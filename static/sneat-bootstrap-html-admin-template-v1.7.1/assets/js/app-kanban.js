@@ -20,11 +20,13 @@
   const kanbanOffcanvas = new bootstrap.Offcanvas(kanbanSidebar);
 
   // Get kanban data
-  const kanbanResponse = await fetch(assetsPath + 'json/kanban.json');
-  if (!kanbanResponse.ok) {
-    console.error('error', kanbanResponse);
+  const kanbanJsonScript = document.querySelector('#kanban-json');
+  if (!kanbanJsonScript) {
+    console.error('Kanban JSON script not found');
+    return; // Stop execution if the script is not found
   }
-  boards = await kanbanResponse.json();
+  const kanbanData = JSON.parse(kanbanJsonScript.innerHTML);
+  boards = kanbanData;
 
   // datepicker init
   if (datePicker) {
@@ -178,10 +180,10 @@
     boards: boards,
     dragBoards: true,
     addItemButton: true,
-    buttonContent: '+ Add Item',
+    buttonContent: '+ Adicionar item',
     itemAddOptions: {
       enabled: true, // add a button to board for easy item creation
-      content: '+ Add New Item', // text or html content of the board button
+      content: '+ Adicionar novo item', // text or html content of the board button
       class: 'kanban-title-button btn btn-default btn-xs', // default class of the button
       footer: false // position the button on footer
     },
@@ -227,11 +229,11 @@
       addNew.setAttribute('class', 'new-item-form');
       addNew.innerHTML =
         '<div class="mb-3">' +
-        '<textarea class="form-control add-new-item" rows="2" placeholder="Add Content" autofocus required></textarea>' +
+        '<textarea class="form-control add-new-item" rows="2" placeholder="Adicionar conteúdo" autofocus required></textarea>' +
         '</div>' +
         '<div class="mb-3">' +
-        '<button type="submit" class="btn btn-primary btn-sm me-2">Add</button>' +
-        '<button type="button" class="btn btn-label-secondary btn-sm cancel-add-item">Cancel</button>' +
+        '<button type="submit" class="btn btn-primary btn-sm me-2">Adicionar</button>' +
+        '<button type="button" class="btn btn-label-secondary btn-sm cancel-add-item">Cancelar</button>' +
         '</div>';
       kanban.addForm(boardId, addNew);
 

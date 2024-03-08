@@ -86,6 +86,21 @@ class Branch(models.Model):
     def __str__(self):
         return self.name
 
+
+class Squad(models.Model):
+    name = models.CharField("Nome", max_length=255)
+    branch = models.ForeignKey("accounts.Branch", verbose_name="Filial", on_delete=models.CASCADE)
+    manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='squad_manager')
+    members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
+
+    class Meta:
+        verbose_name = "Squad"
+        verbose_name_plural = "Squads"
+
+    def __str__(self):
+        return self.name
+
+
 class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
     email = models.EmailField("E-mail", unique=True)
@@ -96,6 +111,7 @@ class Department(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Role(models.Model):
     name = models.CharField("Nome", max_length=255)

@@ -61,3 +61,13 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name", "email")
     list_per_page = 10
     list_max_show_all = 100
+
+
+@admin.register(Squad)
+class SquadAdmin(admin.ModelAdmin):
+    list_display = ("name", "branch", "manager")
+    list_display_links = ("name",)
+    search_fields = ("name", "branch", "manager")
+    list_filter = ("branch",)
+    list_per_page = 10
+    list_max_show_all = 100

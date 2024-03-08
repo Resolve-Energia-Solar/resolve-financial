@@ -1,55 +1,196 @@
 from django.db import models
 
 
+class Board(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Nome")
+    description = models.TextField(verbose_name="Descrição", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="board_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="board_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Quadro"
+        verbose_name_plural = "Quadros"
+        ordering = ["name"]
+
+
+class Column(models.Model):
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, verbose_name="Quadro")
+    name = models.CharField(max_length=200, verbose_name="Nome")
+    order = models.IntegerField(verbose_name="Ordem")
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="column_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="column_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.name} - {self.board}"
+
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Coluna"
+        verbose_name_plural = "Colunas"
+        ordering = ["order"]
+        
+
+class Card(models.Model):
+    column = models.ManyToManyField(Column, verbose_name="Colunas", blank=True)
+    lead = models.OneToOneField("main.Lead", on_delete=models.CASCADE, verbose_name="Lead", blank=True, null=True)
+    task = models.OneToOneField("main.Task", on_delete=models.CASCADE, verbose_name="Tarefa", blank=True, null=True)
+    order = models.IntegerField(verbose_name="Ordem")
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="card_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="card_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    
+    def __str__(self):
+        if self.lead:
+            return self.lead.name
+        else:
+            return self.task.title
+
+    def save(self, current_user=None, *args, **kwargs):
+        if self.lead and self.task:
+            raise ValueError("Apenas um dos campos 'lead' ou 'atividade' pode ser preenchido.")
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Cartão"
+        verbose_name_plural = "Cartões"
+        ordering = ["order"]
+
+
 class Lead(models.Model):
 
     # Personal Information
     name = models.CharField(max_length=200, verbose_name="Nome")
     type = models.CharField(max_length=200, verbose_name="Tipo", help_text="Pessoa Física ou Jurídica?", choices=[("PF", "Pessoa Física"), ("PJ", "Pessoa Jurídica")])
-    picture = models.ImageField(verbose_name="Foto", upload_to="leads", blank=True, null=True)
-    
+
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
     phone = models.CharField(max_length=20, verbose_name="Telefone")
-    address = models.TextField(verbose_name="Endereço", blank=True, null=True)
+    address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True)
     
     # CRM Information
+
+    origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
+    squad = models.ForeignKey("accounts.Squad", on_delete=models.CASCADE, verbose_name="Squad")
+    responsible = models.CharField(max_length=200, verbose_name="Responsável", blank=True, null=True)
+    seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", blank=True, null=True)
+
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="lead_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="lead_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
     
-    origin = models.CharField(max_length=200, verbose_name="Origem")
-    responsible = models.CharField(max_length=200, verbose_name="Responsável")
-    preseller = models.CharField(max_length=200, verbose_name="Pré-vendedor", blank=True, null=True)
-    branch = models.CharField(max_length=200, verbose_name="Filial")
+    def __str__(self):
+        return self.name
 
-    # Meta Information
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = "Contato"
-        verbose_name_plural = "Contatos"
+        verbose_name = "Lead"
+        verbose_name_plural = "Leads"
 
 
+class Task(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead")
+    title = models.CharField(max_length=200, verbose_name="Título")
+    delivery_date = models.DateTimeField(verbose_name="Data de Entrega")
+    description = models.TextField(verbose_name="Descrição")
+    status = models.CharField(max_length=200, verbose_name="Status", choices=[("P", "Pendente"), ("D", "Desenvolvimento"), ("F", "Finalizado")])
+    task_type = models.CharField(max_length=1, verbose_name="Tipo de Atividade", choices=[("L", "Ligar"), ("R", "Responder"), ("E", "E-mail"), ("V", "Visitar"), ("T", "Tentar passar crédito"), ("I", "Vistoria")])
+    date = models.DateField(verbose_name="Data")
+    members = models.ManyToManyField("accounts.User", verbose_name="Membros")
+    notes = models.TextField(verbose_name="Notas")
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="task_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="task_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    
+    def __str__(self):
+        return self.title
+
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Tarefa"
+        verbose_name_plural = "Tarefas"
+
+
+class Attachment(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, verbose_name="Tarefa")
+    file = models.FileField(verbose_name="Arquivo")
+    description = models.TextField(verbose_name="Descrição")
+    # Logs
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="attachment_created_by", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="attachment_updated_by", blank=True, null=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.id and current_user is not None:
+            self.created_by = self.updated_by = current_user
+        elif current_user is not None:
+            self.updated_by = current_user
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.file.name
+    
+    class Meta:
+        verbose_name = "Anexo"
+        verbose_name_plural = "Anexos"
+
+
+"""
 class Opportunity(models.Model):
     Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
     stage = models.CharField(max_length=200, verbose_name="Estágio")
     value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
     expected_close_date = models.DateField(verbose_name="Data de Fechamento Esperada")
 
-    class Meta:
+    board = ta:
         verbose_name = "Oportunidade"
         verbose_name_plural = "Oportunidades"
-
-
-class Activity(models.Model):
-    Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
-    activity_type = models.CharField(max_length=200, verbose_name="Tipo de Atividade")
-    date = models.DateField(verbose_name="Data")
-    notes = models.TextField(verbose_name="Notas")
-
-    class Meta:
-        verbose_name = "Atividade"
-        verbose_name_plural = "Atividades"
 
 
 class Email(models.Model):
@@ -83,3 +224,4 @@ class CustomerLifeCycle(models.Model):
     class Meta:
         verbose_name = "Ciclo de Vida do Cliente"
         verbose_name_plural = "Ciclos de Vida dos Clientes"
+"""
