@@ -9,3 +9,8 @@ class IndexView(TemplateView):
 class KanbanView(DetailView):
     model = Board
     template_name = "leads_kanban.html"
+
+
+class TaskView(DetailView):
+    model = Task
+    template_name = "tasks.html"

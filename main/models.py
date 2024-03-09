@@ -1,11 +1,11 @@
 from django.db import models
+from django.urls import reverse_lazy
 
 
 class Board(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nome")
     description = models.TextField(verbose_name="Descrição", blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+    type = models.CharField(max_length=200, verbose_name="Tipo", choices=[("L", "Leads"), ("T", "Tarefas")], default="L")
     # Logs
     created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="board_created_by", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
@@ -21,6 +21,9 @@ class Board(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_absolute_url(self):
+        return reverse_lazy('main:board-detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Quadro"
@@ -55,7 +58,7 @@ class Column(models.Model):
         
 
 class Card(models.Model):
-    column = models.ManyToManyField(Column, verbose_name="Colunas", blank=True)
+    column = models.ForeignKey(Column, verbose_name="Coluna", on_delete=models.CASCADE, blank=True, null=True)
     lead = models.OneToOneField("main.Lead", on_delete=models.CASCADE, verbose_name="Lead", blank=True, null=True)
     task = models.OneToOneField("main.Task", on_delete=models.CASCADE, verbose_name="Tarefa", blank=True, null=True)
     order = models.IntegerField(verbose_name="Ordem")
@@ -101,8 +104,8 @@ class Lead(models.Model):
 
     origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
     squad = models.ForeignKey("accounts.Squad", on_delete=models.CASCADE, verbose_name="Squad")
-    responsible = models.CharField(max_length=200, verbose_name="Responsável", blank=True, null=True)
-    seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", blank=True, null=True)
+    responsible = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Responsável", related_name="lead_responsible", blank=True, null=True)
+    seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", related_name="lead_seller", blank=True, null=True)
 
     # Logs
     created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="lead_created_by", blank=True, null=True)
