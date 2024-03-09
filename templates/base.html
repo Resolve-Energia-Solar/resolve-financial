@@ -86,6 +86,7 @@
 
         <ul class="menu-inner py-1">
           {% url 'main:index' as index_url %}
+          {% url 'main:tasks' as tasks_url %}
           {% url 'main:board-detail' object.pk as board_detail_url %}
           <!-- Dashboards -->
           <li class="menu-header small text-uppercase">
@@ -116,8 +117,7 @@
           </li>
           {% endif %}
 
-          {% if task_boards %}
-          <li class="menu-item {% if request.path == board_detail_url and object.type == 'T' %}active open{% endif %}">
+          <li class="menu-item {% if request.path == board_detail_url and object.type == 'T' or request.path == tasks_url %}active open{% endif %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
               <div class="text-truncate">Atividades</div>
@@ -129,10 +129,15 @@
                   <div class="text-truncate">{{ board.name }}</div>
                 </a>
               </li>
+              {% empty %}
               {% endfor %}
+              <li class="menu-item {% if request.path == tasks_url %}active{% endif %}">
+                <a href="{{ tasks_url }}" class="menu-link">
+                  <div class="text-truncate">Tarefas</div>
+                </a>
+              </li>
             </ul>
           </li>
-          {% endif %}
 
           <!-- Portal do Vendedor -->
           <li class="menu-header small text-uppercase">

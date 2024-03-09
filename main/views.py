@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView, ListView, DetailView
 from .models import *
 
 
@@ -11,6 +11,6 @@ class KanbanView(DetailView):
     template_name = "leads_kanban.html"
 
 
-class TaskView(DetailView):
+class TasksView(ListView):
     model = Task
     template_name = "tasks.html"
