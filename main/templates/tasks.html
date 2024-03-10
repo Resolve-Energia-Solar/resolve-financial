@@ -2,112 +2,138 @@
 {% load static %}
 
 {% block extra_styles %}
-    <!-- Page CSS -->
-    <link rel="stylesheet" href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/apex-charts/apex-charts.css' %}" />
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css' %}" />
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css' %}" />
 {% endblock %}
 
 {% block content %}
-<!-- Content wrapper -->
 <div class="content-wrapper">
     <!-- Content -->
-
     <div class="container-xxl flex-grow-1 container-p-y">
-        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Invoice /</span> List</h4>
+        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Tarefas /</span> Lista</h4>
 
-        <!-- Invoice List Widget -->
 
-        <div class="card mb-4">
-            <div class="card-widget-separator-wrapper">
-                <div class="card-body card-widget-separator">
-                    <div class="row gy-4 gy-sm-1">
-                        <div class="col-sm-6 col-lg-3">
+
+        <!-- Tarefa List Table -->
+        <div class="card">
+            <div class="card-datatable table-responsive">
+                <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
+                    <div class="row mx-1">
+                        <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
                             <div
-                                class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
-                                <div>
-                                    <h3 class="mb-1">24</h3>
-                                    <p class="mb-0">Clients</p>
-                                </div>
-                                <div class="avatar me-sm-4">
-                                    <span class="avatar-initial rounded bg-label-secondary">
-                                        <i class="bx bx-user bx-sm"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <hr class="d-none d-sm-block d-lg-none me-4" />
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div
-                                class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
-                                <div>
-                                    <h3 class="mb-1">165</h3>
-                                    <p class="mb-0">Invoices</p>
-                                </div>
-                                <div class="avatar me-lg-4">
-                                    <span class="avatar-initial rounded bg-label-secondary">
-                                        <i class="bx bx-file bx-sm"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <hr class="d-none d-sm-block d-lg-none" />
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div
-                                class="d-flex justify-content-between align-items-start border-end pb-3 pb-sm-0 card-widget-3">
-                                <div>
-                                    <h3 class="mb-1">$2.46k</h3>
-                                    <p class="mb-0">Paid</p>
-                                </div>
-                                <div class="avatar me-sm-4">
-                                    <span class="avatar-initial rounded bg-label-secondary">
-                                        <i class="bx bx-check-double bx-sm"></i>
-                                    </span>
+                                class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
+                                <div class="dt-buttons btn-group flex-wrap">
+                                    <a href="{% url 'main:task-create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Tarefa</span></span></a>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h3 class="mb-1">$876</h3>
-                                    <p class="mb-0">Unpaid</p>
-                                </div>
-                                <div class="avatar">
-                                    <span class="avatar-initial rounded bg-label-secondary">
-                                        <i class="bx bx-error-circle bx-sm"></i>
-                                    </span>
-                                </div>
+                        <div
+                            class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
+                            <div id="DataTables_Table_0_filter" class="dataTables_filter"><label><input type="search"
+                                        class="form-control" placeholder="Pesquisar tarefa"
+                                        aria-controls="DataTables_Table_0"></label></div>
+                            <div class="invoice_status mb-3 mb-md-0"><select id="UserRole" class="form-select">
+                                    <option value="">Selecionar status</option>
+                                    <option value="P" class="text-capitalize">Pendente</option>
+                                    <option value="D" class="text-capitalize">Desenvolvimento</option>
+                                    <option value="F" class="text-capitalize">Finalizado</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <table class="invoice-list-table table border-top dataTable no-footer dtr-column"
+                        id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
+                        <thead>
+                            <tr>
+                                <th class="control sorting dtr-hidden" tabindex="0" aria-controls="DataTables_Table_0"
+                                    rowspan="1" colspan="1" style="width: 0px; display: none;"
+                                    aria-label=": activate to sort column ascending"></th>
+                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
+                                    colspan="1" style="width: 60px;" aria-label=": activate to sort column ascending">Status</th>
+                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
+                                    colspan="1" style="width: 323px;"
+                                    aria-label="Client: activate to sort column ascending">Lead</th>
+                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
+                                    colspan="1" style="width: 88px;"
+                                    aria-label="Total: activate to sort column ascending">Tipo</th>
+                                <th class="text-truncate sorting" tabindex="0" aria-controls="DataTables_Table_0"
+                                    rowspan="1" colspan="1" style="width: 156px;"
+                                    aria-label="Issued Date: activate to sort column ascending">Data da Tarefa</th>
+                                <th class="sorting_disabled" rowspan="1" colspan="1" style="width: 117px;"
+                                    aria-label="Balance">Criada em</th>
+                                <th class="cell-fit sorting_disabled" rowspan="1" colspan="1" style="width: 76px;"
+                                    aria-label="Actions">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr class="odd">
+                                <td class="control" tabindex="0" style="display: none;"></td>
+                                <td><span class="badge bg-label-success">{{ task.get_status_display }}</span></td>
+                                <td>
+                                    <div class="d-flex justify-content-start align-items-center">
+                                        <div class="avatar-wrapper">
+                                            <div class="avatar avatar-sm me-2"><span class="avatar-initial rounded-circle bg-label-dark">{{ task.lead.name|slice:1 }}</span></div>
+                                        </div>
+                                        <div class="d-flex flex-column"><a href="pages-profile-user.html" class="text-body text-truncate"><span class="fw-medium">{{ task.lead.name }}</span></a><small class="text-truncate text-muted">{{ task.title }}</small></div>
+                                    </div>
+                                </td>
+                                <td><span class="d-none">{{ task.task_type }}</span>{{ task.get_task_type_display }}</td>
+                                <td><span class="d-none">{{ task.delivery_date|date:"Ymd" }}</span>{{ task.delivery_date|date:"d M Y" }}</td>
+                                <td><span class="d-none">{{ task.created_at|date:"Ymd" }}</span>{{ task.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="javascript:;" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Send Mail" data-bs-original-title="Send Mail"><i class="bx bx-send mx-1"></i></a>
+                                        <a href="app-invoice-preview.html" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver tarefa" data-bs-original-title="Ver tarefa"><i class="bx bx-show mx-1"></i></a>
+                                        <div class="dropdown">
+                                            <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <a href="javascript:;" class="dropdown-item">Baixar</a>
+                                                <a href="app-invoice-edit.html" class="dropdown-item">Editar</a>
+                                                <a href="javascript:;" class="dropdown-item">Duplicar</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="javascript:;" class="dropdown-item delete-record text-danger">Deletar</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="row mx-2">
+                        <div class="col-sm-12 col-md-6">
+                            <div class="dataTables_paginate paging_simple_numbers" id="DataTables_Table_0_paginate">
+                                <ul class="pagination">
+                                    <li class="paginate_button page-item previous disabled"
+                                        id="DataTables_Table_0_previous"><a aria-controls="DataTables_Table_0"
+                                            aria-disabled="true" role="link" data-dt-idx="previous" tabindex="-1"
+                                            class="page-link">Previous</a></li>
+                                    <li class="paginate_button page-item active"><a href="#"
+                                            aria-controls="DataTables_Table_0" role="link" aria-current="page"
+                                            data-dt-idx="0" tabindex="0" class="page-link">1</a></li>
+                                    <li class="paginate_button page-item next disabled" id="DataTables_Table_0_next"><a
+                                            aria-controls="DataTables_Table_0" aria-disabled="true" role="link"
+                                            data-dt-idx="next" tabindex="-1" class="page-link">Next</a></li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Invoice List Table -->
-        <div class="card">
-            <div class="card-datatable table-responsive">
-                <table class="invoice-list-table table border-top">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>#ID</th>
-                            <th><i class="bx bx-trending-up"></i></th>
-                            <th>Client</th>
-                            <th>Total</th>
-                            <th class="text-truncate">Issued Date</th>
-                            <th>Balance</th>
-                            <th>Invoice Status</th>
-                            <th class="cell-fit">Actions</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
     </div>
     <!-- / Content -->
-{% endblock %}
+    {% endblock %}
 
-{% block extra_scripts %}
+    {% block extra_scripts %}
+    <!-- Vendors JS -->
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/moment/moment.js' %}"></script>
+    <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script> -->
+
     <!-- Page JS -->
-    <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/app-invoice-list.js' %}"></script>
-    <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/apex-charts/apexcharts.js' %}"></script>
-{% endblock %}
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/app-invoice-list.js' %}"></script> -->
+    {% endblock %}

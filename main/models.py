@@ -135,9 +135,7 @@ class Task(models.Model):
     description = models.TextField(verbose_name="Descrição")
     status = models.CharField(max_length=200, verbose_name="Status", choices=[("P", "Pendente"), ("D", "Desenvolvimento"), ("F", "Finalizado")])
     task_type = models.CharField(max_length=1, verbose_name="Tipo de Atividade", choices=[("L", "Ligar"), ("R", "Responder"), ("E", "E-mail"), ("V", "Visitar"), ("T", "Tentar passar crédito"), ("I", "Vistoria")])
-    date = models.DateField(verbose_name="Data")
     members = models.ManyToManyField("accounts.User", verbose_name="Membros")
-    notes = models.TextField(verbose_name="Notas")
     # Logs
     created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="task_created_by", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)

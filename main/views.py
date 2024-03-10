@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import TemplateView, ListView, DetailView, CreateView
 from .models import *
 
 
@@ -14,3 +14,11 @@ class KanbanView(DetailView):
 class TasksView(ListView):
     model = Task
     template_name = "tasks.html"
+    context_object_name = "tasks"
+
+
+class TaskCreateView(CreateView):
+    model = Task
+    fields = "__all__"
+    template_name = "task_create.html"
+    success_url = reverse_lazy("tasks")

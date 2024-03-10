@@ -28,7 +28,7 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("lead", "title", "delivery_date", "description", "status", "task_type", "date")
+    list_display = ("lead", "title", "delivery_date", "description", "status", "task_type")
     readonly_fields = ("created_by", "created_at", "updated_by", "updated_at")
 
 

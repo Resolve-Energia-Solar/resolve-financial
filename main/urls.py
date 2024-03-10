@@ -7,4 +7,5 @@ urlpatterns = [
     path('', IndexView.as_view(), name='index'),
     path('quadro/<int:pk>', KanbanView.as_view(), name='board-detail'),
     path('tarefas/', TasksView.as_view(), name='tasks'),
+    path('tarefas/criar', TaskCreateView.as_view(), name='task-create'),
 ]
