@@ -197,19 +197,41 @@
               </li>
             </ul>
           </li>
-
-          <!-- Misc -->
+          <!-- Administração -->
           <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Miscelânea</span>
+            <span class="menu-header-text">Administração</span>
           </li>
           {% if user.is_superuser %}            
           <li class="menu-item">
             <a href="{% url 'admin:index' %}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-cog"></i>
-              <div class="text-truncate">Administração</div>
+              <div class="text-truncate">Área de Administração</div>
             </a>
           </li>
+          <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-user"></i>
+              <div class="text-truncate">Usuários</div>
+            </a>
+
+            <ul class="menu-sub">
+              <li class="menu-item">
+                <a href="{% url 'accounts:users_list' %}" class="menu-link">
+                  <div class="text-truncate">Lista</div>
+                </a>
+              </li>
+              <li class="menu-item">
+                <a href="{% url 'accounts:user_create' %}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
           {% endif %}
+          <!-- Misc -->
+          <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Miscelânea</span>
+          </li>
           <li class="menu-item">
             <a href="https://resolveenergiasolar.com.br/support/" target="_blank" class="menu-link">
               <i class="menu-icon tf-icons bx bx-support"></i>
