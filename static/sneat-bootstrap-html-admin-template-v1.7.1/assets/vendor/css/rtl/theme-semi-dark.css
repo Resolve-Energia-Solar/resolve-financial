@@ -225,7 +225,8 @@ a.bg-primary:focus {
 .pagination li.active>a:not(.page-link):focus {
   border-color: #FDC600;
   background-color: #FDC600;
-  color: #fff;
+  color: #2B2C40;
+  font-weight: bolder;
   box-shadow: 0 0.125rem 0.25rem rgba(105, 108, 255, 0.4);
 }
 
@@ -449,7 +450,7 @@ button.list-group-item-primary.active {
 }
 
 .btn-primary {
-  color: #fff;
+  color: #2B2C40;
   background-color: #FDC600;
   border-color: #FDC600;
   box-shadow: 0 0.125rem 0.25rem 0 rgba(105, 108, 255, 0.4);
@@ -457,8 +458,8 @@ button.list-group-item-primary.active {
 
 .btn-primary:hover {
   color: #fff !important;
-  background-color: #5f61e6 !important;
-  border-color: #5f61e6 !important;
+  background-color: #ac8d1d !important;
+  border-color: #ac8d1d !important;
   transform: translateY(-1px) !important;
 }
 
@@ -1433,7 +1434,7 @@ li.ui-timepicker-selected,
 }
 
 .shepherd-element .shepherd-button:not(:disabled).btn-primary {
-  color: #fff;
+  color: #2B2C40;
   background-color: #FDC600;
   border-color: #FDC600;
   box-shadow: 0 0.125rem 0.25rem 0 rgba(105, 108, 255, 0.4);
@@ -1441,8 +1442,8 @@ li.ui-timepicker-selected,
 
 .shepherd-element .shepherd-button:not(:disabled).btn-primary:hover {
   color: #fff !important;
-  background-color: #5f61e6 !important;
-  border-color: #5f61e6 !important;
+  background-color: #ac8d1d !important;
+  border-color: #ac8d1d !important;
   transform: translateY(-1px) !important;
 }
 
