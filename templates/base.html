@@ -88,6 +88,8 @@
           {% url 'main:index' as index_url %}
           {% url 'main:tasks' as tasks_url %}
           {% url 'main:board-detail' object.pk as board_detail_url %}
+          {% url 'accounts:users_list' as users_list_url %}
+          {% url 'accounts:user_create' as user_create_url %}
           <!-- Dashboards -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">CRM</span>
@@ -208,19 +210,18 @@
               <div class="text-truncate">Área de Administração</div>
             </a>
           </li>
-          <li class="menu-item">
+          <li class="menu-item {% if request.path == user_create_url or request.path == users_list_url %}active open{% endif %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-user"></i>
               <div class="text-truncate">Usuários</div>
             </a>
-
             <ul class="menu-sub">
-              <li class="menu-item">
+              <li class="menu-item {% if request.path == users_list_url %}active{% endif %}">
                 <a href="{% url 'accounts:users_list' %}" class="menu-link">
                   <div class="text-truncate">Lista</div>
                 </a>
               </li>
-              <li class="menu-item">
+              <li class="menu-item {% if request.path == user_create_url %}active{% endif %}">
                 <a href="{% url 'accounts:user_create' %}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
@@ -268,7 +269,7 @@
               <div class="nav-item navbar-search-wrapper mb-0">
                 <a class="nav-item nav-link search-toggler px-0" href="javascript:void(0);">
                   <i class="bx bx-search bx-sm"></i>
-                  <span class="d-none d-md-inline-block text-muted">Search (Ctrl+/)</span>
+                  <span class="d-none d-md-inline-block text-muted">Pesquisar (Ctrl+/)</span>
                 </a>
               </div>
             </div>

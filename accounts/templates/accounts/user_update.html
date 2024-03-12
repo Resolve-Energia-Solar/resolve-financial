@@ -4,9 +4,12 @@
 <div class="content-wrapper">
   <!-- Content -->
   <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row justify-content-center">
+    <div class="row justify-content-center py-3">
       <div class="col-12 col-md-8">
-        <h2>Criar Tarefa</h2>
+        <div class="d-flex justify-content-between align-items-center my-2">
+          <h1>Editar Usuário</h1>
+          <h4>({{ object.username }})</h4>
+        </div>
         {% load widget_tweaks %}
 
         <form method="post" enctype="multipart/form-data" id="user_form">
@@ -14,7 +17,7 @@
 
           <!-- Personal Info -->
           <fieldset class="module aligned">
-            <h2>Informações Pessoais</h2>
+            <h5>Informações Pessoais</h5>
             {% for field in form.visible_fields %}
             {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
             <div class="form-group mb-3">
@@ -32,7 +35,7 @@
 
           <!-- Contact -->
           <fieldset class="module aligned">
-            <h2>Contato</h2>
+            <h5>Contato</h5>
             {% for field in form.visible_fields %}
             {% if field.name in "phone email" %}
             <div class="form-group mb-3">
@@ -50,7 +53,7 @@
 
           <!-- Address -->
           <fieldset class="module aligned">
-            <h2>Endereço</h2>
+            <h5>Endereço</h5>
             {% for field in form.visible_fields %}
             {% if field.name == "address" %}
             <div class="form-group mb-3">
@@ -68,7 +71,7 @@
 
           <!-- Employee Info -->
           <fieldset class="module aligned">
-            <h2>Informações do Funcionário</h2>
+            <h5>Informações do Funcionário</h5>
             {% for field in form.visible_fields %}
             {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
             <div class="form-group mb-3">
@@ -84,7 +87,7 @@
             {% endfor %}
           </fieldset>
 
-          <div class="submit-row">
+          <div class="submit-row d-flex justify-content-between align-items-center">
             <button class="btn btn-success" type="submit">Salvar</button>
             <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
           </div>
