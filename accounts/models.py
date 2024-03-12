@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse_lazy
 
 
 class User(AbstractUser):
@@ -39,6 +40,9 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
     
+    def get_absolute_url(self):
+        return reverse_lazy("accounts:user_detail", kwargs={"pk": self.pk})
+    
     class Meta:
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
@@ -67,7 +71,10 @@ class Address(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state}, {self.zip_code}, {self.country}"
+        if self.complement:
+            return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state}, {self.zip_code}, {self.country}"
+        else:
+            return f"{self.street} - {self.number}, {self.city}/{self.state}, {self.zip_code}, {self.country}"
     
     class Meta:
         verbose_name = "Endereço"
