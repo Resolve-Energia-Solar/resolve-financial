@@ -7,10 +7,10 @@ class Board(models.Model):
     description = models.TextField(verbose_name="Descrição", blank=True, null=True)
     type = models.CharField(max_length=200, verbose_name="Tipo", choices=[("L", "Leads"), ("T", "Tarefas")], default="L")
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="board_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="board_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="board_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="board_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -36,10 +36,10 @@ class Column(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nome")
     order = models.IntegerField(verbose_name="Ordem")
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="column_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="column_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="column_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="column_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
     
     def __str__(self):
         return f"{self.name} - {self.board}"
@@ -63,10 +63,10 @@ class Card(models.Model):
     task = models.OneToOneField("main.Task", on_delete=models.CASCADE, verbose_name="Tarefa", blank=True, null=True)
     order = models.IntegerField(verbose_name="Ordem")
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="card_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="card_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="card_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="card_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
     
     def __str__(self):
         if self.lead:
@@ -108,10 +108,10 @@ class Lead(models.Model):
     seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", related_name="lead_seller", blank=True, null=True)
 
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="lead_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="lead_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="lead_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="lead_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
     
     def __str__(self):
         return self.name
@@ -137,10 +137,10 @@ class Task(models.Model):
     task_type = models.CharField(max_length=1, verbose_name="Tipo de Atividade", choices=[("L", "Ligar"), ("R", "Responder"), ("E", "E-mail"), ("V", "Visitar"), ("T", "Tentar passar crédito"), ("I", "Vistoria")])
     members = models.ManyToManyField("accounts.User", verbose_name="Membros")
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="task_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="task_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="task_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="task_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
     
     def __str__(self):
         return self.title
@@ -151,6 +151,9 @@ class Task(models.Model):
         elif current_user is not None:
             self.updated_by = current_user
         super().save(*args, **kwargs)
+        
+    def get_absolute_url(self):
+        return reverse_lazy('main:task-detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Tarefa"
@@ -162,10 +165,10 @@ class Attachment(models.Model):
     file = models.FileField(verbose_name="Arquivo")
     description = models.TextField(verbose_name="Descrição")
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="attachment_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="attachment_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="attachment_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="attachment_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:

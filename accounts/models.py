@@ -24,10 +24,10 @@ class User(AbstractUser):
     hire_date = models.DateField("Data de Admissão", blank=True, null=True)
     resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="user_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="user_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="user_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="user_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -54,10 +54,10 @@ class Address(models.Model):
     number = models.CharField("Número", max_length=10)
     complement = models.CharField("Complemento", max_length=255, blank=True, null=True)
     # Logs
-    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="address_created_by", blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="address_updated_by", blank=True, null=True)
-    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True)
+    created_by = models.ForeignKey("accounts.User", verbose_name="Criado por", on_delete=models.CASCADE, related_name="address_created_by", blank=True, null=True, editable=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
+    updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="address_updated_by", blank=True, null=True, editable=False)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
