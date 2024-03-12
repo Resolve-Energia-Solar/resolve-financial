@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, ListView, DetailView, CreateView
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
 from .models import *
 
 
@@ -16,6 +16,11 @@ class TasksView(ListView):
     template_name = "tasks.html"
     context_object_name = "tasks"
     paginate_by = 10
+    
+
+class TaskDetailView(DetailView):
+    model = Task
+    template_name = "task_detail.html"
 
 
 class TaskCreateView(CreateView):
@@ -23,3 +28,12 @@ class TaskCreateView(CreateView):
     fields = "__all__"
     template_name = "task_create.html"
     success_url = reverse_lazy("main:tasks")
+
+
+class TaskUpdateView(UpdateView):
+    model = Task
+    fields = "__all__"
+    template_name = "task_update.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
