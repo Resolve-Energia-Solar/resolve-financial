@@ -13,6 +13,7 @@ class UsersListView(ListView):
 class UserDetailView(DetailView):
     model = get_user_model()
     template_name = "accounts/user_detail.html"
+    slug_field = "username"
 
 
 class UserCreateView(CreateView):
@@ -26,6 +27,7 @@ class UserUpdateView(UpdateView):
     model = get_user_model()
     fields = "__all__"
     template_name = "accounts/user_update.html"
+    slug_field = "username"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
