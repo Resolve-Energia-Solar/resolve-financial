@@ -37,3 +37,33 @@ class TaskUpdateView(UpdateView):
 
     def get_success_url(self):
         return self.object.get_absolute_url()
+    
+
+class BoardsView(ListView):
+    model = Board
+    template_name = "boards.html"
+    context_object_name = "boards"
+    paginate_by = 10
+
+
+class BoardDetailView(DetailView):
+    model = Board
+    template_name = "board_detail.html"
+    
+
+class BoardCreateView(CreateView):
+    model = Board
+    fields = "__all__"
+    template_name = "board_create.html"
+    success_url = reverse_lazy("main:boards")
+
+
+class BoardUpdateView(UpdateView):
+    model = Board
+    fields = "__all__"
+    template_name = "board_update.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
