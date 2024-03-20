@@ -12,5 +12,6 @@ urlpatterns = [
     path('tarefas/<int:pk>/editar', TaskUpdateView.as_view(), name='task-update'),
     path('quadros/', BoardsView.as_view(), name='boards'),
     path('quadros/criar', BoardCreateView.as_view(), name='board-create'),  
-    path('quadros/editar/<int:pk>', BoardUpdateView.as_view(), name='board-update'),
+    path('move_card/<int:table_id>/<int:column_id>/<int:card_id>', MoveCardView.as_view(), name='move_card'),
+    path('quadros/<int:pk>/<int:column_id>/criar', CreateCardView.as_view(), name='card-create'),
 ]

@@ -1,4 +1,8 @@
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+from django.db.models import F
+from django.http import JsonResponse
+from django.views import View
+from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
 
@@ -9,6 +13,14 @@ class IndexView(TemplateView):
 class KanbanView(DetailView):
     model = Board
     template_name = "leads_kanban.html"
+    
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get('name')
+        board = self.get_object()
+        column = Column(name=name, board=board)
+        column.order = self.get_object().column_set.count()
+        column.save()
+        return redirect('main:board-detail', pk=board.pk)
 
 
 class TasksView(ListView):
@@ -67,3 +79,20 @@ class BoardUpdateView(UpdateView):
         return self.object.get_absolute_url()
 
 
+class MoveCardView(View):
+    def post(self, request, table_id, column_id, card_id, *args, **kwargs):
+        card = get_object_or_404(Card, id=card_id)
+        column = get_object_or_404(Column, id=column_id)
+        card.column = column
+        card.save()
+        return JsonResponse({'status': 'success'})
+
+
+class CreateCardView(View):
+    def post(self, request, pk, column_id, *args, **kwargs):
+        title = request.POST.get('title')
+        column = get_object_or_404(Column, id=column_id)
+        order = column.card_set.count() + 1
+        card = Card(column=column, title=title, order=order)
+        card.save()
+        return JsonResponse({'status': 'success', 'card_id': card.id})
