@@ -80,9 +80,9 @@
       "<div class='dropdown'>" +
       "<i class='dropdown-toggle bx bx-dots-vertical-rounded cursor-pointer fs-4' id='board-dropdown' data-bs-toggle='dropdown' aria-haspopup='true' aria-expanded='false'></i>" +
       "<div class='dropdown-menu dropdown-menu-end' aria-labelledby='board-dropdown'>" +
-      "<a class='dropdown-item delete-board' href='javascript:void(0)'> <i class='bx bx-trash bx-xs'></i> <span class='align-middle'>Delete</span></a>" +
-      "<a class='dropdown-item' href='javascript:void(0)'><i class='bx bx-rename bx-xs'></i> <span class='align-middle'>Rename</span></a>" +
-      "<a class='dropdown-item' href='javascript:void(0)'><i class='bx bx-archive bx-xs'></i> <span class='align-middle'>Archive</span></a>" +
+      "<a class='dropdown-item delete-board' href='javascript:void(0)'> <i class='bx bx-trash bx-xs'></i> <span class='align-middle'>Deletar</span></a>" +
+      "<a class='dropdown-item' href='javascript:void(0)'><i class='bx bx-rename bx-xs'></i> <span class='align-middle'>Renomear</span></a>" +
+      "<a class='dropdown-item' href='javascript:void(0)'><i class='bx bx-archive bx-xs'></i> <span class='align-middle'>Arquivar</span></a>" +
       '</div>' +
       '</div>'
     );
@@ -125,31 +125,31 @@
     return images == undefined
       ? ' '
       : images
-          .split(',')
-          .map(function (img, index, arr) {
-            var $margin = margin && index !== arr.length - 1 ? ' me-' + margin + '' : '';
+        .split(',')
+        .map(function (img, index, arr) {
+          var $margin = margin && index !== arr.length - 1 ? ' me-' + margin + '' : '';
 
-            return (
-              "<div class='avatar " +
-              $size +
-              $margin +
-              "'" +
-              "data-bs-toggle='tooltip' data-bs-placement='top'" +
-              "title='" +
-              member[index] +
-              "'" +
-              '>' +
-              "<img src='" +
-              assetsPath +
-              'img/avatars/' +
-              img +
-              "' alt='Avatar' class='rounded-circle " +
-              $transition +
-              "'>" +
-              '</div>'
-            );
-          })
-          .join(' ');
+          return (
+            "<div class='avatar " +
+            $size +
+            $margin +
+            "'" +
+            "data-bs-toggle='tooltip' data-bs-placement='top'" +
+            "title='" +
+            member[index] +
+            "'" +
+            '>' +
+            "<img src='" +
+            assetsPath +
+            'img/avatars/' +
+            img +
+            "' alt='Avatar' class='rounded-circle " +
+            $transition +
+            "'>" +
+            '</div>'
+          );
+        })
+        .join(' ');
   }
 
   // Render footer
@@ -190,8 +190,8 @@
     click: function (el) {
       let element = el;
       let title = element.getAttribute('data-eid')
-          ? element.querySelector('.kanban-text').textContent
-          : element.textContent,
+        ? element.querySelector('.kanban-text').textContent
+        : element.textContent,
         date = element.getAttribute('data-due-date'),
         dateObj = new Date(),
         year = dateObj.getFullYear(),
@@ -218,9 +218,9 @@
         .insertAdjacentHTML(
           'afterbegin',
           renderAvatar(avatars, false, 'sm', '0', el.getAttribute('data-members')) +
-            "<div class='avatar avatar-sm'>" +
-            "<span class='avatar-initial rounded-circle bg-label-secondary'><i class='bx bx-plus'></i></span>" +
-            '</div>'
+          "<div class='avatar avatar-sm'>" +
+          "<span class='avatar-initial rounded-circle bg-label-secondary'><i class='bx bx-plus'></i></span>" +
+          '</div>'
         );
     },
 
@@ -281,6 +281,27 @@
       // Remove form on clicking cancel button
       addNew.querySelector('.cancel-add-item').addEventListener('click', function (e) {
         addNew.remove();
+      });
+    },
+    dropEl: function (el, target, source, sibling) {
+      // Obtenha os IDs necessários
+      var card_id = el.dataset.eid;
+      var column_id = target.parentElement.dataset.id;
+      var table_id = document.querySelector('.app-kanban').dataset.boardId;
+
+      // Envie uma solicitação AJAX para a view MoveCardView
+      $.ajax({
+        url: `/move_card/${table_id}/${column_id}/${card_id}`,
+        type: 'POST',
+        data: {
+          csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+        },
+        success: function (response) {
+          console.log('Cartão movido com sucesso');
+        },
+        error: function (error) {
+          console.error('Erro ao mover o cartão:', error);
+        }
       });
     }
   });
@@ -405,7 +426,7 @@
   // Add new board
   if (kanbanAddNewBoard) {
     kanbanAddNewBoard.addEventListener('submit', function (e) {
-      e.preventDefault();
+      // e.preventDefault();
       const thisEle = this,
         value = thisEle.querySelector('.form-control').value,
         id = value.replace(/\s+/g, '-').toLowerCase();

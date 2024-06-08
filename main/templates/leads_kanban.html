@@ -23,19 +23,20 @@
     <!-- Content -->
 
     <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="app-kanban">
+        {% csrf_token %}
+        <div class="app-kanban" data-board-id="{{ object.id }}">
             <!-- Add new board -->
             <div class="row">
                 <div class="col-12">
-                    <form class="kanban-add-new-board">
+                    <form class="kanban-add-new-board" method="post">
+                        {% csrf_token %}
                         <label class="kanban-add-board-btn" for="kanban-add-board-input">
                             <i class="bx bx-plus me-1"></i>
                             <span class="align-middle">Adicionar nova</span>
                         </label>
-                        <input type="text" class="form-control w-px-250 kanban-add-board-input mb-2 d-none"
-                            placeholder="Add Board Title" id="kanban-add-board-input" required />
+                        <input type="text" class="form-control w-px-250 kanban-add-board-input mb-2 d-none" placeholder="Adicionar título da coluna" id="kanban-add-board-input" name="name" required />
                         <div class="mb-3 kanban-add-board-input d-none">
-                            <button class="btn btn-primary btn-sm me-2">Adicionar</button>
+                            <button type="submit" class="btn btn-primary btn-sm me-2">Adicionar</button>
                             <button type="button" class="btn btn-label-secondary btn-sm kanban-add-board-cancel-btn">
                                 Cancelar
                             </button>
@@ -134,7 +135,7 @@
                                     <span class="avatar-initial bg-label-success rounded-circle">HJ</span>
                                 </div>
                                 <div class="media-body">
-                                    <p class="mb-0"><span class="fw-medium">Jordan</span> Left the board.</p>
+                                    <p class="mb-0"><span class="fw-medium">Jordan</span> Left the object.</p>
                                     <small class="text-muted">Today 11:00 AM</small>
                                 </div>
                             </div>
@@ -159,7 +160,7 @@
                                 <div class="media-body">
                                     <p class="mb-0">
                                         <span class="fw-medium">Martian</span> added moved Charts & Maps task to the
-                                        done board.
+                                        done object.
                                     </p>
                                     <small class="text-muted">Today 10:00 AM</small>
                                 </div>
@@ -240,7 +241,7 @@
                                 <div class="media-body">
                                     <p class="mb-0">
                                         <span class="fw-medium">Dianna</span> moved task
-                                        <span class="fw-medium">FAQ UX</span> from in progress to done board.
+                                        <span class="fw-medium">FAQ UX</span> from in progress to done object.
                                     </p>
                                     <small class="text-muted">Today 7:00 AM</small>
                                 </div>
@@ -263,7 +264,7 @@
                                 </div>
                                 <div class="media-body">
                                     <p class="mb-0"><span class="fw-medium">Bruce</span> added new task in progress
-                                        board.</p>
+                                        object.</p>
                                     <small class="text-muted">Yesterday 12:00 PM</small>
                                 </div>
                             </div>
@@ -279,7 +280,7 @@
     {% block extra_scripts %}
     <script id="kanban-json" class="d-none">
         [
-            {% for column in board.column_set.all %}
+            {% for column in object.column_set.all %}
             {
                 "id": "{{ column.id }}",
                 "title": "{{ column.name }}",
@@ -320,5 +321,4 @@
     <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/quill/katex.js' %}"></script>
     <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/quill/quill.js' %}"></script>
     <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/app-kanban.js' %}"></script>
-
     {% endblock extra_scripts %}
