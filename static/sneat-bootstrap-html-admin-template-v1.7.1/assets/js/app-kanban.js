@@ -93,9 +93,9 @@
       "<div class='dropdown kanban-tasks-item-dropdown'>" +
       "<i class='dropdown-toggle bx bx-dots-vertical-rounded' id='kanban-tasks-item-dropdown' data-bs-toggle='dropdown' aria-haspopup='true' aria-expanded='false'></i>" +
       "<div class='dropdown-menu dropdown-menu-end' aria-labelledby='kanban-tasks-item-dropdown'>" +
-      "<a class='dropdown-item' href='javascript:void(0)'>Copy task link</a>" +
-      "<a class='dropdown-item' href='javascript:void(0)'>Duplicate task</a>" +
-      "<a class='dropdown-item delete-task' href='javascript:void(0)'>Delete</a>" +
+      "<a class='dropdown-item' href='javascript:void(0)'>Copiar link</a>" +
+      "<a class='dropdown-item' href='javascript:void(0)'>Duplicar</a>" +
+      "<a class='dropdown-item delete-task' href='javascript:void(0)'>Deletar</a>" +
       '</div>' +
       '</div>'
     );
@@ -397,10 +397,23 @@
     deleteBoards.forEach(function (elem) {
       elem.addEventListener('click', function () {
         const id = this.closest('.kanban-board').getAttribute('data-id');
-        kanban.removeBoard(id);
+        $.ajax({
+          url: `/coluna/${id}/deletar`,
+          type: 'POST',
+          data: {
+            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+          },
+          success: function (response) {
+            console.log('Coluna deletada com sucesso');
+            kanban.removeBoard(id);
+          },
+          error: function (error) {
+            console.error('Erro ao deletar coluna:', error);
+          }
+        });
       });
     });
-  }
+  }  
 
   // Delete task for rendered boards
   const deleteTask = [].slice.call(document.querySelectorAll('.delete-task'));

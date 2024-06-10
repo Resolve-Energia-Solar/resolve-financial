@@ -96,3 +96,17 @@ class CreateCardView(View):
         card = Card(column=column, title=title, order=order)
         card.save()
         return JsonResponse({'status': 'success', 'card_id': card.id})
+
+
+class DeleteCardView(View):
+    def post(self, request, pk, column_id, card_id, *args, **kwargs):
+        card = get_object_or_404(Card, id=card_id)
+        card.delete()
+        return JsonResponse({'status': 'success'})
+
+
+class DeleteColumnView(View):
+    def post(self, request, column_id, *args, **kwargs):
+        column = get_object_or_404(Column, id=column_id)
+        column.delete()
+        return JsonResponse({'status': 'success'})

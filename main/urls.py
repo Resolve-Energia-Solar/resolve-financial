@@ -14,4 +14,5 @@ urlpatterns = [
     path('quadros/criar', BoardCreateView.as_view(), name='board-create'),  
     path('move_card/<int:table_id>/<int:column_id>/<int:card_id>', MoveCardView.as_view(), name='move_card'),
     path('quadros/<int:pk>/<int:column_id>/criar', CreateCardView.as_view(), name='card-create'),
+    path('coluna/<int:column_id>/deletar', DeleteColumnView.as_view(), name='column-delete'),
 ]
