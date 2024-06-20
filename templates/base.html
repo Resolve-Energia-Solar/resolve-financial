@@ -433,7 +433,7 @@
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
                               {% if user.profile_picture %}
-                                <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                                <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
                               {% else %}
                                 <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}</div>
                               {% endif %}                                
@@ -637,7 +637,7 @@
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                   <div class="avatar avatar-online">
                     {% if user.profile_picture %}
-                      <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                      <img src="https://picsum.photos/200" alt="user image" class="w-px-40 h-auto rounded-circle" />
                     {% else %}
                       <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}</div>
                     {% endif %}   
