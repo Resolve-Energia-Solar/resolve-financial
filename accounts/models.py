@@ -72,9 +72,9 @@ class Address(models.Model):
 
     def __str__(self):
         if self.complement:
-            return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state}, {self.zip_code}, {self.country}"
+            return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
         else:
-            return f"{self.street} - {self.number}, {self.city}/{self.state}, {self.zip_code}, {self.country}"
+            return f"{self.street} - {self.number}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
     
     class Meta:
         verbose_name = "Endereço"

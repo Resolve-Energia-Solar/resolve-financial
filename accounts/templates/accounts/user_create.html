@@ -1,95 +1,236 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="content-wrapper">
-  <!-- Content -->
-  <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row justify-content-center">
-      <div class="col-12 col-md-8">
-        <h2>Criar Tarefa</h2>
-        {% load widget_tweaks %}
 
-        <form method="post" enctype="multipart/form-data" id="user_form">
-          {% csrf_token %}
+<div class="row justify-content-center mb-3">
+  <div class="col-12 col-md-8">
+    <h1 class="display-5">Criar Usuário</h1>
+    {% load widget_tweaks %}
 
-          <!-- Personal Info -->
-          <fieldset class="module aligned">
-            <h2>Informações Pessoais</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
+    <form method="post" enctype="multipart/form-data" id="user_form">
+      {% csrf_token %}
 
-          <!-- Contact -->
-          <fieldset class="module aligned">
-            <h2>Contato</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "phone email" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
-
-          <!-- Address -->
-          <fieldset class="module aligned">
-            <h2>Endereço</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name == "address" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
-
-          <!-- Employee Info -->
-          <fieldset class="module aligned">
-            <h2>Informações do Funcionário</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
-
-          <div class="submit-row">
-            <button class="btn btn-success" type="submit">Salvar</button>
-            <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
+      <!-- Personal Info -->
+      <fieldset class="module aligned">
+        <h2 class="h3">Informações Pessoais</h2>
+        {% for field in form.visible_fields %}
+        {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
+        <div class="form-group mb-3">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% render_field field class="form-control" %}
+          {% for error in field.errors %}
+          <div class="invalid-feedback">
+            {{ error }}
           </div>
-        </form>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </fieldset>
 
+      <!-- Contact -->
+      <fieldset class="module aligned">
+        <h2 class="h3">Contato</h2>
+        {% for field in form.visible_fields %}
+        {% if field.name in "phone email" %}
+        <div class="form-group mb-3">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% render_field field class="form-control" %}
+          {% for error in field.errors %}
+          <div class="invalid-feedback">
+            {{ error }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </fieldset>
+
+      <!-- Address -->
+      <fieldset class="module aligned">
+        <h2 class="h3">Endereço</h2>
+        <div class="form-group mb-3">
+          <label for="address-input">Endereço</label>
+          <input list="addresses" id="address-input" name="address" class="form-control"
+            placeholder="Comece a digitar um endereço...">
+          <datalist id="addresses">
+            <!-- As opções serão inseridas aqui pelo JavaScript -->
+          </datalist>
+          <small class="help-text"><a href="#" data-bs-toggle="modal" data-bs-target="#createAddress">Não achou seu
+              endereço?</a></small>
+        </div>
+      </fieldset>
+
+      <!-- Employee Info -->
+      <fieldset class="module aligned">
+        <h2 class="h3">Informações do Funcionário</h2>
+        {% for field in form.visible_fields %}
+        {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
+        <div class="form-group mb-3">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% render_field field class="form-control" %}
+          {% for error in field.errors %}
+          <div class="invalid-feedback">
+            {{ error }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </fieldset>
+
+      <div class="submit-row">
+        <button class="btn btn-success me-2" type="submit">Salvar</button>
+        <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
+      </div>
+    </form>
+
+    <!-- Add New Address Modal -->
+    <div class="modal fade" id="createAddress" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-simple modal-add-new-address">
+        <div class="modal-content p-3 p-md-5">
+          <div class="modal-body">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="text-center mb-4">
+              <h3 class="address-title">Adicionar novo endereço</h3>
+              <p class="address-subtitle">Novo endereço para o funcionário</p>
+            </div>
+            <form id="createAddressForm" class="row">
+              <div class="col-12">
+                <div class="row">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_zip_code">CEP</label>
+                    <input type="text" id="id_zip_code" name="zip_code" class="form-control"
+                      placeholder="Digite o CEP para começar" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_country">País</label>
+                    <input class="form-control" type="text" name="country" id="id_country" value="Brasil">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_state">Estado</label>
+                    <input type="text" id="id_state" name="state" class="form-control" placeholder="PA" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="modalAddressCity">Cidade</label>
+                    <input type="text" id="id_city" name="city" class="form-control"
+                      placeholder="Digite a cidade aqui" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_neighborhood">Bairro</label>
+                    <input type="text" id="id_neighborhood" name="neighborhood" class="form-control"
+                      placeholder="Digite o bairro aqui" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="street">Logradouro</label>
+                    <input type="text" id="id_street" name="street" class="form-control"
+                      placeholder="Digite a rua, avenida, travessa etc." />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_number">Número</label>
+                    <input type="text" id="id_number" name="number" class="form-control"
+                      placeholder="Digite o número da casa" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_complement">Complemento</label>
+                    <input type="text" id="id_complement" name="complement" class="form-control"
+                      placeholder="Digite o complemento aqui" />
+                  </div>
+                  <div class="col-12 text-center mt-4">
+                    <button type="submit" class="btn btn-primary me-sm-3 me-1">Criar</button>
+                    <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
+    <!--/ Add New Address Modal -->
+  </div>
+</div>
 {% endblock content %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch('{% url "accounts:addresses_api" %}')
+      .then(response => response.json())
+      .then(data => {
+        const addressesDatalist = document.getElementById('addresses');
+        data.forEach(address => {
+          const option = document.createElement('option');
+          option.value = address.complete_address;
+          option.text = address.complete_address;
+          option.setAttribute('data-address-id', address.id);
+          addressesDatalist.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Erro ao buscar endereços:', error));
+
+    document.getElementById('createAddressForm').addEventListener('submit', function (e) {
+      e.preventDefault(); // Impede o envio padrão do formulário
+
+      // Coleta os dados do formulário
+      var formData = {
+        street: document.getElementById('id_street').value,
+        city: document.getElementById('id_city').value,
+        state: document.getElementById('id_state').value,
+        zip_code: document.getElementById('id_zip_code').value,
+        country: document.getElementById('id_country').value,
+        neighborhood: document.getElementById('id_neighborhood').value,
+        number: document.getElementById('id_number').value,
+        complement: document.getElementById('id_complement').value
+      };
+
+      // Envia os dados para a API
+      fetch('{% url "accounts:addresses_api" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Sucesso:', data);
+          // Cria um novo option com o endereço retornado
+          const newOption = new Option(data.complete_address, data.id, true, true);
+          // Adiciona o novo option ao select de endereços
+          document.getElementById('addresses').appendChild(newOption);
+          // Opcionalmente, dispara o evento de mudança se necessário
+          document.getElementById('addresses').dispatchEvent(new Event('change'));
+        })
+        .catch((error) => {
+          console.error('Erro:', error);
+        });
+    });
+  });
+
+  document.getElementById('id_zip_code').addEventListener('blur', function () {
+    const cep = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    if (cep.length === 8) {
+      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        .then(response => response.json())
+        .then(data => {
+          if (!("erro" in data)) {
+            document.getElementById('id_street').value = data.logradouro;
+            document.getElementById('id_neighborhood').value = data.bairro;
+            document.getElementById('id_city').value = data.localidade;
+            document.getElementById('id_state').value = data.uf;
+            document.getElementById('id_complement').value = data.complemento;
+            document.getElementById('id_country').value = "Brasil"; // Considerando que o serviço é para endereços no Brasil
+          } else {
+            alert("CEP não encontrado.");
+          }
+        })
+        .catch(error => console.error('Erro ao buscar o CEP:', error));
+    } else {
+      alert("CEP inválido. O CEP deve conter 8 dígitos.");
+    }
+  });
+</script>
+{% endblock extra_scripts %}

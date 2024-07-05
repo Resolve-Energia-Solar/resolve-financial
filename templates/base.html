@@ -753,9 +753,15 @@
         </nav>
 
         <!-- / Navbar -->
+         
+      <!-- Content wrapper -->
+      <div class="content-wrapper">
+                  
+        {% include 'snippets/alert_messages.html' %}
 
-
+        <!-- Content -->
         {% block content %}{% endblock content %}
+        <!-- / Content -->
 
         <!-- Footer -->
         <footer class="content-footer footer bg-footer-theme">
@@ -811,8 +817,7 @@
   <!-- endbuild -->
 
   <!-- Vendors JS -->
-  <script
-    src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/apex-charts/apexcharts.js' %}"></script>
+  <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/apex-charts/apexcharts.js' %}"></script>
 
   <!-- Main JS -->
   <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/main.js' %}"></script>
