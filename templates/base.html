@@ -1,5 +1,5 @@
 <!doctype html>
-{% load static %}
+{% load static menu_tags %}
 <html lang="pt-br" class="light-style layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
   data-theme="theme-default" data-assets-path="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/' %}"
   data-template="vertical-menu-template">
@@ -98,16 +98,16 @@
           {% url 'main:board-create' as boards_create_url %}
           <!-- Dashboards -->
           <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">CRM</span>
+            <span class="menu-header-text">CRM {{ object.pk }}</span>
           </li>
-          <li class="menu-item {% if request.path == index_url %}active{% endif %}">
+          <li class="menu-item {% is_active index_url %}">
             <a href="{% url 'main:index' %}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-bar-chart"></i>
               <div class="text-truncate">Dashboard</div>
             </a>
           </li>
           {% if lead_boards %}
-          <li class="menu-item {% if request.path == board_detail_url and object.type == 'L' %}active open{% endif %}">
+          <li class="menu-item {% if object.type == 'L' %}{% is_active_open board_detail_url %}{% endif %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-chevrons-right"></i>
               <div class="text-truncate">Fluxo</div>
@@ -115,7 +115,7 @@
             </a>
             <ul class="menu-sub">
               {% for board in lead_boards %}
-              <li class="menu-item {% if request.path == board.get_absolute_url %}active{% endif %}">
+              <li class="menu-item {% is_active board.get_absolute_url %}">
                 <a href="{{ board.get_absolute_url }}" class="menu-link">
                   <div class="text-truncate">{{ board.name }}</div>
                 </a>
@@ -124,29 +124,29 @@
             </ul>
           </li>
           {% endif %}
-
-          <li class="menu-item {% if request.path == board_detail_url and object.type == 'T' or request.path == tasks_url %}active open{% endif %}">
+        
+          <li class="menu-item {% if object.type == 'T' or request.path == tasks_url %}{% is_active_open board_detail_url tasks_url %}{% endif %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
               <div class="text-truncate">Atividades</div>
             </a>
             <ul class="menu-sub">
               {% for board in task_boards %}
-              <li class="menu-item {% if request.path == board.get_absolute_url %}active{% endif %}">
+              <li class="menu-item {% is_active board.get_absolute_url %}">
                 <a href="{{ board.get_absolute_url }}" class="menu-link">
                   <div class="text-truncate">{{ board.name }}</div>
                 </a>
               </li>
               {% empty %}
               {% endfor %}
-              <li class="menu-item {% if request.path == tasks_url %}active{% endif %}">
+              <li class="menu-item {% is_active tasks_url %}">
                 <a href="{{ tasks_url }}" class="menu-link">
                   <div class="text-truncate">Tarefas</div>
                 </a>
               </li>
             </ul>
           </li>
-
+        
           <!-- Portal do Vendedor -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Portal do Vendedor</span>
@@ -156,7 +156,7 @@
               <i class="menu-icon tf-icons bx bx-layout"></i>
               <div class="text-truncate">Portal do Vendedor</div>
             </a>
-
+        
             <ul class="menu-sub">
               <li class="menu-item">
                 <a href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/html/vertical-menu-template/layouts-collapsed-menu.html' %}" class="menu-link">
@@ -194,30 +194,30 @@
               <div class="text-truncate">Usuários</div>
             </a>
             <ul class="menu-sub">
-              <li class="menu-item {% if request.path == users_list_url %}active{% endif %}">
+              <li class="menu-item {% is_active users_list_url %}">
                 <a href="{% url 'accounts:users_list' %}" class="menu-link">
                   <div class="text-truncate">Lista</div>
                 </a>
               </li>
-              <li class="menu-item {% if request.path == user_create_url %}active{% endif %}">
+              <li class="menu-item {% is_active user_create_url %}">
                 <a href="{% url 'accounts:user_create' %}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>
             </ul>
           </li>
-          <li class="menu-item {% if request.path == boards_list_url or request.path == boards_create_url %}active open{% endif %}">
+          <li class="menu-item {% is_active_open boards_list_url boards_create_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
               <div class="text-truncate">Quadros</div>
             </a>
             <ul class="menu-sub">
-              <li class="menu-item {% if request.path == boards_list_url %}active{% endif %}">
+              <li class="menu-item {% is_active boards_list_url %}">
                 <a href="{% url 'main:boards' %}" class="menu-link">
                   <div class="text-truncate">Lista</div>
                 </a>
               </li>
-              <li class="menu-item {% if request.path == boards_create_url %}active{% endif %}">
+              <li class="menu-item {% is_active boards_create_url %}">
                 <a href="{% url 'main:board-create' %}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
@@ -243,6 +243,7 @@
             </a>
           </li>
         </ul>
+        
       </aside>
       <!-- / Menu -->
 
