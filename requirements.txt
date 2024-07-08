@@ -4,3 +4,5 @@ pillow==10.2.0
 sqlparse==0.4.4
 python-dotenv==1.0.1
 django-widget-tweaks==1.5.0
+django-crispy-forms==2.1
+crispy-bootstrap5==2024.2

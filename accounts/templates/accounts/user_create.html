@@ -2,86 +2,86 @@
 
 {% block content %}
 
-<div class="row justify-content-center mb-3">
+<div class="row justify-content-center my-3">
   <div class="col-12 col-md-8">
-    <h1 class="display-5">Criar Usuário</h1>
+    <h1 class="display-5 text-center">Criar Usuário</h1>
     {% load widget_tweaks %}
 
-    <form method="post" enctype="multipart/form-data" id="user_form">
+    <form method="post" enctype="multipart/form-data" id="user_form" class="mt-4">
       {% csrf_token %}
+      <div class="row justify-content-between g-3">
+        <div class="col-12 col-md-6 px-4">
 
-      <!-- Personal Info -->
-      <fieldset class="module aligned">
-        <h2 class="h3">Informações Pessoais</h2>
-        {% for field in form.visible_fields %}
-        {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
-        <div class="form-group mb-3">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% render_field field class="form-control" %}
-          {% for error in field.errors %}
-          <div class="invalid-feedback">
-            {{ error }}
+          <!-- Personal Info -->
+          <fieldset class="module aligned">
+            <h2 class="h3">Informações Pessoais</h2>
+            {% for field in form.visible_fields %}
+            {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
+            <div class="form-group mb-3">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% render_field field class="form-control" %}
+              {% for error in field.errors %}
+              <div class="invalid-feedback">
+                {{ error }}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </fieldset>
+
+          <!-- Contact -->
+          <fieldset class="module aligned mt-3">
+            <h2 class="h3">Contato</h2>
+            {% for field in form.visible_fields %}
+            {% if field.name in "phone email" %}
+            <div class="form-group mb-3">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% render_field field class="form-control" %}
+              {% for error in field.errors %}
+              <div class="invalid-feedback">
+                {{ error }}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+            <div class="form-group mb-3">
+              <label for="address-input">Endereço</label>
+              <input list="addresses" id="address-input" name="address" class="form-control"
+                placeholder="Comece a digitar um endereço...">
+              <datalist id="addresses">
+                <!-- As opções serão inseridas aqui pelo JavaScript -->
+              </datalist>
+              <small class="help-text"><a href="#" data-bs-toggle="modal" data-bs-target="#createAddress">Não achou seu
+                  endereço?</a></small>
+            </div>
+          </fieldset>
+
+        </div>
+
+        <!-- Employee Info -->
+        <fieldset class="module aligned col-12 col-md-6 px-4">
+          <h2 class="h3">Informações do Funcionário</h2>
+          {% for field in form.visible_fields %}
+          {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
+          <div class="form-group mb-3">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% render_field field class="form-control" %}
+            {% for error in field.errors %}
+            <div class="invalid-feedback">
+              {{ error }}
+            </div>
+            {% endfor %}
           </div>
+          {% endif %}
           {% endfor %}
-        </div>
-        {% endif %}
-        {% endfor %}
-      </fieldset>
+        </fieldset>
 
-      <!-- Contact -->
-      <fieldset class="module aligned">
-        <h2 class="h3">Contato</h2>
-        {% for field in form.visible_fields %}
-        {% if field.name in "phone email" %}
-        <div class="form-group mb-3">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% render_field field class="form-control" %}
-          {% for error in field.errors %}
-          <div class="invalid-feedback">
-            {{ error }}
-          </div>
-          {% endfor %}
+        <div class="submit-row">
+          <button class="btn btn-success me-2" type="submit">Salvar</button>
+          <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
         </div>
-        {% endif %}
-        {% endfor %}
-      </fieldset>
-
-      <!-- Address -->
-      <fieldset class="module aligned">
-        <h2 class="h3">Endereço</h2>
-        <div class="form-group mb-3">
-          <label for="address-input">Endereço</label>
-          <input list="addresses" id="address-input" name="address" class="form-control"
-            placeholder="Comece a digitar um endereço...">
-          <datalist id="addresses">
-            <!-- As opções serão inseridas aqui pelo JavaScript -->
-          </datalist>
-          <small class="help-text"><a href="#" data-bs-toggle="modal" data-bs-target="#createAddress">Não achou seu
-              endereço?</a></small>
-        </div>
-      </fieldset>
-
-      <!-- Employee Info -->
-      <fieldset class="module aligned">
-        <h2 class="h3">Informações do Funcionário</h2>
-        {% for field in form.visible_fields %}
-        {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
-        <div class="form-group mb-3">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {% render_field field class="form-control" %}
-          {% for error in field.errors %}
-          <div class="invalid-feedback">
-            {{ error }}
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% endfor %}
-      </fieldset>
-
-      <div class="submit-row">
-        <button class="btn btn-success me-2" type="submit">Salvar</button>
-        <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
       </div>
     </form>
 
