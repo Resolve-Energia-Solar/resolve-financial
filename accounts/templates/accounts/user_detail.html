@@ -6,8 +6,6 @@
 {% endblock extra_styles %}
 
 {% block content %}
-<!-- Content wrapper -->
-
 
     <div class="container-xxl flex-grow-1 container-p-y">
         <h4 class="py-3 mb-4"><span class="text-muted fw-light">Usuários /</span> Perfil</h4>
@@ -19,12 +17,12 @@
                     <div class="user-profile-header-banner">
                         <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/pages/profile-banner.png' %}" alt="Banner image" class="rounded-top" />
                     </div>
-                    <div class="user-profile-header d-flex flex-column flex-sm-row text-sm-start text-center mb-4">
-                        <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
+                    <div class="user-profile-header d-flex flex-column flex-sm-row text-sm-start text-center ms-sm-4 mb-4">
+                        <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto overflow-hidden ratio ratio-1x1 user-profile-img">
                             {% if object.profile_picture %}
-                            <img src="{{ object.profile_picture.url }}" alt="user image" class="d-block h-auto ms-0 ms-sm-4 rounded user-profile-img" />
+                            <img src="{{ object.profile_picture.url }}" alt="user image" class="object-fit-cover w-100" />
                             {% else %}
-                            <div alt="user image" class="d-block h-auto ms-0 ms-sm-4 rounded user-profile-img">{{ object.first_name|slice:1 }}</div>
+                            <div alt="user image" class="object-fit-cover w-100">{{ object.first_name|slice:1 }}</div>
                             {% endif %}
                         </div>
                         <div class="flex-grow-1 mt-3 mt-sm-5">
@@ -76,9 +74,47 @@
                             Conexões</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:user_update' object.username %}"><i class="bx bx-pencil me-1"></i>
-                            Editar</a>
+                        <a class="nav-link" href="{% url 'accounts:user_update' object.username %}"><i class="bx bx-pencil me-1"></i> Editar</a>
                     </li>
+                    {% if user.is_superuser %}
+                    <li class="nav-item">
+                        <button class="nav-link text-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal"><i class="bx bx-trash me-1"></i> Deletar</button>
+                    </li>
+                    <!-- deleteUserModal -->
+                    <div class="modal fade animate__animated animate__pulse fadeIn" id="deleteUserModal" tabindex="-2" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="deleteUserModalLabel">Deseja mesmo deletar este usuário?</h5> <br>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+
+                          <div class="modal-footer mt-3">
+                            <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reallyDeleteUserModal">Deletar</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal fade animate__animated animate__flip fadeIn" id="reallyDeleteUserModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                          <div class="modal-content bg-danger-subtle">
+                            <div class="modal-header bg-danger-subtle">
+                              <h5 class="modal-title" id="deleteUserModalLabel">Deseja <strong>REALMENTE</strong> deletar este usuário?</h5> <br>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-footer bg-danger-subtle mt-3">
+                                <button type="button" class="btn btn-primary btn-label-secondary" data-bs-dismiss="modal">
+                                    Cancelar
+                                </button>
+                                <button type="button" class="btn btn-danger">
+                                    <i class="bx bx-trash me-1"></i> Sim, deletar!
+                                </button>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </ul>
             </div>
         </div>

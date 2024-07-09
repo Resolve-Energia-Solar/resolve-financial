@@ -48,14 +48,16 @@
             {% endfor %}
             <div class="form-group mb-3">
               <label for="address-input">Endereço</label>
-              <input list="addresses" id="address-input" name="address" class="form-control"
-                placeholder="Comece a digitar um endereço...">
+              <input list="addresses" id="address-input" class="form-control" placeholder="Comece a digitar um endereço...">
               <datalist id="addresses">
                 <!-- As opções serão inseridas aqui pelo JavaScript -->
               </datalist>
-              <small class="help-text"><a href="#" data-bs-toggle="modal" data-bs-target="#createAddress">Não achou seu
-                  endereço?</a></small>
+              <input type="hidden" id="id_address" name="address">
+              <small class="help-text">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
+              </small>
             </div>
+
           </fieldset>
 
         </div>
@@ -86,7 +88,7 @@
     </form>
 
     <!-- Add New Address Modal -->
-    <div class="modal fade" id="createAddress" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="createAddressModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-simple modal-add-new-address">
         <div class="modal-content p-3 p-md-5">
           <div class="modal-body">
@@ -137,7 +139,9 @@
                       placeholder="Digite o complemento aqui" />
                   </div>
                   <div class="col-12 text-center mt-4">
-                    <button type="submit" class="btn btn-primary me-sm-3 me-1">Criar</button>
+                    <button type="submit" class="btn btn-primary me-sm-3 me-1">
+                      Criar
+                    </button>
                     <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">
                       Cancelar
                     </button>
@@ -150,6 +154,7 @@
       </div>
     </div>
     <!--/ Add New Address Modal -->
+
   </div>
 </div>
 {% endblock content %}
@@ -161,73 +166,151 @@
       .then(response => response.json())
       .then(data => {
         const addressesDatalist = document.getElementById('addresses');
+        addressesDatalist.innerHTML = '';
         data.forEach(address => {
           const option = document.createElement('option');
           option.value = address.complete_address;
-          option.text = address.complete_address;
           option.setAttribute('data-address-id', address.id);
           addressesDatalist.appendChild(option);
         });
       })
       .catch(error => console.error('Erro ao buscar endereços:', error));
 
-    document.getElementById('createAddressForm').addEventListener('submit', function (e) {
-      e.preventDefault(); // Impede o envio padrão do formulário
+    const addressInput = document.getElementById('address-input');
+    const addressIdInput = document.getElementById('id_address');
 
-      // Coleta os dados do formulário
-      var formData = {
-        street: document.getElementById('id_street').value,
-        city: document.getElementById('id_city').value,
-        state: document.getElementById('id_state').value,
-        zip_code: document.getElementById('id_zip_code').value,
-        country: document.getElementById('id_country').value,
-        neighborhood: document.getElementById('id_neighborhood').value,
-        number: document.getElementById('id_number').value,
-        complement: document.getElementById('id_complement').value
-      };
+    addressInput.addEventListener('input', function () {
+      const inputValue = addressInput.value;
+      const options = document.querySelectorAll('#addresses option');
 
-      // Envia os dados para a API
-      fetch('{% url "accounts:addresses_api" %}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Sucesso:', data);
-          // Cria um novo option com o endereço retornado
-          const newOption = new Option(data.complete_address, data.id, true, true);
-          // Adiciona o novo option ao select de endereços
-          document.getElementById('addresses').appendChild(newOption);
-          // Opcionalmente, dispara o evento de mudança se necessário
-          document.getElementById('addresses').dispatchEvent(new Event('change'));
-        })
-        .catch((error) => {
-          console.error('Erro:', error);
-        });
+      options.forEach(option => {
+        if (option.value === inputValue) {
+          addressIdInput.value = option.getAttribute('data-address-id');
+          console.log('Endereço selecionado:', option.value);
+          console.log('ID do endereço:', addressIdInput.value);
+        }
+      });
+    });
+
+    addressInput.addEventListener('change', function () {
+      const inputValue = addressInput.value;
+      const options = document.querySelectorAll('#addresses option');
+      let isValid = false;
+
+      options.forEach(option => {
+        if (option.value === inputValue) {
+          addressIdInput.value = option.getAttribute('data-address-id');
+          isValid = true;
+        }
+      });
+
+      if (!isValid) {
+        addressIdInput.value = '';
+      }
     });
   });
 
+
+  document.getElementById('createAddressForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Impede o envio padrão do formulário
+
+    // Coleta os dados do formulário
+    var formData = {
+      street: document.getElementById('id_street').value,
+      city: document.getElementById('id_city').value,
+      state: document.getElementById('id_state').value,
+      zip_code: document.getElementById('id_zip_code').value,
+      country: document.getElementById('id_country').value,
+      neighborhood: document.getElementById('id_neighborhood').value,
+      number: document.getElementById('id_number').value,
+      complement: document.getElementById('id_complement').value
+    };
+
+    // Envia os dados para a API
+    fetch('{% url "accounts:addresses_api" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Sucesso:', data);
+        // Cria um novo option com o endereço retornado
+        const newOption = document.createElement('option');
+        newOption.value = data.complete_address; // Define o valor do option
+        newOption.textContent = data.complete_address; // Define o texto do option
+        newOption.setAttribute('data-address-id', data.id); // Define o atributo data-address-id
+
+        // Adiciona o novo option ao datalist de endereços
+        document.getElementById('addresses').appendChild(newOption);
+        // Opcionalmente, dispara o evento de mudança se necessário
+        document.getElementById('addresses').dispatchEvent(new Event('change'));
+
+        // Define o valor do input para o endereço recém-criado, fazendo com que ele seja selecionado
+        document.getElementById('address-input').value = data.complete_address;
+
+        // Fecha o modal
+        var modalElement = document.getElementById('createAddressModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance.hide();
+      })
+      .catch((error) => {
+        console.error('Erro:', error);
+      });
+  });
+
+
   document.getElementById('id_zip_code').addEventListener('blur', function () {
     const cep = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    const fieldsToDisable = ['id_zip_code', 'id_street', 'id_neighborhood', 'id_city', 'id_state', 'id_complement', 'id_country'];
+    const submitButton = document.querySelector('.modal button[type="submit"]');
+    const originalButtonContent = submitButton.innerHTML; // Armazena o conteúdo original do botão
+
+    // Função para alterar o botão para o indicador de carregamento
+    function setLoadingIndicator(isLoading) {
+      if (isLoading) {
+        submitButton.innerHTML = '<span class="spinner-grow spinner-grow-sm text-secondary me-1" aria-hidden="true"></span> Aguarde...';
+        submitButton.disabled = true; // Desativa o botão para evitar múltiplos cliques
+      } else {
+        submitButton.innerHTML = originalButtonContent; // Restaura o conteúdo original do botão
+        submitButton.disabled = false; // Reativa o botão
+      }
+    }
+
+    function toggleFields(isLoading) {
+      fieldsToDisable.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+          field.disabled = isLoading;
+        }
+      });
+      setLoadingIndicator(isLoading);
+    }
+
     if (cep.length === 8) {
-      fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      toggleFields(true); // Desabilita os campos enquanto busca o CEP
+      fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`)
         .then(response => response.json())
         .then(data => {
-          if (!("erro" in data)) {
-            document.getElementById('id_street').value = data.logradouro;
-            document.getElementById('id_neighborhood').value = data.bairro;
-            document.getElementById('id_city').value = data.localidade;
-            document.getElementById('id_state').value = data.uf;
-            document.getElementById('id_complement').value = data.complemento;
-            document.getElementById('id_country').value = "Brasil"; // Considerando que o serviço é para endereços no Brasil
+          if (data.type && data.type === "service_error") {
+            // Trata o erro de serviço
+            console.error('Erro ao buscar o CEP:', data);
+            let errorMessage = 'Todos os serviços de CEP retornaram erro. Por favor, verifique o CEP ou tente novamente mais tarde.';
+            alert(errorMessage);
           } else {
-            alert("CEP não encontrado.");
+            document.getElementById('id_street').value = data.street;
+            document.getElementById('id_neighborhood').value = data.neighborhood;
+            document.getElementById('id_city').value = data.city;
+            document.getElementById('id_state').value = data.state;
+            document.getElementById('id_country').value = "Brasil";
           }
         })
-        .catch(error => console.error('Erro ao buscar o CEP:', error));
+        .catch(error => console.error('Erro ao buscar o CEP no segundo serviço:', error))
+        .finally(() => {
+          toggleFields(false);
+        });
     } else {
       alert("CEP inválido. O CEP deve conter 8 dígitos.");
     }

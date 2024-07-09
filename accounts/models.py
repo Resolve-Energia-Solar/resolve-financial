@@ -41,7 +41,7 @@ class User(AbstractUser):
         return f'{self.first_name} {self.last_name}'
     
     def get_absolute_url(self):
-        return reverse_lazy("accounts:user_detail", kwargs={"pk": self.pk})
+        return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})
     
     class Meta:
         verbose_name = "Usuário"

@@ -1,4 +1,6 @@
 import json
+from django.contrib import messages
+from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -6,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Address
+from .forms import UserForm, UserUpdateForm
 
 
 class UsersListView(ListView):
@@ -19,18 +22,58 @@ class UserDetailView(DetailView):
     model = get_user_model()
     template_name = "accounts/user_detail.html"
     slug_field = "username"
+    context_object_name = "user_obj"
 
 
 class UserCreateView(CreateView):
     model = get_user_model()
-    fields = "__all__"
+    form_class = UserForm
     template_name = "accounts/user_create.html"
-    success_url = reverse_lazy("accounts:users")
+    
+    def form_valid(self, form):
+        # Generate a random password
+        password = get_user_model().objects.make_random_password()
+        
+        # Set the generated password for the user
+        user = form.save(commit=False)
+        user.set_password(password)
+        
+        # Get the address_id from the POST data
+        address_id = self.request.POST.get('address')
+        if address_id:
+            try:
+                address = Address.objects.get(id=address_id)
+                user.address = address
+            except Address.DoesNotExist:
+                form.add_error('address', 'Endereço inválido. Por favor, selecione um endereço válido.')
+                return self.form_invalid(form)
+        
+        user.save()
+        
+        # Send an email to the user with the username and password
+        send_mail(
+            subject="Conta criada",
+            message=f"Nome de usuário: {user.username}\nSenha: {password}\n\nAcesse em http://127.0.0.1:31813/",
+            from_email='ti@resolvenergiasolar.com',
+            recipient_list=[user.email],
+        )
+        
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        for field, errors in form.errors.items():
+            field_object = form.fields[field]
+            for error in errors:
+                messages.error(self.request, f"Erro no campo {field_object.label}: {error} Por favor, corrija o erro e tente novamente.")
+        return self.render_to_response(self.get_context_data(form=form))
+    
+    def get_success_url(self):
+        return reverse_lazy("accounts:user_detail", kwargs={"slug": self.object.username})
     
 
 class UserUpdateView(UpdateView):
     model = get_user_model()
-    fields = "__all__"
+    form_class = UserUpdateForm
     template_name = "accounts/user_update.html"
     slug_field = "username"
 

@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="row justify-content-center py-3">
+  <div class="col-12 col-md-8">
+    <div class="d-flex justify-content-between align-items-center my-2">
+      <h1>Editar Usuário</h1>
+      <h4>({{ object.username }})</h4>
+    </div>
+    {% load widget_tweaks %}
 
-  <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row justify-content-center py-3">
-      <div class="col-12 col-md-8">
-        <div class="d-flex justify-content-between align-items-center my-2">
-          <h1>Editar Usuário</h1>
-          <h4>({{ object.username }})</h4>
-        </div>
-        {% load widget_tweaks %}
-
-        <form method="post" enctype="multipart/form-data" id="user_form">
-          {% csrf_token %}
+    <form method="post" enctype="multipart/form-data" id="user_form" class="mt-4">
+      {% csrf_token %}
+      <div class="row justify-content-between g-3">
+        <div class="col-12 col-md-6 px-4">
 
           <!-- Personal Info -->
           <fieldset class="module aligned">
-            <h5>Informações Pessoais</h5>
+            <h2 class="h3">Informações Pessoais</h2>
             {% for field in form.visible_fields %}
             {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
             <div class="form-group mb-3">
@@ -33,8 +33,8 @@
           </fieldset>
 
           <!-- Contact -->
-          <fieldset class="module aligned">
-            <h5>Contato</h5>
+          <fieldset class="module aligned mt-3">
+            <h2 class="h3">Contato</h2>
             {% for field in form.visible_fields %}
             {% if field.name in "phone email" %}
             <div class="form-group mb-3">
@@ -48,50 +48,274 @@
             </div>
             {% endif %}
             {% endfor %}
-          </fieldset>
-
-          <!-- Address -->
-          <fieldset class="module aligned">
-            <h5>Endereço</h5>
-            {% for field in form.visible_fields %}
-            {% if field.name == "address" %}
             <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
+              <label for="address-input">Endereço</label>
+              <input list="addresses" id="address-input" class="form-control" placeholder="Comece a digitar um endereço..." value="{{ object.address }}">
+              <datalist id="addresses">
+                <!-- As opções serão inseridas aqui pelo JavaScript -->
+              </datalist>
+              {% render_field form.address %}
+              <small class="help-text">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
+              </small>
             </div>
-            {% endif %}
-            {% endfor %}
+
           </fieldset>
 
-          <!-- Employee Info -->
-          <fieldset class="module aligned">
-            <h5>Informações do Funcionário</h5>
-            {% for field in form.visible_fields %}
-            {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
+        </div>
 
-          <div class="submit-row d-flex justify-content-between align-items-center">
-            <button class="btn btn-success" type="submit">Salvar</button>
-            <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
+        <!-- Employee Info -->
+        <fieldset class="module aligned col-12 col-md-6 px-4">
+          <h2 class="h3">Informações do Funcionário</h2>
+          {% for field in form.visible_fields %}
+          {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
+          <div class="form-group mb-3">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% render_field field class="form-control" %}
+            {% for error in field.errors %}
+            <div class="invalid-feedback">
+              {{ error }}
+            </div>
+            {% endfor %}
           </div>
-        </form>
+          {% endif %}
+          {% endfor %}
+        </fieldset>
 
+        <div class="submit-row">
+          <button class="btn btn-success me-2" type="submit">Salvar</button>
+          <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
+        </div>
+      </div>
+    </form>
+
+    <!-- Add New Address Modal -->
+    <div class="modal fade" id="createAddressModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-simple modal-add-new-address">
+        <div class="modal-content p-3 p-md-5">
+          <div class="modal-body">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="text-center mb-4">
+              <h3 class="address-title">Adicionar novo endereço</h3>
+              <p class="address-subtitle">Novo endereço para o funcionário</p>
+            </div>
+            <form id="createAddressForm" class="row">
+              <div class="col-12">
+                <div class="row">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_zip_code">CEP</label>
+                    <input type="text" id="id_zip_code" name="zip_code" class="form-control"
+                      placeholder="Digite o CEP para começar" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_country">País</label>
+                    <input class="form-control" type="text" name="country" id="id_country" value="Brasil">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_state">Estado</label>
+                    <input type="text" id="id_state" name="state" class="form-control" placeholder="PA" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="modalAddressCity">Cidade</label>
+                    <input type="text" id="id_city" name="city" class="form-control"
+                      placeholder="Digite a cidade aqui" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_neighborhood">Bairro</label>
+                    <input type="text" id="id_neighborhood" name="neighborhood" class="form-control"
+                      placeholder="Digite o bairro aqui" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="street">Logradouro</label>
+                    <input type="text" id="id_street" name="street" class="form-control"
+                      placeholder="Digite a rua, avenida, travessa etc." />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_number">Número</label>
+                    <input type="text" id="id_number" name="number" class="form-control"
+                      placeholder="Digite o número da casa" />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="id_complement">Complemento</label>
+                    <input type="text" id="id_complement" name="complement" class="form-control"
+                      placeholder="Digite o complemento aqui" />
+                  </div>
+                  <div class="col-12 text-center mt-4">
+                    <button type="submit" class="btn btn-primary me-sm-3 me-1">
+                      Criar
+                    </button>
+                    <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
+    <!--/ Add New Address Modal -->
+
+  </div>
+</div>
 {% endblock content %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch('{% url "accounts:addresses_api" %}')
+      .then(response => response.json())
+      .then(data => {
+        const addressesDatalist = document.getElementById('addresses');
+        addressesDatalist.innerHTML = '';
+        data.forEach(address => {
+          const option = document.createElement('option');
+          option.value = address.complete_address;
+          option.setAttribute('data-address-id', address.id);
+          addressesDatalist.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Erro ao buscar endereços:', error));
+
+    const addressInput = document.getElementById('address-input');
+    const addressIdInput = document.getElementById('id_address');
+
+    addressInput.addEventListener('input', function () {
+      const inputValue = addressInput.value;
+      const options = document.querySelectorAll('#addresses option');
+
+      options.forEach(option => {
+        if (option.value === inputValue) {
+          addressIdInput.value = option.getAttribute('data-address-id');
+          console.log('Endereço selecionado:', option.value);
+          console.log('ID do endereço:', addressIdInput.value);
+        }
+      });
+    });
+
+    addressInput.addEventListener('change', function () {
+      const inputValue = addressInput.value;
+      const options = document.querySelectorAll('#addresses option');
+      let isValid = false;
+
+      options.forEach(option => {
+        if (option.value === inputValue) {
+          addressIdInput.value = option.getAttribute('data-address-id');
+          isValid = true;
+        }
+      });
+
+      if (!isValid) {
+        addressIdInput.value = '';
+      }
+    });
+  });
+
+
+  document.getElementById('createAddressForm').addEventListener('submit', function (e) {
+    e.preventDefault(); // Impede o envio padrão do formulário
+
+    // Coleta os dados do formulário
+    var formData = {
+      street: document.getElementById('id_street').value,
+      city: document.getElementById('id_city').value,
+      state: document.getElementById('id_state').value,
+      zip_code: document.getElementById('id_zip_code').value,
+      country: document.getElementById('id_country').value,
+      neighborhood: document.getElementById('id_neighborhood').value,
+      number: document.getElementById('id_number').value,
+      complement: document.getElementById('id_complement').value
+    };
+
+    // Envia os dados para a API
+    fetch('{% url "accounts:addresses_api" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Sucesso:', data);
+        // Cria um novo option com o endereço retornado
+        const newOption = document.createElement('option');
+        newOption.value = data.complete_address; // Define o valor do option
+        newOption.textContent = data.complete_address; // Define o texto do option
+        newOption.setAttribute('data-address-id', data.id); // Define o atributo data-address-id
+
+        // Adiciona o novo option ao datalist de endereços
+        document.getElementById('addresses').appendChild(newOption);
+        // Opcionalmente, dispara o evento de mudança se necessário
+        document.getElementById('addresses').dispatchEvent(new Event('change'));
+
+        // Define o valor do input para o endereço recém-criado, fazendo com que ele seja selecionado
+        document.getElementById('address-input').value = data.complete_address;
+
+        // Fecha o modal
+        var modalElement = document.getElementById('createAddressModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance.hide();
+      })
+      .catch((error) => {
+        console.error('Erro:', error);
+      });
+  });
+
+
+  document.getElementById('id_zip_code').addEventListener('blur', function () {
+    const cep = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    const fieldsToDisable = ['id_zip_code', 'id_street', 'id_neighborhood', 'id_city', 'id_state', 'id_complement', 'id_country'];
+    const submitButton = document.querySelector('.modal button[type="submit"]');
+    const originalButtonContent = submitButton.innerHTML; // Armazena o conteúdo original do botão
+
+    // Função para alterar o botão para o indicador de carregamento
+    function setLoadingIndicator(isLoading) {
+      if (isLoading) {
+        submitButton.innerHTML = '<span class="spinner-grow spinner-grow-sm text-secondary me-1" aria-hidden="true"></span> Aguarde...';
+        submitButton.disabled = true; // Desativa o botão para evitar múltiplos cliques
+      } else {
+        submitButton.innerHTML = originalButtonContent; // Restaura o conteúdo original do botão
+        submitButton.disabled = false; // Reativa o botão
+      }
+    }
+
+    function toggleFields(isLoading) {
+      fieldsToDisable.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+          field.disabled = isLoading;
+        }
+      });
+      setLoadingIndicator(isLoading);
+    }
+
+    if (cep.length === 8) {
+      toggleFields(true); // Desabilita os campos enquanto busca o CEP
+      fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.type && data.type === "service_error") {
+            // Trata o erro de serviço
+            console.error('Erro ao buscar o CEP:', data);
+            let errorMessage = 'Todos os serviços de CEP retornaram erro. Por favor, verifique o CEP ou tente novamente mais tarde.';
+            alert(errorMessage);
+          } else {
+            document.getElementById('id_street').value = data.street;
+            document.getElementById('id_neighborhood').value = data.neighborhood;
+            document.getElementById('id_city').value = data.city;
+            document.getElementById('id_state').value = data.state;
+            document.getElementById('id_country').value = "Brasil";
+          }
+        })
+        .catch(error => console.error('Erro ao buscar o CEP no segundo serviço:', error))
+        .finally(() => {
+          toggleFields(false);
+        });
+    } else {
+      alert("CEP inválido. O CEP deve conter 8 dígitos.");
+    }
+  });
+</script>
+{% endblock extra_scripts %}
