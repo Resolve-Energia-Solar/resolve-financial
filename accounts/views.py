@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth import get_user_model
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Address
@@ -148,3 +149,22 @@ def addresses_api(request):
         ]
 
         return JsonResponse(data, safe=False)
+
+
+def delete_user(request, username):
+    try:
+        user = get_user_model().objects.get(username=username)
+    except get_user_model().DoesNotExist:
+        messages.error(request, "Usuário não encontrado.")
+        return redirect('accounts:users_list')
+    
+    if request.user.username == username:
+        messages.error(request, "Você não pode excluir sua própria conta.")
+        return redirect(user.get_absolute_url())
+    elif not request.user.is_superuser:
+        messages.error(request, "Você não tem permissão para excluir usuários.")
+        return redirect(user.get_absolute_url())
+    else:
+        messages.success(request, f"Usuário {user.username} excluído com sucesso.")
+        user.delete()
+    return redirect('accounts:users_list')

@@ -9,6 +9,7 @@ urlpatterns = [
     path("usuarios/", UsersListView.as_view(), name="users_list"),
     path("usuarios/<slug:slug>/", UserDetailView.as_view(), name="user_detail"),
     path("usuarios/<slug:slug>/editar/", UserUpdateView.as_view(), name="user_update"),
+    path("usuarios/<slug:username>/excluir/", delete_user, name="delete_user"),
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),
 ]
