@@ -20,11 +20,11 @@
     <form method="post" enctype="multipart/form-data" id="user_form" class="mt-4">
       {% csrf_token %}
       <div class="row justify-content-between g-3">
-        <div class="col-12 col-md-6 px-4">
+        <div class="col-12 col-md-6 px-2 h-100">
 
           <!-- Personal Info -->
           <fieldset class="module aligned">
-            <h2 class="h3">Informações Pessoais</h2>
+            <h2 class="h4">Informações Pessoais</h2>
             {% for field in form.visible_fields %}
             {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
             <div class="form-group mb-3">
@@ -40,9 +40,33 @@
             {% endfor %}
           </fieldset>
 
+
+        </div>
+        <div class="col-12 col-md-6 px-2 h-100">
+          <!-- Employee Info -->
+          <fieldset class="module aligned">
+            <h2 class="h4">Informações do Funcionário</h2>
+            {% for field in form.visible_fields %}
+            {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
+            <div class="form-group mb-3">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% render_field field class="form-control" %}
+              {% for error in field.errors %}
+              <div class="invalid-feedback">
+                {{ error }}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </fieldset>
+        </div>
+      </div>
+      <div class="row justify-content-between mt-3 g-3">
+        <div class="col-12 col-md-6 px-2 h-100">
           <!-- Contact -->
-          <fieldset class="module aligned mt-3">
-            <h2 class="h3">Contato</h2>
+          <fieldset class="module aligned">
+            <h2 class="h4">Contato</h2>
             {% for field in form.visible_fields %}
             {% if field.name in "phone email" %}
             <div class="form-group mb-3">
@@ -73,23 +97,25 @@
 
         </div>
 
-        <!-- Employee Info -->
-        <fieldset class="module aligned col-12 col-md-6 px-4">
-          <h2 class="h3">Informações do Funcionário</h2>
-          {% for field in form.visible_fields %}
-          {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
-          <div class="form-group mb-3">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {% render_field field class="form-control" %}
-            {% for error in field.errors %}
-            <div class="invalid-feedback">
-              {{ error }}
+        <div class="col-12 col-md-6 px-2 h-100">
+          <!-- User Permissions -->
+          <fieldset class="module aligned">
+            <h2 class="h4">Permissões</h2>
+            {% for field in form.visible_fields %}
+            {% if field.name in "groups user_permissions" %}
+            <div class="form-group mb-3">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% render_field field class="form-control" %}
+              {% for error in field.errors %}
+              <div class="invalid-feedback">
+                {{ error }}
+              </div>
+              {% endfor %}
             </div>
+            {% endif %}
             {% endfor %}
-          </div>
-          {% endif %}
-          {% endfor %}
-        </fieldset>
+          </fieldset>
+        </div>
 
         <div class="submit-row">
           <button class="btn btn-success me-2" type="submit">Salvar</button>

@@ -10,14 +10,16 @@ from django_select2.forms import Select2MultipleWidget, Select2Widget
 class UserForm(ModelForm):
     class Meta:
         model = User
-        exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "groups", "user_permissions", "password", "resignation_date"]
+        exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "password", "resignation_date"]
         widgets = {
             "hire_date": DateInput(attrs={'type': 'date'}),
             "birth_date": DateInput(attrs={'type': 'date'}),
-            'branch': Select2Widget,
-            'department': Select2Widget,
-            'role': Select2Widget,
-            'user_manager': Select2Widget
+            'branch': Select2Widget(attrs={'data-placeholder': 'Selecionar unidade'}),
+            'department': Select2Widget(attrs={'data-placeholder': 'Selecionar departamento'}),
+            'role': Select2Widget(attrs={'data-placeholder': 'Selecionar cargo'}),
+            'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
+            'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
+            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'})
         }
 
 
@@ -29,14 +31,16 @@ class UserUpdateForm(ModelForm):
 
     class Meta:
         model = User
-        exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "groups", "user_permissions", "password"]
+        exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "password"]
         widgets = {
             "hire_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "birth_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "resignation_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "address": TextInput(attrs={'type': 'hidden'}),
-            'branch': Select2Widget,
-            'department': Select2Widget,
-            'role': Select2Widget,
-            'user_manager': Select2Widget
+            'branch': Select2Widget(attrs={'data-placeholder': 'Selecionar unidade'}),
+            'department': Select2Widget(attrs={'data-placeholder': 'Selecionar departamento'}),
+            'role': Select2Widget(attrs={'data-placeholder': 'Selecionar cargo'}),
+            'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
+            'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
+            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'})
         }

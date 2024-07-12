@@ -203,7 +203,7 @@
                 <div class="card mb-4">
                     <div class="card-header align-items-center">
                         <h5 class="card-title"><i class="bx bx-key me-2"></i>Permissões</h5>
-                        <ul>
+                        <ul class="list-group">
                         {% for permission in object.get_all_permissions %}
                             <li class="list-group-item">&dash; {{ permission }}</li>    
                         {% endfor %}
