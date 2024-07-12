@@ -198,6 +198,18 @@
                 </div>
                 <!--/ Profile Overview -->
             </div>
+            <div class="col-12 col-md-7">
+                <!-- Recent Activities -->
+                <div class="card mb-4">
+                    <div class="card-header align-items-center">
+                        <h5 class="card-title"><i class="bx bx-key me-2"></i>Permissões</h5>
+                        <ul>
+                        {% for permission in object.get_all_permissions %}
+                            <li class="list-group-item">&dash; {{ permission }}</li>    
+                        {% endfor %}
+                        </ul>
+            </div>
+            {% comment %}
             <div class="col-lg-7 col-md-7">
                 <!-- Activity Timeline -->
                 <div class="card card-action mb-4">
@@ -572,6 +584,7 @@
                 </div>
                 <!--/ Projects table -->
             </div>
+            {% endcomment %}
         </div>
         <!--/ User Profile Content -->
     </div>

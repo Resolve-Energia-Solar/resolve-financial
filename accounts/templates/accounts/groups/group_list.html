@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static iam_tags %}
+
+{% block extra_styles %}
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css' %}" />
+<link rel="stylesheet"
+    href="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Perfis /</span> Lista</h4>
+        <!-- Groups List Table -->
+        <div class="card">
+            <div class="card-datatable table-responsive">
+                <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
+                    <div class="row mx-1">
+                        {% if user|has_perm:'auth.add_group' %}
+                        <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
+                            <div
+                                class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
+                                <div class="dt-buttons btn-group flex-wrap">
+                                    <a href="{% url 'accounts:group_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Perfil</span></span></a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div
+                            class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
+                            <div id="DataTables_Table_0_filter" class="dataTables_filter"><label><input type="search" class="form-control" placeholder="Pesquisar Perfil" aria-controls="DataTables_Table_0"></label></div>
+                            <div class="invoice_status mb-3 mb-md-0"><select id="UserRole" class="form-select">
+                                    <option value="">Selecionar departamento</option>
+                                    <option value="P" class="text-capitalize">Pendente</option>
+                                    <option value="D" class="text-capitalize">Desenvolvimento</option>
+                                    <option value="F" class="text-capitalize">Finalizado</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <table class="invoice-list-table table border-top dataTable no-footer dtr-column"
+                        id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
+                        <thead>
+                            <tr>
+                                <th rowspan="1" colspan="1" style="width: 30%;">Perfil</th>
+                                <th rowspan="1" colspan="1" style="width: 30%;">Quantidade de Usuários</th>
+                                <th rowspan="1" colspan="1" style="width: 30%;">Quantidade de Permissões</th>
+                                <th class="cell-fit sorting_disabled" rowspan="1" colspan="1" style="width: 10%;" aria-label="Ações">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in groups %}
+                            <tr class="even">
+                                <td class="text-capitalize">
+                                    <a href="{% url 'accounts:group_detail' group.pk %}">{{ group.name }}</a>
+                                </td>
+                                <td><span class="d-none">{{ group.user_set.count }}</span>{{ group.user_set.count }}</td>
+                                <td><span class="d-none">{{ group.permissions.count }}</span>{{ group.permissions.count }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="{% url 'accounts:group_detail' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver detalhes" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
+                                        <a href="{% url 'accounts:group_update' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Perfil" data-bs-original-title="Editar Perfil"><i class="bx bx-pencil mx-1"></i></a>
+                                        <a href="#groupDeleteModel" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Deletar Perfil" data-bs-original-title="Deletar Perfil"><i class="bx bx-trash mx-1"></i></a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="row mx-2">
+                        <div class="col-sm-12 col-md-6">
+                            {% include 'snippets/pagination.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- / Content -->
+    {% endblock %}
+
+    {% block extra_scripts %}
+    <!-- Vendors JS -->
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/moment/moment.js' %}"></script>
+    <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script> -->
+
+    <!-- Page JS -->
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/app-invoice-list.js' %}"></script> -->
+    {% endblock %}

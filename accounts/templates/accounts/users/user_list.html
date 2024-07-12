@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static iam_tags %}
 
 {% block extra_styles %}
 <link rel="stylesheet"
@@ -15,13 +15,12 @@
     <div class="container-xxl flex-grow-1 container-p-y">
         <h4 class="py-3 mb-4"><span class="text-muted fw-light">Usuários /</span> Lista</h4>
 
-
-
-        <!-- Usuário List Table -->
+        <!-- Users List Table -->
         <div class="card">
             <div class="card-datatable table-responsive">
                 <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
                     <div class="row mx-1">
+                        {% if user|has_perm:'accounts.add_user' %}
                         <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
                             <div
                                 class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
@@ -30,6 +29,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                         <div
                             class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
                             <div id="DataTables_Table_0_filter" class="dataTables_filter"><label><input type="search" class="form-control" placeholder="Pesquisar Usuário" aria-controls="DataTables_Table_0"></label></div>
@@ -76,7 +76,7 @@
                                         <div class="avatar-wrapper">
                                             <div class="avatar avatar-sm me-2"><span class="avatar-initial rounded-circle bg-label-dark">{{ user_obj.username|slice:1 }}</span></div>
                                         </div>
-                                        <div class="d-flex flex-column"><a href="{% url 'accounts:user_detail' user_obj.username %}" class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name }}</span></a><small class="text-truncate text-muted">{{ user_obj.first_name }} {{ user_obj.last_name }}</small></div>
+                                        <div class="d-flex flex-column"><a href="{% url 'accounts:user_detail' user_obj.username %}" class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name }}</span></a><small class="text-truncate text-muted">{{ user_obj.get_full_name }}</small></div>
                                     </div>
                                 </td>
                                 <td><span class="d-none">{{ user_obj.department }}</span>{{ user_obj.department }}</td>

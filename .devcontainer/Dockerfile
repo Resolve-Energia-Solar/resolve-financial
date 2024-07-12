@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     python3-dev \
     libffi-dev \
-    libssl-dev
+    libssl-dev \
+    redis-server
+
 
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended
 RUN chsh -s $(which zsh)

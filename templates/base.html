@@ -94,6 +94,10 @@
           {% url 'main:board-detail' object.pk as board_detail_url %}
           {% url 'accounts:users_list' as users_list_url %}
           {% url 'accounts:user_create' as user_create_url %}
+          {% url 'accounts:permission_create' as permission_create_url %}
+          {% url 'accounts:permission_list' as permission_list_url %}
+          {% url 'accounts:group_list' as group_list_url %}
+          {% url 'accounts:group_create' as group_create_url %}
           {% url 'main:boards' as boards_list_url %}
           {% url 'main:board-create' as boards_create_url %}
           <!-- Dashboards -->
@@ -219,6 +223,44 @@
               </li>
               <li class="menu-item {% is_active boards_create_url %}">
                 <a href="{% url 'main:board-create' %}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open group_list_url boards_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-group"></i>
+              <div class="text-truncate">Perfis</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active group_list_url %}">
+                <a href="{{ group_list_url }}" class="menu-link">
+                  <div class="text-truncate">Lista</div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active group_create_url %}">
+                <a href="{{ group_create_url }}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open permission_list_url permission_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-key"></i>
+              <div class="text-truncate">Permissões</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active permission_list_url %}">
+                <a href="{{ permission_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active permission_create_url %}">
+                <a href="{{ permission_create_url }}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>

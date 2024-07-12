@@ -4,6 +4,7 @@ from django.db.models.base import Model
 from django.forms import ModelForm, DateInput, TextInput
 from django.forms.utils import ErrorList
 from .models import User
+from django_select2.forms import Select2MultipleWidget, Select2Widget
 
 
 class UserForm(ModelForm):
@@ -13,6 +14,10 @@ class UserForm(ModelForm):
         widgets = {
             "hire_date": DateInput(attrs={'type': 'date'}),
             "birth_date": DateInput(attrs={'type': 'date'}),
+            'branch': Select2Widget,
+            'department': Select2Widget,
+            'role': Select2Widget,
+            'user_manager': Select2Widget
         }
 
 
@@ -30,4 +35,8 @@ class UserUpdateForm(ModelForm):
             "birth_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "resignation_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "address": TextInput(attrs={'type': 'hidden'}),
+            'branch': Select2Widget,
+            'department': Select2Widget,
+            'role': Select2Widget,
+            'user_manager': Select2Widget
         }

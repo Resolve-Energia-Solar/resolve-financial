@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
@@ -14,14 +15,14 @@ from .forms import UserForm, UserUpdateForm
 
 class UsersListView(ListView):
     model = get_user_model()
-    template_name = "accounts/users.html"
+    template_name = "accounts/users/user_list.html"
     context_object_name = "users"
     paginate_by = 10
 
 
 class UserDetailView(DetailView):
     model = get_user_model()
-    template_name = "accounts/user_detail.html"
+    template_name = "accounts/users/user_detail.html"
     slug_field = "username"
     context_object_name = "user_obj"
 
@@ -29,7 +30,7 @@ class UserDetailView(DetailView):
 class UserCreateView(CreateView):
     model = get_user_model()
     form_class = UserForm
-    template_name = "accounts/user_create.html"
+    template_name = "accounts/users/user_create.html"
     
     def form_valid(self, form):
         # Generate a random password
@@ -75,11 +76,68 @@ class UserCreateView(CreateView):
 class UserUpdateView(UpdateView):
     model = get_user_model()
     form_class = UserUpdateForm
-    template_name = "accounts/user_update.html"
+    template_name = "accounts/users/user_update.html"
     slug_field = "username"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
+
+
+class PermissionCreateView(CreateView):
+    model = Permission
+    fields = ['name', 'content_type', 'codename']
+    template_name = "accounts/permissions/permission_form.html"
+    
+    def get_success_url(self):
+        return reverse_lazy("accounts:permission_list")
+
+
+class PermissionsListView(ListView):
+    model = Permission
+    template_name = "accounts/permissions/permission_list.html"
+    context_object_name = "permissions"
+    paginate_by = 10
+
+
+class PermissionUpdateView(UpdateView):
+    model = Permission
+    fields = ['name', 'content_type', 'codename']
+    template_name = "accounts/permissions/permission_form.html"
+    slug_field = "codename"
+    
+    def get_success_url(self):
+        return reverse_lazy("accounts:permission_detail", kwargs={"slug": self.object.codename})
+
+
+class GroupCreateView(CreateView):
+    model = Group
+    fields = ['name', 'permissions']
+    template_name = "accounts/groups/group_form.html"
+    
+    def get_success_url(self):
+        return reverse_lazy("accounts:permission_list")
+
+
+class GroupsListView(ListView):
+    model = Group
+    template_name = "accounts/groups/group_list.html"
+    context_object_name = "groups"
+    paginate_by = 10
+
+
+class GroupDetailView(DetailView):
+    model = Group
+    template_name = "accounts/groups/group_detail.html"
+
+
+class GroupUpdateView(UpdateView):
+    model = Group
+    fields = ['name', 'permissions']
+    template_name = "accounts/groups/group_form.html"
+    slug_field = "codename"
+    
+    def get_success_url(self):
+        return reverse_lazy("accounts:permission_detail", kwargs={"slug": self.object.codename})
 
 
 # API
