@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
 
-{% block content %}
+{% block extra_styles %}
+{% include 'snippets/select2-css.html' %}
+{% endblock extra_styles %}
 
+{% block content %}
   <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row justify-content-center">
       <div class="col-12 col-md-8">
@@ -32,3 +35,7 @@
       </div>
     </div>
 {% endblock content %}
+
+{% block extra_scripts %}
+{% include 'snippets/select2-js.html' %}
+{% endblock extra_scripts %}

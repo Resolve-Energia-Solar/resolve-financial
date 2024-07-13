@@ -2,6 +2,7 @@ from django.views.generic import TemplateView, ListView, DetailView, CreateView,
 from django.db.models import F
 from django.http import JsonResponse
 from django.views import View
+from .forms import TaskForm
 from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
@@ -37,7 +38,7 @@ class TaskDetailView(DetailView):
 
 class TaskCreateView(CreateView):
     model = Task
-    fields = "__all__"
+    form_class = TaskForm
     template_name = "task_create.html"
     success_url = reverse_lazy("main:tasks")
 
