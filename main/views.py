@@ -8,12 +8,12 @@ from .models import *
 
 
 class IndexView(TemplateView):
-    template_name = "index.html"
+    template_name = "main/index.html"
 
 
 class KanbanView(DetailView):
     model = Board
-    template_name = "leads_kanban.html"
+    template_name = "main/leads/leads_kanban.html"
     
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
@@ -26,27 +26,27 @@ class KanbanView(DetailView):
 
 class TasksView(ListView):
     model = Task
-    template_name = "tasks.html"
+    template_name = "main/tasks/task_list.html"
     context_object_name = "tasks"
     paginate_by = 10
     
 
 class TaskDetailView(DetailView):
     model = Task
-    template_name = "task_detail.html"
+    template_name = "main/tasks/task_detail.html"
 
 
 class TaskCreateView(CreateView):
     model = Task
     form_class = TaskForm
-    template_name = "task_create.html"
+    template_name = "main/tasks/task_create.html"
     success_url = reverse_lazy("main:tasks")
 
 
 class TaskUpdateView(UpdateView):
     model = Task
     fields = "__all__"
-    template_name = "task_update.html"
+    template_name = "main/tasks/task_update.html"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
@@ -54,27 +54,27 @@ class TaskUpdateView(UpdateView):
 
 class BoardsView(ListView):
     model = Board
-    template_name = "boards.html"
+    template_name = "main/boards/board_list.html"
     context_object_name = "boards"
     paginate_by = 10
 
 
 class BoardDetailView(DetailView):
     model = Board
-    template_name = "board_detail.html"
+    template_name = "main/boards/board_detail.html"
     
 
 class BoardCreateView(CreateView):
     model = Board
     fields = "__all__"
-    template_name = "board_create.html"
+    template_name = "main/boards/board_create.html"
     success_url = reverse_lazy("main:boards")
 
 
 class BoardUpdateView(UpdateView):
     model = Board
     fields = "__all__"
-    template_name = "board_update.html"
+    template_name = "main/boards/board_update.html"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
