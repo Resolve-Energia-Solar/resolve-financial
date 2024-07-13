@@ -2,7 +2,7 @@ from django.views.generic import TemplateView, ListView, DetailView, CreateView,
 from django.db.models import F
 from django.http import JsonResponse
 from django.views import View
-from .forms import TaskForm
+from .forms import LeadForm, TaskForm
 from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
@@ -111,3 +111,16 @@ class DeleteColumnView(View):
         column = get_object_or_404(Column, id=column_id)
         column.delete()
         return JsonResponse({'status': 'success'})
+
+
+class LeadCreateView(CreateView):
+    model = Lead
+    form_class = LeadForm
+    template_name = "main/leads/lead_create.html"
+    success_url = reverse_lazy("main:lead_detail")
+
+"""
+class LeadDetailView(DetailView):
+    model = Lead
+    template_name = "main/leads/lead_detail.html"
+"""
