@@ -70,7 +70,7 @@ class UserCreateView(CreateView):
         return self.render_to_response(self.get_context_data(form=form))
     
     def get_success_url(self):
-        return reverse_lazy("accounts:user_detail", kwargs={"slug": self.object.username})
+        return self.object.get_absolute_url()
     
 
 class UserUpdateView(UpdateView):
@@ -106,7 +106,7 @@ class PermissionUpdateView(UpdateView):
     slug_field = "codename"
     
     def get_success_url(self):
-        return reverse_lazy("accounts:permission_detail", kwargs={"slug": self.object.codename})
+        return reverse_lazy("accounts:permission_list")
 
 
 class GroupCreateView(CreateView):
@@ -137,7 +137,7 @@ class GroupUpdateView(UpdateView):
     slug_field = "codename"
     
     def get_success_url(self):
-        return reverse_lazy("accounts:permission_detail", kwargs={"slug": self.object.codename})
+        return reverse_lazy("accounts:group_detail", kwargs={"pk": self.object.pk})
 
 
 # API
