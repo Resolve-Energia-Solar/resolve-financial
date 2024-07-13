@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='user_created_by', to=settings.AUTH_USER_MODEL, verbose_name='Criado por')),
                 ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
                 ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='user_updated_by', to=settings.AUTH_USER_MODEL, verbose_name='Atualizado por')),
-                ('user_manager', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='this_user_manager', to=settings.AUTH_USER_MODEL, verbose_name='Gerente')),
+                ('user_manager', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='this_user_manager', to=settings.AUTH_USER_MODEL, verbose_name='Gerente' blank=True, null=True))),
                 ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
             ],
             options={
@@ -113,7 +113,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=255, verbose_name='Nome')),
                 ('address', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.address', verbose_name='Endereço')),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='branches_owner', to=settings.AUTH_USER_MODEL, verbose_name='Proprietário')),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='branches_owner', to=settings.AUTH_USER_MODEL, verbose_name='Proprietário', blank=True, null=True)),
             ],
             options={
                 'verbose_name': 'Filial',

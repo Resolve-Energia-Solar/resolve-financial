@@ -21,7 +21,7 @@ class User(AbstractUser):
     branch = models.ForeignKey("accounts.Branch", verbose_name="Filial", on_delete=models.CASCADE)
     department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE)
     role = models.ForeignKey("accounts.Role", verbose_name="Cargo", on_delete=models.CASCADE)
-    user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager")
+    user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
     hire_date = models.DateField("Data de Admissão", blank=True, null=True)
     resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
     # Logs
@@ -90,7 +90,7 @@ class Address(models.Model):
 class Branch(models.Model):
     name = models.CharField("Nome", max_length=255)
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
-    owner = models.ForeignKey("accounts.User", verbose_name="Proprietário", on_delete=models.CASCADE, related_name='branches_owner')
+    owner = models.ForeignKey("accounts.User", verbose_name="Proprietário", on_delete=models.CASCADE, related_name='branches_owner', blank=True, null=True)
 
     class Meta:
         verbose_name = "Filial"
