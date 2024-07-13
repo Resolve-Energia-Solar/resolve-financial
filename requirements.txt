@@ -8,5 +8,5 @@ django-crispy-forms==2.1
 crispy-bootstrap5==2024.2
 django-select2==8.2.0
 django-redis==5.4.0
-
+mysqlclient==2.2.4
 gunicorn==22.0.0

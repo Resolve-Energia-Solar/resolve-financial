@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 services:
   web:
     build:
@@ -6,6 +6,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/app
-    command: sh -c "python3 manage.py collectstatic --noinput && gunicorn -c ./configs/configs.py crm_resolve.wsgi"
+    command: sh -c "python3 manage.py collectstatic --noinput && python3 manage.py makemigrations && python3 manage.py migrate && gunicorn -c ./configs/configs.py crm_resolve.wsgi"
     ports:
       - "8060:8060"
