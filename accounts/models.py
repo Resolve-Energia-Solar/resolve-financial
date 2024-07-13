@@ -35,6 +35,12 @@ class User(AbstractUser):
             self.created_by = self.updated_by = current_user
         elif current_user is not None:
             self.updated_by = current_user
+        if self.resignation_date is not None:
+            self.is_active = False
+        if not self.first_name and not self.last_name:
+            name_parts = self.complete_name.split(" ")
+            self.first_name = name_parts[0]
+            self.last_name = name_parts[-1]
         super().save(*args, **kwargs)
 
     def __str__(self):
