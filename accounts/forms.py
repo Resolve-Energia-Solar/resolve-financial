@@ -1,8 +1,5 @@
-from typing import Any, Mapping
-from django.core.files.base import File
-from django.db.models.base import Model
+from django.contrib.auth.models import Group
 from django.forms import ModelForm, DateInput, TextInput
-from django.forms.utils import ErrorList
 from .models import User
 from django_select2.forms import Select2MultipleWidget, Select2Widget
 
@@ -43,4 +40,13 @@ class UserUpdateForm(ModelForm):
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
             'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'})
+        }
+
+
+class GroupForm(ModelForm):
+    class Meta:
+        model = Group
+        fields = '__all__'
+        widgets = {
+            'permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'})
         }

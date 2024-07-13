@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Address
-from .forms import UserForm, UserUpdateForm
+from .forms import UserForm, UserUpdateForm, GroupForm
 
 
 class UsersListView(ListView):
@@ -111,11 +111,11 @@ class PermissionUpdateView(UpdateView):
 
 class GroupCreateView(CreateView):
     model = Group
-    fields = ['name', 'permissions']
+    form_class = GroupForm
     template_name = "accounts/groups/group_form.html"
     
     def get_success_url(self):
-        return reverse_lazy("accounts:permission_list")
+        return reverse_lazy("accounts:group_list")
 
 
 class GroupsListView(ListView):
@@ -132,7 +132,7 @@ class GroupDetailView(DetailView):
 
 class GroupUpdateView(UpdateView):
     model = Group
-    fields = ['name', 'permissions']
+    form_class = GroupForm
     template_name = "accounts/groups/group_form.html"
     slug_field = "codename"
     
