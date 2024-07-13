@@ -192,7 +192,7 @@
             </a>
           </li>
           {% endif %}
-          <li class="menu-item">
+          <li class="menu-item {% is_active_open users_list_url user_create_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-user"></i>
               <div class="text-truncate">Usuários</div>
@@ -228,7 +228,7 @@
               </li>
             </ul>
           </li>
-          <li class="menu-item {% is_active_open group_list_url boards_create_url %}">
+          <li class="menu-item {% is_active_open group_list_url group_create_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-group"></i>
               <div class="text-truncate">Perfis</div>
