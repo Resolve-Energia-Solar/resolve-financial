@@ -188,40 +188,7 @@
       footer: false // position the button on footer
     },
     click: function (el) {
-      let element = el;
-      let title = element.getAttribute('data-eid')
-        ? element.querySelector('.kanban-text').textContent
-        : element.textContent,
-        date = element.getAttribute('data-due-date'),
-        dateObj = new Date(),
-        year = dateObj.getFullYear(),
-        dateToUse = date
-          ? date + ', ' + year
-          : dateObj.getDate() + ' ' + dateObj.toLocaleString('en', { month: 'long' }) + ', ' + year,
-        label = element.getAttribute('data-badge-text'),
-        avatars = element.getAttribute('data-assigned');
-
-      // Show kanban offcanvas
-      kanbanOffcanvas.show();
-
-      // To get data on sidebar
-      kanbanSidebar.querySelector('#title').value = title;
-      kanbanSidebar.querySelector('#due-date').nextSibling.value = dateToUse;
-
-      // ! Using jQuery method to get sidebar due to select2 dependency
-      $('.kanban-update-item-sidebar').find(select2).val(label).trigger('change');
-
-      // Remove & Update assigned
-      kanbanSidebar.querySelector('.assigned').innerHTML = '';
-      kanbanSidebar
-        .querySelector('.assigned')
-        .insertAdjacentHTML(
-          'afterbegin',
-          renderAvatar(avatars, false, 'sm', '0', el.getAttribute('data-members')) +
-          "<div class='avatar avatar-sm'>" +
-          "<span class='avatar-initial rounded-circle bg-label-secondary'><i class='bx bx-plus'></i></span>" +
-          '</div>'
-        );
+      window.location.href = '/leads/' + el.dataset.eid;
     },
 
     buttonClick: function (el, boardId) {

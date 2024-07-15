@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
@@ -13,21 +14,21 @@ from .models import Address
 from .forms import UserForm, UserUpdateForm, GroupForm
 
 
-class UsersListView(ListView):
+class UsersListView(LoginRequiredMixin, ListView):
     model = get_user_model()
     template_name = "accounts/users/user_list.html"
     context_object_name = "users"
     paginate_by = 10
 
 
-class UserDetailView(DetailView):
+class UserDetailView(LoginRequiredMixin, DetailView):
     model = get_user_model()
     template_name = "accounts/users/user_detail.html"
     slug_field = "username"
     context_object_name = "user_obj"
 
 
-class UserCreateView(CreateView):
+class UserCreateView(LoginRequiredMixin, CreateView):
     model = get_user_model()
     form_class = UserForm
     template_name = "accounts/users/user_create.html"
@@ -73,7 +74,7 @@ class UserCreateView(CreateView):
         return self.object.get_absolute_url()
     
 
-class UserUpdateView(UpdateView):
+class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = get_user_model()
     form_class = UserUpdateForm
     template_name = "accounts/users/user_update.html"
@@ -83,7 +84,7 @@ class UserUpdateView(UpdateView):
         return self.object.get_absolute_url()
 
 
-class PermissionCreateView(CreateView):
+class PermissionCreateView(LoginRequiredMixin, CreateView):
     model = Permission
     fields = ['name', 'content_type', 'codename']
     template_name = "accounts/permissions/permission_form.html"
@@ -92,14 +93,14 @@ class PermissionCreateView(CreateView):
         return reverse_lazy("accounts:permission_list")
 
 
-class PermissionsListView(ListView):
+class PermissionsListView(LoginRequiredMixin, ListView):
     model = Permission
     template_name = "accounts/permissions/permission_list.html"
     context_object_name = "permissions"
     paginate_by = 10
 
 
-class PermissionUpdateView(UpdateView):
+class PermissionUpdateView(LoginRequiredMixin, UpdateView):
     model = Permission
     fields = ['name', 'content_type', 'codename']
     template_name = "accounts/permissions/permission_form.html"
@@ -109,7 +110,7 @@ class PermissionUpdateView(UpdateView):
         return reverse_lazy("accounts:permission_list")
 
 
-class GroupCreateView(CreateView):
+class GroupCreateView(LoginRequiredMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "accounts/groups/group_form.html"
@@ -118,19 +119,19 @@ class GroupCreateView(CreateView):
         return reverse_lazy("accounts:group_list")
 
 
-class GroupsListView(ListView):
+class GroupsListView(LoginRequiredMixin, ListView):
     model = Group
     template_name = "accounts/groups/group_list.html"
     context_object_name = "groups"
     paginate_by = 10
 
 
-class GroupDetailView(DetailView):
+class GroupDetailView(LoginRequiredMixin, DetailView):
     model = Group
     template_name = "accounts/groups/group_detail.html"
 
 
-class GroupUpdateView(UpdateView):
+class GroupUpdateView(LoginRequiredMixin, UpdateView):
     model = Group
     form_class = GroupForm
     template_name = "accounts/groups/group_form.html"

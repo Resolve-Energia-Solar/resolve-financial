@@ -8,10 +8,9 @@
 
 <form id="formAuthentication" class="mb-3" method="post">
   {% csrf_token %}
-
   <div class="mb-3">
     <label for="{{ form.username.id_for_label }}" class="form-label">Nome de Usuário</label>
-    {% render_field form.username class="form-control" placeholder="Enter your email or username" autofocus="True" %}
+    {% render_field form.username class="form-control" placeholder="Insira seu nome de usuário" autofocus="True" %}
   </div>
 
   <div class="mb-3 form-password-toggle">
@@ -23,7 +22,7 @@
     </div>
 
     <div class="input-group input-group-merge">
-      {% render_field form.password type="password" class="form-control" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" %}
+      {% render_field form.password type="password" class="form-control" placeholder="**************" %}
       <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
     </div>
 

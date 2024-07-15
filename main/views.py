@@ -1,4 +1,6 @@
+from django.urls import reverse
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F
 from django.http import JsonResponse
 from django.views import View
@@ -7,11 +9,11 @@ from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
 
-class IndexView(TemplateView):
+class IndexView(LoginRequiredMixin, TemplateView):
     template_name = "main/index.html"
 
 
-class KanbanView(DetailView):
+class KanbanView(LoginRequiredMixin, DetailView):
     model = Board
     template_name = "main/leads/leads_kanban.html"
     
@@ -24,26 +26,26 @@ class KanbanView(DetailView):
         return redirect('main:board-detail', pk=board.pk)
 
 
-class TasksView(ListView):
+class TasksView(LoginRequiredMixin, ListView):
     model = Task
     template_name = "main/tasks/task_list.html"
     context_object_name = "tasks"
     paginate_by = 10
     
 
-class TaskDetailView(DetailView):
+class TaskDetailView(LoginRequiredMixin, DetailView):
     model = Task
     template_name = "main/tasks/task_detail.html"
 
 
-class TaskCreateView(CreateView):
+class TaskCreateView(LoginRequiredMixin, CreateView):
     model = Task
     form_class = TaskForm
     template_name = "main/tasks/task_create.html"
     success_url = reverse_lazy("main:tasks")
 
 
-class TaskUpdateView(UpdateView):
+class TaskUpdateView(LoginRequiredMixin, UpdateView):
     model = Task
     fields = "__all__"
     template_name = "main/tasks/task_update.html"
@@ -52,26 +54,26 @@ class TaskUpdateView(UpdateView):
         return self.object.get_absolute_url()
     
 
-class BoardsView(ListView):
+class BoardsView(LoginRequiredMixin, ListView):
     model = Board
     template_name = "main/boards/board_list.html"
     context_object_name = "boards"
     paginate_by = 10
 
 
-class BoardDetailView(DetailView):
+class BoardDetailView(LoginRequiredMixin, DetailView):
     model = Board
     template_name = "main/boards/board_detail.html"
     
 
-class BoardCreateView(CreateView):
+class BoardCreateView(LoginRequiredMixin, CreateView):
     model = Board
     fields = "__all__"
     template_name = "main/boards/board_create.html"
     success_url = reverse_lazy("main:boards")
 
 
-class BoardUpdateView(UpdateView):
+class BoardUpdateView(LoginRequiredMixin, UpdateView):
     model = Board
     fields = "__all__"
     template_name = "main/boards/board_update.html"
@@ -80,7 +82,7 @@ class BoardUpdateView(UpdateView):
         return self.object.get_absolute_url()
 
 
-class MoveCardView(View):
+class MoveCardView(LoginRequiredMixin, View):
     def post(self, request, table_id, column_id, card_id, *args, **kwargs):
         card = get_object_or_404(Card, id=card_id)
         column = get_object_or_404(Column, id=column_id)
@@ -89,7 +91,7 @@ class MoveCardView(View):
         return JsonResponse({'status': 'success'})
 
 
-class CreateCardView(View):
+class CreateCardView(LoginRequiredMixin, View):
     def post(self, request, pk, column_id, *args, **kwargs):
         title = request.POST.get('title')
         column = get_object_or_404(Column, id=column_id)
@@ -99,28 +101,29 @@ class CreateCardView(View):
         return JsonResponse({'status': 'success', 'card_id': card.id})
 
 
-class DeleteCardView(View):
+class DeleteCardView(LoginRequiredMixin, View):
     def post(self, request, pk, column_id, card_id, *args, **kwargs):
         card = get_object_or_404(Card, id=card_id)
         card.delete()
         return JsonResponse({'status': 'success'})
 
 
-class DeleteColumnView(View):
+class DeleteColumnView(LoginRequiredMixin, View):
     def post(self, request, column_id, *args, **kwargs):
         column = get_object_or_404(Column, id=column_id)
         column.delete()
         return JsonResponse({'status': 'success'})
 
 
-class LeadCreateView(CreateView):
+class LeadCreateView(LoginRequiredMixin, CreateView):
     model = Lead
     form_class = LeadForm
     template_name = "main/leads/lead_create.html"
-    success_url = reverse_lazy("main:lead_detail")
+    
+    def get_success_url(self):
+        return reverse("main:lead_detail", kwargs={"pk": self.object.pk})
 
-"""
-class LeadDetailView(DetailView):
+
+class LeadDetailView(LoginRequiredMixin, DetailView):
     model = Lead
     template_name = "main/leads/lead_detail.html"
-"""
