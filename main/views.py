@@ -124,6 +124,13 @@ class LeadCreateView(LoginRequiredMixin, CreateView):
         return reverse("main:lead_detail", kwargs={"pk": self.object.pk})
 
 
+class LeadListView(LoginRequiredMixin, ListView):
+    model = Lead
+    template_name = "main/leads/lead_list.html"
+    context_object_name = "leads"
+    paginate_by = 10
+
+
 class LeadDetailView(LoginRequiredMixin, DetailView):
     model = Lead
     template_name = "main/leads/lead_detail.html"

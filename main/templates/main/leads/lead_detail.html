@@ -134,7 +134,11 @@
                         <ul class="list-unstyled mb-4 mt-3">
                             <li class="d-flex align-items-center mb-3">
                                 <i class="bx bx-phone"></i><span class="fw-medium mx-2">Contato:</span>
-                                <a id="phonenumber" href="tel:{{ object.phone }}">{{ object.phone|default:'-' }}</a>
+                                {% if object.phone %}                                    
+                                <a id="phonenumber" href="tel:{{ object.phone }}">({{ lead.phone|slice:":2"|safe }}) {{ lead.phone|slice:"2:3"|safe }} {{ lead.phone|slice:"3:7"|safe }}-{{ lead.phone|slice:"7:"|safe }}</a>
+                                {% else %}
+                                <span>-</span>
+                                {% endif %}
                             </li>
                             <li class="d-flex align-items-center mb-3">
                                 <i class="bx bx-envelope"></i><span class="fw-medium mx-2">E-mail:</span>

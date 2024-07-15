@@ -20,5 +20,6 @@ urlpatterns = [
     path('coluna/<int:column_id>/deletar', DeleteColumnView.as_view(), name='column-delete'),
     # Leads
     path('leads/criar', LeadCreateView.as_view(), name='lead_create'),
+    path('leads/', LeadListView.as_view(), name='lead_list'),
     path('leads/<int:pk>/', LeadDetailView.as_view(), name='lead_detail'),
 ]
