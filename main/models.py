@@ -122,6 +122,9 @@ class Lead(models.Model):
         elif current_user is not None:
             self.updated_by = current_user
         super().save(*args, **kwargs)
+        
+    def get_absolute_url(self):
+        return reverse_lazy('main:lead_detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Lead"
@@ -185,6 +188,23 @@ class Attachment(models.Model):
         verbose_name_plural = "Anexos"
 
 
+class Contact(models.Model):
+    contact_type_choices = [
+        ("email", "E-mail"),
+        ("sms", "SMS")
+    ]
+
+    contact_type = models.CharField(max_length=10, choices=contact_type_choices, verbose_name="Tipo de Contato")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
+    subject = models.CharField(max_length=200, verbose_name="Assunto")
+    body = models.TextField(verbose_name="Corpo")
+    sent_at = models.DateTimeField(verbose_name="Enviado em")
+
+    class Meta:
+        verbose_name = "Contato"
+        verbose_name_plural = "Contatos"
+
+
 """
 class Opportunity(models.Model):
     Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
@@ -195,17 +215,6 @@ class Opportunity(models.Model):
     board = ta:
         verbose_name = "Oportunidade"
         verbose_name_plural = "Oportunidades"
-
-
-class Email(models.Model):
-    Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
-    subject = models.CharField(max_length=200, verbose_name="Assunto")
-    body = models.TextField(verbose_name="Corpo")
-    sent_at = models.DateTimeField(verbose_name="Enviado em")
-
-    class Meta:
-        verbose_name = "E-mail"
-        verbose_name_plural = "E-mails"
 
 
 class MarketingCampaign(models.Model):
