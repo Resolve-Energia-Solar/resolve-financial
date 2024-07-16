@@ -118,7 +118,7 @@ class DeleteColumnView(LoginRequiredMixin, View):
 class LeadCreateView(LoginRequiredMixin, CreateView):
     model = Lead
     form_class = LeadForm
-    template_name = "main/leads/lead_create.html"
+    template_name = "main/leads/lead_form.html"
     
     def get_success_url(self):
         return reverse("main:lead_detail", kwargs={"pk": self.object.pk})
@@ -134,3 +134,12 @@ class LeadListView(LoginRequiredMixin, ListView):
 class LeadDetailView(LoginRequiredMixin, DetailView):
     model = Lead
     template_name = "main/leads/lead_detail.html"
+
+
+class LeadUpdateView(LoginRequiredMixin, UpdateView):
+    model = Lead
+    form_class = LeadForm
+    template_name = "main/leads/lead_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
