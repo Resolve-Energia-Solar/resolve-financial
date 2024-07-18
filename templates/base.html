@@ -101,8 +101,7 @@
         <div class="app-brand demo">
           <a href="{% url 'main:index' %}" class="app-brand-link">
             <span class="app-brand-logo demo">
-              <img
-                src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/branding/Resolve (Redondo Amarelo-Preto).svg' %}"
+              <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/branding/Resolve (Redondo Amarelo-Preto).svg' %}"
                 style="width: 45px;">
             </span>
             <span class="app-brand-text demo menu-text fw-bold ms-2">Resolve</span>
@@ -121,6 +120,8 @@
           {% url 'main:board-detail' object.pk as board_detail_url %}
           {% url 'accounts:users_list' as users_list_url %}
           {% url 'accounts:user_create' as user_create_url %}
+          {% url 'accounts:branch_list' as branch_list_url %}
+          {% url 'accounts:branch_create' as branch_create_url %}
           {% url 'accounts:permission_create' as permission_create_url %}
           {% url 'accounts:permission_list' as permission_list_url %}
           {% url 'accounts:group_list' as group_list_url %}
@@ -129,6 +130,7 @@
           {% url 'main:board-create' as boards_create_url %}
           {% url 'main:lead_create' as lead_create_url %}
           {% url 'main:lead_list' as lead_list_url %}
+          {% url 'main:lead_detail' lead.pk as lead_detail_url %}
           <!-- Dashboards -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">CRM {{ object.pk }}</span>
@@ -157,7 +159,7 @@
             </ul>
           </li>
           {% endif %}
-          <li class="menu-item {% is_active_open lead_list_url lead_create_url %}">
+          <li class="menu-item {% is_active_open lead_list_url lead_create_url lead_detail_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-user"></i>
               <div class="text-truncate">Leads</div>
@@ -251,6 +253,26 @@
               </li>
               <li class="menu-item {% is_active user_create_url %}">
                 <a href="{% url 'accounts:user_create' %}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open branch_list_url branch_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-building"></i>
+              <div class="text-truncate">Unidades</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active branch_list_url %}">
+                <a href="{{ branch_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active branch_create_url %}">
+                <a href="{{ branch_create_url }}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>
@@ -361,119 +383,6 @@
             <!-- /Search -->
 
             <ul class="navbar-nav flex-row align-items-center ms-auto">
-              <!-- Language -->
-              <li class="nav-item dropdown-language dropdown me-2 me-xl-0">
-                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-                  <i class="bx bx-globe bx-sm"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <a class="dropdown-item" href="javascript:void(0);" data-language="en" data-text-direction="ltr">
-                      <span class="align-middle">English</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="javascript:void(0);" data-language="fr" data-text-direction="ltr">
-                      <span class="align-middle">French</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="javascript:void(0);" data-language="ar" data-text-direction="rtl">
-                      <span class="align-middle">Arabic</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="javascript:void(0);" data-language="de" data-text-direction="ltr">
-                      <span class="align-middle">German</span>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <!-- /Language -->
-
-              <!-- Quick links  -->
-              <li class="nav-item dropdown-shortcuts navbar-dropdown dropdown me-2 me-xl-0">
-                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown"
-                  data-bs-auto-close="outside" aria-expanded="false">
-                  <i class="bx bx-grid-alt bx-sm"></i>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end py-0">
-                  <div class="dropdown-menu-header border-bottom">
-                    <div class="dropdown-header d-flex align-items-center py-3">
-                      <h5 class="text-body mb-0 me-auto">Shortcuts</h5>
-                      <a href="javascript:void(0)" class="dropdown-shortcuts-add text-body" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="Add shortcuts"><i class="bx bx-sm bx-plus-circle"></i></a>
-                    </div>
-                  </div>
-                  <div class="dropdown-shortcuts-list scrollable-container">
-                    <div class="row row-bordered overflow-visible g-0">
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-calendar fs-4"></i>
-                        </span>
-                        <a href="app-calendar.html" class="stretched-link">Calendar</a>
-                        <small class="text-muted mb-0">Appointments</small>
-                      </div>
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-food-menu fs-4"></i>
-                        </span>
-                        <a href="app-invoice-list.html" class="stretched-link">Invoice App</a>
-                        <small class="text-muted mb-0">Manage Accounts</small>
-                      </div>
-                    </div>
-                    <div class="row row-bordered overflow-visible g-0">
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-user fs-4"></i>
-                        </span>
-                        <a href="app-user-list.html" class="stretched-link">User App</a>
-                        <small class="text-muted mb-0">Manage Users</small>
-                      </div>
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-check-shield fs-4"></i>
-                        </span>
-                        <a href="app-access-roles.html" class="stretched-link">Role Management</a>
-                        <small class="text-muted mb-0">Permissão</small>
-                      </div>
-                    </div>
-                    <div class="row row-bordered overflow-visible g-0">
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-pie-chart-alt-2 fs-4"></i>
-                        </span>
-                        <a href="index.html" class="stretched-link">Dashboard</a>
-                        <small class="text-muted mb-0">User Profile</small>
-                      </div>
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-cog fs-4"></i>
-                        </span>
-                        <a href="pages-account-settings-account.html" class="stretched-link">Setting</a>
-                        <small class="text-muted mb-0">Account Settings</small>
-                      </div>
-                    </div>
-                    <div class="row row-bordered overflow-visible g-0">
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-help-circle fs-4"></i>
-                        </span>
-                        <a href="pages-faq.html" class="stretched-link">FAQs</a>
-                        <small class="text-muted mb-0">FAQs & Articles</small>
-                      </div>
-                      <div class="dropdown-shortcuts-item col">
-                        <span class="dropdown-shortcuts-icon bg-label-secondary rounded-circle mb-2">
-                          <i class="bx bx-window-open fs-4"></i>
-                        </span>
-                        <a href="modal-examples.html" class="stretched-link">Modals</a>
-                        <small class="text-muted mb-0">Useful Popups</small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <!-- Quick links -->
 
               <!-- Style Switcher -->
               <li class="nav-item dropdown-style-switcher dropdown me-2 me-xl-0">
@@ -483,17 +392,17 @@
                 <ul class="dropdown-menu dropdown-menu-end dropdown-styles">
                   <li>
                     <a class="dropdown-item" href="javascript:void(0);" data-theme="light">
-                      <span class="align-middle"><i class="bx bx-sun me-2"></i>Light</span>
+                      <span class="align-middle"><i class="bx bx-sun me-2"></i>Claro</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="javascript:void(0);" data-theme="dark">
-                      <span class="align-middle"><i class="bx bx-moon me-2"></i>Dark</span>
+                      <span class="align-middle"><i class="bx bx-moon me-2"></i>Escuro</span>
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="javascript:void(0);" data-theme="system">
-                      <span class="align-middle"><i class="bx bx-desktop me-2"></i>System</span>
+                      <span class="align-middle"><i class="bx bx-desktop me-2"></i>Sistema</span>
                     </a>
                   </li>
                 </ul>
@@ -522,9 +431,9 @@
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
                               {% if user.profile_picture %}
-                                <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                                <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
                               {% else %}
-                                <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}</div>
+                                <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
                               {% endif %}                                
                             </div>
                           </div>
@@ -565,8 +474,7 @@
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
-                              <img
-                                src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/2.png' %}"
+                              <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/2.png' %}"
                                 alt class="w-px-40 h-auto rounded-circle" />
                             </div>
                           </div>
@@ -608,8 +516,7 @@
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
-                              <img
-                                src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/9.png' %}"
+                              <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/9.png' %}"
                                 alt class="w-px-40 h-auto rounded-circle" />
                             </div>
                           </div>
@@ -726,10 +633,10 @@
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                   <div class="avatar avatar-online">
                     {% if user.profile_picture %}
-                      <img src="https://picsum.photos/200" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                      <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
                     {% else %}
-                      <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}</div>
-                    {% endif %}   
+                      <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                    {% endif %}      
                   </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">

@@ -18,7 +18,7 @@ class User(AbstractUser):
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", max_length=255, on_delete=models.CASCADE, blank=True, null=True)
     # Employee Info
     contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")))
-    branch = models.ForeignKey("accounts.Branch", verbose_name="Filial", on_delete=models.CASCADE)
+    branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE)
     role = models.ForeignKey("accounts.Role", verbose_name="Cargo", on_delete=models.CASCADE)
     user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
@@ -93,8 +93,8 @@ class Branch(models.Model):
     owner = models.ForeignKey("accounts.User", verbose_name="Proprietário", on_delete=models.CASCADE, related_name='branches_owner', blank=True, null=True)
 
     class Meta:
-        verbose_name = "Filial"
-        verbose_name_plural = "Filiais"
+        verbose_name = "Unidade"
+        verbose_name_plural = "Unidades"
 
     def __str__(self):
         return self.name
@@ -102,7 +102,7 @@ class Branch(models.Model):
 
 class Squad(models.Model):
     name = models.CharField("Nome", max_length=255)
-    branch = models.ForeignKey("accounts.Branch", verbose_name="Filial", on_delete=models.CASCADE)
+    branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
 

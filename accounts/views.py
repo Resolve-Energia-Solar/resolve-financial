@@ -10,7 +10,7 @@ from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Address
+from .models import Address, Branch
 from .forms import UserForm, UserUpdateForm, GroupForm
 
 
@@ -139,6 +139,37 @@ class GroupUpdateView(LoginRequiredMixin, UpdateView):
     
     def get_success_url(self):
         return reverse_lazy("accounts:group_detail", kwargs={"pk": self.object.pk})
+
+
+class BranchCreateView(LoginRequiredMixin, CreateView):
+    model = Branch
+    fields = ['name', 'address', 'owner']
+    template_name = 'accounts/branches/branch_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
+
+
+class BranchListView(LoginRequiredMixin, ListView):
+    model = Branch
+    template_name = "accounts/branches/branch_list.html"
+    context_object_name = "branches"
+    paginate_by = 10
+
+
+class BranchDetailView(LoginRequiredMixin, DetailView):
+    model = Branch
+    template_name = "accounts/branches/branch_detail.html"
+    context_object_name = "branch"
+
+
+class BranchUpdateView(LoginRequiredMixin, UpdateView):
+    model = Branch
+    fields = ['name', 'address', 'owner']
+    template_name = 'accounts/branches/branch_form.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
 # API

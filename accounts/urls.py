@@ -19,6 +19,10 @@ urlpatterns = [
     path("perfis/", GroupsListView.as_view(), name="group_list"),
     path("perfis/<int:pk>/", GroupDetailView.as_view(), name="group_detail"),
     path("perfis/<int:pk>/editar/", GroupUpdateView.as_view(), name="group_update"),
+    # Units
+    path("unidades/criar/", BranchCreateView.as_view(), name="branch_create"),
+    path("unidades/", BranchListView.as_view(), name="branch_list"),
+    path("unidades/<int:pk>/atualizar/", BranchUpdateView.as_view(), name="branch_update"),
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),
 ]
