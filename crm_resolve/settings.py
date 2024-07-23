@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main.apps.MainConfig',
     'accounts.apps.AccountsConfig',
+    'notifications',
     'widget_tweaks',
     'django_select2',
     'crispy_forms',
