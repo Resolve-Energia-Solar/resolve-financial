@@ -58,10 +58,13 @@ INSTALLED_APPS = [
     'django_select2',
     'crispy_forms',
     'crispy_bootstrap5',
+    'simple_history',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+DJANGO_NOTIFICATIONS_CONFIG = { 'SOFT_DELETE': True}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -71,6 +74,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'crm_resolve.urls'

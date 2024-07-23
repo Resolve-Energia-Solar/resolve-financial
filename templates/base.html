@@ -1,5 +1,5 @@
 <!doctype html>
-{% load static menu_tags %}
+{% load static menu_tags notifications_tags %}
 <html lang="pt-br" class="light-style layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
   data-theme="theme-default" data-assets-path="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/' %}"
   data-template="vertical-menu-template">
@@ -411,218 +411,77 @@
 
               <!-- Notification -->
               <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
-                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown"
-                  data-bs-auto-close="outside" aria-expanded="false">
+                <a
+                  class="nav-link dropdown-toggle hide-arrow"
+                  href="javascript:void(0);"
+                  data-bs-toggle="dropdown"
+                  data-bs-auto-close="outside"
+                  aria-expanded="false">
                   <i class="bx bx-bell bx-sm"></i>
-                  <span class="badge bg-danger rounded-pill badge-notifications">0</span>
+                  {% notifications_unread as notifications_unread %}
+                  {% if notifications_unread %}
+                  <span id="badge-notifications" class="badge bg-danger rounded-pill badge-notifications">{{ notifications_unread }}</span>
+                  {% endif %}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
                   <li class="dropdown-menu-header border-bottom">
-                    <div class="dropdown-header d-flex align-items-center py-3">
-                      <h5 class="text-body mb-0 me-auto">Notificações</h5>
-                      <a href="javascript:void(0)" class="dropdown-notifications-all text-body" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="Mark all as read"><i class="bx fs-4 bx-envelope-open"></i></a>
-                    </div>
+                      <div class="dropdown-header d-flex align-items-center py-3">
+                        <h5 class="text-body mb-0 me-auto">Notificações</h5>
+                        {% if notifications_unread %}
+                        <a href="{% url 'notifications:mark_all_as_read' %}"
+                          class="dropdown-notifications-all text-body"
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="top"
+                          title="Marcar todas como lidas"
+                          ><i class="bx fs-4 bx-envelope-open"></i
+                        ></a>
+                        {% endif %}
+                      </div>
                   </li>
                   <li class="dropdown-notifications-list scrollable-container">
                     <ul class="list-group list-group-flush">
+                      {% for notification in request.user.notifications.active %}                       
                       <li class="list-group-item list-group-item-action dropdown-notifications-item">
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
-                              {% if user.profile_picture %}
-                                <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                              {% if notification.actor.profile_picture %}
+                                <img src="{{ notification.actor.profile_picture.url }}" alt class="w-px-40 h-auto rounded-circle" />
                               {% else %}
-                                <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
-                              {% endif %}                                
+                                <img src="{% static 'accounts/img/dummy-user.jpg' %}" alt class="w-px-40 h-auto rounded-circle" />
+                              {% endif %}
                             </div>
                           </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Congratulation Lettie 🎉</h6>
-                            <p class="mb-0">Won the monthly best seller gold badge</p>
-                            <small class="text-muted">1h ago</small>
-                          </div>
+                          <a class="flex-grow-1 notification-link" href="{{ notification.action_object.get_absolute_url }}" data-mark-read-url="{% url "notifications:mark_as_read" notification.slug %}">
+                            <h6 class="mb-1">
+                              {% if notification.actor == user %}
+                              Você
+                              {% else %}
+                              {{ notification.actor }}
+                              {% endif %}
+                              {{ notification.verb }}
+                            </h6>
+                            <p class="mb-0">{{ notification.description|default:'' }}</p>
+                            <small class="text-muted">há {{ notification.timesince }}</small>
+                          </a>
                           <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
+                            {% if notification.unread %}                                
+                            <a href="javascript:void(0)" class="dropdown-notifications-read">
+                              <span class="badge badge-dot {% if notification.level == 'success' %}bg-success{% elif notification.level == 'warning' %}bg-warning{% elif notification.level == 'error' %}bg-danger{% elif notification.level == 'info' %}bg-info{% endif %}"></span>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'notifications:delete' notification.slug %}" class="dropdown-notifications-archive">
+                              <span class="bx bx-x"></span>
+                            </a>
                           </div>
                         </div>
                       </li>
+                      {% empty %}
                       <li class="list-group-item list-group-item-action dropdown-notifications-item">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <span class="avatar-initial rounded-circle bg-label-danger">CF</span>
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Charles Franklin</h6>
-                            <p class="mb-0">Accepted your connection</p>
-                            <small class="text-muted">12hr ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
+                        Você não tem notificações.
                       </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item marked-as-read">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/2.png' %}"
-                                alt class="w-px-40 h-auto rounded-circle" />
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">New Message ✉️</h6>
-                            <p class="mb-0">You have new message from Natalie</p>
-                            <small class="text-muted">1h ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <span class="avatar-initial rounded-circle bg-label-success"><i
-                                  class="bx bx-cart"></i></span>
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Whoo! You have new order 🛒</h6>
-                            <p class="mb-0">ACME Inc. made new order $1,154</p>
-                            <small class="text-muted">1 day ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item marked-as-read">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/9.png' %}"
-                                alt class="w-px-40 h-auto rounded-circle" />
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Application has been approved 🚀</h6>
-                            <p class="mb-0">Your ABC project application has been approved.</p>
-                            <small class="text-muted">2 days ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item marked-as-read">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <span class="avatar-initial rounded-circle bg-label-success"><i
-                                  class="bx bx-pie-chart-alt"></i></span>
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Monthly report is generated</h6>
-                            <p class="mb-0">July monthly financial report is generated</p>
-                            <small class="text-muted">3 days ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item marked-as-read">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <img
-                                src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/5.png' %}"
-                                alt class="w-px-40 h-auto rounded-circle" />
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">Send connection request</h6>
-                            <p class="mb-0">Peter sent you connection request</p>
-                            <small class="text-muted">4 days ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <img
-                                src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/avatars/6.png' %}"
-                                alt class="w-px-40 h-auto rounded-circle" />
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">New message from Jane</h6>
-                            <p class="mb-0">Your have new message from Jane</p>
-                            <small class="text-muted">5 days ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="list-group-item list-group-item-action dropdown-notifications-item marked-as-read">
-                        <div class="d-flex">
-                          <div class="flex-shrink-0 me-3">
-                            <div class="avatar">
-                              <span class="avatar-initial rounded-circle bg-label-warning"><i
-                                  class="bx bx-error"></i></span>
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-1">CPU is running high</h6>
-                            <p class="mb-0">CPU Utilization Percent is currently at 88.63%,</p>
-                            <small class="text-muted">5 days ago</small>
-                          </div>
-                          <div class="flex-shrink-0 dropdown-notifications-actions">
-                            <a href="javascript:void(0)" class="dropdown-notifications-read"><span
-                                class="badge badge-dot"></span></a>
-                            <a href="javascript:void(0)" class="dropdown-notifications-archive"><span
-                                class="bx bx-x"></span></a>
-                          </div>
-                        </div>
-                      </li>
+                      {% endfor %}
                     </ul>
-                  </li>
-                  <li class="dropdown-menu-footer border-top p-3">
-                    <button class="btn btn-primary text-uppercase w-100">view all notifications</button>
                   </li>
                 </ul>
               </li>
@@ -825,6 +684,87 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.1/typeahead.bundle.min.js"></script>
     {{ form.media.js }}
   {% endif %}
+
+  <script src="{% static 'notifications/notify.js' %}" type="text/javascript"></script>
+  {# {% register_notify_callbacks callbacks='fill_notification_list,fill_notification_badge' %} #}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Marcar todas como lidas
+        document.querySelector('.dropdown-notifications-all').addEventListener('click', function(event) {
+            event.preventDefault();
+    
+            var url = this.href;
+    
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('badge-notifications').remove();
+            })
+            .catch(error => {
+                console.error('Erro ao marcar notificações como lidas:', error);
+            });
+        });
+    
+        // Excluir notificação
+        document.querySelectorAll('.dropdown-notifications-archive').forEach(function(element) {
+            element.addEventListener('click', function(event) {
+                event.preventDefault();
+                var url = this.href;
+    
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Notificação excluída com sucesso');
+                    } else {
+                        console.error('Falha ao excluir a notificação');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao excluir a notificação:', error);
+                });
+            });
+        });
+
+        // Marcar notificação como lida
+        document.querySelectorAll('.notification-link').forEach(function(element) {
+        element.addEventListener('click', function(event) {
+          event.preventDefault(); // Previne o redirecionamento padrão
+    
+          var url = this.href;
+          var markReadUrl = this.dataset.markReadUrl;
+    
+          fetch(markReadUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Notificação marcada como lida com sucesso');
+                } else {
+                    console.error('Falha ao marcar a notificação como lida');
+                }
+            })
+            .catch(error => {
+                console.error('Falha ao marcar a notificação como lida:', error);
+            });
+            window.location.href = url;
+          });
+        });
+    });
+  </script>
 
   {% block extra_scripts %}{% endblock extra_scripts %}
 </body>

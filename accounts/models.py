@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+from simple_history.models import HistoricalRecords
 from django.urls import reverse_lazy
 
 
@@ -29,6 +30,7 @@ class User(AbstractUser):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="user_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -68,6 +70,7 @@ class Address(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="address_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -91,6 +94,7 @@ class Branch(models.Model):
     name = models.CharField("Nome", max_length=255)
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     owner = models.ForeignKey("accounts.User", verbose_name="Proprietário", on_delete=models.CASCADE, related_name='branches_owner', blank=True, null=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Unidade"
@@ -105,6 +109,7 @@ class Squad(models.Model):
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Squad"
@@ -117,6 +122,7 @@ class Squad(models.Model):
 class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
     email = models.EmailField("E-mail", unique=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Departamento"
@@ -128,6 +134,7 @@ class Department(models.Model):
 
 class Role(models.Model):
     name = models.CharField("Nome", max_length=255)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Cargo"

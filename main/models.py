@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse_lazy
+from simple_history.models import HistoricalRecords
 
 
 class Board(models.Model):
@@ -11,6 +12,7 @@ class Board(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="board_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -40,6 +42,7 @@ class Column(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="column_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
     
     def __str__(self):
         return f"{self.name} - {self.board}"
@@ -67,6 +70,7 @@ class Card(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="card_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
     
     def __str__(self):
         if self.lead:
@@ -112,6 +116,7 @@ class Lead(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="lead_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
     
     def __str__(self):
         return self.name
@@ -144,6 +149,7 @@ class Task(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="task_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
     
     def __str__(self):
         return self.title
@@ -172,6 +178,7 @@ class Attachment(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True, editable=False)
     updated_by = models.ForeignKey("accounts.User", verbose_name="Atualizado por", on_delete=models.CASCADE, related_name="attachment_updated_by", blank=True, null=True, editable=False)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True, blank=True, null=True, editable=False)
+    history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.id and current_user is not None:
@@ -199,6 +206,7 @@ class Contact(models.Model):
     subject = models.CharField(max_length=200, verbose_name="Assunto")
     body = models.TextField(verbose_name="Corpo")
     sent_at = models.DateTimeField(verbose_name="Enviado em")
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Contato"
