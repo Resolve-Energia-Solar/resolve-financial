@@ -7,14 +7,14 @@
     <div class="col-12 col-md-8">
       <div class="text-center my-2">
         {% if object %}
-        <h1>Editar Unidade</h1>
+        <h1>Editar Lead</h1>
         <h4>({{ object.name }})</h4>
         {% else %}
-        <h1>Criar Unidade</h1>
+        <h1>Criar Lead</h1>
         {% endif %}
       </div>
 
-      <form method="post" id="branch_form" class="mt-4">
+      <form method="post" id="lead_form" class="mt-4">
         {% csrf_token %}
         <div class="row justify-content-center g-3">
           <div class="col-12 px-4">
@@ -23,7 +23,7 @@
 
             <div class="submit-row">
               <button class="btn btn-success me-2" type="submit">Salvar</button>
-              {# <a href="{% url 'resolve_crm:branch_list' %}">Voltar para a lista</a> #}
+              {# <a href="{% url 'resolve_crm:lead_list' %}">Voltar para a lista</a> #}
             </div>
 
           </div>

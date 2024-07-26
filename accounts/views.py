@@ -11,7 +11,7 @@ from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Address, Branch
-from .forms import UserForm, UserUpdateForm, GroupForm
+from .forms import BranchForm, UserForm, UserUpdateForm, GroupForm
 
 
 class UsersListView(LoginRequiredMixin, ListView):
@@ -143,11 +143,12 @@ class GroupUpdateView(LoginRequiredMixin, UpdateView):
 
 class BranchCreateView(LoginRequiredMixin, CreateView):
     model = Branch
-    fields = ['name', 'address', 'owner']
+    form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
+    success_url = reverse_lazy('branch_list')
     
-    def get_success_url(self):
-        return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
+    # def get_success_url(self):
+        # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
 class BranchListView(LoginRequiredMixin, ListView):
@@ -165,11 +166,12 @@ class BranchDetailView(LoginRequiredMixin, DetailView):
 
 class BranchUpdateView(LoginRequiredMixin, UpdateView):
     model = Branch
-    fields = ['name', 'address', 'owner']
+    form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
+    success_url = reverse_lazy('branch_list')
     
-    def get_success_url(self):
-        return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
+    # def get_success_url(self):
+        # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
 # API

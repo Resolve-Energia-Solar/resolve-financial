@@ -54,7 +54,7 @@
       <div class="row justify-content-between g-3">
         <div class="col-12 col-md-6 px-2 h-100">
           <!-- Contact -->
-          <fieldset class="module aligned mt-3">
+          <fieldset class="module aligned">
             <h2 class="h4">Contato</h2>
             {% for field in form.visible_fields %}
             {% if field.name in "phone email" %}
@@ -70,13 +70,8 @@
             {% endif %}
             {% endfor %}
             <div class="form-group mb-3">
-              <label for="address-input">Endereço</label>
-              <input list="addresses" id="address-input" class="form-control"
-                placeholder="Comece a digitar um endereço..." value="{{ object.address }}">
-              <datalist id="addresses">
-                <!-- As opções serão inseridas aqui pelo JavaScript -->
-              </datalist>
-              {% render_field form.address %}
+              {{ form.address.label }}
+              {{ form.address }}
               <small class="help-text">
                 <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
               </small>
@@ -185,56 +180,6 @@
 
 {% block extra_scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    fetch('{% url "accounts:addresses_api" %}')
-      .then(response => response.json())
-      .then(data => {
-        const addressesDatalist = document.getElementById('addresses');
-        addressesDatalist.innerHTML = '';
-        data.forEach(address => {
-          const option = document.createElement('option');
-          option.value = address.complete_address;
-          option.setAttribute('data-address-id', address.id);
-          addressesDatalist.appendChild(option);
-        });
-      })
-      .catch(error => console.error('Erro ao buscar endereços:', error));
-
-    const addressInput = document.getElementById('address-input');
-    const addressIdInput = document.getElementById('id_address');
-
-    addressInput.addEventListener('input', function () {
-      const inputValue = addressInput.value;
-      const options = document.querySelectorAll('#addresses option');
-
-      options.forEach(option => {
-        if (option.value === inputValue) {
-          addressIdInput.value = option.getAttribute('data-address-id');
-          console.log('Endereço selecionado:', option.value);
-          console.log('ID do endereço:', addressIdInput.value);
-        }
-      });
-    });
-
-    addressInput.addEventListener('change', function () {
-      const inputValue = addressInput.value;
-      const options = document.querySelectorAll('#addresses option');
-      let isValid = false;
-
-      options.forEach(option => {
-        if (option.value === inputValue) {
-          addressIdInput.value = option.getAttribute('data-address-id');
-          isValid = true;
-        }
-      });
-
-      if (!isValid) {
-        addressIdInput.value = '';
-      }
-    });
-  });
-
-
   document.getElementById('createAddressForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Impede o envio padrão do formulário
 

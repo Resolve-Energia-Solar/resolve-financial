@@ -1,2 +1,3 @@
-# crm_resolve
-Resolve's Customer Relationship Management web app.
+# ERP Resolve
+
+ERP da REsolve.

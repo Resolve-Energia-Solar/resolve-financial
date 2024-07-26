@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+      <h2>Criar Quadro</h2>
+      <form method="post">
+        {% csrf_token %}
+        {% load widget_tweaks %}
+        {% for field in form %}
+        <div class="form-group mb-3">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.name == "delivery_date" %}
+          {% render_field field class="form-control" type="datetime-local" %}
+          {% else %}
+          {% render_field field class="form-control" %}
+          {% endif %}
+          {% for error in field.errors %}
+          <div class="invalid-feedback">
+            {{ error }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between my-4">
+          <button class="btn btn-success" type="submit">Criar</button>
+          <a href="{% url 'resolve_crm:boards' %}">Voltar para a lista</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -71,13 +71,8 @@
             {% endif %}
             {% endfor %}
             <div class="form-group mb-3">
-              <label for="address-input">Endereço</label>
-              <input list="addresses" id="address-input" class="form-control"
-                placeholder="Comece a digitar um endereço...">
-              <datalist id="addresses">
-                <!-- As opções serão inseridas aqui pelo JavaScript -->
-              </datalist>
-              <input type="hidden" id="id_address" name="address">
+              {{ form.address.label }}
+              {{ form.address }}
               <small class="help-text">
                 <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
               </small>

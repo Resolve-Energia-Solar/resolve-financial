@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from django.forms import ModelForm, DateInput, TextInput
-from .models import User
+from .models import Branch, User
 from django_select2.forms import Select2MultipleWidget, Select2Widget
 
 
@@ -16,7 +16,8 @@ class UserForm(ModelForm):
             'role': Select2Widget(attrs={'data-placeholder': 'Selecionar cargo'}),
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
-            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'})
+            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
+            'address': Select2Widget(attrs={'data-placeholder': 'Selecionar endereço'})
         }
 
 
@@ -39,7 +40,8 @@ class UserUpdateForm(ModelForm):
             'role': Select2Widget(attrs={'data-placeholder': 'Selecionar cargo'}),
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
-            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'})
+            'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
+            'address': Select2Widget(attrs={'data-placeholder': 'Selecionar endereço'})
         }
 
 
@@ -49,4 +51,13 @@ class GroupForm(ModelForm):
         fields = '__all__'
         widgets = {
             'permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'})
+        }
+
+
+class BranchForm(ModelForm):
+    class Meta:
+        model = Branch
+        fields = '__all__'
+        widgets = {
+            'owners': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar proprietários'})
         }
