@@ -99,7 +99,7 @@
 
       <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
-          <a href="{% url 'resolve_crm:index' %}" class="app-brand-link">
+          <a href="{% url 'core:index' %}" class="app-brand-link">
             <span class="app-brand-logo demo">
               <img src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/img/branding/Resolve (Redondo Amarelo-Preto).svg' %}"
                 style="width: 45px;">
@@ -115,7 +115,7 @@
         <div class="menu-inner-shadow"></div>
 
         <ul class="menu-inner py-1">
-          {% url 'resolve_crm:index' as index_url %}
+          {% url 'core:index' as index_url %}
           {% url 'resolve_crm:tasks' as tasks_url %}
           {% url 'resolve_crm:board-detail' object.pk as board_detail_url %}
           {% url 'accounts:users_list' as users_list_url %}
@@ -136,7 +136,7 @@
             <span class="menu-header-text">CRM {{ object.pk }}</span>
           </li>
           <li class="menu-item {% is_active index_url %}">
-            <a href="{% url 'resolve_crm:index' %}" class="menu-link">
+            <a href="{% url 'core:index' %}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-bar-chart"></i>
               <div class="text-truncate">Dashboard</div>
             </a>
@@ -281,11 +281,29 @@
           <li class="menu-item {% is_active_open boards_list_url boards_create_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
-              <div class="text-truncate">Quadros</div>
+              <div class="text-truncate">Quadros do CRM</div>
             </a>
             <ul class="menu-sub">
               <li class="menu-item {% is_active boards_list_url %}">
                 <a href="{% url 'resolve_crm:boards' %}" class="menu-link">
+                  <div class="text-truncate">Lista</div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active boards_create_url %}">
+                <a href="{% url 'resolve_crm:board-create' %}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open boards_list_url boards_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
+              <div class="text-truncate">Quadros</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active boards_list_url %}">
+                <a href="{% url 'core:board-list' %}" class="menu-link">
                   <div class="text-truncate">Lista</div>
                 </a>
               </li>

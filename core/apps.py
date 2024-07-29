@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class ResolveCRMConfig(AppConfig):
+class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'resolve_crm'
+    name = 'core'

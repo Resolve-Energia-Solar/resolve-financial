@@ -9,10 +9,6 @@ from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
 
-class IndexView(LoginRequiredMixin, TemplateView):
-    template_name = "resolve_crm/index.html"
-
-
 class KanbanView(LoginRequiredMixin, DetailView):
     model = Board
     template_name = "resolve_crm/leads/leads_kanban.html"

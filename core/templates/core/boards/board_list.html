@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Quadros /</span> Lista</h4>
+
+
+
+        <!-- Quadro List Table -->
+        <div class="row card">
+            <div class="col-12 card-datatable table-responsive">
+                <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
+                    <div class="row mx-1 py-3">
+                        <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
+                            <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
+                                <div class="dt-buttons btn-group flex-wrap">
+                                    <a href="{% url 'core:board-create' %}" class="btn btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Quadro</span></span></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
+                            <div id="DataTables_Table_0_filter" class="dataTables_filter">
+                                <label>
+                                    <input type="search" class="form-control" placeholder="Pesquisar Quadro" aria-controls="DataTables_Table_0">
+                                </label>
+                            </div>
+                            <div class="invoice_status mb-3 mb-md-0">
+                                <select id="UserRole" class="form-select">
+                                    <option value="">Selecionar tipo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="invoice-list-table table border-top dataTable no-footer dtr-column">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for board in boards %}
+                            <tr>
+                                <td>{{ board.title }}</td>
+                                <td>{{ board.created_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="javascript:;" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Enviar e-mail" data-bs-original-title="Enviar e-mail"><i class="bx bx-send mx-1"></i></a>
+                                        <a href="{% url 'core:board-detail' board.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Quadro" data-bs-original-title="Ver Quadro"><i class="bx bx-show mx-1"></i></a>
+                                        <div class="dropdown">
+                                            <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <a href="{% url 'core:board-update' board.pk %}" class="dropdown-item">Editar</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a href="javascript:;" class="dropdown-item delete-record text-danger">Deletar</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% include 'snippets/pagination.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- / Content -->
+    {% endblock %}
+
+    {% block extra_scripts %}
+    <!-- Vendors JS -->
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/moment/moment.js' %}"></script>
+    <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script> -->
+
+    <!-- Page JS -->
+    <!-- <script src="{% static 'sneat-bootstrap-html-admin-template-v1.7.1/assets/js/app-invoice-list.js' %}"></script> -->
+    {% endblock %}

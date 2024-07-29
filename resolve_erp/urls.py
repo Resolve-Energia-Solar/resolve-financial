@@ -25,7 +25,8 @@ urlpatterns = [
     path("select2/", include("django_select2.urls")),
     path('admin/', admin.site.urls),
     path("conta/", include("accounts.urls")),
-    path('', include('resolve_crm.urls')),
+    path('crm/', include('resolve_crm.urls')),
+    path('', include('core.urls')),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]
 
