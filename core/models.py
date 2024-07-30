@@ -33,6 +33,8 @@ class Task(models.Model):
     depends_on = models.ManyToManyField('core.Task', related_name='dependents', symmetrical=False)
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True)
     id_integration = models.CharField(max_length=200)
     # Logs
     created_at = models.DateTimeField(auto_now_add=True)
