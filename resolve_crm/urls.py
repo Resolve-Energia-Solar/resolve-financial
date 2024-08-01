@@ -22,4 +22,9 @@ urlpatterns = [
     path('leads/', LeadListView.as_view(), name='lead_list'),
     path('leads/<int:pk>/', LeadDetailView.as_view(), name='lead_detail'),
     path('leads/<int:pk>/editar', LeadUpdateView.as_view(), name='lead_update'),
+    # Squads
+    path('squads/criar/', SquadCreateView.as_view(), name='squad_create'),
+    path('squads/', SquadListView.as_view(), name='squad_list'),
+    path('squads/<int:pk>/', SquadDetailView.as_view(), name='squad_detail'),
+    path('squads/<int:pk>/editar', SquadUpdateView.as_view(), name='squad_update'),
 ]

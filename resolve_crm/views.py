@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F
 from django.http import JsonResponse
 from django.views import View
-from .forms import LeadForm, TaskForm
+from .forms import LeadForm, SquadForm, TaskForm
 from django.shortcuts import get_object_or_404, redirect
 from .models import *
 
@@ -139,3 +139,33 @@ class LeadUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return self.object.get_absolute_url()
+
+
+class SquadCreateView(LoginRequiredMixin, CreateView):
+    model = Squad
+    form_class = SquadForm
+    template_name = "resolve_crm/squads/squad_form.html"
+
+    def get_success_url(self):
+        return reverse("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
+
+    
+class SquadListView(LoginRequiredMixin, ListView):
+    model = Squad
+    template_name = "resolve_crm/squads/squad_list.html"
+
+    
+class SquadDetailView(LoginRequiredMixin, DetailView):
+    model = Squad
+    template_name = "resolve_crm/squads/squad_detail.html"
+
+    
+class SquadUpdateView(LoginRequiredMixin, UpdateView):
+    model = Squad
+    form_class = SquadForm
+    template_name = "resolve_crm/squads/squad_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    

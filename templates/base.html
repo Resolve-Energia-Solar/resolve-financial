@@ -122,6 +122,9 @@
           {% url 'accounts:user_create' as user_create_url %}
           {% url 'accounts:branch_list' as branch_list_url %}
           {% url 'accounts:branch_create' as branch_create_url %}
+          {% url 'accounts:address_create' as address_create_url %}
+          {% url 'accounts:address_list' as address_list_url %}
+          {% url 'accounts:address_update' object.pk as address_update_url %}
           {% url 'accounts:permission_create' as permission_create_url %}
           {% url 'accounts:permission_list' as permission_list_url %}
           {% url 'accounts:group_list' as group_list_url %}
@@ -347,6 +350,26 @@
               </li>
               <li class="menu-item {% is_active permission_create_url %}">
                 <a href="{{ permission_create_url }}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open address_list_url address_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-map"></i>
+              <div class="text-truncate">Endereços</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active address_list_url %}">
+                <a href="{{ address_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active address_create_url %}">
+                <a href="{{ address_create_url }}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>

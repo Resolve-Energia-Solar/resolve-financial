@@ -8,13 +8,16 @@ class Squad(models.Model):
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     manager = models.ForeignKey("accounts.User", verbose_name="Supervisor", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
-    boards = models.ManyToManyField("resolve_crm.Board", verbose_name="Quadros", related_name='squad_boards')
+    boards = models.ManyToManyField("resolve_crm.Board", verbose_name="Quadros", related_name='squad_boards', blank=True)
     # Logs
     history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Squad"
         verbose_name_plural = "Squads"
+    
+    def get_absolute_url(self):
+        return reverse_lazy('resolve_crm:squad_detail', kwargs={'pk': self.pk})
 
     def __str__(self):
         return self.name

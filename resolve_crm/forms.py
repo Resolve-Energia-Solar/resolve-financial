@@ -1,5 +1,5 @@
 from django import forms
-from .models import Task, Lead
+from .models import Squad, Task, Lead
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 
@@ -23,4 +23,16 @@ class LeadForm(forms.ModelForm):
             'seller': Select2Widget,
             'squad': Select2Widget,
             'responsible': Select2Widget
+        }
+
+
+class SquadForm(forms.ModelForm):
+    class Meta:
+        model = Squad
+        fields = "__all__"
+        widgets = {
+            'branch': Select2Widget,
+            'manager': Select2Widget,
+            'members': Select2MultipleWidget,
+            'boards': Select2MultipleWidget
         }

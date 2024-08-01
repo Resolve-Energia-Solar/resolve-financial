@@ -178,6 +178,7 @@ class AddressCreateView(LoginRequiredMixin, CreateView):
     model = Address
     fields = '__all__'
     template_name = "accounts/address/address_form.html"
+    success_url = reverse_lazy('accounts:address_list')
 
 
 class AddressListView(LoginRequiredMixin, ListView):
@@ -190,6 +191,7 @@ class AddressUpdateView(LoginRequiredMixin, UpdateView):
     model = Address
     fields = '__all__'
     template_name = "accounts/address/address_form.html"
+    success_url = reverse_lazy('accounts:address_list')
 
 
 # API
