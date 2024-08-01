@@ -174,6 +174,24 @@ class BranchUpdateView(LoginRequiredMixin, UpdateView):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
+class AddressCreateView(LoginRequiredMixin, CreateView):
+    model = Address
+    fields = '__all__'
+    template_name = "accounts/address/address_form.html"
+
+
+class AddressListView(LoginRequiredMixin, ListView):
+    model = Address
+    template_name = "accounts/address/address_list.html"
+    context_object_name = "addresses"
+
+
+class AddressUpdateView(LoginRequiredMixin, UpdateView):
+    model = Address
+    fields = '__all__'
+    template_name = "accounts/address/address_form.html"
+
+
 # API
 
 @csrf_exempt

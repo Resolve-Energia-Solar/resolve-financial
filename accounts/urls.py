@@ -23,6 +23,10 @@ urlpatterns = [
     path("unidades/criar/", BranchCreateView.as_view(), name="branch_create"),
     path("unidades/", BranchListView.as_view(), name="branch_list"),
     path("unidades/<int:pk>/atualizar/", BranchUpdateView.as_view(), name="branch_update"),
+    # Addresses
+    path("enderecos/criar/", AddressCreateView.as_view(), name="address_create"),
+    path("enderecos/", AddressListView.as_view(), name="address_list"),
+    path("enderecos/<int:pk>/atualizar/", AddressUpdateView.as_view(), name="address_update"),
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),
 ]
