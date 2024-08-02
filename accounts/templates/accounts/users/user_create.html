@@ -259,19 +259,11 @@
       .then(response => response.json())
       .then(data => {
         console.log('Sucesso:', data);
-        // Cria um novo option com o endereço retornado
-        const newOption = document.createElement('option');
-        newOption.value = data.complete_address; // Define o valor do option
-        newOption.textContent = data.complete_address; // Define o texto do option
-        newOption.setAttribute('data-address-id', data.id); // Define o atributo data-address-id
 
-        // Adiciona o novo option ao datalist de endereços
-        document.getElementById('addresses').appendChild(newOption);
-        // Opcionalmente, dispara o evento de mudança se necessário
-        document.getElementById('addresses').dispatchEvent(new Event('change'));
-
-        // Define o valor do input para o endereço recém-criado, fazendo com que ele seja selecionado
-        document.getElementById('address-input').value = data.complete_address;
+        // Cria um novo option com o endereço retornado e adiciona o novo option ao select de endereços
+        var newOption = new Option(data.address_text, data.address_id, false, true);
+        var selectElement = $('#id_address');
+        selectElement.append(newOption).trigger('change');
 
         // Fecha o modal
         var modalElement = document.getElementById('createAddressModal');
