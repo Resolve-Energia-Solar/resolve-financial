@@ -31,25 +31,7 @@
   <link rel="stylesheet"
     href="{% static 'sneat-template/assets/vendor/fonts/flag-icons.css' %}" />
 
-  <!-- Core CSS -->
-  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/rtl/core.css' %}"
-    class="template-customizer-core-css" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/css/rtl/theme-default.css' %}"
-    class="template-customizer-theme-css" />
-  <link rel="stylesheet" href="{% static 'sneat-template/assets/css/demo.css' %}" />
-
-  <!-- Vendors CSS -->
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/apex-charts/apex-charts.css' %}" />
-
-    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/animate-css/animate.css' %}" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-
+  <!-- Select2 CSS -->
   {% if form %}
     {{ form.media.css }}
     <style>
@@ -76,6 +58,23 @@
     </style>
   {% endif %}
 
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/rtl/core.css' %}" class="template-customizer-core-css" />
+  <link rel="stylesheet"
+    href="{% static 'sneat-template/assets/vendor/css/rtl/theme-default.css' %}"
+    class="template-customizer-theme-css" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/css/demo.css' %}" />
+
+  <!-- Vendors CSS -->
+  <link rel="stylesheet"
+    href="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+  <link rel="stylesheet"
+    href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
+  <link rel="stylesheet"
+    href="{% static 'sneat-template/assets/vendor/libs/apex-charts/apex-charts.css' %}" />
+
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/animate-css/animate.css' %}" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
   {% block extra_styles %}{% endblock extra_styles %}
 
