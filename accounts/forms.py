@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group
-from django.forms import ModelForm, DateInput, TextInput
+from django.forms import ModelForm, DateInput
 from .models import Branch, User
-from django_select2.forms import Select2MultipleWidget, Select2Widget
+from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2Widget
 
 
 class UserForm(ModelForm):
@@ -17,7 +17,16 @@ class UserForm(ModelForm):
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
             'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
-            'address': Select2Widget(attrs={'data-placeholder': 'Selecionar endereço'})
+            'address': ModelSelect2Widget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
+                'zip_code__icontains',
+                'country__icontains',
+                'state__icontains',
+                'city__icontains',
+                'neighborhood__icontains',
+                'street__icontains',
+                'number__icontains',
+                'complement__icontains',
+            ])
         }
 
 
@@ -34,14 +43,22 @@ class UserUpdateForm(ModelForm):
             "hire_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "birth_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "resignation_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
-            "address": TextInput(attrs={'type': 'hidden'}),
             'branch': Select2Widget(attrs={'data-placeholder': 'Selecionar unidade'}),
             'department': Select2Widget(attrs={'data-placeholder': 'Selecionar departamento'}),
             'role': Select2Widget(attrs={'data-placeholder': 'Selecionar cargo'}),
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
             'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
-            'address': Select2Widget(attrs={'data-placeholder': 'Selecionar endereço'})
+            'address': ModelSelect2Widget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
+                'zip_code__icontains',
+                'country__icontains',
+                'state__icontains',
+                'city__icontains',
+                'neighborhood__icontains',
+                'street__icontains',
+                'number__icontains',
+                'complement__icontains',
+            ])
         }
 
 
