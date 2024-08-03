@@ -16,5 +16,4 @@ services:
     # security_opt:
     #   - seccomp:unconfined
 
-    command: /bin/zsh -c "while sleep 1000; do :; done"
- 
+    command: /bin/zsh -c "redis-server && while sleep 1000; do :; done"
