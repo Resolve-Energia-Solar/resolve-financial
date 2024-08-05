@@ -1,15 +1,6 @@
 from django.contrib import admin
-from .models import Board, Column, Lead, Task, Attachment
+from .models import Lead, Task, Attachment
 
-
-@admin.register(Board)
-class BoardAdmin(admin.ModelAdmin):
-    list_display = ("name", "description")
-
-
-@admin.register(Column)
-class ColumnAdmin(admin.ModelAdmin):
-    list_display = ("board", "name", "order")
 
 
 """

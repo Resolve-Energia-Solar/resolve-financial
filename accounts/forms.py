@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from django.forms import ModelForm, DateInput
-from .models import Branch, User
+from .models import Branch, User, Squad
 from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2Widget
 
 
@@ -77,4 +77,16 @@ class BranchForm(ModelForm):
         fields = '__all__'
         widgets = {
             'owners': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar proprietários'})
+        }
+
+
+class SquadForm(ModelForm):
+    class Meta:
+        model = Squad
+        fields = "__all__"
+        widgets = {
+            'branch': Select2Widget,
+            'manager': Select2Widget,
+            'members': Select2MultipleWidget,
+            'boards': Select2MultipleWidget
         }

@@ -4,22 +4,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F
 from django.http import JsonResponse
 from django.views import View
-from .forms import LeadForm, SquadForm, TaskForm
+from .forms import LeadForm, TaskForm
 from django.shortcuts import get_object_or_404, redirect
 from .models import *
-
-
-class KanbanView(LoginRequiredMixin, DetailView):
-    model = Board
-    template_name = "resolve_crm/leads/leads_kanban.html"
-    
-    def post(self, request, *args, **kwargs):
-        name = request.POST.get('name')
-        board = self.get_object()
-        column = Column(name=name, board=board)
-        column.order = self.get_object().column_set.count()
-        column.save()
-        return redirect('resolve_crm:board-detail', pk=board.pk)
 
 
 class TasksView(LoginRequiredMixin, ListView):
@@ -49,67 +36,6 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return self.object.get_absolute_url()
     
-
-class BoardsView(LoginRequiredMixin, ListView):
-    model = Board
-    template_name = "resolve_crm/boards/board_list.html"
-    context_object_name = "boards"
-    paginate_by = 10
-
-
-class BoardDetailView(LoginRequiredMixin, DetailView):
-    model = Board
-    template_name = "resolve_crm/boards/board_detail.html"
-    
-
-class BoardCreateView(LoginRequiredMixin, CreateView):
-    model = Board
-    fields = "__all__"
-    template_name = "resolve_crm/boards/board_create.html"
-    success_url = reverse_lazy("resolve_crm:boards")
-
-
-class BoardUpdateView(LoginRequiredMixin, UpdateView):
-    model = Board
-    fields = "__all__"
-    template_name = "resolve_crm/boards/board_update.html"
-
-    def get_success_url(self):
-        return self.object.get_absolute_url()
-
-
-class MoveCardView(LoginRequiredMixin, View):
-    def post(self, request, table_id, column_id, card_id, *args, **kwargs):
-        card = get_object_or_404(Card, id=card_id)
-        column = get_object_or_404(Column, id=column_id)
-        card.column = column
-        card.save()
-        return JsonResponse({'status': 'success'})
-
-
-class CreateCardView(LoginRequiredMixin, View):
-    def post(self, request, pk, column_id, *args, **kwargs):
-        title = request.POST.get('title')
-        column = get_object_or_404(Column, id=column_id)
-        order = column.card_set.count() + 1
-        card = Card(column=column, title=title, order=order)
-        card.save()
-        return JsonResponse({'status': 'success', 'card_id': card.id})
-
-
-class DeleteCardView(LoginRequiredMixin, View):
-    def post(self, request, pk, column_id, card_id, *args, **kwargs):
-        card = get_object_or_404(Card, id=card_id)
-        card.delete()
-        return JsonResponse({'status': 'success'})
-
-
-class DeleteColumnView(LoginRequiredMixin, View):
-    def post(self, request, column_id, *args, **kwargs):
-        column = get_object_or_404(Column, id=column_id)
-        column.delete()
-        return JsonResponse({'status': 'success'})
-
 
 class LeadCreateView(LoginRequiredMixin, CreateView):
     model = Lead
@@ -141,31 +67,3 @@ class LeadUpdateView(LoginRequiredMixin, UpdateView):
         return self.object.get_absolute_url()
 
 
-class SquadCreateView(LoginRequiredMixin, CreateView):
-    model = Squad
-    form_class = SquadForm
-    template_name = "resolve_crm/squads/squad_form.html"
-
-    def get_success_url(self):
-        return reverse("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
-
-    
-class SquadListView(LoginRequiredMixin, ListView):
-    model = Squad
-    template_name = "resolve_crm/squads/squad_list.html"
-
-    
-class SquadDetailView(LoginRequiredMixin, DetailView):
-    model = Squad
-    template_name = "resolve_crm/squads/squad_detail.html"
-
-    
-class SquadUpdateView(LoginRequiredMixin, UpdateView):
-    model = Squad
-    form_class = SquadForm
-    template_name = "resolve_crm/squads/squad_form.html"
-
-    def get_success_url(self):
-        return self.object.get_absolute_url()
-
-    

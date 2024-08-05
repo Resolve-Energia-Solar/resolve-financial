@@ -10,8 +10,8 @@ from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Address, Branch
-from .forms import BranchForm, UserForm, UserUpdateForm, GroupForm
+from .models import Address, Branch, Squad
+from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm
 
 
 class UsersListView(LoginRequiredMixin, ListView):
@@ -280,3 +280,33 @@ def delete_user(request, username):
         messages.success(request, f"Usuário {user.username} excluído com sucesso.")
         user.delete()
     return redirect('accounts:users_list')
+
+
+class SquadCreateView(LoginRequiredMixin, CreateView):
+    model = Squad
+    form_class = SquadForm
+    template_name = "resolve_crm/squads/squad_form.html"
+
+    def get_success_url(self):
+        return reverse("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
+
+    
+class SquadListView(LoginRequiredMixin, ListView):
+    model = Squad
+    template_name = "resolve_crm/squads/squad_list.html"
+
+    
+class SquadDetailView(LoginRequiredMixin, DetailView):
+    model = Squad
+    template_name = "resolve_crm/squads/squad_detail.html"
+
+    
+class SquadUpdateView(LoginRequiredMixin, UpdateView):
+    model = Squad
+    form_class = SquadForm
+    template_name = "resolve_crm/squads/squad_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+    

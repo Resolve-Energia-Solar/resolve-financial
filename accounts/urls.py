@@ -27,6 +27,11 @@ urlpatterns = [
     path("enderecos/criar/", AddressCreateView.as_view(), name="address_create"),
     path("enderecos/", AddressListView.as_view(), name="address_list"),
     path("enderecos/<int:pk>/atualizar/", AddressUpdateView.as_view(), name="address_update"),
+    # Squads
+    path('squads/criar/', SquadCreateView.as_view(), name='squad_create'),
+    path('squads/', SquadListView.as_view(), name='squad_list'),
+    path('squads/<int:pk>/', SquadDetailView.as_view(), name='squad_detail'),
+    path('squads/<int:pk>/editar', SquadUpdateView.as_view(), name='squad_update'),
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),
 ]

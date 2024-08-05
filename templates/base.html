@@ -116,7 +116,7 @@
         <ul class="menu-inner py-1">
           {% url 'core:index' as index_url %}
           {% url 'resolve_crm:tasks' as tasks_url %}
-          {% url 'resolve_crm:board-detail' object.pk as board_detail_url %}
+          {% url 'core:board-detail' object.pk as board_detail_url %}
           {% url 'accounts:users_list' as users_list_url %}
           {% url 'accounts:user_create' as user_create_url %}
           {% url 'accounts:branch_list' as branch_list_url %}
@@ -128,8 +128,8 @@
           {% url 'accounts:permission_list' as permission_list_url %}
           {% url 'accounts:group_list' as group_list_url %}
           {% url 'accounts:group_create' as group_create_url %}
-          {% url 'resolve_crm:boards' as boards_list_url %}
-          {% url 'resolve_crm:board-create' as boards_create_url %}
+          {% url 'core:boards' as boards_list_url %}
+          {% url 'core:board-create' as boards_create_url %}
           {% url 'resolve_crm:lead_create' as lead_create_url %}
           {% url 'resolve_crm:lead_list' as lead_list_url %}
           {% url 'resolve_crm:lead_detail' lead.pk as lead_detail_url %}
@@ -287,12 +287,12 @@
             </a>
             <ul class="menu-sub">
               <li class="menu-item {% is_active boards_list_url %}">
-                <a href="{% url 'resolve_crm:boards' %}" class="menu-link">
+                <a href="{% url 'core:boards' %}" class="menu-link">
                   <div class="text-truncate">Lista</div>
                 </a>
               </li>
               <li class="menu-item {% is_active boards_create_url %}">
-                <a href="{% url 'resolve_crm:board-create' %}" class="menu-link">
+                <a href="{% url 'core:board-create' %}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>
@@ -310,7 +310,7 @@
                 </a>
               </li>
               <li class="menu-item {% is_active boards_create_url %}">
-                <a href="{% url 'resolve_crm:board-create' %}" class="menu-link">
+                <a href="{% url 'core:board-create' %}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>

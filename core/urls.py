@@ -10,4 +10,13 @@ urlpatterns = [
     path('quadros/<int:pk>/', KanbanView.as_view(), name='board-detail'),
     path('quadros/<int:pk>/editar/', BoardUpdateView.as_view(), name='board-update'),
     path('quadros/api/<int:pk>/', board_api, name='board-api'),
+    # Boards
+    path('quadro/crm/<int:pk>', KanbanView.as_view(), name='board-detail'),
+    path('quadros/crm/', BoardsView.as_view(), name='boards'),
+    path('quadros/crm/criar', BoardCreateView.as_view(), name='board-create'),
+    path('quadros/crm/<int:pk>/editar/', BoardUpdateView.as_view(), name='board-update'),
+    # Columns
+    # path('quadros/crm/<int:pk>/<int:column_id>/criar', CreateCardView.as_view(), name='card-create'),
+    # path('move_card/<int:table_id>/<int:column_id>/<int:card_id>', MoveCardView.as_view(), name='move_card'),
+    path('coluna/<int:column_id>/deletar', DeleteColumnView.as_view(), name='column-delete'),
 ]

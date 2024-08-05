@@ -71,6 +71,10 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
     
+    def get_absolute_url(self):
+        url = f'{self.content_type.app_label}:{self.content_type.model}_detail'
+        return reverse_lazy(url, kwargs={'pk': self.object_id})
+    
     def get_object(self):
         return self.content_type.get_object_for_this_type(pk=self.object_id)
 

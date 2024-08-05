@@ -18,8 +18,10 @@
         badge: task.badge || "default",
         'due-date': task.dueDate || "",
         attachments: task.attachments || "0",
-        assigned: task.assigned || [],
-        members: task.members || []
+        assigned: task.owner,
+        members: task.members || [],
+        url: task.url || "",
+        created_at: task.created_at || "",
       }))
     }));
   }
@@ -101,8 +103,14 @@
       dragItems: false, // Disable dragging of items
       addItemButton: false, // Disable adding new items
       click: function (el) {
-        // Prevent any actions on click
-        return;
+        const itemId = el.dataset.eid;
+        const board = boards.find(board => board.item.some(item => item.id === itemId));
+        const item = board ? board.item.find(item => item.id === itemId) : null;
+        if (item) {
+          showModal(item);
+        } else {
+          console.error('Item não encontrado:', itemId);
+        }
       }
     });
 
@@ -141,6 +149,18 @@
     tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+  }
+
+  function showModal(item) {
+    const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+    document.getElementById('task-title').innerText = item.title;
+    document.getElementById('task-comments').innerText = item.description;
+    document.getElementById('task-badge').innerText = item.status;
+    document.getElementById('task-due-date').innerText = item['due-date'];
+    document.getElementById('task-attachments').innerText = item.attachments;
+    document.getElementById('task-assigned').innerText = item.assigned;
+    document.getElementById('task-created-at').innerText = item.created_at;
+    modal.show();
   }
 
   // Kanban Wrapper scrollbar
