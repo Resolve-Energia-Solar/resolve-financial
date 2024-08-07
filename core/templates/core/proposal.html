@@ -1,0 +1,3493 @@
+<!doctype html>
+<html lang="pt-br" dir="ltr">
+{% load static %}
+<head>
+    <meta charset="utf-8">
+    <style>
+        body,
+        html {
+            margin: 0 auto !important;
+            overflow-x: auto !important;
+            width: 100% !important
+        }
+
+        html {
+            background-color: #eeeeee !important
+        }
+
+        body {
+            background-color: #fff !important
+        }
+
+        .sp-container {
+            left: auto !important;
+            right: 0 !important
+        }
+
+        .gjs-cv-canvas {
+            width: 85% !important;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        body,
+        html {
+            font-size: 16px;
+            background-color: rgb(238, 238, 238);
+            margin-top: 0px !important;
+            margin-right: auto !important;
+            margin-bottom: 0px !important;
+            margin-left: auto !important;
+            overflow-x: auto !important;
+            width: 21cm !important;
+            max-width: 100% !important;
+        }
+
+        html {
+            background-color: rgb(238, 238, 238) !important;
+        }
+
+        body {
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            background-color: rgb(255, 255, 255) !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            list-style-position: initial;
+            list-style-image: initial;
+            list-style-type: none;
+            text-decoration-line: none;
+            text-decoration-style: initial;
+            text-decoration-color: initial;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            font-family: Montserrat, sans-serif;
+        }
+
+        section {
+            display: flex;
+            justify-content: flex-start;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            padding-top: 10px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            min-height: 75px;
+        }
+
+        section>div {
+            flex-grow: 1;
+            flex-basis: 100%;
+            padding-top: 5px;
+            padding-right: 5px;
+            padding-bottom: 5px;
+            padding-left: 5px;
+        }
+
+        .coluna.\\37 0 {
+            max-width: 70%;
+        }
+
+        .pag1 {
+            height: 1122px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #iynoy {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        .banner {
+            max-width: 100%;
+        }
+
+        #ie76r {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #i5ly3 {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #i64hp {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #isget {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        .logo {
+            max-width: 200px;
+            width: auto;
+        }
+
+        #iiffi {
+            max-width: 3.4%;
+        }
+
+        #ifkdu {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+        }
+
+        #ig6rp {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: right;
+        }
+
+        #ifoek {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #idpx9 {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        .h1 {
+            font-size: 80px;
+            font-weight: 800;
+            color: var(--corpersonalizada1);
+        }
+
+        .back2 {
+            background-color: var(--corpersonalizada2);
+        }
+
+        #idn79 {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: right;
+        }
+
+        .h1.secundario {
+            color: var(--corpersonalizada2);
+            font-weight: 500;
+            font-size: 77px;
+            line-height: 60px;
+        }
+
+        #iqc8l {
+            text-align: right;
+            font-size: 32px;
+            color: rgb(20, 24, 67);
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #ienzy {
+            font-size: 36.8px;
+            color: var(--corpersonalizada3);
+        }
+
+        #izpn2 {
+            text-align: right;
+            font-size: 16px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            color: rgb(12, 12, 12);
+        }
+
+        #ir5am {
+            text-align: right;
+            font-size: 26px;
+            color: rgb(12, 12, 12);
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            font-weight: 700;
+        }
+
+        #ilngw {
+            text-align: right;
+            font-size: 20px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            color: rgb(12, 12, 12);
+        }
+
+        #iveil {
+            text-align: right;
+            font-size: 16px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            color: rgb(12, 12, 12);
+        }
+
+        #iiyu7 {
+            text-align: right;
+            font-size: 16px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            color: rgb(12, 12, 12);
+        }
+
+        #inm0z {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        #ifol7 {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #i54tk {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #iwypt {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #isucf {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iefdt {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #indjn {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        .titulo {
+            color: var(--corpersonalizada1);
+            font-size: 40px;
+            text-align: center;
+        }
+
+        #ip65b {
+            text-align: center;
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        .comofunciona {
+            max-width: 93%;
+        }
+
+        #iefi8 {
+            text-align: center;
+        }
+
+        #icddm {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        #icijv {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #iptxz {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #ii09b {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #iybbj {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #i2anx {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #iqqwy {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10%;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #ib6uh {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .svgcolor1 {
+            fill: var(--corpersonalizada1);
+        }
+
+        #ihd2s {
+            min-height: auto;
+            padding-top: 10px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            flex-direction: column;
+        }
+
+        #izpgvj {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #i0vn7w {
+            font-weight: 400;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            text-align: justify;
+            font-size: 11px;
+        }
+
+        #ik49b1 {
+            min-height: auto;
+            width: auto;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #i7kj0i {
+            font-weight: 400;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        #i0w19j {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10%;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #icd9rk {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        .svgbranco {
+            fill: rgb(255, 255, 255) !important;
+        }
+
+        .back1 {
+            background-color: var(--corpersonalizada1);
+        }
+
+        .boxprojeto {
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 8px;
+            margin-left: 0px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            margin: 0 0 0 0;
+        }
+
+        #indsi5 {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: auto;
+            max-width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .textover {
+            font-weight: 400;
+            font-size: 14px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 4px;
+            margin-right: 0px;
+            margin-bottom: 4px;
+            margin-left: 0px;
+            color: rgb(255, 255, 255);
+        }
+
+        .textover.texto {
+            font-size: 16px;
+        }
+
+        .tituloover {
+            color: rgb(255, 255, 255);
+            font-size: 40px;
+        }
+
+        #ium77s {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        #ihi7ie {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #iar0ax {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #ig4gii {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #i61t1o {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iu20qe {
+            text-align: center;
+            margin-top: 32px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #iyjjro {
+            max-width: 400px;
+        }
+
+        #i1wzic {
+            min-height: auto;
+            padding-top: 10px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            flex-direction: column;
+        }
+
+        #iw89hm {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            width: 100%;
+        }
+
+        #i0pqf6 {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #id0y2x {
+            max-width: 7%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #ihvcns {
+            max-width: 33px;
+        }
+
+        #ix9j1r {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #ir9tje {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #ia3ibm {
+            max-width: 7%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #ist1yz {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #ifxw5i {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #ifnnyy {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #i6szsi {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #i7nlu5 {
+            max-width: 7%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #ipeqmg {
+            max-width: 31px;
+        }
+
+        #ii4xnv {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #i395xk {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #iho2mw {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #iv82mi {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #ikrl93 {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: auto;
+            padding-top: 32px;
+            padding-right: 10px;
+            padding-bottom: 32px;
+            padding-left: 10px;
+        }
+
+        #injax2 {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iwqgx9 {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        #i70r55 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #it1pki {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #ij3ogh {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        #igtco4 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #idd9so {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #ioowwi {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        #i1ndk6 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #isbi6z {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #i5yw0q {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        #is1sdd {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #i82hse {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #iwleup {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        #ilhvxi {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #i2o719 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        #irp78x {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            background-color: rgb(255, 255, 255);
+            height: 1px;
+            font-size: 1px;
+            margin-top: 0px;
+            margin-right: 10%;
+            margin-bottom: 0px;
+            margin-left: 10%;
+        }
+
+        #ilcw6y {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            background-color: rgb(255, 255, 255);
+            height: 1px;
+            font-size: 1px;
+            margin-top: 0px;
+            margin-right: 10%;
+            margin-bottom: 0px;
+            margin-left: 10%;
+        }
+
+        #ixlmxg {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            background-color: rgb(255, 255, 255);
+            height: 1px;
+            font-size: 1px;
+            margin-top: 0px;
+            margin-right: 10%;
+            margin-bottom: 0px;
+            margin-left: 10%;
+        }
+
+        #i1m1ql {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            background-color: rgb(255, 255, 255);
+            height: 1px;
+            font-size: 1px;
+            margin-top: 0px;
+            margin-right: 10%;
+            margin-bottom: 0px;
+            margin-left: 10%;
+        }
+
+        #ij07my {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            background-color: rgb(255, 255, 255);
+            height: 1px;
+            font-size: 1px;
+            margin-top: 0px;
+            margin-right: 10%;
+            margin-bottom: 0px;
+            margin-left: 10%;
+        }
+
+        #idgwa {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #valores {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 2rem;
+        }
+
+        #is1wix {
+            font-weight: 400;
+            text-align: center;
+        }
+
+        #i61zvo {
+            text-align: center;
+            margin-top: 32px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        .bancos {
+            max-width: 70%;
+        }
+
+        .textover.economia {
+            flex-direction: column;
+        }
+
+        #i3qrbc {
+            max-width: 100%;
+            padding-top: 0px;
+            padding-right: 24px;
+            padding-bottom: 0px;
+            padding-left: 21px;
+        }
+
+        #iamlum {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        #icykil {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #i6owpp {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #ijerjg {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #itf423 {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ixir3b {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #i5xwvd {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #ijerh6 {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #i9ac4c {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ih7p58 {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            background-color: var(--corpersonalizada2);
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #irnenv {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        #i0e0m4 {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #irmwjl {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #i7epv8 {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #in8kye {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: auto;
+            max-width: 100%;
+        }
+
+        #i3kzru {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iwibey {
+            font-weight: 400;
+        }
+
+        #iqcoqf {
+            max-width: 100%;
+        }
+
+        #iap0h5 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #i6ijq3 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #i3d2do {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ikxftk {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        #ii8zut {
+            background-color: var(--corpersonalizada1);
+        }
+
+        #i3orpm {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iqsk54 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ifs0m3 {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #i1j6ht {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #inxspi {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iizv41 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        .textinterpola {
+            font-size: 16px;
+            color: var(--corpersonalizada3);
+            text-align: center;
+        }
+
+        #ieqjcz {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #izzdj3 {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .textinterpola.over {
+            color: rgb(255, 255, 255);
+        }
+
+        .titulo.over {
+            color: rgb(255, 255, 255);
+        }
+
+        #iir67k {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        #i7kczz {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 15%;
+            padding-bottom: 0px;
+            padding-left: 15%;
+        }
+
+        #i9rx9k {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #iizpph {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #ipphax {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        #igww9j {
+            max-width: 450px;
+        }
+
+        .boxgrafico {
+            justify-content: center;
+        }
+
+        #iqb65x {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 15%;
+            padding-bottom: 0px;
+            padding-left: 15%;
+        }
+
+        #ijirpr {
+            max-width: 450px;
+        }
+
+        #it6t51 {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #i1lhu8 {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #i8okeb {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        #i1c3s6 {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 15%;
+            padding-bottom: 0px;
+            padding-left: 15%;
+        }
+
+        #iw9bbi {
+            max-width: 450px;
+        }
+
+        #ivpvn3 {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #iwkekm {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #ifvv4l {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        #ikwmws {
+            color: rgb(0, 0, 0);
+        }
+
+        #ixka0q {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #i7an2k {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+        }
+
+        #i1eclp {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #ihj7iy {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+        }
+
+        #i41ym5 {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        #it9pg3 {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #iwq5ir {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #icwh9g {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #i3nssb {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ior0k5 {
+            font-weight: 600;
+            text-align: center;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #i3vjjs {
+            font-size: 32px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        #iay49f {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            padding: 0 32px 0 32px;
+        }
+
+        #i36wbu {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            background-color: var(--corpersonalizada1);
+        }
+
+        #iek533 {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            flex-direction: column;
+        }
+
+        #iz5fq4 {
+            max-width: 100%;
+            font-size: 22px;
+        }
+
+        #irildx {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #ixszmb {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: rgb(102, 102, 102);
+        }
+
+        #i3cbdz {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #i1cpah {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: rgb(104, 104, 104);
+        }
+
+        #ic3c0e {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #ii5nyu {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: rgb(111, 111, 111);
+        }
+
+        #i0ewma {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        #iz5s1g {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #ibkzsf {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #ihiczm {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #i1vlho {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #i1yoxf {
+            text-align: center;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #iuws4k {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+        }
+
+        #ilyjp6 {
+            padding-top: 10px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+            margin-top: 16px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #irdogi {
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10px;
+        }
+
+        #i2nvwp {
+            width: auto;
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+        }
+
+        #ikxk42 {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ie2jtl {
+            text-align: center;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #i4ga1g {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+            color: var(--corpersonalizada2);
+        }
+
+        #i8stti {
+            max-width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        #ie9bjs {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #irk01h {
+            max-width: 73px;
+            height: auto;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+        }
+
+        #igxxto {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--corpersonalizada1);
+        }
+
+        #io3xk3 {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        #i9xo44 {
+            max-width: 83px;
+        }
+
+        #i80axi {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--corpersonalizada1);
+        }
+
+        #i23du7 {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #iykqvv {
+            max-width: 90px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+        }
+
+        #ig0k0m {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--corpersonalizada1);
+        }
+
+        #img6r5 {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #irpzdj {
+            max-width: 100%;
+            padding-top: 0px;
+            padding-right: 24px;
+            padding-bottom: 0px;
+            padding-left: 24px;
+        }
+
+        #irdk67 {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #iut4gf {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #i87el3 {
+            max-width: 100%;
+            padding-top: 0px;
+            padding-right: 24px;
+            padding-bottom: 0px;
+            padding-left: 24px;
+        }
+
+        #ierr4l {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #ihpzhm {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-top: 16px;
+            padding-right: 16px;
+            padding-bottom: 16px;
+            padding-left: 16px;
+        }
+
+        #i7ph5h {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        .titulo.titulo2 {
+            color: var(--corpersonalizada2);
+        }
+
+        #ig97mx {
+            justify-content: center;
+            flex-direction: row;
+            flex-wrap: wrap;
+            font-size: 1rem;
+            padding: 0 32px 0 32px;
+        }
+
+        #iekheg {
+            font-size: 22px;
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+
+        #ic5zul {
+            font-size: 22px;
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+
+        #i3cx5k {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #ieiixq {
+            font-weight: 400;
+        }
+
+        #ic75i5 {
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+
+        #ivhzqj {
+            font-weight: 400;
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            font-size: 14px;
+            color: rgb(255, 255, 255);
+        }
+
+        #iq1m3i {
+            font-size: 16px;
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+
+        #iyzwkc {
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+
+        #iy6wqj {
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        #igoij2 {
+            background-color: var(--corpersonalizada1);
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 32px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #idg3ha {
+            width: 100%;
+            flex-direction: column;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #i04a4f {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iew4vj {
+            font-weight: 400;
+        }
+
+        #i1z65c {
+            max-width: 100%;
+            font-size: 22px;
+        }
+
+        #i9umly {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #iwgav3 {
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            text-align: center;
+            font-weight: 600;
+            max-width: 315px;
+        }
+
+        #i4qvk1 {
+            background-color: var(--corpersonalizada1);
+            flex-direction: column;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 10px;
+            padding-left: 0px;
+        }
+
+        #idmuuu {
+            width: 100%;
+            flex-direction: column;
+            padding-top: 32px;
+            padding-right: 32px;
+            padding-bottom: 32px;
+            padding-left: 32px;
+        }
+
+        #iz6kj9 {
+            padding-top: 0px;
+            padding-right: 8px;
+            padding-bottom: 0px;
+            padding-left: 8px;
+            text-align: center;
+        }
+
+        #iu23h9 {
+            font-weight: 400;
+        }
+
+        #ie8tvi {
+            min-height: 12px;
+            margin-top: 32px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 6px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            background-color: var(--corpersonalizada2);
+        }
+
+        #igmcsx {
+            min-height: 12px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+            padding-top: 6px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+            padding-left: 10px;
+            background-color: var(--corpersonalizada2);
+        }
+
+        #iei37p {
+            max-width: 100%;
+            font-size: 22px;
+            min-height: 40px;
+        }
+
+        #i2hf8h {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            max-width: 60%;
+        }
+
+        #igci7f {
+            max-width: 7%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #il9jjb {
+            max-width: 28px;
+        }
+
+        #i5pgx9 {
+            max-width: 7%;
+        }
+
+        #in9fh7 {
+            max-width: 34px;
+        }
+
+        #iywa7m {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+        }
+
+        #ilutvo {
+            max-width: 7%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #i758fl {
+            max-width: 13px;
+        }
+
+        #iziwui {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+        }
+
+        #ivsrfb {
+            width: 100%;
+        }
+
+        #iyzp7i {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #iyls7k {
+            max-width: 8%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 190px;
+        }
+
+        #izlznd {
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #i8yeat {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 0px;
+        }
+
+        #irqg6w {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #iyylak {
+            max-width: 8%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 190px;
+        }
+
+        #iq9c2w {
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #ix7djl {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 0px;
+        }
+
+        #iwhqun {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #icigk4 {
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #iio2sj {
+            font-weight: 800;
+            font-size: 20px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 0px;
+        }
+
+        #il472g {
+            font-size: 14px;
+            padding-top: 4px;
+            padding-right: 0px;
+            padding-bottom: 4px;
+            padding-left: 0px;
+            color: var(--corpersonalizada1);
+        }
+
+        #i79ks7 {
+            font-size: 14px;
+            padding-top: 4px;
+            padding-right: 0px;
+            padding-bottom: 4px;
+            padding-left: 0px;
+            color: var(--corpersonalizada1);
+        }
+
+        #i4qyeo {
+            width: 100%;
+        }
+
+        #i5xkpk {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #iy5zi5 {
+            max-width: 8%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 190px;
+        }
+
+        #iukmyk {
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #ikkx1s {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 0px;
+        }
+
+        #iucq2b {
+            width: 100%;
+        }
+
+        #i3664q {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #i0y5b6 {
+            width: 100%;
+        }
+
+        #i6a4mm {
+            min-height: auto;
+            width: 100%;
+            max-width: 514px;
+            justify-content: center;
+            align-items: center;
+            padding-top: 0px;
+            padding-right: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+        }
+
+        #ip051d {
+            width: 100%;
+        }
+
+        #i37s71 {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #i5e4wg {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #izzih5 {
+            width: 100%;
+        }
+
+        #ievtih {
+            width: 40%;
+        }
+
+        #i8hpu2 {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        #i2mznh {
+            font-size: 30px;
+            color: rgb(255, 255, 255);
+        }
+
+        #i8bumg {
+            font-size: 30px;
+            color: rgb(255, 255, 255);
+        }
+
+        #i8dfsj {
+            text-align: left;
+            font-size: 32px;
+        }
+
+        #iyl6b8 {
+            font-size: 18px;
+            color: rgb(255, 255, 255);
+        }
+
+        #ifyf97 {
+            text-align: left;
+            margin-top: 8px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+        }
+
+        #iuev3o {
+            font-size: 18px;
+            color: rgb(255, 255, 255);
+        }
+
+        #irp8xs {
+            text-align: left;
+            font-size: 22px;
+        }
+
+        #iyvbp6 {
+            font-size: 40px;
+        }
+
+        #iwumii {
+            font-size: 40px;
+        }
+
+        .textoinstitu {
+            text-align: justify;
+            padding-top: 0px;
+            padding-right: 16px;
+            padding-bottom: 0px;
+            padding-left: 16px;
+            font-size: 20px;
+        }
+
+        #ip2tur {
+            max-width: 150px;
+        }
+
+        #isbk2j {
+            max-width: 150px;
+        }
+
+        #inaqv {
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 10px;
+            margin-left: 10px;
+        }
+
+        #iua5t9 {
+            width: 64px;
+        }
+
+        #ig1mtz {
+            width: 84px;
+        }
+
+        #ij4ugp {
+            width: 106px;
+        }
+
+        .CUIDAMOS {
+            max-width: 100%;
+        }
+
+        #ifa2lj {
+            width: 100%;
+        }
+
+        #icmjwv {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #ifw3sa {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #iavtpa {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            max-width: 514px;
+        }
+
+        #i1svvk {
+            padding-top: 0px;
+            padding-right: 5px;
+            padding-bottom: 0px;
+            padding-left: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #ie2v8t {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--corpersonalizada1);
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 0px;
+        }
+
+        #iny8lk {
+            max-width: 34px;
+        }
+
+        #iya27k {
+            width: 24px;
+        }
+
+        #if1dav {
+            min-height: auto;
+            width: 100%;
+            padding-top: 0px;
+            padding-right: 10px;
+            padding-bottom: 0px;
+            padding-left: 10%;
+            padding: 0 2% 0 2%;
+        }
+
+        #i7vs3m {
+            font-weight: 600;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            padding: 8px 8px 0 8px;
+        }
+
+        #iy0gmi {
+            font-weight: 400;
+            padding-top: 8px;
+            padding-right: 8px;
+            padding-bottom: 8px;
+            padding-left: 8px;
+            font-size: 14px;
+            padding: 0 8px 8px 8px;
+        }
+
+        @media (max-width: 480px) {
+            .h1 {
+                font-size: 59px;
+            }
+
+            .h1.secundario {
+                font-size: 57px;
+            }
+
+            #ienzy {
+                font-size: 30.8px;
+            }
+
+            #inidw {
+                text-align: center;
+            }
+
+            .pag1 {
+                height: auto;
+            }
+
+            .boxprojeto {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #iywa7m {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #i0pqf6 {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #ir9tje {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #ifxw5i {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #i6szsi {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #i395xk {
+                padding-top: 0px;
+                padding-right: 10px;
+                padding-bottom: 0px;
+                padding-left: 10px;
+            }
+
+            #ikrl93 {
+                max-width: 100%;
+            }
+
+            .back1 {
+                max-width: 100%;
+            }
+
+            .tituloover {
+                font-size: 32px;
+            }
+
+            #ium77s {
+                max-width: 100%;
+            }
+
+            .titulo {
+                font-size: 32px;
+            }
+
+            #iyjjro {
+                max-width: 100%;
+            }
+
+            #iqcoqf {
+                flex-direction: column;
+            }
+
+            .textinterpola {
+                font-size: 15px;
+            }
+
+            #ieqjcz {
+                font-size: 20px;
+            }
+
+            #i0ewma {
+                justify-content: space-around;
+            }
+
+            #iuws4k {
+                justify-content: space-around;
+            }
+
+            #iz5fq4 {
+                flex-direction: column;
+            }
+
+            #iei37p {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            #i2hf8h {
+                justify-content: center;
+            }
+
+            #i3qrbc {
+                flex-direction: column;
+            }
+
+            #i87el3 {
+                flex-direction: column;
+            }
+
+            #irpzdj {
+                flex-direction: column;
+            }
+
+            #i8stti {
+                flex-direction: column;
+            }
+
+            #i99vv9 {
+                text-align: right;
+            }
+
+            .boxgrafico {
+                padding-top: 0px;
+                padding-right: 0px;
+                padding-bottom: 0px;
+                padding-left: 0px;
+            }
+
+            #i6owpp {
+                padding-top: 0px;
+                padding-right: 0px;
+                padding-bottom: 0px;
+                padding-left: 0px;
+                max-width: 100%;
+            }
+
+            #icykil {
+                max-width: 100%;
+            }
+
+            #i1c3s6 {
+                padding-top: 0px;
+                padding-right: 0px;
+                padding-bottom: 0px;
+                padding-left: 0px;
+            }
+
+            #ijirpr {
+                max-width: 100%;
+            }
+
+            #iqb65x {
+                padding-top: 0px;
+                padding-right: 0px;
+                padding-bottom: 0px;
+                padding-left: 0px;
+            }
+
+            #i7kczz {
+                padding-top: 0px;
+                padding-right: 0px;
+                padding-bottom: 0px;
+                padding-left: 0px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.css' type='text/css' />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <script src='https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js'></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+    <section id="ictz" class="pag1">
+        <div draggable="true" data-highlightable="1" id="iynoy">
+            <section id="i64hp">
+                <div draggable="true" data-highlightable="1" id="isget">
+                    <div id="iefi8"><img src="{% static 'resolve_crm/img/proposal/ativo300_4b98.png' %}" alt="" class="banner" /></div>
+                </div>
+            </section>
+            <section id="ifkdu">
+                <section id="idpx9">
+                    <div draggable="true" data-highlightable="1" id="ifoek">
+                        <div id="ig6rp" class="h1"> PROPOSTA </div>
+                        <div id="idn79" class="h1 secundario">COMERCIAL </div>
+                        <div id="iqc8l"><span id="ienzy">sistema fotovoltaico</span></div>
+                        <div id="ilngw"><span>[[kwPSimulacao]] kWp</span></div>
+                        <div id="ir5am"><span>[[NomeLead]]</span></div>
+                        <div id="izpn2"><span>[[EnderecoProjeto]]</span></div>
+                        <div id="iiyu7"><span>[[DataSimulacao]]</span></div>
+                        <div id="iveil"><span>Proposta validade até dia [[DataValidadePropostaSimulacao]]</span></div>
+                    </div>
+                </section>
+                <div draggable="true" data-highlightable="1" id="iiffi" class="back2"> </div>
+            </section>
+            <section id="ie76r">
+                <div draggable="true" data-highlightable="1" id="i5ly3">
+                    <div id="inidw"><img src="{% static 'resolve_crm/img/proposal/ativo500_5e29.png' %}" alt="" id="inaqv" class="logo" /></div>
+                </div>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="inm0z">
+            <section id="ifol7">
+                <section id="i54tk">
+                    <div draggable="true" data-highlightable="1" id="iwypt">
+                        <div id="isucf" class="titulo">COMO<b id="i9h7n"> FUNCIONA?</b></div>
+                        <div id="ip65b"><img src="{% static 'resolve_crm/img/proposal/i2_1eb9.png' %}" alt="" id="ilby8" class="comofunciona" /></div>
+                    </div>
+                </section>
+            </section>
+            <section id="iefdt">
+                <div draggable="true" data-highlightable="1" id="indjn"> </div>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="ium77s">
+            <section id="ihi7ie">
+                <section id="iar0ax">
+                    <div draggable="true" data-highlightable="1" id="ig4gii">
+                        <div id="i61t1o" class="titulo">SEU <b>PROJETO</b></div>
+                        <div id="iu20qe"><img src="https://maps.googleapis.com/maps/api/staticmap?center=[[LatitudePontoProjeto]],[[LongitudePontoProjeto]]&zoom=[[ZoomProjeto]]&size=600x300&maptype=satellite&key=AIzaSyD_6LMP4nt6u8q67erxxUQTpHnIcSs3fYA&markers=[[LatitudePontoProjeto]],[[LongitudePontoProjeto]]" id="iyjjro" /></div>
+                    </div>
+                </section>
+            </section>
+            <section id="i1wzic">
+                <section id="iywa7m" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="ilutvo"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 12.86 34.42" id="i758fl">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g data-name="Camada 2">
+                                <g data-name="Camada 1">
+                                    <path xmlns="http://www.w3.org/2000/svg"
+                                        d="M8.14 0L1.77 15.67 0 19.82l6.15.18-2.39 14.42 7.42-15.66 1.68-3.72-6.06-.61L8.14 0z"
+                                        class="svgcolor1"></path>
+                                </g>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="iziwui">Potência do sistema: [[kwPSimulacao]]kWp </div>
+                    </div>
+                </section>
+                <section id="i0pqf6" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="id0y2x"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 27 28.4" id="ihvcns">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g data-name="Camada 2">
+                                <g data-name="Camada 1">
+                                    <g xmlns="http://www.w3.org/2000/svg" data-name="Camada 1">
+                                        <path
+                                            d="M26.68,19H.31v-.33C.31,15.64.3,5,.31,2a1.89,1.89,0,0,1,2-2H24.69a1.88,1.88,0,0,1,2,2V18.67c0,.1,0,.19,0,.3"
+                                            class="svgcolor1"> </path>
+                                        <path
+                                            d="M.31,19.56H26.69v6.87a1.87,1.87,0,0,1-2,2H2.28a1.87,1.87,0,0,1-2-2c0-2.19,0-4.38,0-6.56Zm13.48,4.06c.14-.88.27-1.72.41-2.57h-.07l-2,3.27h1.1c-.14.89-.27,1.74-.41,2.58l.06,0,2-3.3Z"
+                                            class="svgcolor1"> </path>
+                                        <rect y="17.71" width="27" height="1.26" class="svgbranco"> </rect>
+                                        <rect x="3.79" y="4.84" width="4.53" height="4.64" class="svgbranco">
+                                        </rect>
+                                        <rect x="19.62" y="4.85" width="4.53" height="4.63" class="svgbranco">
+                                        </rect>
+                                        <rect x="11.7" y="4.84" width="4.53" height="4.64" class="svgbranco">
+                                        </rect>
+                                    </g>
+                                </g>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="ix9j1r">Inversor [[InversorSimulacao]] </div>
+                    </div>
+                </section>
+                <section id="ir9tje" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="ia3ibm"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 33.25 28.98">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g xmlns="http://www.w3.org/2000/svg" data-name="Camada 1">
+                                <path
+                                    d="M33.11,18c0-.06-.06-.1-.08-.15l-5.15-15A4.33,4.33,0,0,0,23.75,0H6.55a1.42,1.42,0,0,0-.2,0,1.29,1.29,0,0,0-.19,0A2.68,2.68,0,0,0,3.59,3.54a1,1,0,0,0,1,.71,1.87,1.87,0,0,0,.34-.07A1,1,0,0,0,5.52,2.9a.64.64,0,0,1,.1-.61A.65.65,0,0,1,6.16,2,1,1,0,0,0,6.56,2H23.79A2.33,2.33,0,0,1,26,3.5l5.16,15a.78.78,0,0,0,0,.14.69.69,0,0,1-.07.57.65.65,0,0,1-.48.3,1,1,0,0,0-.84,1.15,1,1,0,0,0,1,.84h.13A2.7,2.7,0,0,0,33.11,18Z"
+                                    class="svgcolor1"> </path>
+                                <path
+                                    d="M27.49,19a1.15,1.15,0,0,1-.46.11H8.38a1,1,0,0,1,0-2.07h1.87l-2-5.63a1,1,0,0,1,.64-1.22,1,1,0,0,1,1.28.61L12.38,17h5.17l-2-5.63a1,1,0,0,1,.64-1.22,1,1,0,0,1,1.27.61L19.67,17h7.16L24.24,9.23a3.71,3.71,0,0,0-3.5-2.51L1.82,6.78A1.84,1.84,0,0,0,.1,9.23L2.69,17,.07,26.37a.93.93,0,0,0,.71,1.18.59.59,0,0,0,.26,0,1,1,0,0,0,1-.71l1.81-6.49,2,6.08A3.72,3.72,0,0,0,9.36,29l12.82,0a1.13,1.13,0,0,1-.13-.27l-2.28-6.89a1,1,0,0,1,.65-1.31,1,1,0,0,1,1.29.65L24,28a1,1,0,0,1-.15.91h4.44A1.84,1.84,0,0,0,30,26.48ZM15.15,28a.67.67,0,0,1-.34.07,1,1,0,0,1-.93-.68L11.63,21a.94.94,0,0,1,.64-1.22,1,1,0,0,1,1.27.61l2.25,6.4A1,1,0,0,1,15.15,28Z"
+                                    class="svgcolor1"> </path>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="ist1yz">[[QuantidadePlacasSimulacao]] Módulos Solares [[PlacaNomeSimulacao]]
+                            de [[PlacaPotenciaSimulacao]]W </div>
+                    </div>
+                </section>
+                <section id="ifxw5i" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="igci7f"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 23.77 28.77" id="il9jjb">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g data-name="Camada 2">
+                                <g data-name="Camada 1">
+                                    <path xmlns="http://www.w3.org/2000/svg"
+                                        d="M15.52,26.8v2H8.25v-2Zm2.73-2.57H5.53v-2H18.25ZM11.89,0a12.08,12.08,0,0,1,9.33,19.5l-.23.28-1.51-1.25A10.12,10.12,0,0,0,21.8,12,10,10,0,0,0,11.89,2,10,10,0,0,0,2,12a10.14,10.14,0,0,0,2.1,6.21l.22.28L2.78,19.78A12.07,12.07,0,0,1,11.89,0"
+                                        class="svgcolor1"></path>
+                                </g>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="ifnnyy">Geração estimada mensal de [[GeracaoMensalSimulacao]]kWh/mês </div>
+                    </div>
+                </section>
+                <section id="i6szsi" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="i7nlu5"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 26.7 29.86" id="ipeqmg">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g data-name="Camada 2">
+                                <g data-name="Camada 1">
+                                    <path
+                                        d="M9.38,6.9a.82.82,0,0,0-.88.76.83.83,0,0,0,.88.77h7.9a.83.83,0,0,0,.88-.77.82.82,0,0,0-.88-.76Z"
+                                        class="svgcolor1"></path>
+                                    <path
+                                        d="M9,6h8.92C19.2,2.08,22.55,2.57,20,1.47,19.42,1.2,17.88.63,17.4,1s-1,2.61-2.38,2.69c.1-.67,1.52-2.57,1-3.26C15.7,0,13.89,0,13.41,0s-2.29,0-2.62.47c-.52.69.9,2.59,1,3.26C10.45,3.65,9.89,1.45,9.41,1S7.3,1,6.77,1.47C4.91,3.3,7.62,2.08,9,6Z"
+                                        class="svgcolor1"></path>
+                                    <path
+                                        d="M10.4,16.9a2.78,2.78,0,0,0,1.43.93l.37.14V14.38a3.16,3.16,0,0,0-1.56.57A1.46,1.46,0,0,0,10.4,16.9Z"
+                                        class="svgcolor1"></path>
+                                    <path
+                                        d="M15,20.9l-.88-.35V24.2a3.18,3.18,0,0,0,1.74-.43,1.45,1.45,0,0,0,.4-1.93A2.84,2.84,0,0,0,15,20.9Z"
+                                        class="svgcolor1"></path>
+                                    <path
+                                        d="M17.93,9.24H8.77C7.39,11.82-.07,15,0,22.56c.05,6.27,5.41,7.3,13.33,7.3h0c7.93,0,13.28-1,13.33-7.3C26.77,15,19.31,11.82,17.93,9.24Zm-.68,15.51a5.88,5.88,0,0,1-3.15.92v.84a.32.32,0,0,1-.32.33H12.53a.33.33,0,0,1-.33-.33v-.92c-1.68-.22-3.26-.82-3.95-1.79-.46-.64,1-1.74,1.53-1l.09.12.07.06.17.14a5,5,0,0,0,1.42.74c.2.06.43.11.67.16V19.77c-1-.39-1.91-.78-2.18-.9a3.07,3.07,0,0,1-1.38-1.28,2.79,2.79,0,0,1,.79-3.52A5.54,5.54,0,0,1,12.2,13V12a.33.33,0,0,1,.33-.33h1.25a.32.32,0,0,1,.32.33v.92a6.78,6.78,0,0,1,1,.16,5.32,5.32,0,0,1,2.78,1.64c.46.63-1,1.73-1.53,1l-.09-.11c-.05,0,.07.05-.07-.07L16,15.4a5.64,5.64,0,0,0-1.44-.81c-.16,0-.32-.09-.5-.12v4.24c1.56.56,3.76,1.32,4.26,2.61A3,3,0,0,1,17.25,24.75Z"
+                                        class="svgcolor1"></path>
+                                </g>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="ii4xnv">Economia de R$ [[ContaEconomiaMesSimulacao]] por mês  </div>
+                    </div>
+                </section>
+                <section id="i395xk" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="i5pgx9"><svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 26.5 26.5" id="in9fh7">
+                            <defs></defs>
+                            <title>Ativo 5icones</title>
+                            <g data-name="Camada 2">
+                                <g data-name="Camada 1">
+                                    <path xmlns="http://www.w3.org/2000/svg"
+                                        d="M11.27,22.71,22.71,11.27V6.81H21.29L6.81,21.29v1.42Zm3.21,0h5.21v-3h3V14.48Zm-9.27-3L19.69,5.21V3.79H15.23L3.79,15.23v4.46ZM3.79,12,12,3.79H6.81v3h-3Zm3-10.51H19.69V0H26.5V6.81H25V19.69H26.5V26.5H19.69V25H6.81V26.5H0V19.69H1.51V6.81H0V0H6.81Zm-4.54,3H4.54V2.27H2.27Zm0,19.69H4.54V22H2.27ZM22,4.54h2.27V2.27H22Zm0,19.69h2.27V22H22Z"
+                                        class="svgcolor1"></path>
+                                </g>
+                            </g>
+                        </svg></div>
+                    <div draggable="true" data-highlightable="1">
+                        <div id="iho2mw">Área minima: [[AreaMinimaSimulacao]] m² </div>
+                    </div>
+                </section>
+                <section class="boxprojeto" id="if1dav">
+                    <div draggable="true" data-highlightable="1">
+                        <div id="i7vs3m">Descrição detalhada do kit</div>
+                        <div id="iy0gmi"><span>[[ItensKitSimulacao]]</span></div>
+                    </div>
+                </section>
+            </section>
+            <section id="iv82mi" class="back1">
+                <section id="ikrl93">
+                    <div draggable="true" data-highlightable="1" id="i25rzk">
+                        <div id="injax2" class="tituloover"><b>GARANTIAS</b></div>
+                    </div>
+                    <div draggable="true" data-highlightable="1" id="iwqgx9" class="textover">
+                        <div id="i70r55"><b>Módulos solares</b></div>
+                        <div id="it1pki">[[GarantiaPlacaDadosPropostaLoja]] </div>
+                    </div>
+                    <div id="ilcw6y">
+                        <div><br /></div>
+                    </div>
+                    <div draggable="true" data-highlightable="1" id="ij3ogh" class="textover">
+                        <div id="igtco4"><b>Inversores</b></div>
+                        <div id="idd9so">[[GarantiaInversorDadosPropostaLoja]] </div>
+                    </div>
+                    <div id="ixlmxg">
+                        <div><br /></div>
+                    </div>
+                    <div draggable="true" data-highlightable="1" id="ioowwi" class="textover">
+                        <div id="i1ndk6"><b>Micro Inversores</b></div>
+                        <div id="isbi6z">[[GarantiaMicroInversorDadosPropostaLoja]] </div>
+                    </div>
+                    <div id="i1m1ql">
+                        <div><br /></div>
+                    </div>
+                    <div draggable="true" data-highlightable="1" id="i5yw0q" class="textover">
+                        <div id="is1sdd"><b>Estrutura</b></div>
+                        <div id="i82hse">[[GarantiaEstruturaDadosPropostaLoja]] </div>
+                    </div>
+                    <div id="ij07my">
+                        <div><br /></div>
+                    </div>
+                    <div draggable="true" data-highlightable="1" id="iwleup" class="textover">
+                        <div id="ilhvxi"><b>Instalação</b></div>
+                        <div id="i2o719">[[GarantiaServicoDadosPropostaLoja]] </div>
+                    </div>
+                    <div id="irp78x">
+                        <div><br /></div>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="icddm">
+            <section id="icijv">
+                <section id="iptxz">
+                    <div draggable="true" data-highlightable="1" id="ii09b">
+                        <div id="iybbj" class="titulo">SEU <b id="i793td">INVESTIMENTO</b></div>
+                        <section id="iqqwy" class="boxprojeto">
+                            <div draggable="true" data-highlightable="1" id="io3pc">
+                                <div id="ib6uh">
+                                    <ul draggable="false" data-highlightable="1" id="idgwa">
+                                        <li draggable="false" data-highlightable="1" id="valores" class="gjs-selected">
+                                            Valor R$<span draggable="true" data-highlightable="1"
+                                                id="iyen49">[[PrecoSimulacao]]</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                        <section id="i0w19j" class="boxprojeto">
+                            <div draggable="true" data-highlightable="1">
+                                <div id="icd9rk"><span id="is1wix">[[Financiamentos4Simulacao]]</span></div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+            <section id="ihd2s">
+                <section id="ik49b1" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="inc1r">
+                        <div id="i7kj0i"><span><i>Simulação sujeita a análise de crédito conforme a instituição
+                                    financeira escolhida </i></span></div>
+                    </div>
+                </section>
+                <section id="izpgvj" class="boxprojeto">
+                    <div draggable="true" data-highlightable="1" id="iew4pm">
+                        <div id="i0vn7w"><span><i id="iop937">“Para o correto dimensionamento e precificação do seu
+                                    projeto é fundamental a nossa visita técnica. Uma vez que a face e a inclinação do
+                                    telhado podem alterar a geração de energia do sistema fotovoltaico. Na visita nós
+                                    avaliaremos também as condições da estrutura física, assim como elétrica. É possível
+                                    que sejam necessárias adequações para a sua segurança e a correta homologação do
+                                    sistema junto à Concessionária de Energia." </i></span></div>
+                    </div>
+                </section>
+            </section>
+            <div id="i61zvo"><img src="{% static 'resolve_crm/img/proposal/ativo10_aad6.png' %}" alt="" id="iz4b7k" class="bancos" /></div>
+            <section id="i7epv8" class="back1">
+                <section id="in8kye">
+                    <div draggable="true" data-highlightable="1">
+                        <div id="i3cx5k" class="tituloover"><b id="ieiixq">
+                                <div id="iwumii"><span id="i4xrat"><span id="i99vv9">SUA</span><b id="it05fm">
+                                            ECONOMIA </b></span></div>
+                            </b></div>
+                        <section id="iqcoqf">
+                            <div draggable="true" data-highlightable="1">
+                                <div id="iap0h5" class="textover"><b>Sua conta de energia sem Energia Solar</b>
+                                </div>
+                                <div id="i6ijq3" class="textover">R$ [[ContaAtualAnoSimulacao]] / ano </div>
+                                <div id="i3d2do" class="textover">R$ [[ContaAtualMesSimulacao]] / mês  </div>
+                            </div>
+                            <div draggable="true" data-highlightable="1">
+                                <div id="ikxftk" class="textover">
+                                    <div><b id="ii8zut">Sua conta de energia com Energia Solar </b></div>
+                                </div>
+                                <div id="i3orpm" class="textover">R$ [[ContaGeradorAnoSimulacao]] / ano </div>
+                                <div id="iqsk54" class="textover">R$ [[ContaGeradorMesSimulacao]] / mês </div>
+                            </div>
+                            <div draggable="true" data-highlightable="1" id="ifs0m3">
+                                <div id="i1j6ht" class="textover"><b>Sua economia sera de:</b></div>
+                                <div id="inxspi" class="textover">R$ [[ContaEconomiaAnoSimulacao]] / ano </div>
+                                <div id="iizv41" class="textover">R$ [[ContaEconomiaMesSimulacao]] / mês </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="iamlum">
+            <section id="icykil">
+                <section id="i6owpp">
+                    <div draggable="true" data-highlightable="1" id="ijerjg">
+                        <div id="itf423" class="titulo">SEU <b>RETORNO </b></div>
+                        <div id="ieqjcz">
+                            <ul draggable="false" data-highlightable="1" id="izzdj3">
+                                <li draggable="false" data-highlightable="1" id="iir67k" class="textinterpola">Retorno
+                                    de investimento em [[AnoComMesesRetornoInvestimentoSimulacao]] anos </li>
+                            </ul>
+                        </div>
+                        <section id="i1c3s6" class="boxgrafico">
+                            <div draggable="true" data-highlightable="1" id="iw9bbi">
+                                <div id="ivpvn3">
+                                    <ul draggable="false" data-highlightable="1" id="iwkekm">
+                                        <li draggable="false" data-highlightable="1" id="ifvv4l" class="textinterpola">
+                                            <ul draggable="false" data-highlightable="1">
+                                                <li draggable="false" data-highlightable="1" class="textinterpola over">
+                                                    <span id="ikwmws">[[PayBackGraficoSimulacao]]</span></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+            <section id="ih7p58">
+                <section id="irnenv">
+                    <div draggable="true" data-highlightable="1" id="i0e0m4">
+                        <div id="irmwjl" class="titulo over">SUA <b>RENTABILIDADE</b></div>
+                        <section id="iqb65x" class="boxgrafico">
+                            <div draggable="true" data-highlightable="1" id="ijirpr">
+                                <div id="it6t51">
+                                    <ul draggable="false" data-highlightable="1" id="i1lhu8">
+                                        <li draggable="false" data-highlightable="1" id="i8okeb" class="textinterpola">
+                                            <ul draggable="false" data-highlightable="1" id="iujcug-2">
+                                                <li draggable="false" data-highlightable="1" id="iiw4xt-2"
+                                                    class="textinterpola over">
+                                                    [[ComparativosInvestimentoGraficoSimulacao]] </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+            <section id="ixir3b">
+                <section id="i5xwvd">
+                    <div draggable="true" data-highlightable="1" id="ijerh6">
+                        <div id="i9ac4c" class="titulo">CAPACIDADE <b>DE GERAÇÃO</b></div>
+                        <div id="i7an2k">
+                            <ul draggable="false" data-highlightable="1" id="i1eclp">
+                                <li draggable="false" data-highlightable="1" id="ihj7iy" class="textinterpola">Energia
+                                    Consumida X Gerada {KwH/mês} </li>
+                            </ul>
+                        </div>
+                        <section id="i7kczz" class="boxgrafico">
+                            <div draggable="true" data-highlightable="1" id="igww9j">
+                                <div id="i9rx9k">
+                                    <ul draggable="false" data-highlightable="1" id="iizpph">
+                                        <li draggable="false" data-highlightable="1" id="ipphax" class="textinterpola">
+                                            [[GeracaoProducaoEm12MesesSimulacao]] </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+            <section id="i2anx">
+                <section id="indsi5">
+                    <div draggable="true" data-highlightable="1">
+                        <section id="i8stti">
+                            <div draggable="true" data-highlightable="1" id="ie9bjs"><svg
+                                    xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 512.203 512.203"
+                                    height="512" viewBox="0 0 512.203 512.203" width="512" id="irk01h">
+                                    <path
+                                        d="m390.537 385.842c47.303 0 85.787-38.484 85.787-85.787 0-19.457-6.698-38.514-18.861-53.658-8.379-10.434-19.124-18.758-31.172-24.303 3.261-10.71 4.908-21.834 4.908-33.232 0-27.334-9.801-53.791-27.597-74.496-14.979-17.429-34.818-29.902-56.752-35.87-2.823-19.661-11.922-37.797-26.274-51.995-17.276-17.09-40.173-26.501-64.474-26.501s-47.199 9.411-64.474 26.5c-14.352 14.198-23.451 32.334-26.274 51.995-21.934 5.968-41.772 18.441-56.752 35.87-17.796 20.705-27.597 47.162-27.597 74.496 0 11.398 1.646 22.522 4.908 33.232-12.048 5.545-22.793 13.869-31.172 24.303-12.163 15.145-18.861 34.201-18.861 53.658 0 47.303 38.484 85.787 85.787 85.787h119.436v96.361h-123.716v30h277.43v-30h-123.715v-96.361h119.435zm-268.871-30c-30.761 0-55.787-25.026-55.787-55.787 0-26.031 17.68-48.357 42.994-54.295l18.042-4.231-7.898-16.765c-5.316-11.285-8.012-23.364-8.012-35.902 0-20.163 7.227-39.675 20.348-54.942 12.989-15.112 30.908-25.174 50.457-28.332l12.457-2.012.15-12.617c.4-33.613 28.072-60.959 61.685-60.959s61.284 27.346 61.684 60.958l.15 12.617 12.457 2.012c19.549 3.158 37.468 13.22 50.457 28.332 13.122 15.268 20.348 34.779 20.348 54.942 0 12.538-2.696 24.617-8.012 35.902l-7.898 16.765 18.042 4.231c25.314 5.938 42.994 28.264 42.994 54.295 0 30.761-25.026 55.787-55.787 55.787h-119.435v-83.429l54.938-54.938-21.213-21.213-33.726 33.725v-99.405h-30v45.299l-33.726-33.725-21.213 21.213 54.938 54.938v65.785l-33.726-33.726-21.213 21.213 54.938 54.938v29.323h-119.433z"
+                                        class="svgcolor1"></path>
+                                </svg>
+                                <div id="igxxto">
+                                    <div>[[TotalArvoresSimulacao]]</div>
+                                    <div>Árvores Salvas </div>
+                                </div>
+                            </div>
+                            <div draggable="true" data-highlightable="1" id="io3xk3"><svg
+                                    xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                                    version="1.1" x="0px" y="0px" viewBox="0 0 394.648 394.648" xml:space="preserve"
+                                    id="i9xo44">
+                                    <path
+                                        d="M391.909,145.036  c-0.938-2.731-4.263-4.855-7.039-4.855c-12.021,0-24.04,0-36.061,0c-2.775,0-6.101,2.124-7.04,4.855  c-0.918,2.673-1.604,5.058-2.06,7.301l-24.088-66.641c-3.973-10.989-14.495-18.372-26.179-18.372H105.209  c-11.685,0-22.205,7.383-26.18,18.374l-24.089,66.647c-0.457-2.245-1.143-4.633-2.062-7.309c-0.938-2.731-4.264-4.855-7.039-4.855  c-12.02,0-24.04,0-36.061,0c-2.775,0-6.101,2.124-7.039,4.855c-3.652,10.633-3.65,16.72,0.001,27.354  c0.938,2.731,4.264,4.855,7.039,4.855c12.021,0,24.041,0,36.061,0c0.034,0,0.07-0.009,0.105-0.01l-0.544,1.507  c-7.353,2.443-12.662,9.365-12.662,17.539v55.805v4.599v61.752c0,4.909,3.978,8.887,8.887,8.887h44.727  c4.908,0,8.887-3.978,8.887-8.887v-43.262H299.41v43.262c0,4.909,3.979,8.887,8.887,8.887h44.727c4.909,0,8.887-3.978,8.887-8.887  v-61.752v-4.599v-55.805c0-8.172-5.307-15.093-12.657-17.538l-0.545-1.508c0.033,0.001,0.068,0.009,0.101,0.009  c12.021,0,24.04,0,36.061,0c2.776,0,6.101-2.124,7.039-4.855C395.561,161.756,395.559,155.669,391.909,145.036z M108.612,100.028  h177.402l28.108,77.762H80.505L108.612,100.028z M113.56,232.571H76.142c-8.028,0-14.535-6.507-14.535-14.535  c0-8.027,6.506-14.535,14.535-14.535h37.418c8.027,0,14.535,6.507,14.535,14.535C128.096,226.064,121.587,232.571,113.56,232.571z   M318.505,232.571h-37.418c-8.027,0-14.535-6.507-14.535-14.535c0-8.027,6.508-14.535,14.535-14.535h37.418  c8.028,0,14.535,6.507,14.535,14.535C333.04,226.064,326.533,232.571,318.505,232.571z"
+                                        class="svgcolor1"></path>
+                                </svg>
+                                <div id="i80axi">
+                                    <div>[[TotalVeiculosForaCirculacaoSimulacao]]</div>
+                                    <div>anos de um carro fora de circulação</div>
+                                </div>
+                            </div>
+                            <div draggable="true" data-highlightable="1" id="i23du7"><svg
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75.29 49.18" id="iykqvv">
+                                    <defs></defs>
+                                    <title>Ativo 52icones</title>
+                                    <g data-name="Camada 2">
+                                        <g data-name="Camada 1">
+                                            <path
+                                                d="M23.05,29.46a12.83,12.83,0,0,1,23-7.8,14,14,0,0,1,20.07,4.1,14.1,14.1,0,0,1,5.39,1.41,18.07,18.07,0,0,0-17.8-15,18.78,18.78,0,0,0-3.21.3,18.07,18.07,0,0,0-34-1.11,18.08,18.08,0,0,0,1.52,36.09l16.37-.07a13.94,13.94,0,0,1-2.4-5.67A12.83,12.83,0,0,1,23.05,29.46Z"
+                                                class="svgcolor1"></path>
+                                            <path
+                                                d="M65.37,29.82a9.29,9.29,0,0,0-1.76.17A9.91,9.91,0,0,0,48,25.29a12.79,12.79,0,0,1-11.66,17,9.91,9.91,0,0,0,9.45,6.91l19.56-.08c5.48,0,9.92-3.88,9.92-9.36A9.92,9.92,0,0,0,65.37,29.82Z"
+                                                class="svgcolor1"></path>
+                                            <path
+                                                d="M42.65,32.48,42,33.1v.49h3.8v-.67H43.14l.48-.44c1.25-1.21,2.05-2.1,2.05-3.2a1.68,1.68,0,0,0-1.83-1.73,2.65,2.65,0,0,0-1.68.6l.26.57a2,2,0,0,1,1.26-.5,1.06,1.06,0,0,1,1.18,1.16C44.85,30.27,44.16,31,42.65,32.48Z"
+                                                class="svgcolor1"></path>
+                                            <path
+                                                d="M31,25.63a3.86,3.86,0,0,1,1.91.43l.38-1.28A5.63,5.63,0,0,0,31,24.31a4.62,4.62,0,0,0-4.88,4.83,4.32,4.32,0,0,0,4.52,4.64,6,6,0,0,0,2.61-.53L33,32a4.8,4.8,0,0,1-2,.45,3.12,3.12,0,0,1-3.15-3.4A3.14,3.14,0,0,1,31,25.63Z"
+                                                class="svgcolor1"></path>
+                                            <path
+                                                d="M37,33.8A4.45,4.45,0,0,0,41.51,29c0-2.78-1.76-4.67-4.37-4.67s-4.51,1.78-4.51,4.82A4.33,4.33,0,0,0,37,33.8Zm.11-8.26c1.95,0,2.72,1.95,2.72,3.49,0,2-1.18,3.53-2.76,3.53s-2.76-1.5-2.76-3.49C34.3,27.34,35.15,25.54,37.1,25.54Z"
+                                                class="svgcolor1"></path>
+                                        </g>
+                                    </g>
+                                </svg>
+                                <div id="ig0k0m">
+                                    <div>[[TotalCO2Simulacao]] </div>
+                                    <div>toneladas de CO2 não emitidos</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="i0ewma">
+            <section id="iz5s1g">
+                <section id="ibkzsf">
+                    <div draggable="true" data-highlightable="1" id="ihiczm">
+                        <div id="i1vlho" class="titulo">NOS CUIDAMOS<div><b> DE TUDO PARA VOCÊ </b></div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+            <div id="i1yoxf"><img src="[[UrlImgCuidamosDadosPropostaLoja]]" alt="" id="irkgo9" class="CUIDAMOS" /></div>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="iuws4k">
+            <section id="ilyjp6">
+                <section id="irdogi">
+                    <div draggable="true" data-highlightable="1" id="i2nvwp">
+                        <div id="ikxk42" class="titulo">
+                            <div><span id="ia78qo">NOSSOS<b draggable="true" data-highlightable="1" id="iyebvj">
+                                        PROJETOS</b></span></div>
+                        </div>
+                        <div id="i4ga1g">
+                            <div><span>CONFIRA ALGUNS PROJETOS REALIZADOS PELA NOSSA EMPRESA.</span></div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+            <div draggable="true" data-highlightable="1" id="imdao4">
+                <section id="i3qrbc">
+                    <div draggable="true" data-highlightable="1" id="ixka0q"><img
+                            src="[[UrlImgProjeto1DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                    <div draggable="true" data-highlightable="1" id="img6r5"><img
+                            src="[[UrlImgProjeto2DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                </section>
+                <section id="i87el3">
+                    <div draggable="true" data-highlightable="1" id="ierr4l"><img
+                            src="[[UrlImgProjeto3DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                    <div draggable="true" data-highlightable="1" id="ihpzhm"><img
+                            src="[[UrlImgProjeto4DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                </section>
+                <section id="irpzdj">
+                    <div draggable="true" data-highlightable="1" id="irdk67"><img
+                            src="[[UrlImgProjeto5DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                    <div draggable="true" data-highlightable="1" id="iut4gf"><img
+                            src="[[UrlImgProjeto6DadosPropostaLoja]]" alt="" class="comofunciona" /></div>
+                </section>
+            </div>
+            <div id="ie2jtl"></div>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="i41ym5">
+            <section id="it9pg3">
+                <section id="iwq5ir">
+                    <div draggable="true" data-highlightable="1" id="icwh9g">
+                        <div id="i3nssb" class="titulo">PORQUE ESCOLHER </div>
+                        <div id="i7ph5h" class="titulo titulo2"><b>[[NomeLoja]]</b></div>
+                        <div id="ior0k5">
+                            <ul draggable="false" data-highlightable="1" id="i3vjjs">
+                                <li draggable="false" data-highlightable="1" id="iay49f" class="textoinstitu">
+                                    [[TextoInstitucionalDadosPropostaLoja]] </li>
+                                <li draggable="false" data-highlightable="1" id="ig97mx" class="textoinstitu">
+                                    [[TextoInstitucional2DadosPropostaLoja]] </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </section>
+            <section id="i36wbu">
+                <section id="iek533">
+                    <div id="i3kzru" class="tituloover"><b id="iwibey">
+                            <div id="i4u6to"><span><span id="iz885n">NOSSO</span><b
+                                        id="i6gk3m"> COMPROMISSO</b></span></div>
+                        </b></div>
+                    <section id="iz5fq4">
+                        <div draggable="true" data-highlightable="1" id="irildx"><img
+                                src="https://arquivos-groner.s3.us-east-2.amazonaws.com/safeleadsfiles/cxteste/ativo18mgf_f323.png"
+                                id="iua5t9" />
+                            <div id="ixszmb">
+                                <div id="ic5zul"><span><b>COM A </b></span>
+                                    <div>NATUREZA </div>
+                                </div>
+                                <div id="ivhzqj"><span>Energia limpa totalmente sustentável</span></div>
+                            </div>
+                        </div>
+                        <div draggable="true" data-highlightable="1" id="i3cbdz"><img
+                                src="https://arquivos-groner.s3.us-east-2.amazonaws.com/safeleadsfiles/cxteste/ativo17mgf_ac6a.png"
+                                id="ij4ugp" />
+                            <div id="i1cpah">
+                                <div id="iekheg"><b>COM SEU</b>
+                                    <div>PROJETO</div>
+                                </div>
+                                <div id="ic75i5">Equipe de profissionais altamente qualificados. </div>
+                            </div>
+                        </div>
+                        <div draggable="true" data-highlightable="1" id="ic3c0e"><img
+                                src="https://arquivos-groner.s3.us-east-2.amazonaws.com/safeleadsfiles/cxteste/ativo19mgf_adf8.png"
+                                id="ig1mtz" />
+                            <div id="ii5nyu">
+                                <div id="iyzwkc"><b>COM SEU</b>
+                                    <div><span>BOLSO</span></div>
+                                </div>
+                                <div id="iq1m3i">Economia de até 95% na sua fatura de energia </div>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+            </section>
+        </div>
+    </section>
+    <section class="pag1">
+        <div draggable="true" data-highlightable="1" id="iy6wqj">
+            <section id="igoij2">
+                <section id="idg3ha">
+                    <div id="i04a4f" class="tituloover"><b id="iew4vj">
+                            <div id="iyvbp6"><span><span id="iohmhy">ENTRE EM</span><b
+                                        id="im91q5"><br />CONTATO</b></span></div>
+                        </b></div>
+                    <section id="ie8tvi"></section>
+                </section>
+            </section>
+            <section id="i1z65c">
+                <div draggable="true" data-highlightable="1" id="i9umly">
+                    <div id="isbk2j"><img id="ip2tur" src="[[ImagemPerfilURLUsuario]]" width="100%" /></div>
+                    <div id="iwgav3">
+                        <p id="il472g">[[NomeUsuario]] </p><a
+                            href="https://api.whatsapp.com/send?phone=[[CelularUsuario]]" target="_blank"
+                            class="link"><span id="i0y5b6">
+                                <section id="i6a4mm">
+                                    <div id="iw89hm">[[CelularUsuario]]</div>
+                                </section>
+                            </span></a>
+                        <p id="i79ks7">[[EmailUsuario]] </p>
+                    </div>
+                </div>
+            </section>
+            <section id="iei37p">
+                <section id="ievtih">
+                    <div draggable="true" data-highlightable="1" id="i8hpu2"><img src="[[UrlImgLogoDadosPropostaLoja]]"
+                            alt="" class="logo" /></div>
+                </section>
+                <div draggable="true" data-highlightable="1" id="i2hf8h">
+                    <div id="ijge0k"> </div><a href="https://[[LinkSiteDadosPropostaLoja]]" target="_blank"
+                        class="link"><span id="ivsrfb">
+                            <section id="iwhqun">
+                                <div draggable="true" data-highlightable="1" id="icigk4">
+                                    <div id="iio2sj">[[LinkSiteDadosPropostaLoja]]</div>
+                                </div>
+                            </section>
+                        </span></a><a href="mailto:[[EmailComercialDadosPropostaLoja]]" target="_blank"
+                        class="link"><span id="i4qyeo">
+                            <section id="i5xkpk">
+                                <div draggable="true" data-highlightable="1" id="iy5zi5"><svg
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 113.04 86.11">
+                                        <defs> </defs>
+                                        <title>Ativo 41icones </title>
+                                        <g data-name="Camada 2">
+                                            <g data-name="Camada 1">
+                                                <path
+                                                    d="M0,77.49V8.61a2.83,2.83,0,0,0,.17-.4C1.47,2.89,5.1,0,10.53,0h92C108.8,0,113,4.2,113,10.49q0,32.57,0,65.12a11.6,11.6,0,0,1-.1,1.87c-.84,5.28-4.86,8.62-10.34,8.62H30.29c-6.73,0-13.47,0-20.2,0a9.58,9.58,0,0,1-8.74-5A22.57,22.57,0,0,1,0,77.49ZM56.43,51.32,101.07,6.69H11.4ZM11.56,79.4h89.65L69.77,48C66.42,51.3,63,54.77,59.51,58.22c-1.88,1.87-3.66,1.86-5.55,0L44,48.34c-.25-.25-.51-.49-.71-.68ZM6.7,11.35V74.41L38.37,42.75Zm99.67.48L75.19,43l31.18,31.17Z"
+                                                    class="svgcolor1"> </path>
+                                            </g>
+                                        </g>
+                                    </svg></div>
+                                <div draggable="true" data-highlightable="1" id="iukmyk">
+                                    <div id="ikkx1s">[[EmailComercialDadosPropostaLoja]]</div>
+                                </div>
+                            </section>
+                        </span></a><a href="https://www.fb.com/[[LinkFacebookDadosPropostaLoja]]" target="_blank"
+                        class="link"><span id="iucq2b">
+                            <section id="i3664q">
+                                <section id="iyzp7i">
+                                    <div draggable="true" data-highlightable="1" id="iyls7k"><svg
+                                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 101.91 101.91" id="i3t67n">
+                                            <defs></defs>
+                                            <title>Ativo 40icones</title>
+                                            <g id="Camada_2-2-2" data-name="Camada 2">
+                                                <g id="Camada_1-2-3-2" data-name="Camada 1">
+                                                    <path
+                                                        d="M88.18,0H13.73A13.73,13.73,0,0,0,0,13.73V88.18a13.73,13.73,0,0,0,13.73,13.73H50.45l.06-36.42H41.05a2.22,2.22,0,0,1-2.23-2.22l0-11.74A2.23,2.23,0,0,1,41,49.29h9.45V38c0-13.17,8-20.33,19.78-20.33h9.64a2.23,2.23,0,0,1,2.23,2.23v9.9A2.23,2.23,0,0,1,79.87,32H74c-6.38,0-7.62,3-7.62,7.49v9.82h14a2.23,2.23,0,0,1,2.22,2.49L81.19,63.52a2.23,2.23,0,0,1-2.22,2H66.39l-.06,36.42H88.18a13.73,13.73,0,0,0,13.73-13.73V13.73A13.73,13.73,0,0,0,88.18,0Z"
+                                                        class="svgcolor1"></path>
+                                                </g>
+                                            </g>
+                                        </svg></div>
+                                    <div draggable="true" data-highlightable="1" id="izlznd">
+                                        <div id="i8yeat">[[LinkFacebookDadosPropostaLoja]] </div>
+                                    </div>
+                                </section>
+                            </section>
+                        </span></a><a href="https://www.instagram.com/[[LinkInstagramDadosPropostaLoja]]"
+                        target="_blank" class="link"><span id="ip051d">
+                            <section id="i37s71">
+                                <section id="i5e4wg">
+                                    <section id="irqg6w">
+                                        <div draggable="true" data-highlightable="1" id="iyylak"><svg
+                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 102.69 101.91"
+                                                id="icif9m">
+                                                <defs> </defs>
+                                                <title>Ativo 39icones </title>
+                                                <g data-name="Camada 2">
+                                                    <g data-name="Camada 1">
+                                                        <path
+                                                            d="M0,73V30.23c.16-1.32.28-2.64.47-3.95A29.87,29.87,0,0,1,11.6,6.75C17.44,2,24.23,0,31.69,0,44.43,0,57.17,0,69.91,0a51.94,51.94,0,0,1,6.48.39A29.24,29.24,0,0,1,93.86,9.2a30.43,30.43,0,0,1,8.79,22q.07,20.06,0,40.12c0,6.15-1.34,12-4.88,17.07-5.8,8.31-13.29,13.62-24,13.5-15.11-.18-30.23,0-45.34,0-.47,0-.94,0-1.4,0a17.54,17.54,0,0,1-3.17-.18,30,30,0,0,1-16.51-10A29.09,29.09,0,0,1,.63,77.52C.37,76,.21,74.49,0,73ZM51.33,92.5c6.76,0,13.51.09,20.27,0a24.17,24.17,0,0,0,7-1.1c8.53-2.81,13.89-10.42,13.94-19.6.06-13.65.09-27.29,0-40.94a22.17,22.17,0,0,0-1.12-6.76A20.22,20.22,0,0,0,71.78,10.12q-20.41,0-40.83,0a21,21,0,0,0-4.48.45A20.37,20.37,0,0,0,10.19,30.73c0,13.68,0,27.36.05,41A20.51,20.51,0,0,0,31.07,92.49C37.82,92.53,44.58,92.5,51.33,92.5Z"
+                                                            class="svgcolor1"> </path>
+                                                        <path
+                                                            d="M51.4,77.75A26.44,26.44,0,1,1,77.82,51.3,26.4,26.4,0,0,1,51.4,77.75Zm0-42.78A16.32,16.32,0,1,0,67.69,51.23,16.28,16.28,0,0,0,51.35,35Z"
+                                                            class="svgcolor1"> </path>
+                                                        <path
+                                                            d="M84.21,24.93A6.21,6.21,0,0,1,78,31.15,6.1,6.1,0,0,1,71.78,25,6.07,6.07,0,0,1,78,18.69,6.2,6.2,0,0,1,84.21,24.93Z"
+                                                            class="svgcolor1"> </path>
+                                                    </g>
+                                                </g>
+                                            </svg></div>
+                                        <div draggable="true" data-highlightable="1" id="iq9c2w">
+                                            <div id="ix7djl">[[LinkInstagramDadosPropostaLoja]]</div>
+                                        </div>
+                                    </section>
+                                </section>
+                            </section>
+                        </span></a><a href="https://api.whatsapp.com/send?phone=[[LinkExtraDadosPropostaLoja]]"
+                        target="_blank" class="link"><span id="ifa2lj">
+                            <section id="icmjwv">
+                                <section id="ifw3sa">
+                                    <section id="iavtpa">
+                                        <div id="iny8lk"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 20"
+                                                id="iya27k">
+                                                <g id="Camada_2" data-name="Camada 2">
+                                                    <g id="Camada_1-2" data-name="Camada 1">
+                                                        <path
+                                                            d="M17,2.91A9.82,9.82,0,0,0,10,0,9.92,9.92,0,0,0,1.4,14.86L0,20l5.25-1.38A9.91,9.91,0,0,0,10,19.83h0A9.91,9.91,0,0,0,17,2.91ZM10,18.15h0A8.26,8.26,0,0,1,5.79,17l-.3-.18-3.12.82.83-3L3,14.29A8.24,8.24,0,0,1,10,1.67a8.25,8.25,0,0,1,8.23,8.25A8.22,8.22,0,0,1,10,18.15ZM14.51,12c-.25-.12-1.47-.72-1.69-.81s-.39-.12-.56.12-.64.81-.78,1-.29.19-.54.06A6.66,6.66,0,0,1,9,11.1,7.57,7.57,0,0,1,7.57,9.38c-.14-.25,0-.38.11-.51s.25-.29.37-.43A1.73,1.73,0,0,0,8.3,8a.46.46,0,0,0,0-.43c-.06-.12-.56-1.34-.76-1.84S7.11,5.34,7,5.33H6.48a.9.9,0,0,0-.66.31A2.82,2.82,0,0,0,5,7.71a4.82,4.82,0,0,0,1,2.56A11,11,0,0,0,10.2,14a12.1,12.1,0,0,0,1.41.52,3.43,3.43,0,0,0,1.56.1,2.52,2.52,0,0,0,1.67-1.18A2,2,0,0,0,15,12.27C14.91,12.16,14.76,12.11,14.51,12Z"
+                                                            class="svgcolor1"> </path>
+                                                    </g>
+                                                </g>
+                                            </svg></div>
+                                        <div draggable="true" data-highlightable="1" id="i1svvk">
+                                            <div id="ie2v8t">[[LinkExtraDadosPropostaLoja]]</div>
+                                        </div>
+                                    </section>
+                                </section>
+                            </section>
+                        </span></a><a href="[[LinkLinkedinDadosPropostaLoja]]" target="_blank" class="link"><span
+                            id="izzih5"></span></a>
+                </div>
+            </section>
+            <section id="i4qvk1">
+                <section id="igmcsx"> </section>
+                <section id="idmuuu">
+                    <div id="iz6kj9" class="tituloover"><b id="iu23h9">
+                            <div id="i8dfsj"><span id="ivnw2o"><span
+                                        id="i2mznh"><b>[[CidadeEnderecoLoja]]</b></span><b
+                                        id="i8bumg">-[[UFEnderecoLoja]]</b></span></div>
+                            <div id="ifyf97"><span><span
+                                        id="iyl6b8">[[LogradouroEnderecoLoja]], [[NumeroEnderecoLoja]] [[ComplementoEnderecoLoja]]
+                                        - [[BairroEnderecoLoja]]</span></span></div>
+                            <div id="irp8xs"><span><span id="iuev3o">CEP: [[CEPEnderecoLoja]]<br />Telefone:
+                                        [[TelefoneLoja]]</span></span></div>
+                        </b></div>
+                </section>
+            </section>
+        </div>
+    </section>
+</body>
+
+</html>
