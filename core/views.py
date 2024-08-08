@@ -9,7 +9,7 @@ import json
 
 
 class IndexView(LoginRequiredMixin, TemplateView):
-    template_name = "core/proposal.html"
+    template_name = "core/index.html"
 
 
 class BoardList(LoginRequiredMixin, ListView):

@@ -145,3 +145,44 @@ class CustomerLifeCycle(models.Model):
         verbose_name = "Ciclo de Vida do Cliente"
         verbose_name_plural = "Ciclos de Vida dos Clientes"
 """
+
+
+class ComercialProposal(models.Model):
+    lead = models.CharField(max_length=255)
+    kwp = models.DecimalField(max_digits=10, decimal_places=2)
+    due_date = models.DateField()
+    # inverter_quantity = models.IntegerField()
+    # inverter_simulation = models.CharField(max_length=255)
+    # panel_quantity = models.IntegerField()
+    # panel_name = models.CharField(max_length=255)
+    # panel_power = models.DecimalField(max_digits=10, decimal_places=2)
+    monthly_generation = models.DecimalField(max_digits=10, decimal_places=2)
+    monthly_savings = models.DecimalField(max_digits=10, decimal_places=2)
+    minimum_area = models.DecimalField(max_digits=10, decimal_places=2)
+    # kit_items = models.TextField()
+    roi_years = models.DecimalField(max_digits=10, decimal_places=2)
+    payback_graph = models.TextField()
+    simulation_price = models.DecimalField(max_digits=10, decimal_places=2)
+    financing_options = models.TextField()
+    current_year_bill = models.DecimalField(max_digits=10, decimal_places=2)
+    current_month_bill = models.DecimalField(max_digits=10, decimal_places=2)
+    generator_year_bill = models.DecimalField(max_digits=10, decimal_places=2)
+    generator_month_bill = models.DecimalField(max_digits=10, decimal_places=2)
+    annual_savings = models.DecimalField(max_digits=10, decimal_places=2)
+    monthly_savings = models.DecimalField(max_digits=10, decimal_places=2)
+    seller = models.CharField(max_length=255)
+    branch = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.lead} - {self.kwp} kWp"
+
+
+class ContractSubmission(models.Model):
+    
+    submit_datetime = models.DateTimeField("Data e hora do envio")
+    status = models.CharField("Status do envio")
+    due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
+    link = models.URLField("Link para assinatura")
+    
+    def __str__(self):
+        self.submit_datetime

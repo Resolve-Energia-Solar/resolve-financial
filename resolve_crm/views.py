@@ -67,3 +67,6 @@ class LeadUpdateView(LoginRequiredMixin, UpdateView):
         return self.object.get_absolute_url()
 
 
+class ComercialProposalDetailView(LoginRequiredMixin, DetailView):
+    model = ComercialProposal
+    template_name = 'resolve_crm/proposal/proposal_detail.html'
