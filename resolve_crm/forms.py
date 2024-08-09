@@ -1,5 +1,5 @@
 from django import forms
-from .models import Task, Lead
+from .models import Task, Lead, MarketingCampaign
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 
@@ -24,3 +24,17 @@ class LeadForm(forms.ModelForm):
             'squad': Select2Widget,
             'responsible': Select2Widget
         }
+
+
+class MarketingCampaignForm(forms.ModelForm):
+    class Meta:
+        model = MarketingCampaign
+        fields = "__all__"
+        widgets = {
+            'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
+        }
+        
+    @property
+    def has_file_field(self):
+        return any(isinstance(field, forms.FileField) for field in self.fields.values())

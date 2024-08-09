@@ -9,7 +9,7 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-  <title>CRM &mdash; Resolve</title>
+  <title>ERP &mdash; Resolve</title>
 
   <meta name="description" content="" />
 
@@ -132,10 +132,9 @@
           {% url 'core:board-create' as boards_create_url %}
           {% url 'resolve_crm:lead_create' as lead_create_url %}
           {% url 'resolve_crm:lead_list' as lead_list_url %}
-          {% url 'resolve_crm:lead_detail' lead.pk as lead_detail_url %}
           <!-- Dashboards -->
           <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">CRM {{ object.pk }}</span>
+            <span class="menu-header-text">CRM</span>
           </li>
           <li class="menu-item {% is_active index_url %}">
             <a href="{% url 'core:index' %}" class="menu-link">
@@ -230,6 +229,10 @@
             </ul>
           </li>
           {% if user.is_staff %}
+          {% url 'resolve_crm:campaign_list' as campaign_list_url %}
+          {% url 'resolve_crm:campaign_detail' object.pk as campaign_detail_url %}
+          {% url 'resolve_crm:campaign_create' as campaign_create_url %}
+          {% url 'resolve_crm:campaign_update' object.pk as campaign_update_url %}
           <!-- Administração -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Administração</span>
@@ -242,6 +245,24 @@
             </a>
           </li>
           {% endif %}
+          <li class="menu-item {% is_active_open campaign_list_url campaign_detail_url campaign_create_url campaign_update_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-star"></i>
+              <div class="text-truncate">Campanhas</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active campaign_list_url %}">
+                <a href="{{campaign_list_url}}" class="menu-link">
+                  <div class="text-truncate">Lista</div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active campaign_create_url %}">
+                <a href="{{campaign_create_url}}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
           <li class="menu-item {% is_active_open users_list_url user_create_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-user"></i>

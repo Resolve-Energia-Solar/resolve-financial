@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Campanhas /</span> Lista</h4>
+
+    <!-- Invoice List Table -->
+    <div class="card">
+        <div class="card-datatable table-responsive">
+            <table class="invoice-list-table table border-top">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data Inicial</th>
+                        <th>Data Final</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campaign in campaigns %}
+                    <tr>
+                        <td>{{ campaign.name }}</td>
+                        <td>{{ campaign.start_datetime }}</td>
+                        <td>{{ campaign.end_datetime }}</td>
+                        <td>
+                            <button class="btn" data-bs-toggle="modal" data-bs-target="#campaignDetailModal{{ campaign.id }}">
+                                {{ campaign.description|slice:":50" }}
+                                {% if campaign.description|length > 50 %}
+                                ...
+                                {% endif %}
+                            </button>
+                        </td>
+                    </tr>
+                    <div class="modal fade animate__animated animate__rotateInUpLeft" id="campaignDetailModal{{ campaign.id }}"
+                        tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="campaignDetailModal{{ campaign.id }}Label">{{ campaign.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col mb-3">
+                                            <img src="" alt="">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

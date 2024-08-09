@@ -112,6 +112,18 @@ class Contact(models.Model):
         verbose_name_plural = "Contatos"
 
 
+class MarketingCampaign(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    start_datetime = models.DateTimeField("Data de Início")
+    end_datetime = models.DateTimeField("Data de Término")
+    description = models.TextField("Descrição")
+    banner = models.ImageField("Banner", upload_to="resolve_crm/img/marketing_campaign/")
+
+    class Meta:
+        verbose_name = "Campanha de Marketing"
+        verbose_name_plural = "Campanhas de Marketing"
+
+
 """
 class Opportunity(models.Model):
     Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
@@ -122,28 +134,6 @@ class Opportunity(models.Model):
     board = ta:
         verbose_name = "Oportunidade"
         verbose_name_plural = "Oportunidades"
-
-
-class MarketingCampaign(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Nome")
-    start_date = models.DateField(verbose_name="Data de Início")
-    end_date = models.DateField(verbose_name="Data de Término")
-    effectiveness = models.TextField(verbose_name="Eficácia")
-
-    class Meta:
-        verbose_name = "Campanha de Marketing"
-        verbose_name_plural = "Campanhas de Marketing"
-
-
-class CustomerLifeCycle(models.Model):
-    Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
-    stage = models.CharField(max_length=200, verbose_name="Estágio")
-    start_date = models.DateField(verbose_name="Data de Início")
-    end_date = models.DateField(verbose_name="Data de Término")
-
-    class Meta:
-        verbose_name = "Ciclo de Vida do Cliente"
-        verbose_name_plural = "Ciclos de Vida dos Clientes"
 """
 
 
@@ -180,9 +170,24 @@ class ComercialProposal(models.Model):
 class ContractSubmission(models.Model):
     
     submit_datetime = models.DateTimeField("Data e hora do envio")
-    status = models.CharField("Status do envio")
+    status = models.CharField("Status do envio", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
     due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
     link = models.URLField("Link para assinatura")
     
     def __str__(self):
         self.submit_datetime
+
+
+class Sale(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead")
+    proposal = models.ForeignKey(ComercialProposal, on_delete=models.CASCADE, verbose_name="Proposta Comercial")
+    contract = models.ForeignKey(ContractSubmission, on_delete=models.CASCADE, verbose_name="Contrato")
+    status = models.CharField("Status da Venda", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return f"{self.lead} - {self.proposal.kwp} kWp"
+    
+    class Meta:
+        verbose_name = "Venda"
+        verbose_name_plural = "Vendas"

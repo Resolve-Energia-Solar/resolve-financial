@@ -1,11 +1,7 @@
 from django.urls import reverse
-from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import F
-from django.http import JsonResponse
-from django.views import View
-from .forms import LeadForm, TaskForm
-from django.shortcuts import get_object_or_404, redirect
+from .forms import LeadForm, TaskForm, MarketingCampaignForm
 from .models import *
 
 
@@ -62,6 +58,37 @@ class LeadUpdateView(LoginRequiredMixin, UpdateView):
     model = Lead
     form_class = LeadForm
     template_name = "resolve_crm/leads/lead_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class MarketingCampaignCreateView(LoginRequiredMixin, CreateView):
+    model = MarketingCampaign
+    form_class = MarketingCampaignForm
+    template_name = "resolve_crm/marketing_campaings/marketing_campaign_form.html"
+    
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class MarketingCampaignListView(LoginRequiredMixin, ListView):
+    model = MarketingCampaign
+    template_name = "resolve_crm/marketing_campaings/marketing_campaign_list.html"
+    context_object_name = "campaigns"
+    paginate_by = 10
+    ordering = ['-start_datetime']
+
+
+class MarketingCampaignDetailView(LoginRequiredMixin, DetailView):
+    model = MarketingCampaign
+    template_name = "resolve_crm/templates/resolve_crm/marketing_campaings/marketing_campaign_form.html"
+
+
+class MarketingCampaignUpdateView(LoginRequiredMixin, UpdateView):
+    model = MarketingCampaign
+    form_class = MarketingCampaignForm
+    template_name = "resolve_crm/marketing_campaings/marketing_campaign_form.html"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
