@@ -7,13 +7,18 @@
     <!-- Invoice List Table -->
     <div class="card">
         <div class="card-datatable table-responsive">
+            <div class="card-datatable-header p-3">
+                <div class="card-datatable-header-actions">
+                    <a href="{% url 'resolve_crm:campaign_create' %}" class="btn btn-primary">Nova Campanha</a>
+                </div>
+            </div>
             <table class="invoice-list-table table border-top">
                 <thead>
                     <tr>
                         <th>Nome</th>
                         <th>Data Inicial</th>
                         <th>Data Final</th>
-                        <th>Descrição</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -23,12 +28,12 @@
                         <td>{{ campaign.start_datetime }}</td>
                         <td>{{ campaign.end_datetime }}</td>
                         <td>
-                            <button class="btn" data-bs-toggle="modal" data-bs-target="#campaignDetailModal{{ campaign.id }}">
-                                {{ campaign.description|slice:":50" }}
-                                {% if campaign.description|length > 50 %}
-                                ...
-                                {% endif %}
-                            </button>
+                            <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#campaignDetailModal{{ campaign.id }}">
+                                <i class="bx bx-detail fs-3"></i>
+                            </a>
+                            <a href="{% url 'resolve_crm:campaign_update' campaign.pk %}">
+                                <i class="bx bx-edit fs-3"></i>
+                            </a>
                         </td>
                     </tr>
                     <div class="modal fade animate__animated animate__rotateInUpLeft" id="campaignDetailModal{{ campaign.id }}"
@@ -42,13 +47,15 @@
                                 </div>
                                 <div class="modal-body">
                                     <div class="row">
-                                        <div class="col mb-3">
-                                            <img src="" alt="">
-                                        </div>
+                                        <figure class="col-12 figure text-center mb-3">
+                                            <img src="{{ campaign.banner.url }}" class="img-fluid" alt="">
+                                            <figcaption class="figure-caption fs-5">{{ campaign.description }}</figcaption>
+                                        </figure>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    <a href="{% url 'resolve_crm:campaign_update' campaign.pk %}" class="btn btn-warning">Editar</a>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                                 </div>
                             </div>
                         </div>
