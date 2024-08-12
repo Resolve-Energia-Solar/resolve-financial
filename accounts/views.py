@@ -1,6 +1,7 @@
 import json
 from django.contrib import messages
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -19,6 +20,20 @@ class UsersListView(LoginRequiredMixin, ListView):
     template_name = "accounts/users/user_list.html"
     context_object_name = "users"
     paginate_by = 10
+    ordering = ['username']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(username__icontains=search_query) | 
+                Q(first_name__icontains=search_query) |  
+                Q(last_name__icontains=search_query)
+            )
+
+        return queryset
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):
@@ -98,6 +113,16 @@ class PermissionsListView(LoginRequiredMixin, ListView):
     template_name = "accounts/permissions/permission_list.html"
     context_object_name = "permissions"
     paginate_by = 10
+    ordering = ['content_type', 'codename']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
 
 
 class PermissionUpdateView(LoginRequiredMixin, UpdateView):
@@ -288,7 +313,7 @@ class SquadCreateView(LoginRequiredMixin, CreateView):
     template_name = "resolve_crm/squads/squad_form.html"
 
     def get_success_url(self):
-        return reverse("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
+        return redirect("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
 
     
 class SquadListView(LoginRequiredMixin, ListView):

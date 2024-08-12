@@ -19,55 +19,37 @@
         <div class="card">
             <div class="card-datatable table-responsive">
                 <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
-                    <div class="row mx-1">
+                    <div class="row p-3 mx-1">
                         {% if user|has_perm:'accounts.add_user' %}
-                        <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
-                            <div
-                                class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
-                                <div class="dt-buttons btn-group flex-wrap">
-                                    <a href="{% url 'accounts:user_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Usuário</span></span></a>
-                                </div>
-                            </div>
+                        <div class="col-12 col-md-6">
+                            <a href="{% url 'accounts:user_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Usuário</span></span></a>
                         </div>
                         {% endif %}
-                        <div
-                            class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
-                            <div id="DataTables_Table_0_filter" class="dataTables_filter"><label><input type="search" class="form-control" placeholder="Pesquisar Usuário" aria-controls="DataTables_Table_0"></label></div>
-                            <div class="invoice_status mb-3 mb-md-0"><select id="UserRole" class="form-select">
-                                    <option value="">Selecionar departamento</option>
-                                    <option value="P" class="text-capitalize">Pendente</option>
-                                    <option value="D" class="text-capitalize">Desenvolvimento</option>
-                                    <option value="F" class="text-capitalize">Finalizado</option>
-                                </select></div>
-                        </div>
+                        <form class="col-12 col-md-6 d-flex justify-content-between" method="get">
+                            <input type="search" class="form-control me-2" placeholder="Pesquisar Usuário" name="search" value="{{ request.GET.search }}">
+                            <select id="UserRole" class="form-select me-2">
+                                <option value="">Selecionar departamento</option>
+                                <option value="P" class="text-capitalize">Pendente</option>
+                            </select>
+                            <button class="btn btn-primary">
+                                <i class="bx bx-search"></i>
+                            </button>
+                        </form>
                     </div>
-                    <table class="invoice-list-table table border-top dataTable no-footer dtr-column"
-                        id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
+                    <table class="invoice-list-table table border-top dataTable no-footer dtr-column" id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
                         <thead>
                             <tr>
-                                <th class="control sorting dtr-hidden" tabindex="0" aria-controls="DataTables_Table_0"
-                                    rowspan="1" colspan="1" style="width: 0px; display: none;"
-                                    aria-label=": activate to sort column ascending"></th>
-                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
-                                    colspan="1" style="width: 60px;" aria-label=": activate to sort column ascending">Nome de Usuário</th>
-                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
-                                    colspan="1" style="width: 323px;"
-                                    aria-label="Client: activate to sort column ascending">Nome Completo</th>
-                                <th class="sorting" tabindex="0" aria-controls="DataTables_Table_0" rowspan="1"
-                                    colspan="1" style="width: 88px;"
-                                    aria-label="Total: activate to sort column ascending">Setor</th>
-                                <th class="text-truncate sorting" tabindex="0" aria-controls="DataTables_Table_0"
-                                    rowspan="1" colspan="1" style="width: 156px;"
-                                    aria-label="Issued Date: activate to sort column ascending">Cargo</th>
-                                <th class="sorting_disabled" rowspan="1" colspan="1" style="width: 117px;"
-                                    aria-label="Balance">Data de Admissão</th>
-                                <th class="cell-fit sorting_disabled" rowspan="1" colspan="1" style="width: 76px;" aria-label="Actions">Ações</th>
+                                <th>Nome de Usuário</th>
+                                <th>Nome Completo</th>
+                                <th>Setor</th>
+                                <th>Cargo</th>
+                                <th>Admissão</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for user_obj in users %}
                             <tr class="even">
-                                <td class="control" tabindex="0" style="display: none;"></td>
                                 <td>
                                   <span class="badge bg-label-success">{{ user_obj.username }}</span>
                                 </td>
@@ -79,22 +61,30 @@
                                         <div class="d-flex flex-column"><a href="{% url 'accounts:user_detail' user_obj.username %}" class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name }}</span></a><small class="text-truncate text-muted">{{ user_obj.get_full_name }}</small></div>
                                     </div>
                                 </td>
-                                <td><span class="d-none">{{ user_obj.department }}</span>{{ user_obj.department }}</td>
-                                <td><span class="d-none">{{ user_obj.role }}</span>{{ user_obj.role }}</td>
-                                <td><span class="d-none">{{ user_obj.hire_date|date:"Ymd"|default:"&mdash;" }}</span>{{ user_obj.hire_date|date:"d M Y"|default:"&mdash;" }}</td>
+                                <td>{{ user_obj.department }}</td>
+                                <td>{{ user_obj.role }}</td>
+                                <td>{{ user_obj.hire_date|date:"d M Y"|default:"&mdash;" }}</td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="mailto:{{ user_obj.email }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Enviar e-mail" data-bs-original-title="Enviar e-mail"><i class="bx bx-envelope mx-1"></i></a>
                                         <a href="tel:{{ user_obj.phone }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ligar" data-bs-original-title="Ligar"><i class="bx bx-phone mx-1"></i></a>
+                                        {% if user|has_perm:'accounts.update_user' or user|has_perm:'accounts.delete_user' %}
                                         <div class="dropdown">
                                             <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a href="javascript:;" class="dropdown-item">Baixar</a>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                {% if user|has_perm:'accounts.change_user_password' %}
+                                                <a href="javascript:;" class="dropdown-item">Mudar senha</a>
+                                                {% endif %}
+                                                {% if user|has_perm:'accounts.update_user' %}
                                                 <a href="{% url 'accounts:user_update' user_obj.username %}" class="dropdown-item">Editar</a>
+                                                {% endif %}
+                                                {% if user|has_perm:'accounts.delete_user' %}
                                                 <div class="dropdown-divider"></div>
                                                 <a href="javascript:;" class="dropdown-item delete-record text-danger">Deletar</a>
+                                                {% endif %}
                                             </div>
                                         </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load iam_tags %}
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
     <h4 class="py-3 mb-4"><span class="text-muted fw-light">Campanhas /</span> Lista</h4>
@@ -7,9 +7,21 @@
     <!-- Invoice List Table -->
     <div class="card">
         <div class="card-datatable table-responsive">
-            <div class="card-datatable-header p-3">
+            <div class="card-datatable-header d-flex justify-content-between p-3">
+                {% if user|has_perm:'resolve_crm.add_marketingcampaign' %}
                 <div class="card-datatable-header-actions">
                     <a href="{% url 'resolve_crm:campaign_create' %}" class="btn btn-primary">Nova Campanha</a>
+                </div>
+                {% endif %}
+                <div class="card-datatable-header-actions">
+                    <form method="get">
+                        <div class="input-group">
+                            <input type="search" class="form-control" placeholder="Pesquisar campanha" name="search" id="search-input" value="{{ request.GET.search }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="bx bx-search"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
             <table class="invoice-list-table table border-top">
@@ -31,9 +43,11 @@
                             <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#campaignDetailModal{{ campaign.id }}">
                                 <i class="bx bx-detail fs-3"></i>
                             </a>
+                            {% if user|has_perm:'resolve_crm.update_marketingcampaign' %}
                             <a href="{% url 'resolve_crm:campaign_update' campaign.pk %}">
                                 <i class="bx bx-edit fs-3"></i>
                             </a>
+                            {% endif %}
                         </td>
                     </tr>
                     <div class="modal fade animate__animated animate__rotateInUpLeft" id="campaignDetailModal{{ campaign.id }}"
@@ -66,4 +80,14 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('search-input').addEventListener('input', function() {
+        if (this.value === '') {
+            this.form.submit();
+        }
+    });
+</script>
+{% endblock extra_scripts %}

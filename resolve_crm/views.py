@@ -78,6 +78,15 @@ class MarketingCampaignListView(LoginRequiredMixin, ListView):
     context_object_name = "campaigns"
     paginate_by = 10
     ordering = ['-start_datetime']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
 
 
 class MarketingCampaignDetailView(LoginRequiredMixin, DetailView):

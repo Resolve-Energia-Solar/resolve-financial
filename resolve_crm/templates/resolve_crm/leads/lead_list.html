@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static iam_tags %}
 
 {% block extra_styles %}
 <link rel="stylesheet"
@@ -22,14 +22,15 @@
             <div class="card-datatable table-responsive">
                 <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
                     <div class="row mx-1">
+                        {% if user|has_perm:'auth.add_group' %}
                         <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
-                            <div
-                                class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
+                            <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
                                 <div class="dt-buttons btn-group flex-wrap">
                                     <a href="{% url 'resolve_crm:lead_create' %}" class="btn btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Lead</span></span></a>
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                         <div
                             class="col-12 col-md-6 d-flex align-items-center justify-content-end flex-column flex-md-row pe-3 gap-md-3">
                             <div id="DataTables_Table_0_filter" class="dataTables_filter"><label><input type="search"
