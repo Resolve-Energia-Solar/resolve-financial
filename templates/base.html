@@ -634,13 +634,13 @@
                     <div class="dropdown-divider"></div>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="pages-profile-user.html">
+                    <a class="dropdown-item" href="{{ user.get_absolute_url }}">
                       <i class="bx bx-user me-2"></i>
                       <span class="align-middle">Meu Perfil</span>
                     </a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="pages-account-settings-account.html">
+                    <a class="dropdown-item" href="#">
                       <i class="bx bx-cog me-2"></i>
                       <span class="align-middle">Configurações</span>
                     </a>
@@ -649,13 +649,13 @@
                     <div class="dropdown-divider"></div>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="pages-faq.html">
+                    <a class="dropdown-item" href="#">
                       <i class="bx bx-help-circle me-2"></i>
                       <span class="align-middle">Tutoriais</span>
                     </a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="pages-pricing.html">
+                    <a class="dropdown-item" href="#">
                       <i class="bx bx-dollar me-2"></i>
                       <span class="align-middle">Suporte</span>
                     </a>
@@ -664,33 +664,10 @@
                     <div class="dropdown-divider"></div>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#animationModal">
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
                       <i class="bx bx-power-off me-2"></i>
                       <span class="align-middle">Sair</span>
                     </a>
-                    <!-- Modal -->
-                    <div class="modal animate__animated animate__jackInTheBox" id="animationModal" tabindex="-1" aria-hidden="true">
-                      <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="animationModalLabel">Deseja sair da conta?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body">
-                            <div class="row">
-                              <div class="col mb-3">
-                                <label for="jackInTheBox" class="form-label">Ao sair, será necessário entrar com seu nome de usuário e senha novamente. Tem certeza disto?</label>
-                                <input type="text" id="jackInTheBox" class="form-control" placeholder="Enter Name" />
-                              </div>
-                            </div>
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <a href="{% url 'accounts:logout' %}" role="button" class="btn btn-primary">Sair</a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </li>
                 </ul>
               </li>
@@ -723,7 +700,29 @@
         <!-- Content -->
         {% block content %}{% endblock content %}
         <!-- / Content -->
-
+        <!-- Log-Out Modal -->
+        <div class="modal animate__animated animate__jackInTheBox" id="logoutModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="logoutModalLabel">Deseja sair da conta?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row">
+                  <div class="col mb-3">
+                    <label for="jackInTheBox" class="form-label">Ao sair, será necessário entrar com seu nome de usuário e senha novamente. Tem certeza disto?</label>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'accounts:logout' %}" role="button" class="btn btn-primary">Sair</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- / Log-Out Modal -->
         <!-- Footer -->
         <footer class="content-footer footer bg-footer-theme">
           <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
