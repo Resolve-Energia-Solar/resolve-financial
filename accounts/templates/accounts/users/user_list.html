@@ -22,7 +22,7 @@
                     <div class="row p-3 mx-1">
                         {% if user|has_perm:'accounts.add_user' %}
                         <div class="col-12 col-md-6">
-                            <a href="{% url 'accounts:user_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Usuário</span></span></a>
+                            <a href="{% url 'accounts:user_create' %}" class="btn btn-secondary btn-primary" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Usuário</span></span></a>
                         </div>
                         {% endif %}
                         <form class="col-12 col-md-6 d-flex justify-content-between" method="get">
@@ -57,7 +57,7 @@
                                     <div class="d-flex justify-content-start align-items-center">
                                         <div class="avatar-wrapper">
                                             {% if user_obj.profile_picture %}
-                                            <img src="{{ user_obj.profile_picture.url }}" class="avatar avatar-sm rounded-circle me-2" alt="{{ user_obj.complete_name }}">
+                                            <img src="{{ user_obj.profile_picture.url }}" class="avatar pull-up avatar-initial avatar-sm rounded-circle me-2" alt="{{ user_obj.complete_name }}">
                                             {% else %}
                                             <div class="avatar avatar-sm me-2"><span class="avatar-initial rounded-circle bg-label-dark">{{ user_obj.username|slice:1 }}</span></div>
                                             {% endif %}
