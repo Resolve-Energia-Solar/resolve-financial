@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static iam_tags %}
 
 {% block extra_styles %}
 <link rel="stylesheet"
@@ -18,6 +18,7 @@
             <div class="card-datatable table-responsive">
                 <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
                     <div class="row mx-1">
+                        {% if user|has_perm:'accounts.add_branch' %}
                         <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-3">
                             <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
                                 <div class="dt-buttons btn-group flex-wrap">
@@ -25,15 +26,18 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     <table class="invoice-list-table table border-top dataTable no-footer dtr-column"
                         id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
                         <thead>
                             <tr>
-                                <th style="width: 25%;">Nome</th>
-                                <th style="width: 35%;">Endereço</th>
-                                <th style="width: 20%;">Proprietário</th>
+                                <th style="width: 20%;">Nome</th>
+                                <th style="width: 40%;">Endereço</th>
+                                <th style="width: 20%;">Proprietários</th>
+                                {% if user|has_perm:'accounts.update_branch' %}
                                 <th style="width: 20%;">Ações</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -46,8 +50,21 @@
                                 </td>
                                 <td>{{ branch.address }}</td>
                                 <td>
-                                    <a href="{{ branch.owner.get_absolute_url }}">{{ branch.owner }}</a>
+                                    <ul class="list-unstyled m-0 d-flex align-items-center avatar-group">
+                                        {% for owner in branch.owners.all %} 
+                                        <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar pull-up" aria-label="{{ owner.get_full_name }}" data-bs-original-title="{{ owner.get_full_name }}">
+                                            <a href="{{ owner.get_absolute_url }}">
+                                                <img class="rounded-circle" src="{{ owner.profile_picture.url }}" alt="Avatar">
+                                            </a>
+                                        </li>
+                                        {% empty %}
+                                        <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar pull-up" aria-label="Sem proprietários" data-bs-original-title="Sem proprietários">
+                                            <span class="avatar-initial rounded-circle pull-up bg-secondary">?</span>
+                                        </li>
+                                      {% endfor %}
+                                    </ul>
                                 </td>
+                                {% if user|has_perm:'accounts.update_branch' %}
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="{% url 'accounts:branch_update' branch.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar unidade" data-bs-original-title="Editar">
@@ -55,6 +72,7 @@
                                         </a>
                                     </div>
                                 </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
