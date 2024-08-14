@@ -25,6 +25,7 @@ class UsersListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         search_query = self.request.GET.get('search')
+        department_id = self.request.GET.get('department')
 
         if search_query:
             queryset = queryset.filter(
@@ -32,8 +33,16 @@ class UsersListView(LoginRequiredMixin, ListView):
                 Q(first_name__icontains=search_query) |  
                 Q(last_name__icontains=search_query)
             )
+            
+        if department_id:
+            queryset = queryset.filter(department=department_id)
 
         return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['departments'] = Department.objects.all()
+        return context
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):
