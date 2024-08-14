@@ -23,6 +23,14 @@ urlpatterns = [
     path("unidades/criar/", BranchCreateView.as_view(), name="branch_create"),
     path("unidades/", BranchListView.as_view(), name="branch_list"),
     path("unidades/<int:pk>/atualizar/", BranchUpdateView.as_view(), name="branch_update"),
+    # Departments
+    path("departamentos/criar/", DepartmentCreateView.as_view(), name="department_create"),
+    path("departamentos/", DepartmentListView.as_view(), name="department_list"),
+    path("departamentos/<int:pk>/atualizar/", DepartmentUpdateView.as_view(), name="department_update"),
+    # Roles
+    path("cargos/criar/", RoleCreateView.as_view(), name="role_create"),
+    path("cargos/", RoleListView.as_view(), name="role_list"),
+    path("cargos/<int:pk>/atualizar/", RoleUpdateView.as_view(), name="role_update"),
     # Addresses
     path("enderecos/criar/", AddressCreateView.as_view(), name="address_create"),
     path("enderecos/", AddressListView.as_view(), name="address_list"),

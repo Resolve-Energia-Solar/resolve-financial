@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static iam_tags %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Setores /</span> Lista</h4>
+    <!-- Departments List Table -->
+    <div class="card table-responsive-md">
+        <div class="row p-3">
+            {% if user|has_perm:'accounts.add_department' %}
+            <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start">
+                <a href="{% url 'accounts:department_create' %}" class="btn btn-secondary btn-primary mb-2" role="button">
+                    <span>
+                        <i class="bx bx-plus me-md-1"></i>
+                        <span class="d-md-inline-block d-none">
+                            Criar setor
+                        </span>
+                    </span>
+                </a>
+            </div>
+            {% endif %}
+            <form class="col-12 col-md-6 d-flex align-items-center" method="get">
+                <input type="search" class="form-control me-2" placeholder="Pesquisar setor" name="search"
+                    value="{{ request.GET.search }}">
+                <button class="btn btn-primary">
+                    <i class="bx bx-search"></i>
+                </button>
+            </form>
+        </div>
+        <table class="table border-top">
+            <thead>
+                <tr>
+                    <th rowspan="1" colspan="1" style="width: 30%;">Setor</th>
+                    <th rowspan="1" colspan="1" style="width: 30%;">E-mail</th>
+                    <th rowspan="1" colspan="1" style="width: 30%;">Quantidade de Usuários</th>
+                    <th rowspan="1" colspan="1" style="width: 10%;" aria-label="Ações">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for department in departments %}
+                <tr>
+                    <td class="text-capitalize">{{ department.name }}</td>
+                    </td>
+                    <td>{{ department.email }}</td>
+                    <td>{{ department.user_set.count }}
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <a href="{% url 'accounts:department_update' department.pk %}" data-bs-toggle="tooltip"
+                                class="text-body" data-bs-placement="top" aria-label="Editar Setor"
+                                data-bs-original-title="Editar Setor"><i class="bx bx-pencil mx-1"></i></a>
+                            <a href="#departmentDeleteModel" data-bs-toggle="tooltip" class="text-body"
+                                data-bs-placement="top" aria-label="Deletar Setor"
+                                data-bs-original-title="Deletar Setor"><i class="bx bx-trash mx-1"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Nenhum setor encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include 'snippets/pagination.html' %}
+    </div>
+</div>
+<!-- / Content -->
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Vendors JS -->
+<!-- <script src="{% static 'sneat-template/assets/vendor/libs/moment/moment.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js' %}"></script> -->
+
+<!-- Page JS -->
+<!-- <script src="{% static 'sneat-template/assets/js/app-invoice-list.js' %}"></script> -->
+{% endblock %}

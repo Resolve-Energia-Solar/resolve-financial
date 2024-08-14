@@ -11,7 +11,7 @@ from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Address, Branch, Squad
+from .models import Address, Branch, Department, Role, Squad
 from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm
 
 
@@ -197,6 +197,50 @@ class BranchUpdateView(LoginRequiredMixin, UpdateView):
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
+
+
+class DepartmentCreateView(LoginRequiredMixin, CreateView):
+    model = Department
+    fields = '__all__'
+    template_name = "accounts/departments/department_form.html"
+    success_url = reverse_lazy('accounts:department_list')
+
+
+class DepartmentListView(LoginRequiredMixin, ListView):
+    model = Department
+    template_name = "accounts/departments/department_list.html"
+    context_object_name = "departments"
+    ordering = ['name']
+    paginate_by = 10
+
+
+class DepartmentUpdateView(LoginRequiredMixin, UpdateView):
+    model = Department
+    fields = '__all__'
+    template_name = "accounts/departments/department_form.html"
+    success_url = reverse_lazy('accounts:department_list')
+
+
+class RoleCreateView(LoginRequiredMixin, CreateView):
+    model = Role
+    fields = '__all__'
+    template_name = "accounts/roles/role_form.html"
+    success_url = reverse_lazy('accounts:role_list')
+
+
+class RoleListView(LoginRequiredMixin, ListView):
+    model = Role
+    template_name = "accounts/roles/role_list.html"
+    context_object_name = "roles"
+    ordering = ['name']
+    paginate_by = 10
+
+
+class RoleUpdateView(LoginRequiredMixin, UpdateView):
+    model = Role
+    fields = '__all__'
+    template_name = "accounts/roles/role_form.html"
+    success_url = reverse_lazy('accounts:department_list')
 
 
 class AddressCreateView(LoginRequiredMixin, CreateView):

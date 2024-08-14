@@ -233,6 +233,12 @@
           {% url 'resolve_crm:campaign_detail' object.pk as campaign_detail_url %}
           {% url 'resolve_crm:campaign_create' as campaign_create_url %}
           {% url 'resolve_crm:campaign_update' object.pk as campaign_update_url %}
+          {% url 'accounts:department_create' as department_create_url %}
+          {% url 'accounts:department_list' as department_list_url %}
+          {% url 'accounts:department_update' object.pk as department_update_url %}
+          {% url 'accounts:role_create' as role_create_url %}
+          {% url 'accounts:role_list' as role_list_url %}
+          {% url 'accounts:role_update' object.pk as role_update_url %}
           <!-- Administração -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Administração</span>
@@ -390,6 +396,46 @@
               </li>
               <li class="menu-item {% is_active address_create_url %}">
                 <a href="{{ address_create_url }}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open department_create_url department_list_url department_update_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-shape-square"></i>
+              <div class="text-truncate">Setores</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active department_list_url %}">
+                <a href="{{ department_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active department_create_url %}">
+                <a href="{{ department_create_url }}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open role_list_url role_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bxs-user-detail"></i>
+              <div class="text-truncate">Cargos</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active role_list_url %}">
+                <a href="{{ role_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active role_create_url %}">
+                <a href="{{ role_create_url }}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>
