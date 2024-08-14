@@ -179,7 +179,7 @@ class BranchCreateView(LoginRequiredMixin, CreateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
-    success_url = reverse_lazy('branch_list')
+    success_url = reverse_lazy('accounts:branch_list')
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
@@ -202,7 +202,7 @@ class BranchUpdateView(LoginRequiredMixin, UpdateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
-    success_url = reverse_lazy('branch_list')
+    success_url = reverse_lazy('accounts:branch_list')
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
