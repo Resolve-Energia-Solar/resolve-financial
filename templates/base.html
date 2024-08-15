@@ -229,16 +229,19 @@
             </ul>
           </li>
           {% if user.is_staff %}
-          {% url 'resolve_crm:campaign_list' as campaign_list_url %}
-          {% url 'resolve_crm:campaign_detail' object.pk as campaign_detail_url %}
-          {% url 'resolve_crm:campaign_create' as campaign_create_url %}
-          {% url 'resolve_crm:campaign_update' object.pk as campaign_update_url %}
+          {% url 'accounts:squad_list' as squad_list_url %}
+          {% url 'accounts:squad_create' as squad_create_url %}
+          {% url 'accounts:department_list' as department_list_url %}
           {% url 'accounts:department_create' as department_create_url %}
           {% url 'accounts:department_list' as department_list_url %}
           {% url 'accounts:department_update' object.pk as department_update_url %}
           {% url 'accounts:role_create' as role_create_url %}
           {% url 'accounts:role_list' as role_list_url %}
           {% url 'accounts:role_update' object.pk as role_update_url %}
+          {% url 'resolve_crm:campaign_list' as campaign_list_url %}
+          {% url 'resolve_crm:campaign_detail' object.pk as campaign_detail_url %}
+          {% url 'resolve_crm:campaign_create' as campaign_create_url %}
+          {% url 'resolve_crm:campaign_update' object.pk as campaign_update_url %}
           <!-- Administração -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Administração</span>
@@ -282,6 +285,26 @@
               </li>
               <li class="menu-item {% is_active user_create_url %}">
                 <a href="{% url 'accounts:user_create' %}" class="menu-link">
+                  <div class="text-truncate">Criar</div>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item {% is_active_open squad_list_url squad_create_url %}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+              <i class="menu-icon tf-icons bx bx-group"></i>
+              <div class="text-truncate">Squads</div>
+            </a>
+            <ul class="menu-sub">
+              <li class="menu-item {% is_active squad_list_url %}">
+                <a href="{{ squad_list_url }}" class="menu-link">
+                  <div class="text-truncate">
+                     Lista
+                  </div>
+                </a>
+              </li>
+              <li class="menu-item {% is_active squad_create_url %}">
+                <a href="{{ squad_create_url }}" class="menu-link">
                   <div class="text-truncate">Criar</div>
                 </a>
               </li>
