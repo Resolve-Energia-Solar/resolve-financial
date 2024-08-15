@@ -5,8 +5,8 @@ from simple_history.models import HistoricalRecords
 
 
 class BoardTemplate(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Nome")
-    description = models.TextField(verbose_name="Descrição", blank=True, null=True)
+    name = models.CharField('Nome', max_length=200)
+    description = models.TextField("Descrição", blank=True, null=True)
     # Logs
     history = HistoricalRecords()
 
@@ -30,11 +30,11 @@ class BoardTemplate(models.Model):
 
 
 class Board(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE)
+    title = models.CharField("Título", max_length=200)
+    description = models.TextField("Descrição")
+    branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
     # Logs
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
     def __str__(self):
