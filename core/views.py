@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -5,7 +6,6 @@ from django.views.generic import ListView, TemplateView, DetailView, CreateView,
 from .models import Board, Column, Task
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-import json
 
 
 class IndexView(LoginRequiredMixin, TemplateView):
@@ -15,8 +15,14 @@ class IndexView(LoginRequiredMixin, TemplateView):
 class BoardList(LoginRequiredMixin, ListView):
     model = Board
     template_name = 'core/boards/board_list.html'
-    context_object_name = 'boards'
+    ordering = ['title']
     paginate_by = 10
+    
+    def get_queryset(self):
+        self.queryset = super().get_queryset()
+        title = self.request.GET.get('title')
+        self.queryset = self.queryset.filter(title__icontains=title) if title else self.queryset
+        return self.queryset
 
 
 def board_api(request, pk):
@@ -67,7 +73,7 @@ def board_api(request, pk):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-class KanbanView(DetailView):
+class KanbanView(LoginRequiredMixin, DetailView):
     model = Board
     template_name = "core/boards/board_kanban.html"
     
@@ -79,21 +85,6 @@ class KanbanView(DetailView):
         column.save()
         return redirect('core:board-detail', pk=board.pk)
     
-
-class BoardCreateView(LoginRequiredMixin, CreateView):
-    model = Board
-    fields = "__all__"
-    template_name = "core/boards/board_create.html"
-    success_url = reverse_lazy("core:board-list")
-
-
-class BoardUpdateView(LoginRequiredMixin, UpdateView):
-    model = Board
-    fields = "__all__"
-    template_name = "core/boards/board_update.html"
-
-    def get_success_url(self):
-        return self.object.get_absolute_url()
 
 
 class BoardsView(LoginRequiredMixin, ListView):
