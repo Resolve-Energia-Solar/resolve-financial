@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block extra_styles %}
+{% block extra_head %}
+<title>ERP &mdash; {{ object.get_full_name }}</title>
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/pages/page-profile.css' %}" />
-{% endblock extra_styles %}
+{% endblock extra_head %}
 
 {% block content %}
 

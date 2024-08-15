@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+{% block extra_head %}
+<title>
+  ERP &mdash;
+  {% if object %}
+  Editar Cargo
+  {% else %}
+  Criar Cargo
+  {% endif %}
+</title>
+{% endblock extra_head %}
+
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
   <div class="row justify-content-center py-3">
@@ -14,7 +25,7 @@
         {% endif %}
       </div>
 
-      <form method="post" id="group_form" class="mt-4">
+      <form method="post" id="role_form" class="mt-4">
         {% csrf_token %}
         <div class="row justify-content-center g-3">
           <div class="col-12 px-4">
@@ -23,7 +34,7 @@
 
             <div class="submit-row">
               <button class="btn btn-success me-2" type="submit">Salvar</button>
-              <a href="{% url 'accounts:group_list' %}">Voltar para a lista</a>
+              <a href="{% url 'accounts:role_list' %}">Voltar para a lista</a>
             </div>
 
           </div>

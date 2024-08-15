@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+{% block extra_head %}
+<title>
+  ERP &mdash;
+  {% if object %}
+  Editar Perfil
+  {% else %}
+  Criar Perfil
+  {% endif %}
+</title>
+{% endblock extra_head %}
+
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
   <div class="row justify-content-center py-3">

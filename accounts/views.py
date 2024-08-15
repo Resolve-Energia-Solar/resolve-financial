@@ -360,28 +360,28 @@ def delete_user(request, username):
 class SquadCreateView(LoginRequiredMixin, CreateView):
     model = Squad
     form_class = SquadForm
-    template_name = "resolve_crm/squads/squad_form.html"
+    template_name = "accounts/squads/squad_form.html"
 
     def get_success_url(self):
-        return redirect("resolve_crm:squad_detail", kwargs={"pk": self.object.pk})
+        return redirect("accounts:squad_detail", kwargs={"pk": self.object.pk})
 
     
 class SquadListView(LoginRequiredMixin, ListView):
     model = Squad
-    template_name = "resolve_crm/squads/squad_list.html"
+    template_name = "accounts/squads/squad_list.html"
     ordering = ['name']
     paginate_by = 10
 
     
 class SquadDetailView(LoginRequiredMixin, DetailView):
     model = Squad
-    template_name = "resolve_crm/squads/squad_detail.html"
+    template_name = "accounts/squads/squad_detail.html"
 
     
 class SquadUpdateView(LoginRequiredMixin, UpdateView):
     model = Squad
     form_class = SquadForm
-    template_name = "resolve_crm/squads/squad_form.html"
+    template_name = "accounts/squads/squad_form.html"
 
     def get_success_url(self):
         return self.object.get_absolute_url()

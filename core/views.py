@@ -101,14 +101,14 @@ class BoardDetailView(LoginRequiredMixin, DetailView):
 class BoardCreateView(LoginRequiredMixin, CreateView):
     model = Board
     fields = "__all__"
-    template_name = "resolve_crm/boards/board_create.html"
+    template_name = "core/boards/board_create.html"
     success_url = reverse_lazy("resolve_crm:boards")
 
 
 class BoardUpdateView(LoginRequiredMixin, UpdateView):
     model = Board
     fields = "__all__"
-    template_name = "resolve_crm/boards/board_update.html"
+    template_name = "core/boards/board_update.html"
 
     def get_success_url(self):
         return self.object.get_absolute_url()
