@@ -32,25 +32,53 @@
                 <tr>
                     <th rowspan="1" colspan="1" style="width: 40%;">Cargo</th>
                     <th rowspan="1" colspan="1" style="width: 40%;">Quantidade de Usuários</th>
+                    {% if user|has_perm:'auth.update_role' or user|has_perm:'auth.delete_role' %}
                     <th rowspan="1" colspan="1" style="width: 10%;" aria-label="Ações">Ações</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
-                {% for role in roles %}
+                {% for role in object_list %}
                 <tr>
-                    <td class="text-capitalize">{{ role.name }}</td>
-                    <td>{{ role.user_set.count }}
+                    <td>{{ role.name }}</td>
+                    <td>
+                        <div class="d-flex align-items-center avatar-group">
+                            {% for user in role.user_set.all|slice:":5" %}
+                                <div class="avatar">
+                                    <a href="{{ user.get_absolute_url }}">
+                                        <img src="{{ user.profile_picture.url }}" alt="Avatar" class="rounded-circle pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{ user.get_full_name }}">
+                                    </a>
+                                </div>
+                            {% empty %}
+                                <div class="avatar">
+                                    <span class="avatar-initial rounded-circle pull-up bg-secondary" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="Nenhum usuário">0</span>
+                                </div>
+                            {% endfor %}
+                            {% with remaining_users=role.user_set.count|add:"-5" %}
+                                {% if remaining_users > 0 %}
+                                    <div class="avatar">
+                                        <span class="avatar-initial rounded-circle pull-up bg-secondary" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="Mais {{ remaining_users }}">+{{ remaining_users }}</span>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
                     </td>
+                    {% if user|has_perm:'auth.update_role' or user|has_perm:'auth.delete_role' %}
                     <td>
                         <div class="d-flex align-items-center">
+                            {% if user|has_perm:'auth.update_role' %}
                             <a href="{% url 'accounts:role_update' role.pk %}" data-bs-toggle="tooltip"
                                 class="text-body" data-bs-placement="top" aria-label="Editar Cargo"
                                 data-bs-original-title="Editar Cargo"><i class="bx bx-pencil mx-1"></i></a>
+                            {% endif %}
+                            {% if user|has_perm:'auth.delete_role' %}
                             <a href="#roleDeleteModel" data-bs-toggle="tooltip" class="text-body"
                                 data-bs-placement="top" aria-label="Deletar Cargo"
                                 data-bs-original-title="Deletar Cargo"><i class="bx bx-trash mx-1"></i></a>
+                            {% endif %}
                         </div>
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>

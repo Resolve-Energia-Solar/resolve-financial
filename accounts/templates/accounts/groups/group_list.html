@@ -51,21 +51,50 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for group in groups %}
+                            {% for group in object_list %}
                             <tr class="even">
                                 <td class="text-capitalize">
                                     <a href="{% url 'accounts:group_detail' group.pk %}">{{ group.name }}</a>
                                 </td>
-                                <td><span class="d-none">{{ group.user_set.count }}</span>{{ group.user_set.count }}</td>
-                                <td><span class="d-none">{{ group.permissions.count }}</span>{{ group.permissions.count }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center avatar-group">
+                                        {% for user in group.user_set.all|slice:":5" %}
+                                            <div class="avatar">
+                                                <a href="{{ user.get_absolute_url }}">
+                                                    <img src="{{ user.profile_picture.url }}" alt="Avatar" class="rounded-circle pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-original-title="{{ user.get_full_name }}">
+                                                </a>
+                                            </div>
+                                        {% empty %}
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded-circle pull-up bg-secondary" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="Nenhum usuário">0</span>
+                                            </div>
+                                        {% endfor %}
+                                        {% with remaining_users=group.user_set.count|add:"-5" %}
+                                            {% if remaining_users > 0 %}
+                                                <div class="avatar">
+                                                    <span class="avatar-initial rounded-circle pull-up bg-secondary" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="Mais {{ remaining_users }}">+{{ remaining_users }}</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </td>
+                                <td>{{ group.permissions.count }}</td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="{% url 'accounts:group_detail' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver detalhes" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
+                                        {% if user|has_perm:'auth.update_group' %}
                                         <a href="{% url 'accounts:group_update' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Perfil" data-bs-original-title="Editar Perfil"><i class="bx bx-pencil mx-1"></i></a>
+                                        {% endif %}
+                                        {% if user|has_perm:'auth.delete_group' %}
                                         <a href="#groupDeleteModel" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Deletar Perfil" data-bs-original-title="Deletar Perfil"><i class="bx bx-trash mx-1"></i></a>
+                                        {% endif %}
                                         </div>
                                     </div>
                                 </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum perfil encontrado.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

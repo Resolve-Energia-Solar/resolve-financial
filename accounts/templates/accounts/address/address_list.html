@@ -1,14 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block extra_styles %}
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css' %}" />
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css' %}" />
-{% endblock %}
+{% load static iam_tags %}
 
 {% block content %}
 
@@ -17,44 +8,57 @@
     <div class="card">
         <div class="card-datatable table-responsive">
             <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
+                {% if user|has_perm:'auth.add_adress' %}
                 <div class="row mx-1">
-                    <div
-                        class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-3">
+                    <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-3">
                         <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
                             <div class="dt-buttons btn-group flex-wrap">
                                 <a href="{% url 'accounts:address_create' %}" class="btn btn-primary" tabindex="0"
                                     aria-controls="DataTables_Table_0" role="button"><span><i
-                                            class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar
-                                            Endereço</span></span></a>
+                                            class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Endereço</span></span></a>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 <table class="invoice-list-table table border-top dataTable no-footer dtr-column"
-                    id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
+                    id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info">
                     <thead>
                         <tr>
                             <th style="width: 10%;">CEP</th>
                             <th style="width: 25%;">Cidade/UF</th>
                             <th style="width: 40%;">Rua</th>
+                            {% if user|has_perm:'auth.update_adress' or user|has_perm:'auth.delete_adress' %}
                             <th style="width: 10%;">Nº</th>
                             <th style="width: 10%;">Ações</th>
+                            {% else %}
+                            <th style="width: 20%;">Nº</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
-                        {% for address in addresses %}
+                        {% for address in object_list %}
                         <tr>
                             <td>{{ address.zip_code }}</td>
                             <td>{{ address.city }}/{{ address.state }}</td>
                             <td>{{ address.street }}</td>
                             <td>{{ address.number }}</td>
+                            {% if user|has_perm:'auth.update_adress' or user|has_perm:'auth.delete_adress' %}
                             <td>
                                 <div class="d-flex align-items-center">
+                                    {% if user|has_perm:'auth.update_adress' %}
                                     <a href="{% url 'accounts:address_update' address.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Endereço" data-bs-original-title="Editar">
                                         <i class="bx bx-pencil mx-1"></i>
                                     </a>
+                                    {% endif %}
+                                    {% if user|has_perm:'auth.delete_adress' %}
+                                    <a href="#" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Endereço" data-bs-original-title="Editar">
+                                        <i class="bx bx-trash text-danger mx-1"></i>
+                                    </a>
+                                    {% endif %}                                    
                                 </div>
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>

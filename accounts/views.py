@@ -18,7 +18,6 @@ from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm
 class UsersListView(LoginRequiredMixin, ListView):
     model = get_user_model()
     template_name = "accounts/users/user_list.html"
-    context_object_name = "users"
     paginate_by = 10
     ordering = ['username']
     
@@ -120,7 +119,6 @@ class PermissionCreateView(LoginRequiredMixin, CreateView):
 class PermissionsListView(LoginRequiredMixin, ListView):
     model = Permission
     template_name = "accounts/permissions/permission_list.html"
-    context_object_name = "permissions"
     paginate_by = 10
     ordering = ['content_type', 'codename']
     
@@ -156,7 +154,7 @@ class GroupCreateView(LoginRequiredMixin, CreateView):
 class GroupsListView(LoginRequiredMixin, ListView):
     model = Group
     template_name = "accounts/groups/group_list.html"
-    context_object_name = "groups"
+    ordering = ['name']
     paginate_by = 10
 
 
@@ -179,7 +177,7 @@ class BranchCreateView(LoginRequiredMixin, CreateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
-    success_url = reverse_lazy('branch_list')
+    success_url = reverse_lazy('accounts:branch_list')
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
@@ -188,7 +186,7 @@ class BranchCreateView(LoginRequiredMixin, CreateView):
 class BranchListView(LoginRequiredMixin, ListView):
     model = Branch
     template_name = "accounts/branches/branch_list.html"
-    context_object_name = "branches"
+    ordering = ['name']
     paginate_by = 10
 
 
@@ -202,7 +200,7 @@ class BranchUpdateView(LoginRequiredMixin, UpdateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
-    success_url = reverse_lazy('branch_list')
+    success_url = reverse_lazy('accounts:branch_list')
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
@@ -218,7 +216,6 @@ class DepartmentCreateView(LoginRequiredMixin, CreateView):
 class DepartmentListView(LoginRequiredMixin, ListView):
     model = Department
     template_name = "accounts/departments/department_list.html"
-    context_object_name = "departments"
     ordering = ['name']
     paginate_by = 10
 
@@ -240,7 +237,6 @@ class RoleCreateView(LoginRequiredMixin, CreateView):
 class RoleListView(LoginRequiredMixin, ListView):
     model = Role
     template_name = "accounts/roles/role_list.html"
-    context_object_name = "roles"
     ordering = ['name']
     paginate_by = 10
 
@@ -262,7 +258,8 @@ class AddressCreateView(LoginRequiredMixin, CreateView):
 class AddressListView(LoginRequiredMixin, ListView):
     model = Address
     template_name = "accounts/address/address_list.html"
-    context_object_name = "addresses"
+    ordering = ['street']
+    paginate_by = 10
 
 
 class AddressUpdateView(LoginRequiredMixin, UpdateView):
@@ -372,6 +369,8 @@ class SquadCreateView(LoginRequiredMixin, CreateView):
 class SquadListView(LoginRequiredMixin, ListView):
     model = Squad
     template_name = "resolve_crm/squads/squad_list.html"
+    ordering = ['name']
+    paginate_by = 10
 
     
 class SquadDetailView(LoginRequiredMixin, DetailView):

@@ -8,7 +8,7 @@ from .models import *
 class TasksView(LoginRequiredMixin, ListView):
     model = Task
     template_name = "resolve_crm/tasks/task_list.html"
-    context_object_name = "tasks"
+    ordering = ['-created_at']
     paginate_by = 10
     
 
@@ -45,7 +45,7 @@ class LeadCreateView(LoginRequiredMixin, CreateView):
 class LeadListView(LoginRequiredMixin, ListView):
     model = Lead
     template_name = "resolve_crm/leads/lead_list.html"
-    context_object_name = "leads"
+    ordering = ['-created_at']
     paginate_by = 10
 
 
@@ -75,9 +75,8 @@ class MarketingCampaignCreateView(LoginRequiredMixin, CreateView):
 class MarketingCampaignListView(LoginRequiredMixin, ListView):
     model = MarketingCampaign
     template_name = "resolve_crm/marketing_campaings/marketing_campaign_list.html"
-    context_object_name = "campaigns"
-    paginate_by = 10
     ordering = ['-start_datetime']
+    paginate_by = 10
     
     def get_queryset(self):
         queryset = super().get_queryset()
