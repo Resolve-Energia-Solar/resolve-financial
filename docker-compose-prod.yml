@@ -1,29 +1,11 @@
-version: '3.8'
+version: '3.3'
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - '/data/coolify/applications/mwcoo4o:/app'
-    command: 'sh -c "python3 manage.py collectstatic --noinput && python3 manage.py makemigrations && python3 manage.py migrate && gunicorn -c ./configs/configs.py resolve_erp.wsgi"'
+      - .:/app
+    command: sh -c "python3 manage.py collectstatic --noinput && python3 manage.py makemigrations && python3 manage.py migrate && gunicorn -c ./configs/configs.py resolve_erp.wsgi"
     ports:
-      - '8060:8060'
-    networks:
-      - mwcoo4o
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.resolve-http.entrypoints=http
-      - 'traefik.http.routers.resolve-http.rule=Host(`developement-crm.resolvenergiasolar.com`) && PathPrefix(`/`)'
-      - traefik.http.routers.resolve-https.entrypoints=https
-      - traefik.http.routers.resolve-https.middlewares=gzip
-      - 'traefik.http.routers.resolve-https.rule=Host(`developement-crm.resolvenergiasolar.com`) && PathPrefix(`/`)'
-      - traefik.http.routers.resolve-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.resolve-https.tls=true
-      - traefik.http.services.resolve.loadbalancer.server.port=8060
-    restart: unless-stopped
-    container_name: web-mwcoo4o-044037668766
-networks:
-  mwcoo4o:
-    name: mwcoo4o
-    external: true
+      - "8060:8060"
