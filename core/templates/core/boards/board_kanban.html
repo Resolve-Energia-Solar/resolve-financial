@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block extra_styles %}
+{% block extra_head %}
+<title>Kanban &mdash; {{ object.title }}</title>
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/jkanban/jkanban.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/select2/select2.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/flatpickr/flatpickr.css' %}" />
@@ -9,7 +10,7 @@
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/quill/katex.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/quill/editor.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/pages/app-kanban.css' %}" />
-{% endblock extra_styles %}
+{% endblock extra_head %}
 
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">

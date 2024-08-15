@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block extra_head %}
+  <title>ERP &mdash; Editar {{ object.get_full_name }}</title>
+{% endblock extra_head %}
+
 {% block content %}
 <div class="row justify-content-center py-3">
   <div class="col-12 col-md-8">
