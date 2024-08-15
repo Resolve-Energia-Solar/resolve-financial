@@ -99,7 +99,7 @@ class BoardUpdateView(LoginRequiredMixin, UpdateView):
 class BoardsView(LoginRequiredMixin, ListView):
     model = Board
     template_name = "resolve_crm/boards/board_list.html"
-    context_object_name = "boards"
+    ordering = ["title"]
     paginate_by = 10
 
 

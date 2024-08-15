@@ -21,7 +21,7 @@
                             <div
                                 class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
                                 <div class="dt-buttons btn-squad flex-wrap">
-                                    <a href="{% url 'resolve_crm:squad_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Perfil</span></span></a>
+                                    <a href="{% url 'accounts:squad_create' %}" class="btn btn-secondary btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Perfil</span></span></a>
                                 </div>
                             </div>
                         </div>
@@ -48,17 +48,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for squad in squads %}
+                            {% for squad in object_list %}
                             <tr>
                                 <td class="text-capitalize">
-                                    <a href="{% url 'resolve_crm:squad_detail' squad.pk %}">{{ squad.name }}</a>
+                                    <a href="{% url 'accounts:squad_detail' squad.pk %}">{{ squad.name }}</a>
                                 </td>
                                 <td>{{ squad.members.count }}</td>
                                 <td>{{ squad.squad_boards.count }}</td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <a href="{% url 'resolve_crm:squad_detail' squad.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver detalhes" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
-                                        <a href="{% url 'resolve_crm:squad_update' squad.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Perfil" data-bs-original-title="Editar Perfil"><i class="bx bx-pencil mx-1"></i></a>
+                                        <a href="{% url 'accounts:squad_detail' squad.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver detalhes" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
+                                        <a href="{% url 'accounts:squad_update' squad.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Perfil" data-bs-original-title="Editar Perfil"><i class="bx bx-pencil mx-1"></i></a>
                                         <a href="#squadDeleteModel" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Deletar Perfil" data-bs-original-title="Deletar Perfil"><i class="bx bx-trash mx-1"></i></a>
                                         </div>
                                     </div>

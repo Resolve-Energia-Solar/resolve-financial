@@ -51,7 +51,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for group in groups %}
+                            {% for group in object_list %}
                             <tr class="even">
                                 <td class="text-capitalize">
                                     <a href="{% url 'accounts:group_detail' group.pk %}">{{ group.name }}</a>
