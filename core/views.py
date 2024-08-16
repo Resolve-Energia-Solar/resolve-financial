@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView, CreateView, UpdateView
 from .models import Board, Column, Task
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 
 
@@ -11,11 +11,14 @@ class IndexView(LoginRequiredMixin, TemplateView):
     template_name = "core/index.html"
 
 
-class BoardList(LoginRequiredMixin, ListView):
+class BoardList(UserPassesTestMixin, ListView):
     model = Board
     template_name = 'core/boards/board_list.html'
     ordering = ['title']
     paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.has_perm('core.view_board')
     
     def get_queryset(self):
         self.queryset = super().get_queryset()
@@ -75,6 +78,9 @@ def board_api(request, pk):
 class KanbanView(LoginRequiredMixin, DetailView):
     model = Board
     template_name = "core/boards/board_kanban.html"
+
+    # def test_func(self):
+    #     return self.request.user.has_perm('core.view_board')
     
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
@@ -83,38 +89,39 @@ class KanbanView(LoginRequiredMixin, DetailView):
         column.order = self.get_object().columns.count()
         column.save()
         return redirect('core:board-detail', pk=board.pk)
-    
 
 
-class BoardsView(LoginRequiredMixin, ListView):
-    model = Board
-    template_name = "resolve_crm/boards/board_list.html"
-    ordering = ["title"]
-    paginate_by = 10
-
-
-class BoardDetailView(LoginRequiredMixin, DetailView):
+class BoardDetailView(UserPassesTestMixin, DetailView):
     model = Board
     template_name = "resolve_crm/boards/board_detail.html"
+
+    def test_func(self):
+        return self.request.user.has_perm('core.view_board')
     
 
-class BoardCreateView(LoginRequiredMixin, CreateView):
+class BoardCreateView(UserPassesTestMixin, CreateView):
     model = Board
     fields = "__all__"
     template_name = "core/boards/board_create.html"
     success_url = reverse_lazy("resolve_crm:boards")
 
+    def test_func(self):
+        return self.request.user.has_perm('core.create_board')
 
-class BoardUpdateView(LoginRequiredMixin, UpdateView):
+
+class BoardUpdateView(UserPassesTestMixin, UpdateView):
     model = Board
     fields = "__all__"
     template_name = "core/boards/board_update.html"
+
+    def test_func(self):
+        return self.request.user.has_perm('core.change_board')
 
     def get_success_url(self):
         return self.object.get_absolute_url()
 
 
-# class MoveCardView(LoginRequiredMixin, View):
+# class MoveCardView(UserPassesTestMixin, View):
 #     def post(self, request, table_id, column_id, card_id, *args, **kwargs):
 #         card = get_object_or_404(Card, id=card_id)
 #         column = get_object_or_404(Column, id=column_id)
@@ -123,7 +130,7 @@ class BoardUpdateView(LoginRequiredMixin, UpdateView):
 #         return JsonResponse({'status': 'success'})
 
 
-# class CreateCardView(LoginRequiredMixin, View):
+# class CreateCardView(UserPassesTestMixin, View):
 #     def post(self, request, pk, column_id, *args, **kwargs):
 #         title = request.POST.get('title')
 #         column = get_object_or_404(Column, id=column_id)
@@ -133,14 +140,18 @@ class BoardUpdateView(LoginRequiredMixin, UpdateView):
 #         return JsonResponse({'status': 'success', 'card_id': card.id})
 
 
-# class DeleteCardView(LoginRequiredMixin, View):
+# class DeleteCardView(UserPassesTestMixin, View):
 #     def post(self, request, pk, column_id, card_id, *args, **kwargs):
 #         card = get_object_or_404(Card, id=card_id)
 #         card.delete()
 #         return JsonResponse({'status': 'success'})
 
 
-class DeleteColumnView(LoginRequiredMixin, View):
+class DeleteColumnView(UserPassesTestMixin, View):
+
+    def test_func(self):
+        return self.request.user.has_perm('core.delete_column')
+    
     def post(self, request, column_id, *args, **kwargs):
         column = get_object_or_404(Column, id=column_id)
         column.delete()
