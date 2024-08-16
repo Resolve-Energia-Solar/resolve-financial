@@ -112,6 +112,7 @@ class UserUpdateView(UserPassesTestMixin, UpdateView):
     form_class = UserUpdateForm
     template_name = "accounts/users/user_update.html"
     slug_field = "username"
+    context_object_name = "user_obj"
     
     def test_func(self):
         user = self.request.user
