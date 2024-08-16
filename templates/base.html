@@ -12,7 +12,8 @@
   <meta name="description" content="" />
 
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="{% static 'sneat-template/assets/img/branding/Resolve (Redondo Amarelo-Preto).svg' %}" />
+  <link rel="icon" type="image/x-icon"
+    href="{% static 'sneat-template/assets/img/branding/Resolve (Redondo Amarelo-Preto).svg' %}" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,57 +23,53 @@
     rel="stylesheet" />
 
   <!-- Icons -->
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/fonts/boxicons.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/fonts/fontawesome.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/fonts/flag-icons.css' %}" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/fonts/boxicons.css' %}" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/fonts/fontawesome.css' %}" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/fonts/flag-icons.css' %}" />
 
   <!-- Select2 CSS -->
   {% if form %}
-    {{ form.media.css }}
-    <style>
-        .select2.select2-container {
-            width: 100% !important;
-        }
-        
-        .select2-container--default .select2-selection--single {
-                border: 1px solid #ced4da;
-                border-radius: 0.25rem;
-                height: calc(2.25rem + 2px);
-                padding: 0.375rem 0.75rem;
-        }
-        
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: calc(2.25rem + 2px);
-            position: absolute;
-            top: 1px;
-            right: 5px;
-            width: 20px;
-            display: flex;
-            align-items: center;
-        }
-    </style>
+  {{ form.media.css }}
+  <style>
+    .select2.select2-container {
+      width: 100% !important;
+    }
+
+    .select2-container--default .select2-selection--single {
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      height: calc(2.25rem + 2px);
+      padding: 0.375rem 0.75rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: calc(2.25rem + 2px);
+      position: absolute;
+      top: 1px;
+      right: 5px;
+      width: 20px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
   {% endif %}
 
   <!-- Core CSS -->
-  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/rtl/core.css' %}" class="template-customizer-core-css" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/css/rtl/theme-default.css' %}"
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/rtl/core.css' %}"
+    class="template-customizer-core-css" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/rtl/theme-default.css' %}"
     class="template-customizer-theme-css" />
   <link rel="stylesheet" href="{% static 'sneat-template/assets/css/demo.css' %}" />
 
   <!-- Vendors CSS -->
   <link rel="stylesheet"
     href="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
-  <link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/apex-charts/apex-charts.css' %}" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/apex-charts/apex-charts.css' %}" />
 
-    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/animate-css/animate.css' %}" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/animate-css/animate.css' %}" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
   {% block extra_head %}{% endblock extra_head %}
 
@@ -82,8 +79,7 @@
   <script src="{% static 'sneat-template/assets/vendor/js/helpers.js' %}"></script>
   <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
   <!--? Template customizer: To hide customizer set displayCustomizer value false in config.js.  -->
-  <script
-    src="{% static 'sneat-template/assets/vendor/js/template-customizer.js' %}"></script>
+  <script src="{% static 'sneat-template/assets/vendor/js/template-customizer.js' %}"></script>
   <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
   <script src="{% static 'sneat-template/assets/js/config.js' %}"></script>
 </head>
@@ -126,7 +122,7 @@
           {% url 'accounts:permission_list' as permission_list_url %}
           {% url 'accounts:group_list' as group_list_url %}
           {% url 'accounts:group_create' as group_create_url %}
-          {% url 'core:boards' as boards_list_url %}
+          {% url 'core:board-list' as boards_list_url %}
           {% url 'core:board-create' as boards_create_url %}
           {% url 'resolve_crm:lead_create' as lead_create_url %}
           {% url 'resolve_crm:lead_list' as lead_list_url %}
@@ -176,7 +172,8 @@
               </li>
             </ul>
           </li>
-          <li class="menu-item {% if object.type == 'T' or request.path == tasks_url %}{% is_active_open board_detail_url tasks_url %}{% endif %}">
+          <li
+            class="menu-item {% if object.type == 'T' or request.path == tasks_url %}{% is_active_open board_detail_url tasks_url %}{% endif %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
               <div class="text-truncate">Atividades</div>
@@ -197,7 +194,7 @@
               </li>
             </ul>
           </li>
-        
+
           <!-- Portal do Vendedor -->
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Portal do Vendedor</span>
@@ -207,10 +204,11 @@
               <i class="menu-icon tf-icons bx bx-layout"></i>
               <div class="text-truncate">Portal do Vendedor</div>
             </a>
-        
+
             <ul class="menu-sub">
               <li class="menu-item">
-                <a href="{% static 'sneat-template/html/vertical-menu-template/layouts-collapsed-menu.html' %}" class="menu-link">
+                <a href="{% static 'sneat-template/html/vertical-menu-template/layouts-collapsed-menu.html' %}"
+                  class="menu-link">
                   <div class="text-truncate">Meus clientes</div>
                 </a>
               </li>
@@ -244,7 +242,7 @@
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Administração</span>
           </li>
-          {% if user.is_superuser %}            
+          {% if user.is_superuser %}
           <li class="menu-item">
             <a href="{% url 'admin:index' %}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-cog"></i>
@@ -252,7 +250,8 @@
             </a>
           </li>
           {% endif %}
-          <li class="menu-item {% is_active_open campaign_list_url campaign_detail_url campaign_create_url campaign_update_url %}">
+          <li
+            class="menu-item {% is_active_open campaign_list_url campaign_detail_url campaign_create_url campaign_update_url %}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx-star"></i>
               <div class="text-truncate">Campanhas</div>
@@ -297,7 +296,7 @@
               <li class="menu-item {% is_active squad_list_url %}">
                 <a href="{{ squad_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -317,7 +316,7 @@
               <li class="menu-item {% is_active branch_list_url %}">
                 <a href="{{ branch_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -373,7 +372,7 @@
               <li class="menu-item {% is_active permission_list_url %}">
                 <a href="{{ permission_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -393,7 +392,7 @@
               <li class="menu-item {% is_active address_list_url %}">
                 <a href="{{ address_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -413,7 +412,7 @@
               <li class="menu-item {% is_active department_list_url %}">
                 <a href="{{ department_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -433,7 +432,7 @@
               <li class="menu-item {% is_active role_list_url %}">
                 <a href="{{ role_list_url }}" class="menu-link">
                   <div class="text-truncate">
-                     Lista
+                    Lista
                   </div>
                 </a>
               </li>
@@ -463,7 +462,7 @@
             </a>
           </li>
         </ul>
-        
+
       </aside>
       <!-- / Menu -->
 
@@ -521,48 +520,45 @@
 
               <!-- Notification -->
               <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
-                <a
-                  class="nav-link dropdown-toggle hide-arrow"
-                  href="javascript:void(0);"
-                  data-bs-toggle="dropdown"
-                  data-bs-auto-close="outside"
-                  aria-expanded="false">
+                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown"
+                  data-bs-auto-close="outside" aria-expanded="false">
                   <i class="bx bx-bell bx-sm"></i>
                   {% notifications_unread as notifications_unread %}
                   {% if notifications_unread %}
-                  <span id="badge-notifications" class="badge bg-danger rounded-pill badge-notifications">{{ notifications_unread }}</span>
+                  <span id="badge-notifications" class="badge bg-danger rounded-pill badge-notifications">{{
+                    notifications_unread }}</span>
                   {% endif %}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
                   <li class="dropdown-menu-header border-bottom">
-                      <div class="dropdown-header d-flex align-items-center py-3">
-                        <h5 class="text-body mb-0 me-auto">Notificações</h5>
-                        {% if notifications_unread %}
-                        <a href="{% url 'notifications:mark_all_as_read' %}"
-                          class="dropdown-notifications-all text-body"
-                          data-bs-toggle="tooltip"
-                          data-bs-placement="top"
-                          title="Marcar todas como lidas"
-                          ><i class="bx fs-4 bx-envelope-open"></i
-                        ></a>
-                        {% endif %}
-                      </div>
+                    <div class="dropdown-header d-flex align-items-center py-3">
+                      <h5 class="text-body mb-0 me-auto">Notificações</h5>
+                      {% if notifications_unread %}
+                      <a href="{% url 'notifications:mark_all_as_read' %}" class="dropdown-notifications-all text-body"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Marcar todas como lidas"><i
+                          class="bx fs-4 bx-envelope-open"></i></a>
+                      {% endif %}
+                    </div>
                   </li>
                   <li class="dropdown-notifications-list scrollable-container">
                     <ul class="list-group list-group-flush">
-                      {% for notification in request.user.notifications.active %}                       
+                      {% for notification in request.user.notifications.active %}
                       <li class="list-group-item list-group-item-action dropdown-notifications-item">
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
                               {% if notification.actor.profile_picture %}
-                                <img src="{{ notification.actor.profile_picture.url }}" alt class="w-px-40 h-auto rounded-circle" />
+                              <img src="{{ notification.actor.profile_picture.url }}" alt
+                                class="w-px-40 h-auto rounded-circle" />
                               {% else %}
-                                <img src="{% static 'accounts/img/dummy-user.jpg' %}" alt class="w-px-40 h-auto rounded-circle" />
+                              <img src="{% static 'accounts/img/dummy-user.jpg' %}" alt
+                                class="w-px-40 h-auto rounded-circle" />
                               {% endif %}
                             </div>
                           </div>
-                          <a class="flex-grow-1 notification-link" href="{{ notification.action_object.get_absolute_url }}" data-mark-read-url="{% url "notifications:mark_as_read" notification.slug %}">
+                          <a class="flex-grow-1 notification-link"
+                            href="{{ notification.action_object.get_absolute_url }}" data-mark-read-url="{% url "
+                            notifications:mark_as_read" notification.slug %}">
                             <h6 class="mb-1">
                               {% if notification.actor == user %}
                               Você
@@ -575,12 +571,14 @@
                             <small class="text-muted">há {{ notification.timesince }}</small>
                           </a>
                           <div class="flex-shrink-0 dropdown-notifications-actions">
-                            {% if notification.unread %}                                
+                            {% if notification.unread %}
                             <a href="javascript:void(0)" class="dropdown-notifications-read">
-                              <span class="badge badge-dot {% if notification.level == 'success' %}bg-success{% elif notification.level == 'warning' %}bg-warning{% elif notification.level == 'error' %}bg-danger{% elif notification.level == 'info' %}bg-info{% endif %}"></span>
+                              <span
+                                class="badge badge-dot {% if notification.level == 'success' %}bg-success{% elif notification.level == 'warning' %}bg-warning{% elif notification.level == 'error' %}bg-danger{% elif notification.level == 'info' %}bg-info{% endif %}"></span>
                             </a>
                             {% endif %}
-                            <a href="{% url 'notifications:delete' notification.slug %}" class="dropdown-notifications-archive">
+                            <a href="{% url 'notifications:delete' notification.slug %}"
+                              class="dropdown-notifications-archive">
                               <span class="bx bx-x"></span>
                             </a>
                           </div>
@@ -602,10 +600,11 @@
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                   <div class="avatar avatar-online">
                     {% if user.profile_picture %}
-                      <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                    <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
                     {% else %}
-                      <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image" class="w-px-40 h-auto rounded-circle" />
-                    {% endif %}      
+                    <img src="https://randomuser.me/api/portraits/men/26.jpg" alt="user image"
+                      class="w-px-40 h-auto rounded-circle" />
+                    {% endif %}
                   </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -615,10 +614,12 @@
                         <div class="flex-shrink-0 me-3">
                           <div class="avatar avatar-online">
                             {% if user.profile_picture %}
-                              <img src="{{ user.profile_picture.url }}" alt="user image" class="w-px-40 h-auto rounded-circle" />
+                            <img src="{{ user.profile_picture.url }}" alt="user image"
+                              class="w-px-40 h-auto rounded-circle" />
                             {% else %}
-                              <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}</div>
-                            {% endif %}   
+                            <div alt="user image" class="w-px-40 h-auto rounded-circle">{{ user.first_name|slice:1 }}
+                            </div>
+                            {% endif %}
                           </div>
                         </div>
                         <div class="flex-grow-1">
@@ -643,12 +644,6 @@
                     </a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="#">
-                      <i class="bx bx-cog me-2"></i>
-                      <span class="align-middle">Configurações</span>
-                    </a>
-                  </li>
-                  <li>
                     <div class="dropdown-divider"></div>
                   </li>
                   <li>
@@ -658,8 +653,8 @@
                     </a>
                   </li>
                   <li>
-                    <a class="dropdown-item" href="#">
-                      <i class="bx bx-dollar me-2"></i>
+                    <a class="dropdown-item" href="pages-pricing.html">
+                      <i class="bx bx-headphone me-2"></i>
                       <span class="align-middle">Suporte</span>
                     </a>
                   </li>
@@ -681,7 +676,7 @@
                   <i class="bx bx-log-in-circle bx-sm me-1"></i>
                   <span class="d-none d-sm-inline-block">Entrar</span>
                 </a>
-              {% endif %}
+                {% endif %}
             </ul>
           </div>
 
@@ -694,70 +689,77 @@
         </nav>
 
         <!-- / Navbar -->
-         
-      <!-- Content wrapper -->
-      <div class="content-wrapper">
-                  
-        {% include 'snippets/alert_messages.html' %}
 
-        <!-- Content -->
-        {% block content %}{% endblock content %}
-        <!-- / Content -->
-        <!-- Log-Out Modal -->
-        <div class="modal animate__animated animate__jackInTheBox" id="logoutModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="logoutModalLabel">Deseja sair da conta?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <div class="row">
-                  <div class="col mb-3">
-                    <label for="jackInTheBox" class="form-label">Ao sair, será necessário entrar com seu nome de usuário e senha novamente. Tem certeza disto?</label>
+        <!-- Content wrapper -->
+        <div class="content-wrapper">
+
+          {% include 'snippets/alert_messages.html' %}
+
+          <!-- Content -->
+          {% block content %}{% endblock content %}
+          <!-- / Content -->
+
+          <!-- Modal -->
+          <div class="modal animate__animated animate__jackInTheBox" id="animationModal" tabindex="-1"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="animationModalLabel">Deseja sair da conta?</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="row">
+                    <div class="col mb-3">
+                      <h1 class="h5">Ao sair, será necessário entrar com seu nome de usuário e senha novamente. Tem certeza disto?</h1>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="{% url 'accounts:logout' %}" role="button" class="btn btn-primary">Sair</a>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <a href="{% url 'accounts:logout' %}" role="button" class="btn btn-primary">Sair</a>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Footer -->
+          <footer class="content-footer footer bg-footer-theme">
+            <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+              <div class="mb-2 mb-md-0">
+                ©
+                <script>
+                  document.write(new Date().getFullYear());
+                </script>, por
+                <a href="https://resolveenergiasolar.com.br/" target="_blank" class="footer-link fw-medium">Resolve
+                  Energia Solar</a>
+              </div>
+              <div class="d-none d-lg-inline-block">
+                <a href="https://resolveenergiasolar.com.br/" target="_blank" class="footer-link me-4">Resolve Energia
+                  Solar</a>
+                <a href="https://resolveenergiasolar.com.br/license/" class="footer-link me-4"
+                  target="_blank">Licença</a>
+                <a href="https://demos.themeselection.com/sneat-bootstrap-html-admin-template/documentation/"
+                  target="_blank" class="footer-link me-4">Tutoriais</a>
+                <a href="https://resolveenergiasolar.com.br/support/" target="_blank"
+                  class="footer-link d-none d-sm-inline-block">Suporte</a>
+              </div>
+            </div>
+          </footer>
+          <!-- / Footer -->
+
+          <div class="content-backdrop fade"></div>
         </div>
-        <!-- / Log-Out Modal -->
-        <!-- Footer -->
-        <footer class="content-footer footer bg-footer-theme">
-          <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
-            <div class="mb-2 mb-md-0">
-              ©
-              <script>
-                document.write(new Date().getFullYear());
-              </script>, por
-              <a href="https://resolveenergiasolar.com.br/" target="_blank" class="footer-link fw-medium">Resolve Energia Solar</a>
-            </div>
-            <div class="d-none d-lg-inline-block">
-              <a href="https://resolveenergiasolar.com.br/" target="_blank" class="footer-link me-4">Resolve Energia Solar</a>
-              <a href="https://resolveenergiasolar.com.br/license/" class="footer-link me-4" target="_blank">Licença</a>
-              <a href="https://demos.themeselection.com/sneat-bootstrap-html-admin-template/documentation/" target="_blank" class="footer-link me-4">Tutoriais</a>
-              <a href="https://resolveenergiasolar.com.br/support/" target="_blank" class="footer-link d-none d-sm-inline-block">Suporte</a>
-            </div>
-          </div>
-        </footer>
-        <!-- / Footer -->
-
-        <div class="content-backdrop fade"></div>
+        <!-- Content wrapper -->
       </div>
-      <!-- Content wrapper -->
+      <!-- / Layout page -->
     </div>
-    <!-- / Layout page -->
-  </div>
 
-  <!-- Overlay -->
-  <div class="layout-overlay layout-menu-toggle"></div>
+    <!-- Overlay -->
+    <div class="layout-overlay layout-menu-toggle"></div>
 
-  <!-- Drag Target Area To SlideIn Menu On Small Screens -->
-  <div class="drag-target"></div>
+    <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+    <div class="drag-target"></div>
   </div>
   <!-- / Layout wrapper -->
 
@@ -766,15 +768,17 @@
 
   <script src="{% static 'sneat-template/assets/vendor/libs/jquery/jquery.js' %}"></script>
   <!-- <script src="{% static 'sneat-template/assets/vendor/libs/popper/popper.js' %}"></script> -->
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
+    integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
+    crossorigin="anonymous"></script>
   <!-- <script src="{% static 'sneat-template/assets/vendor/js/bootstrap.js' %}"></script> -->
-  <script
-    src="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js' %}"></script>
+  <script src="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js' %}"></script>
   <script src="{% static 'sneat-template/assets/vendor/libs/hammer/hammer.js' %}"></script>
   <script src="{% static 'sneat-template/assets/vendor/libs/i18n/i18n.js' %}"></script>
-  <script
-    src="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.js' %}"></script>
+  <script src="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.js' %}"></script>
   <script src="{% static 'sneat-template/assets/vendor/js/menu.js' %}"></script>
 
   <!-- endbuild -->
@@ -786,92 +790,93 @@
   <script src="{% static 'sneat-template/assets/js/main.js' %}"></script>
 
   <!-- Page JS -->
-  {# <script src="{% static 'sneat-template/assets/js/ui-modals.js' %}"></script> #}
+  {#
+  <script src="{% static 'sneat-template/assets/js/ui-modals.js' %}"></script> #}
 
   {% if form %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.1/typeahead.bundle.min.js"></script>
-    {{ form.media.js }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.1/typeahead.bundle.min.js"></script>
+  {{ form.media.js }}
   {% endif %}
 
   <script src="{% static 'notifications/notify.js' %}" type="text/javascript"></script>
   {# {% register_notify_callbacks callbacks='fill_notification_list,fill_notification_badge' %} #}
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Marcar todas como lidas
-        document.querySelector('.dropdown-notifications-all').addEventListener('click', function(event) {
-            event.preventDefault();
-    
-            var url = this.href;
-    
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('badge-notifications').remove();
-            })
-            .catch(error => {
-                console.error('Erro ao marcar notificações como lidas:', error);
-            });
-        });
-    
-        // Excluir notificação
-        document.querySelectorAll('.dropdown-notifications-archive').forEach(function(element) {
-            element.addEventListener('click', function(event) {
-                event.preventDefault();
-                var url = this.href;
-    
-                fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('Notificação excluída com sucesso');
-                    } else {
-                        console.error('Falha ao excluir a notificação');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao excluir a notificação:', error);
-                });
-            });
-        });
+    document.addEventListener('DOMContentLoaded', function () {
+      // Marcar todas como lidas
+      document.querySelector('.dropdown-notifications-all').addEventListener('click', function (event) {
+        event.preventDefault();
 
-        // Marcar notificação como lida
-        document.querySelectorAll('.notification-link').forEach(function(element) {
-        element.addEventListener('click', function(event) {
-          event.preventDefault(); // Previne o redirecionamento padrão
-    
+        var url = this.href;
+
+        fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById('badge-notifications').remove();
+          })
+          .catch(error => {
+            console.error('Erro ao marcar notificações como lidas:', error);
+          });
+      });
+
+      // Excluir notificação
+      document.querySelectorAll('.dropdown-notifications-archive').forEach(function (element) {
+        element.addEventListener('click', function (event) {
+          event.preventDefault();
           var url = this.href;
-          var markReadUrl = this.dataset.markReadUrl;
-    
-          fetch(markReadUrl, {
+
+          fetch(url, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+              'X-Requested-With': 'XMLHttpRequest'
             }
           })
             .then(response => {
-                if (response.ok) {
-                    console.log('Notificação marcada como lida com sucesso');
-                } else {
-                    console.error('Falha ao marcar a notificação como lida');
-                }
+              if (response.ok) {
+                console.log('Notificação excluída com sucesso');
+              } else {
+                console.error('Falha ao excluir a notificação');
+              }
             })
             .catch(error => {
-                console.error('Falha ao marcar a notificação como lida:', error);
+              console.error('Erro ao excluir a notificação:', error);
             });
-            window.location.href = url;
-          });
         });
+      });
+
+      // Marcar notificação como lida
+      document.querySelectorAll('.notification-link').forEach(function (element) {
+        element.addEventListener('click', function (event) {
+          event.preventDefault(); // Previne o redirecionamento padrão
+
+          var url = this.href;
+          var markReadUrl = this.dataset.markReadUrl;
+
+          fetch(markReadUrl, {
+            method: 'GET',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+            .then(response => {
+              if (response.ok) {
+                console.log('Notificação marcada como lida com sucesso');
+              } else {
+                console.error('Falha ao marcar a notificação como lida');
+              }
+            })
+            .catch(error => {
+              console.error('Falha ao marcar a notificação como lida:', error);
+            });
+          window.location.href = url;
+        });
+      });
     });
   </script>
 

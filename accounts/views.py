@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
@@ -15,11 +15,14 @@ from .models import Address, Branch, Department, Role, Squad
 from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm
 
 
-class UsersListView(LoginRequiredMixin, ListView):
+class UsersListView(UserPassesTestMixin, ListView):
     model = get_user_model()
     template_name = "accounts/users/user_list.html"
     paginate_by = 10
     ordering = ['username']
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_user')
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -44,17 +47,24 @@ class UsersListView(LoginRequiredMixin, ListView):
         return context
 
 
-class UserDetailView(LoginRequiredMixin, DetailView):
+class UserDetailView(UserPassesTestMixin, DetailView):
     model = get_user_model()
     template_name = "accounts/users/user_detail.html"
     slug_field = "username"
     context_object_name = "user_obj"
+    
+    def test_func(self):
+        user = self.request.user
+        return user.username == self.get_object().username or user.has_perm('accounts.view_user')
 
 
-class UserCreateView(LoginRequiredMixin, CreateView):
+class UserCreateView(UserPassesTestMixin, CreateView):
     model = get_user_model()
     form_class = UserForm
     template_name = "accounts/users/user_create.html"
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_user')
     
     def form_valid(self, form):
         # Generate a random password
@@ -97,30 +107,40 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         return self.object.get_absolute_url()
     
 
-class UserUpdateView(LoginRequiredMixin, UpdateView):
+class UserUpdateView(UserPassesTestMixin, UpdateView):
     model = get_user_model()
     form_class = UserUpdateForm
     template_name = "accounts/users/user_update.html"
     slug_field = "username"
+    
+    def test_func(self):
+        user = self.request.user
+        return user.username == self.get_object().username or user.has_perm('accounts.change_user')
 
     def get_success_url(self):
         return self.object.get_absolute_url()
 
 
-class PermissionCreateView(LoginRequiredMixin, CreateView):
+class PermissionCreateView(UserPassesTestMixin, CreateView):
     model = Permission
     fields = ['name', 'content_type', 'codename']
     template_name = "accounts/permissions/permission_form.html"
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_permission')
     
     def get_success_url(self):
         return reverse_lazy("accounts:permission_list")
 
 
-class PermissionsListView(LoginRequiredMixin, ListView):
+class PermissionsListView(UserPassesTestMixin, ListView):
     model = Permission
     template_name = "accounts/permissions/permission_list.html"
     paginate_by = 10
     ordering = ['content_type', 'codename']
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_permission')
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -132,141 +152,195 @@ class PermissionsListView(LoginRequiredMixin, ListView):
         return queryset
 
 
-class PermissionUpdateView(LoginRequiredMixin, UpdateView):
+class PermissionUpdateView(UserPassesTestMixin, UpdateView):
     model = Permission
     fields = ['name', 'content_type', 'codename']
     template_name = "accounts/permissions/permission_form.html"
     slug_field = "codename"
     
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_permission')
+    
     def get_success_url(self):
         return reverse_lazy("accounts:permission_list")
 
 
-class GroupCreateView(LoginRequiredMixin, CreateView):
+class GroupCreateView(UserPassesTestMixin, CreateView):
     model = Group
     form_class = GroupForm
     template_name = "accounts/groups/group_form.html"
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_group')
     
     def get_success_url(self):
         return reverse_lazy("accounts:group_list")
 
 
-class GroupsListView(LoginRequiredMixin, ListView):
+class GroupsListView(UserPassesTestMixin, ListView):
     model = Group
     template_name = "accounts/groups/group_list.html"
     ordering = ['name']
     paginate_by = 10
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_group')
 
 
-class GroupDetailView(LoginRequiredMixin, DetailView):
+class GroupDetailView(UserPassesTestMixin, DetailView):
     model = Group
     template_name = "accounts/groups/group_detail.html"
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_group')
 
 
-class GroupUpdateView(LoginRequiredMixin, UpdateView):
+class GroupUpdateView(UserPassesTestMixin, UpdateView):
     model = Group
     form_class = GroupForm
     template_name = "accounts/groups/group_form.html"
     slug_field = "codename"
     
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_group')
+    
     def get_success_url(self):
         return reverse_lazy("accounts:group_detail", kwargs={"pk": self.object.pk})
 
 
-class BranchCreateView(LoginRequiredMixin, CreateView):
+class BranchCreateView(UserPassesTestMixin, CreateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
     success_url = reverse_lazy('accounts:branch_list')
     
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_branch')
+    
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
-class BranchListView(LoginRequiredMixin, ListView):
+class BranchListView(UserPassesTestMixin, ListView):
     model = Branch
     template_name = "accounts/branches/branch_list.html"
     ordering = ['name']
-    paginate_by = 10
+    paginate_by = 10 
+
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_branch')
 
 
-class BranchDetailView(LoginRequiredMixin, DetailView):
+class BranchDetailView(UserPassesTestMixin, DetailView):
     model = Branch
     template_name = "accounts/branches/branch_detail.html"
     context_object_name = "branch"
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_branch')
 
-class BranchUpdateView(LoginRequiredMixin, UpdateView):
+
+class BranchUpdateView(UserPassesTestMixin, UpdateView):
     model = Branch
     form_class = BranchForm
     template_name = 'accounts/branches/branch_form.html'
     success_url = reverse_lazy('accounts:branch_list')
+
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_branch')
     
     # def get_success_url(self):
         # return reverse_lazy('branch_detail', kwargs={"pk": self.object.pk})
 
 
-class DepartmentCreateView(LoginRequiredMixin, CreateView):
+class DepartmentCreateView(UserPassesTestMixin, CreateView):
     model = Department
     fields = '__all__'
     template_name = "accounts/departments/department_form.html"
     success_url = reverse_lazy('accounts:department_list')
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_department')
 
-class DepartmentListView(LoginRequiredMixin, ListView):
+
+class DepartmentListView(UserPassesTestMixin, ListView):
     model = Department
     template_name = "accounts/departments/department_list.html"
     ordering = ['name']
     paginate_by = 10
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_department')
 
-class DepartmentUpdateView(LoginRequiredMixin, UpdateView):
+
+class DepartmentUpdateView(UserPassesTestMixin, UpdateView):
     model = Department
     fields = '__all__'
     template_name = "accounts/departments/department_form.html"
     success_url = reverse_lazy('accounts:department_list')
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_department')
 
 
-class RoleCreateView(LoginRequiredMixin, CreateView):
+class RoleCreateView(UserPassesTestMixin, CreateView):
     model = Role
     fields = '__all__'
     template_name = "accounts/roles/role_form.html"
     success_url = reverse_lazy('accounts:role_list')
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_role')
 
-class RoleListView(LoginRequiredMixin, ListView):
+
+class RoleListView(UserPassesTestMixin, ListView):
     model = Role
     template_name = "accounts/roles/role_list.html"
     ordering = ['name']
     paginate_by = 10
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_role')
 
-class RoleUpdateView(LoginRequiredMixin, UpdateView):
+
+class RoleUpdateView(UserPassesTestMixin, UpdateView):
     model = Role
     fields = '__all__'
     template_name = "accounts/roles/role_form.html"
     success_url = reverse_lazy('accounts:department_list')
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_role')
 
-class AddressCreateView(LoginRequiredMixin, CreateView):
+
+class AddressCreateView(UserPassesTestMixin, CreateView):
     model = Address
     fields = '__all__'
     template_name = "accounts/address/address_form.html"
     success_url = reverse_lazy('accounts:address_list')
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_address')
 
-class AddressListView(LoginRequiredMixin, ListView):
+
+class AddressListView(UserPassesTestMixin, ListView):
     model = Address
     template_name = "accounts/address/address_list.html"
     ordering = ['street']
     paginate_by = 10
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_address')
 
-class AddressUpdateView(LoginRequiredMixin, UpdateView):
+
+class AddressUpdateView(UserPassesTestMixin, UpdateView):
     model = Address
     fields = '__all__'
     template_name = "accounts/address/address_form.html"
     success_url = reverse_lazy('accounts:address_list')
+
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_address')
 
 
 # API
@@ -357,33 +431,43 @@ def delete_user(request, username):
     return redirect('accounts:users_list')
 
 
-class SquadCreateView(LoginRequiredMixin, CreateView):
+class SquadCreateView(UserPassesTestMixin, CreateView):
     model = Squad
     form_class = SquadForm
     template_name = "accounts/squads/squad_form.html"
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.add_squad')
 
     def get_success_url(self):
         return redirect("accounts:squad_detail", kwargs={"pk": self.object.pk})
 
     
-class SquadListView(LoginRequiredMixin, ListView):
+class SquadListView(UserPassesTestMixin, ListView):
     model = Squad
     template_name = "accounts/squads/squad_list.html"
     ordering = ['name']
     paginate_by = 10
+    
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_squad')
 
     
-class SquadDetailView(LoginRequiredMixin, DetailView):
+class SquadDetailView(UserPassesTestMixin, DetailView):
     model = Squad
     template_name = "accounts/squads/squad_detail.html"
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.view_squad')
+
     
-class SquadUpdateView(LoginRequiredMixin, UpdateView):
+class SquadUpdateView(UserPassesTestMixin, UpdateView):
     model = Squad
     form_class = SquadForm
     template_name = "accounts/squads/squad_form.html"
 
+    def test_func(self):
+        return self.request.user.has_perm('accounts.change_squad')
+
     def get_success_url(self):
         return self.object.get_absolute_url()
-
-    
