@@ -1,5 +1,5 @@
 <!doctype html>
-{% load static menu_tags notifications_tags %}
+{% load static notifications_tags %}
 <html lang="pt-br" class="light-style layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
   data-theme="theme-default" data-assets-path="{% static 'sneat-template/assets/' %}"
   data-template="vertical-menu-template">
@@ -108,361 +108,46 @@
         <div class="menu-inner-shadow"></div>
 
         <ul class="menu-inner py-1">
-          {% url 'core:index' as index_url %}
-          {% url 'resolve_crm:tasks' as tasks_url %}
-          {% url 'core:board-detail' object.pk as board_detail_url %}
-          {% url 'accounts:users_list' as users_list_url %}
-          {% url 'accounts:user_create' as user_create_url %}
-          {% url 'accounts:branch_list' as branch_list_url %}
-          {% url 'accounts:branch_create' as branch_create_url %}
-          {% url 'accounts:address_create' as address_create_url %}
-          {% url 'accounts:address_list' as address_list_url %}
-          {% url 'accounts:address_update' object.pk as address_update_url %}
-          {% url 'accounts:permission_create' as permission_create_url %}
-          {% url 'accounts:permission_list' as permission_list_url %}
-          {% url 'accounts:group_list' as group_list_url %}
-          {% url 'accounts:group_create' as group_create_url %}
-          {% url 'core:board-list' as boards_list_url %}
-          {% url 'core:board-create' as boards_create_url %}
-          {% url 'resolve_crm:lead_create' as lead_create_url %}
-          {% url 'resolve_crm:lead_list' as lead_list_url %}
-          <!-- Dashboards -->
-          <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">CRM</span>
-          </li>
-          <li class="menu-item {% is_active index_url %}">
-            <a href="{% url 'core:index' %}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-bar-chart"></i>
-              <div class="text-truncate">Dashboard</div>
-            </a>
-          </li>
-          {% if lead_boards %}
-          <li class="menu-item {% if object.type == 'L' %}{% is_active_open board_detail_url %}{% endif %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-chevrons-right"></i>
-              <div class="text-truncate">Fluxo</div>
-              <!-- <span class="badge badge-center rounded-pill bg-danger ms-auto">0</span> -->
-            </a>
-            <ul class="menu-sub">
-              {% for board in lead_boards %}
-              <li class="menu-item {% is_active board.get_absolute_url %}">
-                <a href="{{ board.get_absolute_url }}" class="menu-link">
-                  <div class="text-truncate">{{ board.name }}</div>
-                </a>
-              </li>
-              {% endfor %}
-            </ul>
-          </li>
-          {% endif %}
-          <li class="menu-item {% is_active_open lead_list_url lead_create_url lead_detail_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-user"></i>
-              <div class="text-truncate">Leads</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active lead_list_url %}">
-                <a href="{{ lead_list_url }}" class="menu-link">
-                  <div class="text-truncate">Lista</div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active lead_create_url %}">
-                <a href="{{ lead_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li
-            class="menu-item {% if object.type == 'T' or request.path == tasks_url %}{% is_active_open board_detail_url tasks_url %}{% endif %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
-              <div class="text-truncate">Atividades</div>
-            </a>
-            <ul class="menu-sub">
-              {% for board in task_boards %}
-              <li class="menu-item {% is_active board.get_absolute_url %}">
-                <a href="{{ board.get_absolute_url }}" class="menu-link">
-                  <div class="text-truncate">{{ board.name }}</div>
-                </a>
-              </li>
-              {% empty %}
-              {% endfor %}
-              <li class="menu-item {% is_active tasks_url %}">
-                <a href="{{ tasks_url }}" class="menu-link">
-                  <div class="text-truncate">Tarefas</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-
-          <!-- Portal do Vendedor -->
-          <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Portal do Vendedor</span>
-          </li>
-          <li class="menu-item">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-layout"></i>
-              <div class="text-truncate">Portal do Vendedor</div>
-            </a>
-
-            <ul class="menu-sub">
-              <li class="menu-item">
-                <a href="{% static 'sneat-template/html/vertical-menu-template/layouts-collapsed-menu.html' %}"
-                  class="menu-link">
-                  <div class="text-truncate">Meus clientes</div>
-                </a>
-              </li>
-              <li class="menu-item">
-                <a href="layouts-content-navbar.html" class="menu-link">
-                  <div class="text-truncate">Minhas vendas</div>
-                </a>
-              </li>
-              <li class="menu-item">
-                <a href="layouts-content-navbar.html" class="menu-link">
-                  <div class="text-truncate">Minhas vistorias</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          {% if user.is_staff %}
-          {% url 'accounts:squad_list' as squad_list_url %}
-          {% url 'accounts:squad_create' as squad_create_url %}
-          {% url 'accounts:department_list' as department_list_url %}
-          {% url 'accounts:department_create' as department_create_url %}
-          {% url 'accounts:department_list' as department_list_url %}
-          {% url 'accounts:department_update' object.pk as department_update_url %}
-          {% url 'accounts:role_create' as role_create_url %}
-          {% url 'accounts:role_list' as role_list_url %}
-          {% url 'accounts:role_update' object.pk as role_update_url %}
-          {% url 'resolve_crm:campaign_list' as campaign_list_url %}
-          {% url 'resolve_crm:campaign_detail' object.pk as campaign_detail_url %}
-          {% url 'resolve_crm:campaign_create' as campaign_create_url %}
-          {% url 'resolve_crm:campaign_update' object.pk as campaign_update_url %}
-          <!-- Administração -->
-          <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Administração</span>
-          </li>
-          {% if user.is_superuser %}
-          <li class="menu-item">
-            <a href="{% url 'admin:index' %}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-cog"></i>
-              <div class="text-truncate">Área de Administração</div>
-            </a>
-          </li>
-          {% endif %}
-          <li
-            class="menu-item {% is_active_open campaign_list_url campaign_detail_url campaign_create_url campaign_update_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-star"></i>
-              <div class="text-truncate">Campanhas</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active campaign_list_url %}">
-                <a href="{{campaign_list_url}}" class="menu-link">
-                  <div class="text-truncate">Lista</div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active campaign_create_url %}">
-                <a href="{{campaign_create_url}}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open users_list_url user_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-user"></i>
-              <div class="text-truncate">Usuários</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active users_list_url %}">
-                <a href="{% url 'accounts:users_list' %}" class="menu-link">
-                  <div class="text-truncate">Lista</div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active user_create_url %}">
-                <a href="{% url 'accounts:user_create' %}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open squad_list_url squad_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-group"></i>
-              <div class="text-truncate">Squads</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active squad_list_url %}">
-                <a href="{{ squad_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active squad_create_url %}">
-                <a href="{{ squad_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open branch_list_url branch_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-building"></i>
-              <div class="text-truncate">Unidades</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active branch_list_url %}">
-                <a href="{{ branch_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active branch_create_url %}">
-                <a href="{{ branch_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open boards_list_url boards_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-objects-vertical-top"></i>
-              <div class="text-truncate">Quadros</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active boards_list_url %}">
-                <a href="{% url 'core:board-list' %}" class="menu-link">
-                  <div class="text-truncate">Lista</div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active boards_create_url %}">
-                <a href="{% url 'core:board-create' %}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open group_list_url group_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-group"></i>
-              <div class="text-truncate">Perfis</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active group_list_url %}">
-                <a href="{{ group_list_url }}" class="menu-link">
-                  <div class="text-truncate">Lista</div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active group_create_url %}">
-                <a href="{{ group_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open permission_list_url permission_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-key"></i>
-              <div class="text-truncate">Permissões</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active permission_list_url %}">
-                <a href="{{ permission_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active permission_create_url %}">
-                <a href="{{ permission_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open address_list_url address_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-map"></i>
-              <div class="text-truncate">Endereços</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active address_list_url %}">
-                <a href="{{ address_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active address_create_url %}">
-                <a href="{{ address_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open department_create_url department_list_url department_update_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bx-shape-square"></i>
-              <div class="text-truncate">Setores</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active department_list_url %}">
-                <a href="{{ department_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active department_create_url %}">
-                <a href="{{ department_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          <li class="menu-item {% is_active_open role_list_url role_create_url %}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-              <i class="menu-icon tf-icons bx bxs-user-detail"></i>
-              <div class="text-truncate">Cargos</div>
-            </a>
-            <ul class="menu-sub">
-              <li class="menu-item {% is_active role_list_url %}">
-                <a href="{{ role_list_url }}" class="menu-link">
-                  <div class="text-truncate">
-                    Lista
-                  </div>
-                </a>
-              </li>
-              <li class="menu-item {% is_active role_create_url %}">
-                <a href="{{ role_create_url }}" class="menu-link">
-                  <div class="text-truncate">Criar</div>
-                </a>
-              </li>
-            </ul>
-          </li>
-          {% endif %}
-          <!-- Misc -->
-          <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Miscelânea</span>
-          </li>
-          <li class="menu-item">
-            <a href="https://resolveenergiasolar.com.br/support/" target="_blank" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-support"></i>
-              <div class="text-truncate">Suporte</div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="https://demos.themeselection.com/sneat-bootstrap-html-admin-template/documentation/"
-              target="_blank" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-file"></i>
-              <div class="text-truncate">Tutoriais</div>
-            </a>
-          </li>
+          {% regroup menu_items by section as section_list %}
+          
+          {% for section in section_list %}
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">{{ section.grouper }}</span>
+            </li>
+            
+            {% for item in section.list %}
+              {% if item.permission in user.get_all_permissions %}
+                <li class="menu-item {% if item.active %}active open{% endif %}">
+                  {% if item.url_name %}
+                    <a href="{{ item.url }}" class="menu-link">
+                      <i class="menu-icon tf-icons {{ item.icon }}"></i>
+                      <div class="text-truncate">{{ item.label }}</div>
+                    </a>
+                  {% else %}
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                      <i class="menu-icon tf-icons {{ item.icon }}"></i>
+                      <div class="text-truncate">{{ item.label }}</div>
+                    </a>
+                    {% if item.sub_items %}
+                      <ul class="menu-sub">
+                        {% for sub_item in item.sub_items %}
+                          {% if sub_item.permission in user.get_all_permissions %}
+                            <li class="menu-item {% if sub_item.active %}active{% endif %}">
+                              <a href="{{ sub_item.url }}" class="menu-link">
+                                <div class="text-truncate">{{ sub_item.label }}</div>
+                              </a>
+                            </li>
+                          {% endif %}
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                  {% endif %}
+                </li>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
         </ul>
-
+        
       </aside>
       <!-- / Menu -->
 
