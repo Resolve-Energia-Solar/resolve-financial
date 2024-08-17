@@ -1,15 +1,14 @@
 from django.urls import reverse
 
-
 def menu_items(request):
-    current_path = request.path
     items = [
         # CRM Section
         {
             "label": "Dashboard",
             "url_name": "core:index",
             "icon": "bx bx-bar-chart",
-            "permission": "core.view_dashboard"
+            "permission": "core.view_dashboard",
+            "section": "CRM"
         },
         {
             "label": "Leads",
@@ -26,7 +25,8 @@ def menu_items(request):
                     "url_name": "resolve_crm:lead_create",
                     "permission": "resolve_crm.add_lead"
                 }
-            ]
+            ],
+            "section": "CRM"
         },
         {
             "label": "Atividades",
@@ -38,12 +38,14 @@ def menu_items(request):
                     "url_name": "resolve_crm:tasks",
                     "permission": "resolve_crm.view_task"
                 }
-            ]
+            ],
+            "section": "CRM"
         },
         # Administração Section
         {
             "label": "Administração",
-            "header": True
+            "header": True,
+            "section": "Administração"
         },
         {
             "label": "Usuários",
@@ -60,7 +62,8 @@ def menu_items(request):
                     "url_name": "accounts:user_create",
                     "permission": "accounts.add_user"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Squads",
@@ -77,7 +80,8 @@ def menu_items(request):
                     "url_name": "accounts:squad_create",
                     "permission": "accounts.add_squad"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Unidades",
@@ -94,7 +98,8 @@ def menu_items(request):
                     "url_name": "accounts:branch_create",
                     "permission": "accounts.add_branch"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Quadros",
@@ -111,7 +116,8 @@ def menu_items(request):
                     "url_name": "core:board-create",
                     "permission": "core.add_board"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Perfis",
@@ -128,7 +134,8 @@ def menu_items(request):
                     "url_name": "accounts:group_create",
                     "permission": "accounts.add_group"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Permissões",
@@ -145,7 +152,8 @@ def menu_items(request):
                     "url_name": "accounts:permission_create",
                     "permission": "accounts.add_permission"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Endereços",
@@ -162,7 +170,8 @@ def menu_items(request):
                     "url_name": "accounts:address_create",
                     "permission": "accounts.add_address"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Setores",
@@ -179,12 +188,14 @@ def menu_items(request):
                     "url_name": "accounts:department_create",
                     "permission": "accounts.add_department"
                 }
-            ]
+            ],
+            "section": "Administração"
         },
         {
             "label": "Cargos",
             "icon": "bx bxs-user-detail",
             "permission": "accounts.view_role",
+            "section": "Administração",
             "sub_items": [
                 {
                     "label": "Lista",
@@ -200,6 +211,7 @@ def menu_items(request):
         }
     ]
 
+    current_path = request.path
     for item in items:
         item['active'] = False
         if 'sub_items' in item:
