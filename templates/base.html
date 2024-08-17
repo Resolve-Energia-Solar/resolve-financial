@@ -110,14 +110,9 @@
         <ul class="menu-inner py-1">
           {% for item in menu_items %}
             {% if item.permission in user.get_all_permissions %}
-              <li class="menu-item">
+              <li class="menu-item {% if item.active %}active open{% endif %}">
                 {% if item.url_name %}
-                  <a href="{% url item.url_name %}" class="menu-link">
-                    <i class="menu-icon tf-icons {{ item.icon }}"></i>
-                    <div class="text-truncate">{{ item.label }}</div>
-                  </a>
-                {% elif item.url_static %}
-                  <a href="{{ item.url_static }}" class="menu-link" target="_blank">
+                  <a href="{{ item.url }}" class="menu-link">
                     <i class="menu-icon tf-icons {{ item.icon }}"></i>
                     <div class="text-truncate">{{ item.label }}</div>
                   </a>
@@ -131,23 +126,17 @@
                     <div class="text-truncate">{{ item.label }}</div>
                   </a>
                   {% if item.sub_items %}
-                  <ul class="menu-sub">
-                    {% for sub_item in item.sub_items %}
-                      {% if sub_item.permission in user.get_all_permissions %}
-                        <li class="menu-item {% is_active sub_item.url_name %}">
-                          {% if sub_item.url_name %}
-                            <a href="{% url sub_item.url_name %}" class="menu-link">
+                    <ul class="menu-sub">
+                      {% for sub_item in item.sub_items %}
+                        {% if sub_item.permission in user.get_all_permissions %}
+                          <li class="menu-item {% if sub_item.active %}active{% endif %}">
+                            <a href="{{ sub_item.url }}" class="menu-link">
                               <div class="text-truncate">{{ sub_item.label }}</div>
                             </a>
-                          {% elif sub_item.url_static %}
-                            <a href="{{ sub_item.url_static }}" class="menu-link" target="_blank">
-                              <div class="text-truncate">{{ sub_item.label }}</div>
-                            </a>
-                          {% endif %}
-                        </li>
-                      {% endif %}
-                    {% endfor %}
-                  </ul>
+                          </li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
                   {% endif %}
                 {% endif %}
               </li>
@@ -156,7 +145,7 @@
         </ul>
         
         
-
+        
       </aside>
       <!-- / Menu -->
 

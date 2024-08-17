@@ -1,4 +1,8 @@
+from django.urls import reverse
+
+
 def menu_items(request):
+    current_path = request.path
     items = [
         # CRM Section
         {
@@ -6,18 +10,6 @@ def menu_items(request):
             "url_name": "core:index",
             "icon": "bx bx-bar-chart",
             "permission": "core.view_dashboard"
-        },
-        {
-            "label": "Fluxo",
-            "icon": "bx bx-chevrons-right",
-            "permission": "core.view_board",
-            "sub_items": [
-                {
-                    "label": "Board Detail",
-                    "url_static": "#",
-                    "permission": "core.view_board"
-                }
-            ]
         },
         {
             "label": "Leads",
@@ -45,29 +37,6 @@ def menu_items(request):
                     "label": "Tarefas",
                     "url_name": "resolve_crm:tasks",
                     "permission": "resolve_crm.view_task"
-                }
-            ]
-        },
-        # Portal do Vendedor Section
-        {
-            "label": "Portal do Vendedor",
-            "icon": "bx bx-layout",
-            "permission": "portal.view_vendor",
-            "sub_items": [
-                {
-                    "label": "Meus clientes",
-                    "url_static": "sneat-template/html/vertical-menu-template/layouts-collapsed-menu.html",
-                    "permission": "portal.view_client"
-                },
-                {
-                    "label": "Minhas vendas",
-                    "url_static": "layouts-content-navbar.html",
-                    "permission": "portal.view_sales"
-                },
-                {
-                    "label": "Minhas vistorias",
-                    "url_static": "layouts-content-navbar.html",
-                    "permission": "portal.view_inspections"
                 }
             ]
         },
@@ -228,23 +197,22 @@ def menu_items(request):
                     "permission": "accounts.add_role"
                 }
             ]
-        },
-        # Misc Section
-        {
-            "label": "Miscelânea",
-            "header": True
-        },
-        {
-            "label": "Suporte",
-            "icon": "bx bx-support",
-            "url_static": "https://resolveenergiasolar.com.br/support/",
-            "permission": "misc.view_support"
-        },
-        {
-            "label": "Tutoriais",
-            "icon": "bx bx-file",
-            "url_static": "https://demos.themeselection.com/sneat-bootstrap-html-admin-template/documentation/",
-            "permission": "misc.view_tutorials"
         }
     ]
+
+    for item in items:
+        item['active'] = False
+        if 'sub_items' in item:
+            for sub_item in item['sub_items']:
+                sub_item['url'] = reverse(sub_item['url_name'])
+                if sub_item['url'] == current_path:
+                    item['active'] = True
+                    sub_item['active'] = True
+                else:
+                    sub_item['active'] = False
+        else:
+            item['url'] = reverse(item['url_name']) if 'url_name' in item else None
+            if item['url'] == current_path:
+                item['active'] = True
+
     return {'menu_items': items}
