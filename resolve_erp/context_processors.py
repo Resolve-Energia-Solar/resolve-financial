@@ -43,11 +43,6 @@ def menu_items(request):
         },
         # Administração Section
         {
-            "label": "Administração",
-            "header": True,
-            "section": "Administração"
-        },
-        {
             "label": "Usuários",
             "icon": "bx bx-user",
             "permission": "accounts.view_user",
@@ -212,19 +207,42 @@ def menu_items(request):
     ]
 
     current_path = request.path
+
+    # Filtra os itens baseados nas permissões e atualiza os URLs
+    filtered_items = []
+    sections = {}
+
     for item in items:
         item['active'] = False
         if 'sub_items' in item:
+            visible_sub_items = []
             for sub_item in item['sub_items']:
                 sub_item['url'] = reverse(sub_item['url_name'])
-                if sub_item['url'] == current_path:
-                    item['active'] = True
-                    sub_item['active'] = True
-                else:
-                    sub_item['active'] = False
+                if sub_item.get('permission') in request.user.get_all_permissions():
+                    visible_sub_items.append(sub_item)
+                    if sub_item['url'] == current_path:
+                        item['active'] = True
+                        sub_item['active'] = True
+                    else:
+                        sub_item['active'] = False
+            item['sub_items'] = visible_sub_items
+            if visible_sub_items:
+                filtered_items.append(item)
         else:
             item['url'] = reverse(item['url_name']) if 'url_name' in item else None
-            if item['url'] == current_path:
-                item['active'] = True
+            if item.get('permission') in request.user.get_all_permissions():
+                filtered_items.append(item)
+                if item['url'] == current_path:
+                    item['active'] = True
+            elif 'header' in item:
+                filtered_items.append(item)
 
-    return {'menu_items': items}
+    # Agrupa os itens por seção
+    for item in filtered_items:
+        section = item['section']
+        if section not in sections:
+            sections[section] = []
+        sections[section].append(item)
+
+    # Retorna as seções com seus respectivos itens visíveis
+    return {'menu_items': sections}

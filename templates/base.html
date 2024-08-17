@@ -108,45 +108,40 @@
         <div class="menu-inner-shadow"></div>
 
         <ul class="menu-inner py-1">
-          {% regroup menu_items by section as section_list %}
-          
-          {% for section in section_list %}
+          {% for section, items in menu_items.items %}
             <li class="menu-header small text-uppercase">
-              <span class="menu-header-text">{{ section.grouper }}</span>
+              <span class="menu-header-text">{{ section }}</span>
             </li>
             
-            {% for item in section.list %}
-              {% if item.permission in user.get_all_permissions %}
-                <li class="menu-item {% if item.active %}active open{% endif %}">
-                  {% if item.url_name %}
-                    <a href="{{ item.url }}" class="menu-link">
-                      <i class="menu-icon tf-icons {{ item.icon }}"></i>
-                      <div class="text-truncate">{{ item.label }}</div>
-                    </a>
-                  {% else %}
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                      <i class="menu-icon tf-icons {{ item.icon }}"></i>
-                      <div class="text-truncate">{{ item.label }}</div>
-                    </a>
-                    {% if item.sub_items %}
-                      <ul class="menu-sub">
-                        {% for sub_item in item.sub_items %}
-                          {% if sub_item.permission in user.get_all_permissions %}
-                            <li class="menu-item {% if sub_item.active %}active{% endif %}">
-                              <a href="{{ sub_item.url }}" class="menu-link">
-                                <div class="text-truncate">{{ sub_item.label }}</div>
-                              </a>
-                            </li>
-                          {% endif %}
-                        {% endfor %}
-                      </ul>
-                    {% endif %}
+            {% for item in items %}
+              <li class="menu-item {% if item.active %}active open{% endif %}">
+                {% if item.url_name %}
+                  <a href="{{ item.url }}" class="menu-link">
+                    <i class="menu-icon tf-icons {{ item.icon }}"></i>
+                    <div class="text-truncate">{{ item.label }}</div>
+                  </a>
+                {% else %}
+                  <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons {{ item.icon }}"></i>
+                    <div class="text-truncate">{{ item.label }}</div>
+                  </a>
+                  {% if item.sub_items %}
+                    <ul class="menu-sub">
+                      {% for sub_item in item.sub_items %}
+                        <li class="menu-item {% if sub_item.active %}active{% endif %}">
+                          <a href="{{ sub_item.url }}" class="menu-link">
+                            <div class="text-truncate">{{ sub_item.label }}</div>
+                          </a>
+                        </li>
+                      {% endfor %}
+                    </ul>
                   {% endif %}
-                </li>
-              {% endif %}
+                {% endif %}
+              </li>
             {% endfor %}
           {% endfor %}
         </ul>
+        
         
       </aside>
       <!-- / Menu -->
