@@ -8,3 +8,233 @@
 <h1>Criar Lead</h1>
 {% endif %}
 {% endblock form_title %}
+
+{% comment "Novo formulário em desenvolvimento" %}
+    {% extends 'base.html' %}
+    {% load static crispy_forms_tags %}
+
+    {% block form_title %}
+    {% if object %}
+    <h1>Editar Lead</h1>
+    <h4>({{ object.name }})</h4>
+    {% else %}
+    <h1>Criar Lead</h1>
+    {% endif %}
+    {% endblock form_title %}
+
+    {% block extra_head %}
+    <title>ERP &mdash; Criar Lead</title>
+    <!-- Vendors CSS -->
+    <link rel="stylesheet"
+        href="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.css' %}" />
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bootstrap-select/bootstrap-select.css' %}" />
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/select2/select2.css' %}" />
+    <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/@form-validation/form-validation.css' %}" />
+    {% endblock extra_head %}
+
+    {% block content %}
+    <!-- Content -->
+
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <h4 class="py-3 mb-4">
+            <span class="text-muted fw-light">Leads/</span>
+            {% if object %}
+            Editar
+            {% else %}
+            Criar
+            {% endif %}
+        </h4>
+
+        <div class="row">
+            <div class="col-12">
+                <h5>Formulário</h5>
+            </div>
+
+            <!-- Default Wizard -->
+            <div class="col-12 mb-4">
+                <div class="bs-stepper wizard-numbered mt-2">
+                    <div class="bs-stepper-header">
+                        <div class="step" data-target="#account-details">
+                            <button type="button" class="step-trigger">
+                                <span class="bs-stepper-circle">1</span>
+                                <span class="bs-stepper-label mt-1">
+                                    <span class="bs-stepper-title">Informações Básicas</span>
+                                    <span class="bs-stepper-subtitle">Nome, e-mail</span>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="line">
+                            <i class="bx bx-chevron-right"></i>
+                        </div>
+                        <div class="step" data-target="#personal-info">
+                            <button type="button" class="step-trigger">
+                                <span class="bs-stepper-circle">2</span>
+                                <span class="bs-stepper-label mt-1">
+                                    <span class="bs-stepper-title">Informações Extra</span>
+                                    <span class="bs-stepper-subtitle">Add personal info</span>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="line">
+                            <i class="bx bx-chevron-right"></i>
+                        </div>
+                        <div class="step" data-target="#social-links">
+                            <button type="button" class="step-trigger">
+                                <span class="bs-stepper-circle">3</span>
+                                <span class="bs-stepper-label mt-1">
+                                    <span class="bs-stepper-title">Social Links</span>
+                                    <span class="bs-stepper-subtitle">Add social links</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bs-stepper-content">
+                        <form onSubmit="return false">
+                            <!-- Account Details -->
+                            <div id="account-details" class="content">
+                                <div class="content-header mb-3">
+                                    <h6 class="mb-0">Informações Básicas</h6>
+                                    <small>Nome, e-mail</small>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        {{ form.name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        {{ form.contact_email|as_crispy_field }}
+                                    </div>
+                                    <div class="col-sm-6 form-password-toggle">
+                                        {{ form.phone|as_crispy_field }}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="row g-1">
+                                            <label for="type">Tipo</label>
+                                            <div class="col-6 mb-md-0 mb-2">
+                                                <div class="form-check custom-option custom-option-basic">
+                                                    <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaFisica">
+                                                        <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaFisica" checked />
+                                                        <span class="custom-option-header">
+                                                            <i class="fs-2 bx bxs-user-rectangle me-1"></i>
+                                                            <small>Pessoa Física</small>
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-check custom-option custom-option-basic">
+                                                    <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaJuridica">
+                                                        <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaJuridica" />
+                                                        <span class="custom-option-header">
+                                                            <i class="fs-2 bx bx-buildings me-1"></i>
+                                                            <small>Pessoa Jurídica</small>
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 d-flex justify-content-between">
+                                        <button class="btn btn-label-secondary btn-prev" disabled>
+                                            <i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                                            <span class="align-middle d-sm-inline-block d-none">Anterior</span>
+                                        </button>
+                                        <button class="btn btn-primary btn-next">
+                                            <span class="align-middle d-sm-inline-block d-none me-sm-1">Próximo</span>
+                                            <i class="bx bx-chevron-right bx-sm me-sm-n2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Personal Info -->
+                            <div id="personal-info" class="content">
+                                <div class="content-header mb-3">
+                                    <h6 class="mb-0">Personal Info</h6>
+                                    <small>Informações extra</small>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        {{ form.address|as_crispy_field }}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        {{ form.origin|as_crispy_field }}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        {{ form.byname|as_crispy_field }}
+                                    </div>
+                                    <div class="col-12 d-flex justify-content-between">
+                                        <button class="btn btn-primary btn-prev">
+                                            <i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                                            <span class="align-middle d-sm-inline-block d-none">Anterior</span>
+                                        </button>
+                                        <button class="btn btn-primary btn-next">
+                                            <span class="align-middle d-sm-inline-block d-none me-sm-1">Próximo</span>
+                                            <i class="bx bx-chevron-right bx-sm me-sm-n2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Social Links -->
+                            <div id="social-links" class="content">
+                                <div class="content-header mb-3">
+                                    <h6 class="mb-0">Social Links</h6>
+                                    <small>Enter Your Social Links.</small>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="twitter">Twitter</label>
+                                        <input type="text" id="twitter" class="form-control"
+                                            placeholder="https://twitter.com/abc" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="facebook">Facebook</label>
+                                        <input type="text" id="facebook" class="form-control"
+                                            placeholder="https://facebook.com/abc" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="google">Google+</label>
+                                        <input type="text" id="google" class="form-control"
+                                            placeholder="https://plus.google.com/abc" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="linkedin">LinkedIn</label>
+                                        <input type="text" id="linkedin" class="form-control"
+                                            placeholder="https://linkedin.com/abc" />
+                                    </div>
+                                    <div class="col-12 d-flex justify-content-between">
+                                        <button class="btn btn-primary btn-prev">
+                                            <i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                                            <span class="align-middle d-sm-inline-block d-none">Previous</span>
+                                        </button>
+                                        <button class="btn btn-success btn-submit">Submit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- /Default Wizard -->
+        </div>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-12 col-md-6 card p-4">
+                {{ form|crispy }}
+            </div>
+        </div>
+    </div>
+    <!-- / Content -->
+    {% endblock content %}
+
+    {% block extra_scripts %}
+    <script src="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/bootstrap-select/bootstrap-select.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/select2/select2.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/popular.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/bootstrap5.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/auto-focus.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/js/form-wizard-numbered.js' %}"></script>
+    <script src="{% static 'sneat-template/assets/js/form-wizard-validation.js' %}"></script>
+    {% endblock extra_scripts %}
+{% endcomment %}

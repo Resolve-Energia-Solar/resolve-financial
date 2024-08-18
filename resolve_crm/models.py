@@ -8,6 +8,7 @@ class Lead(models.Model):
     # Personal Information
     name = models.CharField(max_length=200, verbose_name="Nome")
     type = models.CharField(max_length=200, verbose_name="Tipo", help_text="Pessoa Física ou Jurídica?", choices=[("PF", "Pessoa Física"), ("PJ", "Pessoa Jurídica")])
+    byname = models.CharField(max_length=200, verbose_name="Apelido", blank=True, null=True)
 
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
