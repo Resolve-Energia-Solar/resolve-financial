@@ -9,6 +9,34 @@
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bootstrap-select/bootstrap-select.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/@form-validation/form-validation.css' %}" />
+<style>
+    .bs-stepper-header {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        -ms-overflow-style: none;
+        overflow-y: hidden;
+    }
+
+
+    .bs-stepper-header::-webkit-scrollbar {
+        height: 8px;
+        background-color: #FFF;
+        border-radius: 50%;
+    }
+
+    .bs-stepper-header::-webkit-scrollbar-thumb {
+        border-radius: 50%;
+        border: 1px solid #FFF;
+    }
+
+
+    .bs-stepper-header {
+        scrollbar-color: #FDC600 #FFF;
+        scrollbar-width: thin;
+    }
+</style>
 {% endblock extra_head %}
 
 {% block content %}

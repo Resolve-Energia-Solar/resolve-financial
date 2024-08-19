@@ -16,6 +16,32 @@
   #div_id_groups .select2-selection__rendered {
     min-height: 200px !important;
   }
+  .bs-stepper-header {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        -ms-overflow-style: none;
+        overflow-y: hidden;
+    }
+
+
+    .bs-stepper-header::-webkit-scrollbar {
+        height: 8px;
+        background-color: #FFF;
+        border-radius: 50%;
+    }
+
+    .bs-stepper-header::-webkit-scrollbar-thumb {
+        border-radius: 50%;
+        border: 1px solid #FFF;
+    }
+
+
+    .bs-stepper-header {
+        scrollbar-color: #FDC600 #FFF;
+        scrollbar-width: thin;
+    }
 </style>
 {% endblock extra_head %}
 
@@ -23,7 +49,7 @@
 <div class="row justify-content-center my-3">
   <div class="col-12 col-md-10 mb-4">
     <div class="bs-stepper wizard-numbered mt-2">
-      <div class="bs-stepper-header">
+      <div class="bs-stepper-header overflow-x-scroll">
         <!-- Passos do Formulário -->
         <div class="step" data-target="#personal-info">
           <button type="button" class="step-trigger">
