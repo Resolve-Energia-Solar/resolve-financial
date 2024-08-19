@@ -131,7 +131,7 @@ class Squad(models.Model):
         verbose_name_plural = "Squads"
     
     def get_absolute_url(self):
-        return reverse_lazy('core:squad_detail', kwargs={'pk': self.pk})
+        return reverse_lazy('accounts:squad_detail', kwargs={'pk': self.pk})
 
     def __str__(self):
         return self.name

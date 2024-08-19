@@ -21,7 +21,7 @@ class BoardTemplate(models.Model):
         return self.name
     
     def get_absolute_url(self):
-        return reverse_lazy('resolve_crm:board-template-detail', kwargs={'pk': self.pk})
+        return reverse_lazy('core:board-template-detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Modelo de Quadro"
@@ -36,6 +36,9 @@ class Board(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    def get_absolute_url(self):
+        return reverse_lazy('core:board-detail', kwargs={'pk': self.pk})
 
     def __str__(self):
         return self.title

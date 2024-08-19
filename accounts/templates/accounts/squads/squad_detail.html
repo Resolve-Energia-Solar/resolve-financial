@@ -21,11 +21,15 @@
             <div class="col-12 col-md-6 px-4">
             <div class="card h-100">
                 <div class="card-body">
-                <h5 class="card-title">Quadros Permitidos</h5>
+                <h5 class="card-title">Quadros neste Squad</h5>
                 <p class="card-text">Quadros:</p>
                 <ul class="list-group">
                     {% for board in object.boards.all %}
-                    <li class="list-group-item">{{ board.name }}</li>
+                    <li class="list-group-item">
+                        <a href="{{ board.get_absolute_url }}">
+                            {{ board.title }}
+                        </a>
+                    </li>
                     {% endfor %}
                 </ul>
                 </div>
@@ -40,12 +44,22 @@
                 <ul class="list-group">
                     {% for user_obj in object.members.all %}
                     <li class="list-group-item">
-                    <div class="d-flex justify-content-start align-items-center">
-                        <div class="avatar-wrapper">
-                        <div class="avatar avatar-sm me-2"><span class="avatar-initial rounded-circle bg-label-dark">{{ user_obj.username|slice:1 }}</span></div>
-                        </div>
-                        <div class="d-flex flex-column"><a href="{{ user_obj.get_absolute_url }}" class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name }}</span></a><small class="text-truncate text-muted">{{ user_obj.get_full_name }}</small></div>
-                    </div>
+                        <a class="d-flex justify-content-start align-items-center" href="{{ user.get_absolute_url }}">
+                            <div class="avatar-wrapper">
+                                {% if user_obj.profile_picture %}
+                                <img src="{{ user_obj.profile_picture.url }}"
+                                    class="avatar pull-up avatar-initial avatar-sm rounded-circle me-2"
+                                    alt="{{ user_obj.complete_name }}">
+                                {% else %}
+                                <div class="avatar avatar-sm me-2"><span
+                                        class="avatar-initial rounded-circle bg-label-dark">{{ user_obj.username|slice:1 }}</span></div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex flex-column">
+                                <span class="fw-medium">{{ user_obj.complete_name }}</span>
+                                <small class="text-truncate text-muted">{{ user_obj.get_full_name }}</small>
+                            </div>
+                        </a>
                     </li>
                     {% endfor %}
                 </ul>
@@ -56,8 +70,8 @@
 
         <div class="row justify-content-center my-3">
             <div class="col-12 px-4">
-                <a href="{% url 'resolve_crm:squad_update' object.pk %}" class="btn btn-primary">Editar</a>
-                {# <a href="{% url 'resolve_crm:squad_delete' object.pk %}" class="btn btn-danger">Deletar</a> #}
+                <a href="{% url 'accounts:squad_update' object.pk %}" class="btn btn-primary">Editar</a>
+                {# <a href="{% url 'accounts:squad_delete' object.pk %}" class="btn btn-danger">Deletar</a> #}
             </div>
         </div>
 

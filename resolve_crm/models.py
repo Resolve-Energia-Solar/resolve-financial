@@ -16,7 +16,6 @@ class Lead(models.Model):
     address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True)
     
     # CRM Information
-
     origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
     squad = models.ForeignKey("accounts.Squad", on_delete=models.CASCADE, verbose_name="Squad")
     responsible = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Responsável", related_name="lead_responsible", blank=True, null=True)

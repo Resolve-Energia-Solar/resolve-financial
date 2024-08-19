@@ -3,12 +3,9 @@
 
 {% block extra_head %}
 <title>ERP &mdash; Usuários</title>
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css' %}" />
-<link rel="stylesheet"
-    href="{% static 'sneat-template/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -57,7 +54,7 @@
                     </thead>
                     <tbody>
                         {% for user_obj in object_list %}
-                        <tr class="even">
+                        <tr>
                             <td>
                                 <span class="badge bg-label-success">{{ user_obj.username }}</span>
                             </td>

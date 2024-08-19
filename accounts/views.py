@@ -441,7 +441,7 @@ class SquadCreateView(UserPassesTestMixin, CreateView):
         return self.request.user.has_perm('accounts.add_squad')
 
     def get_success_url(self):
-        return redirect("accounts:squad_detail", kwargs={"pk": self.object.pk})
+        return reverse_lazy("accounts:squad_detail", kwargs={"pk": self.object.pk})
 
     
 class SquadListView(UserPassesTestMixin, ListView):

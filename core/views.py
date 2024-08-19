@@ -75,12 +75,12 @@ def board_api(request, pk):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-class KanbanView(LoginRequiredMixin, DetailView):
+class KanbanView(UserPassesTestMixin, DetailView):
     model = Board
     template_name = "core/boards/board_kanban.html"
 
-    # def test_func(self):
-    #     return self.request.user.has_perm('core.view_board')
+    def test_func(self):
+        return self.request.user.squad_members.filter(boards=self.get_object()).exists()
     
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
