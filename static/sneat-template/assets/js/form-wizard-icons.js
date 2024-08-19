@@ -55,7 +55,7 @@ $(function () {
     }
     if (wizardIconsBtnSubmit) {
       wizardIconsBtnSubmit.addEventListener('click', event => {
-        alert('Submitted..!!');
+        // alert('Submitted..!!');
       });
     }
   }
@@ -89,7 +89,7 @@ $(function () {
     }
     if (wizardIconsVerticalBtnSubmit) {
       wizardIconsVerticalBtnSubmit.addEventListener('click', event => {
-        alert('Submitted..!!');
+        // alert('Submitted..!!');
       });
     }
   }
@@ -123,7 +123,7 @@ $(function () {
     }
     if (wizardIconsModernBtnSubmit) {
       wizardIconsModernBtnSubmit.addEventListener('click', event => {
-        alert('Submitted..!!');
+        // alert('Submitted..!!');
       });
     }
   }
@@ -157,7 +157,7 @@ $(function () {
     }
     if (wizardIconsModernVerticalBtnSubmit) {
       wizardIconsModernVerticalBtnSubmit.addEventListener('click', event => {
-        alert('Submitted..!!');
+        // alert('Submitted..!!');
       });
     }
   }

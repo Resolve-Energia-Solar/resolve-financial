@@ -30,7 +30,7 @@
           event.stopPropagation();
         } else {
           // Submit your form
-          alert('Submitted!!!');
+          // alert('Submitted!!!');
         }
 
         form.classList.add('was-validated');

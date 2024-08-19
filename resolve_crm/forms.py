@@ -1,6 +1,7 @@
 from django import forms
+
 from .models import Task, Lead, MarketingCampaign
-from django_select2.forms import Select2Widget, Select2MultipleWidget
+from django_select2.forms import Select2Widget, Select2MultipleWidget, ModelSelect2Widget
 
 
 class TaskForm(forms.ModelForm):
@@ -19,7 +20,19 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = "__all__"
         widgets = {
-            'address': Select2Widget,
+            'address': ModelSelect2Widget(
+                attrs={'data-placeholder': 'Selecionar endereço'},
+                search_fields=[
+                    'zip_code__icontains',
+                    'country__icontains',
+                    'state__icontains',
+                    'city__icontains',
+                    'neighborhood__icontains',
+                    'street__icontains',
+                    'number__icontains',
+                    'complement__icontains',
+                ]
+            ),
             'seller': Select2Widget,
             'squad': Select2Widget,
             'responsible': Select2Widget

@@ -78,7 +78,7 @@ $(function () {
 
       if (wizardCreateAppBtnSubmit) {
         wizardCreateAppBtnSubmit.addEventListener('click', event => {
-          alert('Submitted..!!');
+          // alert('Submitted..!!');
         });
       }
     }

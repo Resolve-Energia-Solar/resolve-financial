@@ -235,7 +235,7 @@
       // wizardValidationForm.submit()
       // or send the form data to server via an Ajax request
       // To make the demo simple, I just placed an alert
-      alert('Submitted..!!');
+      // alert('Submitted..!!');
     });
 
     wizardValidationNext.forEach(item => {
