@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-datatable table-responsive">
             <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
-                {% if user|has_perm:'auth.add_adress' %}
+                {% if user|has_perm:'accounts.add_address' %}
                 <div class="row mx-1">
                     <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-3">
                         <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
@@ -35,7 +35,7 @@
                             <th style="width: 10%;">CEP</th>
                             <th style="width: 25%;">Cidade/UF</th>
                             <th style="width: 40%;">Rua</th>
-                            {% if user|has_perm:'auth.update_adress' or user|has_perm:'auth.delete_adress' %}
+                            {% if user|has_perm:'accounts.change_address' or user|has_perm:'accounts.delete_address' %}
                             <th style="width: 10%;">Nº</th>
                             <th style="width: 10%;">Ações</th>
                             {% else %}
@@ -50,16 +50,16 @@
                             <td>{{ address.city }}/{{ address.state }}</td>
                             <td>{{ address.street }}</td>
                             <td>{{ address.number }}</td>
-                            {% if user|has_perm:'auth.update_adress' or user|has_perm:'auth.delete_adress' %}
+                            {% if user|has_perm:'accounts.change_address' or user|has_perm:'accounts.delete_address' %}
                             <td>
                                 <div class="d-flex align-items-center">
-                                    {% if user|has_perm:'auth.update_adress' %}
-                                    <a href="{% url 'accounts:address_update' address.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Endereço" data-bs-original-title="Editar">
+                                    {% if user|has_perm:'accounts.change_address' %}
+                                    <a href="{% url 'accounts:address_update' address.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar endereço" data-bs-original-title="Editar">
                                         <i class="bx bx-pencil mx-1"></i>
                                     </a>
                                     {% endif %}
-                                    {% if user|has_perm:'auth.delete_adress' %}
-                                    <a href="#" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Endereço" data-bs-original-title="Editar">
+                                    {% if user|has_perm:'accounts.delete_address' %}
+                                    <a href="#" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir endereço" data-bs-original-title="Excluir">
                                         <i class="bx bx-trash text-danger mx-1"></i>
                                     </a>
                                     {% endif %}                                    

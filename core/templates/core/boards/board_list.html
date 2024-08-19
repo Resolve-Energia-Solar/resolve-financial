@@ -13,7 +13,7 @@
     <div class="row card">
         <div class="col-12 table-responsive">
             <div class="row py-3 g-2 justify-content-md-end">
-                {% if user|has_perm:'accounts.create_board' %}
+                {% if user|has_perm:'core.create_board' %}
                 <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3">
                     <div class="btn-group flex-wrap">
                         <a href="{% url 'core:board-create' %}" class="btn btn-primary" tabindex="0" role="button">
@@ -56,14 +56,14 @@
                             <div class="d-flex align-items-center">
                                 <a href="javascript:;" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Enviar e-mail" data-bs-original-title="Enviar e-mail"><i class="bx bx-send mx-1"></i></a>
                                 <a href="{% url 'core:board-detail' board.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Quadro" data-bs-original-title="Ver Quadro"><i class="bx bx-show mx-1"></i></a>
-                                {% if user|has_perm:'accounts.update_board' or user|has_perm:'accounts.delete_board' %}
+                                {% if user|has_perm:'core.change_board' or user|has_perm:'core.delete_board' %}
                                 <div class="dropdown">
                                     <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>
                                     <div class="dropdown-menu dropdown-menu-end">
-                                        {% if user|has_perm:'accounts.update_board' %}
+                                        {% if user|has_perm:'core.change_board' %}
                                         <a href="{% url 'core:board-update' board.pk %}" class="dropdown-item">Editar</a>
                                         {% endif %}
-                                        {% if user|has_perm:'accounts.delete_board' %}
+                                        {% if user|has_perm:'core.delete_board' %}
                                         <div class="dropdown-divider"></div>
                                         <a href="javascript:;" class="dropdown-item delete-record text-danger">Deletar</a>
                                         {% endif %}

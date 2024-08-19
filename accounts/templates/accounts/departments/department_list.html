@@ -36,7 +36,7 @@
                 <tr>
                     <th rowspan="1" colspan="1" style="width: 30%;">Setor</th>
                     <th rowspan="1" colspan="1" style="width: 30%;">E-mail</th>
-                    {% if user|has_perm:'auth.update_department' or user|has_perm:'auth.delete_department' %}
+                    {% if user|has_perm:'accounts.change_department' or user|has_perm:'accounts.delete_department' %}
                     <th rowspan="1" colspan="1" style="width: 30%;">Quantidade de Usuários</th>
                     <th rowspan="1" colspan="1" style="width: 10%;" aria-label="Ações">Ações</th>
                     {% else %}
@@ -72,15 +72,15 @@
                             {% endwith %}
                         </div>
                     </td>
-                    {% if user|has_perm:'auth.update_department' or user|has_perm:'auth.delete_department' %}
+                    {% if user|has_perm:'accounts.change_department' or user|has_perm:'accounts.delete_department' %}
                     <td>
                         <div class="d-flex align-items-center">
-                            {% if user|has_perm:'auth.update_department' %}
+                            {% if user|has_perm:'accounts.change_department' %}
                             <a href="{% url 'accounts:department_update' department.pk %}" data-bs-toggle="tooltip"
                                 class="text-body" data-bs-placement="top" aria-label="Editar Setor"
                                 data-bs-original-title="Editar Setor"><i class="bx bx-pencil mx-1"></i></a>
                             {% endif %}
-                            {% if user|has_perm:'auth.delete_department' %}
+                            {% if user|has_perm:'accounts.delete_department' %}
                             <a href="#departmentDeleteModel" data-bs-toggle="tooltip" class="text-body"
                                 data-bs-placement="top" aria-label="Deletar Setor"
                                 data-bs-original-title="Deletar Setor"><i class="bx bx-trash mx-1"></i></a>

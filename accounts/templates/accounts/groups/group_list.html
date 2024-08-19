@@ -83,7 +83,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="{% url 'accounts:group_detail' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver detalhes" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
-                                        {% if user|has_perm:'auth.update_group' %}
+                                        {% if user|has_perm:'auth.change_group' %}
                                         <a href="{% url 'accounts:group_update' group.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar Perfil" data-bs-original-title="Editar Perfil"><i class="bx bx-pencil mx-1"></i></a>
                                         {% endif %}
                                         {% if user|has_perm:'auth.delete_group' %}

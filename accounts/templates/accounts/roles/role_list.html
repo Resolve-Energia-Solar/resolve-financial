@@ -36,7 +36,7 @@
                 <tr>
                     <th rowspan="1" colspan="1" style="width: 40%;">Cargo</th>
                     <th rowspan="1" colspan="1" style="width: 40%;">Quantidade de Usuários</th>
-                    {% if user|has_perm:'auth.update_role' or user|has_perm:'auth.delete_role' %}
+                    {% if user|has_perm:'accounts.change_role' or user|has_perm:'accounts.delete_role' %}
                     <th rowspan="1" colspan="1" style="width: 10%;" aria-label="Ações">Ações</th>
                     {% endif %}
                 </tr>
@@ -67,15 +67,15 @@
                             {% endwith %}
                         </div>
                     </td>
-                    {% if user|has_perm:'auth.update_role' or user|has_perm:'auth.delete_role' %}
+                    {% if user|has_perm:'accounts.change_role' or user|has_perm:'accounts.delete_role' %}
                     <td>
                         <div class="d-flex align-items-center">
-                            {% if user|has_perm:'auth.update_role' %}
+                            {% if user|has_perm:'accounts.change_role' %}
                             <a href="{% url 'accounts:role_update' role.pk %}" data-bs-toggle="tooltip"
                                 class="text-body" data-bs-placement="top" aria-label="Editar Cargo"
                                 data-bs-original-title="Editar Cargo"><i class="bx bx-pencil mx-1"></i></a>
                             {% endif %}
-                            {% if user|has_perm:'auth.delete_role' %}
+                            {% if user|has_perm:'accounts.delete_role' %}
                             <a href="#roleDeleteModel" data-bs-toggle="tooltip" class="text-body"
                                 data-bs-placement="top" aria-label="Deletar Cargo"
                                 data-bs-original-title="Deletar Cargo"><i class="bx bx-trash mx-1"></i></a>

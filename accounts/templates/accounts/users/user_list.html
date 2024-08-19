@@ -90,7 +90,7 @@
                                     <a href="tel:{{ user_obj.phone }}" data-bs-toggle="tooltip" class="text-body"
                                         data-bs-placement="top" aria-label="Ligar" data-bs-original-title="Ligar"><i
                                             class="bx bx-phone mx-1"></i></a>
-                                    {% if user|has_perm:'accounts.update_user' or user|has_perm:'accounts.delete_user' %}
+                                    {% if user|has_perm:'accounts.change_user' or user|has_perm:'accounts.delete_user' %}
                                     <div class="dropdown">
                                         <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0"
                                             data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>
@@ -98,7 +98,7 @@
                                             {% if user|has_perm:'accounts.change_user_password' %}
                                             <a href="javascript:;" class="dropdown-item">Mudar senha</a>
                                             {% endif %}
-                                            {% if user|has_perm:'accounts.update_user' %}
+                                            {% if user|has_perm:'accounts.change_user' %}
                                             <a href="{% url 'accounts:user_update' user_obj.username %}"
                                                 class="dropdown-item">Editar</a>
                                             {% endif %}

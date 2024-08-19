@@ -36,7 +36,7 @@
                                 <th style="width: 20%;">Nome</th>
                                 <th style="width: 40%;">Endereço</th>
                                 <th style="width: 20%;">Proprietários</th>
-                                {% if user|has_perm:'accounts.update_branch' %}
+                                {% if user|has_perm:'accounts.change_branch' %}
                                 <th style="width: 20%;">Ações</th>
                                 {% endif %}
                             </tr>
@@ -65,7 +65,7 @@
                                       {% endfor %}
                                     </ul>
                                 </td>
-                                {% if user|has_perm:'accounts.update_branch' %}
+                                {% if user|has_perm:'accounts.change_branch' %}
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="{% url 'accounts:branch_update' branch.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar unidade" data-bs-original-title="Editar">

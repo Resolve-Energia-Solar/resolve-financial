@@ -61,7 +61,7 @@
                                     <a role="button" data-bs-target="#permissionDetailModel" data-bs-toggle="modal"
                                         class="text-body" data-bs-placement="top" aria-label="Ver detalhes"
                                         data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
-                                    {% if user|has_perm:'auth.update_permission' %}
+                                    {% if user|has_perm:'auth.change_permission' %}
                                     <a href="{% url 'accounts:permission_update' permission.codename %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar permissão" data-bs-original-title="Editar permissão">
                                         <i class="bx bx-pencil mx-1"></i>
                                     </a>
