@@ -34,7 +34,6 @@ class LeadForm(forms.ModelForm):
                 ]
             ),
             'seller': Select2Widget,
-            'squad': Select2Widget,
             'responsible': Select2Widget
         }
 

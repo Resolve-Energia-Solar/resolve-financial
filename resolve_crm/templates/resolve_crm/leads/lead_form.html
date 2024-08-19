@@ -121,7 +121,7 @@
                                         <div class="col-6 mb-md-0 mb-2">
                                             <div class="form-check custom-option custom-option-basic">
                                                 <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaFisica">
-                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaFisica" value="individual" checked />
+                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaFisica" value="PF" checked />
                                                     <span class="custom-option-header">
                                                         <i class="fs-2 bx bxs-user-rectangle me-1"></i>
                                                         <small>Pessoa Física</small>
@@ -132,7 +132,7 @@
                                         <div class="col-6">
                                             <div class="form-check custom-option custom-option-basic">
                                                 <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaJuridica">
-                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaJuridica" value="corporate" />
+                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaJuridica" value="PJ" />
                                                     <span class="custom-option-header">
                                                         <i class="fs-2 bx bx-buildings me-1"></i>
                                                         <small>Pessoa Jurídica</small>
@@ -188,17 +188,11 @@
                         <div id="responsible-info" class="content">
                             <div class="content-header mb-3">
                                 <h6 class="mb-0">Responsável</h6>
-                                <small>Squad, vendedor, responsável</small>
+                                <small>Vendedor</small>
                             </div>
                             <div class="row g-3">
                                 <div class="col-sm-6">
-                                    {{ form.squad|as_crispy_field }}
-                                </div>
-                                <div class="col-sm-6">
                                     {{ form.seller|as_crispy_field }}
-                                </div>
-                                <div class="col-12">
-                                    {{ form.responsible|as_crispy_field }}
                                 </div>
                                 <div class="col-12 d-flex justify-content-between">
                                     <button class="btn btn-primary btn-prev">
@@ -222,7 +216,6 @@
 
 {% block extra_scripts %}
 <script src="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.js' %}"></script>
-<!-- <script src="{% static 'sneat-template/assets/vendor/libs/bootstrap-select/bootstrap-select.js' %}"></script> -->
 <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/popular.js' %}"></script>
 <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/bootstrap5.js' %}"></script>
 <script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/auto-focus.js' %}"></script>

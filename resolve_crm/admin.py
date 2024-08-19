@@ -12,7 +12,7 @@ class CardAdmin(admin.ModelAdmin):
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ("name", "type", "contact_email", "origin", "responsible")
+    list_display = ("name", "type", "contact_email", "origin", "seller")
 
 
 @admin.register(Task)
