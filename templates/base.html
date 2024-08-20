@@ -183,8 +183,7 @@
                   <i class="bx bx-bell bx-sm"></i>
                   {% notifications_unread as notifications_unread %}
                   {% if notifications_unread %}
-                  <span id="badge-notifications" class="badge bg-danger rounded-pill badge-notifications">{{
-                    notifications_unread }}</span>
+                  <span id="badge-notifications" class="badge bg-danger rounded-pill badge-notifications">{{ notifications_unread }}</span>
                   {% endif %}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
@@ -206,17 +205,11 @@
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar">
                               {% if notification.actor.profile_picture %}
-                              <img src="{{ notification.actor.profile_picture.url }}" alt
-                                class="w-px-40 h-auto rounded-circle" />
-                              {% else %}
-                              <img src="{% static 'accounts/img/dummy-user.jpg' %}" alt
-                                class="w-px-40 h-auto rounded-circle" />
+                              <img src="{{ notification.actor.profile_picture.url }}" alt="Foto de perfil de {{ notification.actor.complete_name }}" class="w-px-40 h-auto rounded-circle" />
                               {% endif %}
                             </div>
                           </div>
-                          <a class="flex-grow-1 notification-link"
-                            href="{{ notification.action_object.get_absolute_url }}" data-mark-read-url="{% url "
-                            notifications:mark_as_read" notification.slug %}">
+                          <a class="flex-grow-1 notification-link" href="{{ notification.action_object.get_absolute_url }}" data-mark-read-url="{% url "notifications:mark_as_read" notification.slug %}">
                             <h6 class="mb-1">
                               {% if notification.actor == user %}
                               Você
@@ -235,8 +228,7 @@
                                 class="badge badge-dot {% if notification.level == 'success' %}bg-success{% elif notification.level == 'warning' %}bg-warning{% elif notification.level == 'error' %}bg-danger{% elif notification.level == 'info' %}bg-info{% endif %}"></span>
                             </a>
                             {% endif %}
-                            <a href="{% url 'notifications:delete' notification.slug %}"
-                              class="dropdown-notifications-archive">
+                            <a href="{% url 'notifications:delete' notification.slug %}" class="dropdown-notifications-archive">
                               <span class="bx bx-x"></span>
                             </a>
                           </div>
@@ -458,30 +450,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       // Marcar todas como lidas
-      document.querySelector('.dropdown-notifications-all').addEventListener('click', function (event) {
-        event.preventDefault();
-
-        var url = this.href;
-
-        fetch(url, {
-          method: 'GET',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-          .then(response => response.text())
-          .then(data => {
-            document.getElementById('badge-notifications').remove();
-          })
-          .catch(error => {
-            console.error('Erro ao marcar notificações como lidas:', error);
-          });
-      });
-
-      // Excluir notificação
-      document.querySelectorAll('.dropdown-notifications-archive').forEach(function (element) {
-        element.addEventListener('click', function (event) {
+      var markAllReadElement = document.querySelector('.dropdown-notifications-all');
+      if (markAllReadElement) {
+        markAllReadElement.addEventListener('click', function (event) {
           event.preventDefault();
+
           var url = this.href;
 
           fetch(url, {
@@ -490,46 +463,74 @@
               'X-Requested-With': 'XMLHttpRequest'
             }
           })
-            .then(response => {
-              if (response.ok) {
-                console.log('Notificação excluída com sucesso');
-              } else {
-                console.error('Falha ao excluir a notificação');
-              }
+            .then(response => response.text())
+            .then(data => {
+              document.getElementById('badge-notifications').remove();
             })
             .catch(error => {
-              console.error('Erro ao excluir a notificação:', error);
+              console.error('Erro ao marcar notificações como lidas:', error);
             });
         });
-      });
+      }
+
+      // Excluir notificação
+      var archiveElements = document.querySelectorAll('.dropdown-notifications-archive');
+      if (archiveElements.length > 0) {
+        archiveElements.forEach(function (element) {
+          element.addEventListener('click', function (event) {
+            event.preventDefault();
+            var url = this.href;
+
+            fetch(url, {
+              method: 'GET',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            })
+              .then(response => {
+                if (response.ok) {
+                  console.log('Notificação excluída com sucesso');
+                } else {
+                  console.error('Falha ao excluir a notificação');
+                }
+              })
+              .catch(error => {
+                console.error('Erro ao excluir a notificação:', error);
+              });
+          });
+        });
+      }
 
       // Marcar notificação como lida
-      document.querySelectorAll('.notification-link').forEach(function (element) {
-        element.addEventListener('click', function (event) {
-          event.preventDefault(); // Previne o redirecionamento padrão
+      var notificationLinks = document.querySelectorAll('.notification-link');
+      if (notificationLinks.length > 0) {
+        notificationLinks.forEach(function (element) {
+          element.addEventListener('click', function (event) {
+            event.preventDefault(); // Previne o redirecionamento padrão
 
-          var url = this.href;
-          var markReadUrl = this.dataset.markReadUrl;
+            var url = this.href;
+            var markReadUrl = this.dataset.markReadUrl;
 
-          fetch(markReadUrl, {
-            method: 'GET',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-            .then(response => {
-              if (response.ok) {
-                console.log('Notificação marcada como lida com sucesso');
-              } else {
-                console.error('Falha ao marcar a notificação como lida');
+            fetch(markReadUrl, {
+              method: 'GET',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
               }
             })
-            .catch(error => {
-              console.error('Falha ao marcar a notificação como lida:', error);
-            });
-          window.location.href = url;
+              .then(response => {
+                if (response.ok) {
+                  console.log('Notificação marcada como lida com sucesso');
+                } else {
+                  console.error('Falha ao marcar a notificação como lida');
+                }
+              })
+              .catch(error => {
+                console.error('Falha ao marcar a notificação como lida:', error);
+              });
+            window.location.href = url;
+          });
         });
-      });
+      }
     });
   </script>
 
