@@ -452,6 +452,15 @@ class SquadListView(UserPassesTestMixin, ListView):
     
     def test_func(self):
         return self.request.user.has_perm('accounts.view_squad')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('name')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
 
     
 class SquadDetailView(UserPassesTestMixin, DetailView):
