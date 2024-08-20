@@ -16,32 +16,32 @@
   #div_id_groups .select2-selection__rendered {
     min-height: 200px !important;
   }
+
   .bs-stepper-header {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: thin;
-        -ms-overflow-style: none;
-        overflow-y: hidden;
-    }
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: none;
+    overflow-y: hidden;
+  }
+
+  .bs-stepper-header::-webkit-scrollbar {
+    height: 8px;
+    background-color: #FFF;
+    border-radius: 50%;
+  }
+
+  .bs-stepper-header::-webkit-scrollbar-thumb {
+    border-radius: 50%;
+    border: 1px solid #FFF;
+  }
 
 
-    .bs-stepper-header::-webkit-scrollbar {
-        height: 8px;
-        background-color: #FFF;
-        border-radius: 50%;
-    }
-
-    .bs-stepper-header::-webkit-scrollbar-thumb {
-        border-radius: 50%;
-        border: 1px solid #FFF;
-    }
-
-
-    .bs-stepper-header {
-        scrollbar-color: #FDC600 #FFF;
-        scrollbar-width: thin;
-    }
+  .bs-stepper-header {
+    scrollbar-color: #FDC600 #FFF;
+    scrollbar-width: thin;
+  }
 </style>
 {% endblock extra_head %}
 
@@ -49,7 +49,7 @@
 <div class="row justify-content-center my-3">
   <div class="col-12 col-md-10 mb-4">
     <div class="bs-stepper wizard-numbered mt-2">
-      <div class="bs-stepper-header overflow-x-scroll">
+      <div class="bs-stepper-header">
         <!-- Passos do Formulário -->
         <div class="step" data-target="#personal-info">
           <button type="button" class="step-trigger">
@@ -119,8 +119,8 @@
                     <div class="form-check custom-option custom-option-basic me-3">
                       <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
                         for="gender_male">
-                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_male"
-                          value="M" {% if form.gender.value == "M" %}checked{% endif %} />
+                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_male" value="M"
+                          {% if form.gender.value == "M" %}checked{% endif %} />
                         <span class="custom-option-header">
                           <i class="fs-4 bx bx-male me-1"></i>
                           <small>Masculino</small>
@@ -130,8 +130,8 @@
                     <div class="form-check custom-option custom-option-basic me-3">
                       <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
                         for="gender_female">
-                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_female"
-                          value="F" {% if form.gender.value == "F" %}checked{% endif %} />
+                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_female" value="F"
+                          {% if form.gender.value == "F" %}checked{% endif %} />
                         <span class="custom-option-header">
                           <i class="fs-4 bx bx-female me-1"></i>
                           <small>Feminino</small>

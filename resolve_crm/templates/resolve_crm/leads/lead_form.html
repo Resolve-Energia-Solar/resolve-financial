@@ -19,7 +19,6 @@
         overflow-y: hidden;
     }
 
-
     .bs-stepper-header::-webkit-scrollbar {
         height: 8px;
         background-color: #FFF;
@@ -98,7 +97,7 @@
                 <div class="bs-stepper-content">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
+
                         <!-- Informações Básicas -->
                         <div id="account-details" class="content">
                             <div class="content-header mb-3">
@@ -120,8 +119,11 @@
                                         <label for="type">Tipo</label>
                                         <div class="col-6 mb-md-0 mb-2">
                                             <div class="form-check custom-option custom-option-basic">
-                                                <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaFisica">
-                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaFisica" value="PF" checked />
+                                                <label
+                                                    class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
+                                                    for="tipoPessoaFisica">
+                                                    <input name="type" class="form-check-input m-0 me-2" type="radio"
+                                                        id="tipoPessoaFisica" value="PF" checked />
                                                     <span class="custom-option-header">
                                                         <i class="fs-2 bx bxs-user-rectangle me-1"></i>
                                                         <small>Pessoa Física</small>
@@ -131,8 +133,11 @@
                                         </div>
                                         <div class="col-6">
                                             <div class="form-check custom-option custom-option-basic">
-                                                <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2" for="tipoPessoaJuridica">
-                                                    <input name="type" class="form-check-input m-0 me-2" type="radio" id="tipoPessoaJuridica" value="PJ" />
+                                                <label
+                                                    class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
+                                                    for="tipoPessoaJuridica">
+                                                    <input name="type" class="form-check-input m-0 me-2" type="radio"
+                                                        id="tipoPessoaJuridica" value="PJ" />
                                                     <span class="custom-option-header">
                                                         <i class="fs-2 bx bx-buildings me-1"></i>
                                                         <small>Pessoa Jurídica</small>
@@ -154,7 +159,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Informações Extras -->
                         <div id="personal-info" class="content">
                             <div class="content-header mb-3">
@@ -183,7 +188,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Responsável -->
                         <div id="responsible-info" class="content">
                             <div class="content-header mb-3">
@@ -206,7 +211,7 @@
                     </form>
                 </div>
             </div>
-            
+
         </div>
         <!-- /Default Wizard -->
     </div>
