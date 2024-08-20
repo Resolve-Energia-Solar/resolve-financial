@@ -203,6 +203,57 @@ def menu_items(request):
                     "permission": "accounts.add_role"
                 }
             ]
+        },
+        {
+            "label": "Campanhas",
+            "icon": "bx bx-star",
+            "section": "Administração",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "resolve_crm:campaign_list",
+                    "permission": "resolve_crm.view_marketingcampaign"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "resolve_crm:campaign_create",
+                    "permission": "resolve_crm.add_marketingcampaign"
+                }
+            ]
+        },
+        {
+            "label": "Perfis",
+            "icon": "bx bx-group",
+            "section": "Administração",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "accounts:group_list",
+                    "permission": "auth.view_group"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "accounts:group_create",
+                    "permission": "auth.add_group"
+                }
+            ]
+        },
+        {
+            "label": "Permissões",
+            "icon": "bx bx-key",
+            "section": "Administração",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "accounts:permission_list",
+                    "permission": "auth.view_permission"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "accounts:permission_create",
+                    "permission": "auth.add_permission"
+                }
+            ]
         }
     ]
 
