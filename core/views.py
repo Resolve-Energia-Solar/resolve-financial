@@ -103,7 +103,7 @@ class BoardCreateView(UserPassesTestMixin, CreateView):
     model = Board
     fields = "__all__"
     template_name = "core/boards/board_create.html"
-    success_url = reverse_lazy("resolve_crm:boards")
+    success_url = reverse_lazy("core:board-list")
 
     def test_func(self):
         return self.request.user.has_perm('core.create_board')
