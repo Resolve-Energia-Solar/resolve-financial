@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -80,7 +81,7 @@ class KanbanView(UserPassesTestMixin, DetailView):
     template_name = "core/boards/board_kanban.html"
 
     def test_func(self):
-        return self.request.user.squad_members.filter(boards=self.get_object()).exists()
+        return self.request.user.squad_members.filter(boards=self.get_object()).exists() or self.request.user.is_superuser
     
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
@@ -88,15 +89,20 @@ class KanbanView(UserPassesTestMixin, DetailView):
         column = Column(title=name, board=board)
         column.order = self.get_object().columns.count()
         column.save()
-        return redirect('core:board-detail', pk=board.pk)
+        return redirect('core:board-kanban', pk=board.pk)
 
 
 class BoardDetailView(UserPassesTestMixin, DetailView):
     model = Board
-    template_name = "resolve_crm/boards/board_detail.html"
+    template_name = "core/boards/board_detail.html"
 
     def test_func(self):
         return self.request.user.has_perm('core.view_board')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['user_can_view'] = self.request.user.squad_members.filter(boards=self.get_object()).exists()
+        return context
     
 
 class BoardCreateView(UserPassesTestMixin, CreateView):
@@ -147,6 +153,48 @@ class BoardUpdateView(UserPassesTestMixin, UpdateView):
 #         return JsonResponse({'status': 'success'})
 
 
+class CreateColumnView(UserPassesTestMixin, View):
+
+    def test_func(self):
+        return self.request.user.has_perm('core.add_column')
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        board_id = data.get('board_id')
+        title = data.get('title')
+        order = data.get('order', 0)
+
+        board = get_object_or_404(Board, id=board_id)
+        column = Column.objects.create(board=board, title=title, order=order)
+
+        return JsonResponse({
+            'id': column.id,
+            'title': column.title,
+            'order': column.order,
+            'created_at': column.created_at,
+        })
+
+
+class UpdateColumnView(UserPassesTestMixin, View):
+
+    def test_func(self):
+        return self.request.user.has_perm('core.change_column')
+
+    def post(self, request, column_id, *args, **kwargs):
+        column = get_object_or_404(Column, id=column_id)
+        data = json.loads(request.body)
+        column.title = data.get('title', column.title)
+        column.order = data.get('order', column.order)
+        column.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'id': column.id,
+            'title': column.title,
+            'order': column.order,
+        })
+
+
 class DeleteColumnView(UserPassesTestMixin, View):
 
     def test_func(self):
@@ -156,5 +204,3 @@ class DeleteColumnView(UserPassesTestMixin, View):
         column = get_object_or_404(Column, id=column_id)
         column.delete()
         return JsonResponse({'status': 'success'})
-
-

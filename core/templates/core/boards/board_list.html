@@ -50,12 +50,16 @@
                 <tbody>
                     {% for board in object_list %}
                     <tr>
-                        <td>{{ board.title }}</td>
+                        <td>
+                            <a href="{% url 'core:board-detail' board.pk %}">
+                                {{ board.title }}
+                            </a>
+                        </td>
                         <td>{{ board.created_at|date:"d/m/Y H:i" }}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <a href="javascript:;" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Enviar e-mail" data-bs-original-title="Enviar e-mail"><i class="bx bx-send mx-1"></i></a>
-                                <a href="{% url 'core:board-detail' board.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Quadro" data-bs-original-title="Ver Quadro"><i class="bx bx-show mx-1"></i></a>
+                                <a href="{% url 'core:board-kanban' board.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Quadro" data-bs-original-title="Ver Quadro"><i class="bx bx-show mx-1"></i></a>
                                 {% if user|has_perm:'core.change_board' or user|has_perm:'core.delete_board' %}
                                 <div class="dropdown">
                                     <a href="javascript:;" class="btn dropdown-toggle hide-arrow text-body p-0" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></a>

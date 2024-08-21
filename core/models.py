@@ -38,7 +38,7 @@ class Board(models.Model):
     history = HistoricalRecords()
     
     def get_absolute_url(self):
-        return reverse_lazy('core:board-detail', kwargs={'pk': self.pk})
+        return reverse_lazy('core:board-kanban', kwargs={'pk': self.pk})
 
     def __str__(self):
         return self.title
