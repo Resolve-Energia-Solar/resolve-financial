@@ -72,12 +72,12 @@
                                     </div>
                                     <div class="d-flex flex-column"><a
                                             href="{% url 'accounts:user_detail' user_obj.username %}"
-                                            class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name }}</span></a><small
-                                            class="text-truncate text-muted">{{ user_obj.get_full_name }}</small></div>
+                                            class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name|default:"&mdash;" }}</span></a><small
+                                            class="text-truncate text-muted">{{ user_obj.get_full_name|default:"&mdash;" }}</small></div>
                                 </div>
                             </td>
-                            <td>{{ user_obj.department }}</td>
-                            <td>{{ user_obj.role }}</td>
+                            <td>{{ user_obj.department|default:"&mdash;" }}</td>
+                            <td>{{ user_obj.role|default:"&mdash;" }}</td>
                             <td>{{ user_obj.hire_date|date:"d M Y"|default:"&mdash;" }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
