@@ -1,292 +1,261 @@
 {% extends 'base.html' %}
 
+{% load static crispy_forms_tags %}
+
 {% block extra_head %}
-  <title>ERP &mdash; Editar {{ object.get_full_name }}</title>
+<title>ERP &mdash; Editar {{ object.get_full_name }}</title>
+<!-- Vendors CSS -->
+<link rel="stylesheet"
+  href="{% static 'sneat-template/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/typeahead-js/typeahead.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/bootstrap-select/bootstrap-select.css' %}" />
+<link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/@form-validation/form-validation.css' %}" />
+<style>
+  #div_id_user_permissions .select2-selection__rendered,
+  #div_id_groups .select2-selection__rendered {
+    min-height: 200px !important;
+  }
+
+  .bs-stepper-header {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -ms-overflow-style: none;
+    overflow-y: hidden;
+  }
+
+  .bs-stepper-header::-webkit-scrollbar {
+    height: 8px;
+    background-color: #FFF;
+    border-radius: 50%;
+  }
+
+  .bs-stepper-header::-webkit-scrollbar-thumb {
+    border-radius: 50%;
+    border: 1px solid #FFF;
+  }
+
+
+  .bs-stepper-header {
+    scrollbar-color: #FDC600 #FFF;
+    scrollbar-width: thin;
+  }
+</style>
 {% endblock extra_head %}
 
 {% block content %}
-<div class="row justify-content-center py-3">
-  <div class="col-12 col-md-8">
-    <div class="d-flex justify-content-between align-items-center my-2">
-      <h1>Editar Usuário</h1>
-      <h4>({{ object.username }})</h4>
-    </div>
-    {% load widget_tweaks %}
-
-    <form method="post" enctype="multipart/form-data" id="user_form" class="mt-4">
-      {% csrf_token %}
-      <div class="row justify-content-between g-3">
-        <div class="col-12 col-md-6 px-2 h-100">
-          <!-- Personal Info -->
-          <fieldset class="module aligned">
-            <h2 class="h4">Informações Pessoais</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "username complete_name birth_date gender cpf profile_picture" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
+<div class="row justify-content-center my-3">
+  <div class="col-12 col-md-10 mb-4">
+    <div class="bs-stepper wizard-numbered mt-2">
+      <div class="bs-stepper-header">
+        <!-- Passos do Formulário -->
+        <div class="step" data-target="#personal-info">
+          <button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">1</span>
+            <span class="bs-stepper-label mt-1">
+              <span class="bs-stepper-title">Informações Pessoais</span>
+              <span class="bs-stepper-subtitle">Nome, data de nascimento, etc.</span>
+            </span>
+          </button>
         </div>
-        <div class="col-12 col-md-6 px-2 h-100">
-          <!-- Employee Info -->
-          <fieldset class="module aligned">
-            <h2 class="h4">Informações do Funcionário</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "contract_type branch department role user_manager hire_date resignation_date" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
+        <div class="line"><i class="bx bx-chevron-right"></i></div>
+        <div class="step" data-target="#employee-info">
+          <button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">2</span>
+            <span class="bs-stepper-label mt-1">
+              <span class="bs-stepper-title">Informações do Funcionário</span>
+              <span class="bs-stepper-subtitle">Contrato, departamento, etc.</span>
+            </span>
+          </button>
+        </div>
+        <div class="line"><i class="bx bx-chevron-right"></i></div>
+        <div class="step" data-target="#contact-info">
+          <button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">3</span>
+            <span class="bs-stepper-label mt-1">
+              <span class="bs-stepper-title">Contato</span>
+              <span class="bs-stepper-subtitle">Telefone, e-mail, endereço</span>
+            </span>
+          </button>
+        </div>
+        <div class="line"><i class="bx bx-chevron-right"></i></div>
+        <div class="step" data-target="#permissions">
+          <button type="button" class="step-trigger">
+            <span class="bs-stepper-circle">4</span>
+            <span class="bs-stepper-label mt-1">
+              <span class="bs-stepper-title">Permissões</span>
+              <span class="bs-stepper-subtitle">Grupos, permissões específicas</span>
+            </span>
+          </button>
         </div>
       </div>
-      <div class="row justify-content-between g-3">
-        <div class="col-12 col-md-6 px-2 h-100">
-          <!-- Contact -->
-          <fieldset class="module aligned">
-            <h2 class="h4">Contato</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "phone email" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
+
+      <div class="bs-stepper-content">
+        <form method="post" enctype="multipart/form-data" id="user_form">
+          {% csrf_token %}
+
+          <!-- Informações Pessoais -->
+          <div id="personal-info" class="content">
+            <div class="content-header mb-3">
+              <h6 class="mb-0">Informações Pessoais</h6>
+              <small>Nome, data de nascimento, etc.</small>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.username|as_crispy_field }}
               </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-            <div class="form-group mb-3">
-              {{ form.address.label }}
-              {{ form.address }}
-              <small class="help-text">
-                <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
-              </small>
-            </div>
-
-          </fieldset>
-        </div>
-        <div class="col-12 col-md-6 px-2 h-100">
-          <!-- User Permissions -->
-          <fieldset class="module aligned">
-            <h2 class="h4">Permissões</h2>
-            {% for field in form.visible_fields %}
-            {% if field.name in "groups user_permissions" %}
-            <div class="form-group mb-3">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% render_field field class="form-control" %}
-              {% for error in field.errors %}
-              <div class="invalid-feedback">
-                {{ error }}
+              <div class="col-md-6">
+                {{ form.complete_name|as_crispy_field }}
               </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            {% endfor %}
-          </fieldset>
-        </div>
-
-        <div class="submit-row">
-          <button class="btn btn-success me-2" type="submit">Salvar</button>
-          <a href="{% url 'accounts:users_list' %}">Voltar para a lista</a>
-        </div>
-      </div>
-    </form>
-
-    <!-- Add New Address Modal -->
-    <div class="modal fade" id="createAddressModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-simple modal-add-new-address">
-        <div class="modal-content p-3 p-md-5">
-          <div class="modal-body">
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            <div class="text-center mb-4">
-              <h3 class="address-title">Adicionar novo endereço</h3>
-              <p class="address-subtitle">Novo endereço para o funcionário</p>
-            </div>
-            <form id="createAddressForm" class="row">
-              <div class="col-12">
-                <div class="row">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_zip_code">CEP</label>
-                    <input type="text" id="id_zip_code" name="zip_code" class="form-control"
-                      placeholder="Digite o CEP para começar" />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_country">País</label>
-                    <input class="form-control" type="text" name="country" id="id_country" value="Brasil">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_state">Estado</label>
-                    <input type="text" id="id_state" name="state" class="form-control" placeholder="PA" />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="modalAddressCity">Cidade</label>
-                    <input type="text" id="id_city" name="city" class="form-control"
-                      placeholder="Digite a cidade aqui" />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_neighborhood">Bairro</label>
-                    <input type="text" id="id_neighborhood" name="neighborhood" class="form-control"
-                      placeholder="Digite o bairro aqui" />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="street">Logradouro</label>
-                    <input type="text" id="id_street" name="street" class="form-control"
-                      placeholder="Digite a rua, avenida, travessa etc." />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_number">Número</label>
-                    <input type="text" id="id_number" name="number" class="form-control"
-                      placeholder="Digite o número da casa" />
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" for="id_complement">Complemento</label>
-                    <input type="text" id="id_complement" name="complement" class="form-control"
-                      placeholder="Digite o complemento aqui" />
-                  </div>
-                  <div class="col-12 text-center mt-4">
-                    <button type="submit" class="btn btn-primary me-sm-3 me-1">
-                      Criar
-                    </button>
-                    <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">
-                      Cancelar
-                    </button>
+              <div class="col-md-6">
+                {{ form.birth_date|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                <div class="col-md-6">
+                  <label for="id_gender" class="form-label">Gênero</label>
+                  <div id="id_gender" class="d-flex justify-content-start align-items-center">
+                    <div class="form-check custom-option custom-option-basic me-3">
+                      <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
+                        for="gender_male">
+                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_male" value="M"
+                          {% if form.gender.value == "M" %}checked{% endif %} />
+                        <span class="custom-option-header">
+                          <i class="fs-4 bx bx-male me-1"></i>
+                          <small>Masculino</small>
+                        </span>
+                      </label>
+                    </div>
+                    <div class="form-check custom-option custom-option-basic me-3">
+                      <label class="form-check-label custom-option-content d-flex align-items-center py-1 px-2"
+                        for="gender_female">
+                        <input type="radio" class="form-check-input m-0 me-2" name="gender" id="gender_female" value="F"
+                          {% if form.gender.value == "F" %}checked{% endif %} />
+                        <span class="custom-option-header">
+                          <i class="fs-4 bx bx-female me-1"></i>
+                          <small>Feminino</small>
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
-            </form>
+              <div class="col-md-6">
+                {{ form.cpf|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.profile_picture|as_crispy_field }}
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-primary btn-next">Próximo <i
+                  class="bx bx-chevron-right bx-sm me-sm-n2"></i></button>
+            </div>
           </div>
-        </div>
+
+          <!-- Informações do Funcionário -->
+          <div id="employee-info" class="content">
+            <div class="content-header mb-3">
+              <h6 class="mb-0">Informações do Funcionário</h6>
+              <small>Contrato, departamento, etc.</small>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.contract_type|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.branch|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.department|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.role|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.user_manager|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.hire_date|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.resignation_date|as_crispy_field }}
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-primary btn-prev"><i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                Anterior</button>
+              <button class="btn btn-primary btn-next">Próximo <i
+                  class="bx bx-chevron-right bx-sm me-sm-n2"></i></button>
+            </div>
+          </div>
+
+          <!-- Contato -->
+          <div id="contact-info" class="content">
+            <div class="content-header mb-3">
+              <h6 class="mb-0">Contato</h6>
+              <small>Telefone, e-mail, endereço</small>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.phone|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.email|as_crispy_field }}
+              </div>
+              <div class="col-12">
+                <div class="form-group">
+                  {{ form.address.label_tag }}
+                  {{ form.address|as_crispy_field }}
+                  <small class="help-text">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-primary btn-prev"><i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                Anterior</button>
+              <button class="btn btn-primary btn-next">Próximo <i
+                  class="bx bx-chevron-right bx-sm me-sm-n2"></i></button>
+            </div>
+          </div>
+
+          <!-- Permissões -->
+          <div id="permissions" class="content">
+            <div class="content-header mb-3">
+              <h6 class="mb-0">Permissões</h6>
+              <small>Grupos, permissões específicas</small>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.groups|as_crispy_field }}
+              </div>
+              <div class="col-md-6">
+                {{ form.user_permissions|as_crispy_field }}
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-primary btn-prev"><i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>
+                Anterior</button>
+              <button type="submit" class="btn btn-success btn-submit">Salvar</button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
-    <!--/ Add New Address Modal -->
-
   </div>
 </div>
+
+{% include "snippets/create_address_modal.html" %}
 {% endblock content %}
 
 {% block extra_scripts %}
-<script>
-  document.getElementById('createAddressForm').addEventListener('submit', function (e) {
-    e.preventDefault(); // Impede o envio padrão do formulário
-
-    // Coleta os dados do formulário
-    var formData = {
-      street: document.getElementById('id_street').value,
-      city: document.getElementById('id_city').value,
-      state: document.getElementById('id_state').value,
-      zip_code: document.getElementById('id_zip_code').value,
-      country: document.getElementById('id_country').value,
-      neighborhood: document.getElementById('id_neighborhood').value,
-      number: document.getElementById('id_number').value,
-      complement: document.getElementById('id_complement').value
-    };
-
-    // Envia os dados para a API
-    fetch('{% url "accounts:addresses_api" %}', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData)
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Sucesso:', data);
-        // Cria um novo option com o endereço retornado
-        const newOption = document.createElement('option');
-        newOption.value = data.complete_address; // Define o valor do option
-        newOption.textContent = data.complete_address; // Define o texto do option
-        newOption.setAttribute('data-address-id', data.id); // Define o atributo data-address-id
-
-        // Adiciona o novo option ao datalist de endereços
-        document.getElementById('addresses').appendChild(newOption);
-        // Opcionalmente, dispara o evento de mudança se necessário
-        document.getElementById('addresses').dispatchEvent(new Event('change'));
-
-        // Define o valor do input para o endereço recém-criado, fazendo com que ele seja selecionado
-        document.getElementById('address-input').value = data.complete_address;
-
-        // Fecha o modal
-        var modalElement = document.getElementById('createAddressModal');
-        var modalInstance = bootstrap.Modal.getInstance(modalElement);
-        modalInstance.hide();
-      })
-      .catch((error) => {
-        console.error('Erro:', error);
-      });
-  });
-
-
-  document.getElementById('id_zip_code').addEventListener('blur', function () {
-    const cep = this.value.replace(/\D/g, ''); // Remove caracteres não numéricos
-    const fieldsToDisable = ['id_zip_code', 'id_street', 'id_neighborhood', 'id_city', 'id_state', 'id_complement', 'id_country'];
-    const submitButton = document.querySelector('.modal button[type="submit"]');
-    const originalButtonContent = submitButton.innerHTML; // Armazena o conteúdo original do botão
-
-    // Função para alterar o botão para o indicador de carregamento
-    function setLoadingIndicator(isLoading) {
-      if (isLoading) {
-        submitButton.innerHTML = '<span class="spinner-grow spinner-grow-sm text-secondary me-1" aria-hidden="true"></span> Aguarde...';
-        submitButton.disabled = true; // Desativa o botão para evitar múltiplos cliques
-      } else {
-        submitButton.innerHTML = originalButtonContent; // Restaura o conteúdo original do botão
-        submitButton.disabled = false; // Reativa o botão
-      }
-    }
-
-    function toggleFields(isLoading) {
-      fieldsToDisable.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-          field.disabled = isLoading;
-        }
-      });
-      setLoadingIndicator(isLoading);
-    }
-
-    if (cep.length === 8) {
-      toggleFields(true); // Desabilita os campos enquanto busca o CEP
-      fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.type && data.type === "service_error") {
-            // Trata o erro de serviço
-            console.error('Erro ao buscar o CEP:', data);
-            let errorMessage = 'Todos os serviços de CEP retornaram erro. Por favor, verifique o CEP ou tente novamente mais tarde.';
-            alert(errorMessage);
-          } else {
-            document.getElementById('id_street').value = data.street;
-            document.getElementById('id_neighborhood').value = data.neighborhood;
-            document.getElementById('id_city').value = data.city;
-            document.getElementById('id_state').value = data.state;
-            document.getElementById('id_country').value = "Brasil";
-          }
-        })
-        .catch(error => console.error('Erro ao buscar o CEP no segundo serviço:', error))
-        .finally(() => {
-          toggleFields(false);
-        });
-    } else {
-      alert("CEP inválido. O CEP deve conter 8 dígitos.");
-    }
-  });
-</script>
+<script src="{% static 'sneat-template/assets/vendor/libs/bs-stepper/bs-stepper.js' %}"></script>
+<script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/popular.js' %}"></script>
+<script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/bootstrap5.js' %}"></script>
+<script src="{% static 'sneat-template/assets/vendor/libs/@form-validation/auto-focus.js' %}"></script>
+<script src="{% static 'sneat-template/assets/js/form-wizard-numbered.js' %}"></script>
+<script src="{% static 'sneat-template/assets/js/form-wizard-validation.js' %}"></script>
 {% endblock extra_scripts %}
