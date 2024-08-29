@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% load static crispy_forms_tags %}
+{% load static crispy_forms_tags iam_tags %}
 
 {% block extra_head %}
 <title>ERP &mdash; Editar {{ object.get_full_name }}</title>
@@ -235,6 +235,21 @@
               <div class="col-md-6">
                 {{ form.user_permissions|as_crispy_field }}
               </div>
+              {% if user|has_perm:'accounts.switch_user_activation' %}
+              <div class="col-md-6">
+                {{ form.is_active|as_crispy_field }}
+              </div>
+              {% endif %}
+              {% if user.is_staff %}
+              <div class="col-md-6">
+                {{ form.is_staff|as_crispy_field }}
+              </div>
+                {% if user.is_superuser %}
+                <div class="col-md-6">
+                  {{ form.is_superuser|as_crispy_field }}
+                </div>
+                {% endif %}
+              {% endif %}
             </div>
             <div class="d-flex justify-content-between mt-4">
               <button class="btn btn-primary btn-prev"><i class="bx bx-chevron-left bx-sm ms-sm-n2"></i>

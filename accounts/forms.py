@@ -38,7 +38,7 @@ class UserUpdateForm(ModelForm):
 
     class Meta:
         model = User
-        exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "password"]
+        exclude = ["last_login", "date_joined", "password"]
         widgets = {
             "hire_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
             "birth_date": DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
