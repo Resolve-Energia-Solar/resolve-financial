@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'core.apps.CoreConfig',
     'resolve_crm.apps.ResolveCRMConfig',
+    'contracts.apps.ContractsConfig',
+    'logistics.apps.LogisticsConfig',
     'notifications',
     'widget_tweaks',
     'django_select2',
@@ -148,7 +150,7 @@ CACHES = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
     "select2": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/2",
+        "LOCATION": "redis://127.0.0.1:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
