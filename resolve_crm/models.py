@@ -1,6 +1,8 @@
 from django.db import models
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
+from django.contrib.auth import get_user_model
+from accounts.models import Branch
 
 
 class Lead(models.Model):
@@ -134,7 +136,6 @@ class Opportunity(models.Model):
     board = ta:
         verbose_name = "Oportunidade"
         verbose_name_plural = "Oportunidades"
-"""
 
 
 class ComercialProposal(models.Model):
@@ -165,6 +166,7 @@ class ComercialProposal(models.Model):
 
     def __str__(self):
         return f"{self.lead} - {self.kwp} kWp"
+"""
 
 
 class ContractSubmission(models.Model):
@@ -179,15 +181,56 @@ class ContractSubmission(models.Model):
 
 
 class Sale(models.Model):
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead")
-    proposal = models.ForeignKey(ComercialProposal, on_delete=models.CASCADE, verbose_name="Proposta Comercial")
-    contract = models.ForeignKey(ContractSubmission, on_delete=models.CASCADE, verbose_name="Contrato")
-    status = models.CharField("Status da Venda", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
+
+    # Stakeholders
+    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente")
+    borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador")
+    seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor")
+    sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas")
+    sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas")
+    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador")
+
+    # Sale Information
+    contract_number = models.CharField("Número do Contrato", max_length=20)
+    contract_date = models.DateField("Data do Contrato")
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
+    marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing")
+
+    # Document Information
+    document_status = models.CharField("Status do Documento", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
+    is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
+    document_situation = models.CharField("Situação do Documento", max_length=256, null=True, blank=True)
+    document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
+
+    # Financial Information
+    financial_status = models.CharField("Status Financeiro", max_length=2, choices=[("P", "Pendente"), ("PA", "Parcial"), ("L", "Liquidado")])
+    is_completed_financial = models.BooleanField("Financeiro Completo", null=True, blank=True)
+    financial_completion_date = models.DateTimeField("Data de Conclusão Financeira", null=True, blank=True)
+    project_value = models.DecimalField("Valor do Projeto", max_digits=20, decimal_places=6, default=0.000000)
+
+    # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-    
-    def __str__(self):
-        return f"{self.lead} - {self.proposal.kwp} kWp"
-    
+
     class Meta:
         verbose_name = "Venda"
         verbose_name_plural = "Vendas"
+    
+    def __str__(self):
+        return f'{self.contract_number} - {self.customer.name}'
+
+
+class SaleDocument(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+    document = models.FileField("Documento", upload_to="resolve_crm/sale_documents/")
+    document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento")
+    status = models.CharField("Status", max_length=2, choices=[("P", "Pendente"), ("A", "Aprovado"), ("R", "Reprovado")])
+    description = models.TextField("Descrição")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Documento da Venda"
+        verbose_name_plural = "Documentos das Vendas"
+    
+    def __str__(self):
+        return self.document.name
