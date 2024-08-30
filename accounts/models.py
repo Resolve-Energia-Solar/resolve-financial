@@ -5,18 +5,33 @@ from simple_history.models import HistoricalRecords
 from django.urls import reverse_lazy
 
 
+class UserType(models.Model):
+    name = models.CharField("Nome do Tipo de Usuário", max_length=50, unique=True)
+    description = models.TextField("Descrição", blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Tipo de Usuário"
+        verbose_name_plural = "Tipos de Usuário"
+
+
 class User(AbstractUser):
     # Personal Info
     complete_name = models.CharField("Nome Completo", max_length=255, blank=True, null=True)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
-    gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino")), default="M")
-    cpf = models.CharField("CPF", max_length=11, unique=True, blank=True, null=True)
+    gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")), default="M")
+    first_document = models.CharField("CPF/CNPJ", max_length=20, unique=True, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
+
     # Contact
-    phone = models.CharField("Telefone", max_length=11, validators=[RegexValidator(r'^\d{1,11}$')], unique=True, blank=True, null=True)
+    phone = models.ForeignKey("accounts.PhoneNumber", verbose_name="Telefone", on_delete=models.CASCADE, blank=True, null=True)
     email = models.EmailField("E-mail", unique=True)
+
     # Address
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", max_length=255, on_delete=models.CASCADE, blank=True, null=True)
+
     # Employee Info
     contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")), default="C")
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE, blank=True, null=True)
@@ -25,6 +40,17 @@ class User(AbstractUser):
     user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
     hire_date = models.DateField("Data de Admissão", blank=True, null=True)
     resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
+
+    # User Type Info
+    user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
+
+    PERSON_TYPE_CHOICES = [
+        ('PF', 'Pessoa Física'),
+        ('PJ', 'Pessoa Jurídica'),
+    ]
+    person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
+    second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
+
     # Logs
     history = HistoricalRecords()
 
@@ -38,14 +64,32 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
-    
+        return self.get_full_name()
+
     def get_absolute_url(self):
         return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})
-    
+
     class Meta:
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
+
+
+class PhoneNumber(models.Model):
+    phone_number = models.CharField("Número de Telefone", max_length=20, validators=[RegexValidator(r'^\d{1,11}$')], unique=True)
+    is_main = models.BooleanField("Principal?", default=False)
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Cliente")
+    
+    def __str__(self):
+        return self.phone_number
+    
+    def save(self):
+        if self.is_main:
+            PhoneNumber.objects.filter(customer=self.customer).update(is_main=False)
+        super(PhoneNumber, self).save()
+    
+    class Meta:
+        verbose_name = "Número de Telefone"
+        verbose_name_plural = "Números de Telefone"
     
 
 class Address(models.Model):
