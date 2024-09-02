@@ -19,6 +19,7 @@ class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = "__all__"
+        exclude = ['created_by', 'created_at', 'updated_by', 'updated_at', 'customer']
         widgets = {
             'address': ModelSelect2Widget(
                 attrs={'data-placeholder': 'Selecionar endereço'},

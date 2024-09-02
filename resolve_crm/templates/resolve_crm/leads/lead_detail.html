@@ -1751,8 +1751,20 @@
         <section class="row d-none" id="customer">
             <div class="col-lg-5 col-md-5">
                 <small class="text-muted text-uppercase">Informações do Cliente</small>
-                {% if object. %}
-                  
+                {% if object.customer %}
+                <ul class="list-unstyled mb-4 mt-3">
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="bx bx-user"></i><span class="fw-medium mx-2">Nome:</span>
+                        <span>{{ object.customer.name }}</span>
+                    </li>
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="bx bx-mail"></i><span class="fw-medium mx-2">E-mail:</span>
+                        <span>{{ object.customer.email }}</span>
+                    </li>
+                </ul>
+                {% else %}
+                <p class="h3 my-3">Nenhum cliente associado.</p>
+                <a class="btn btn-success" href="#">Adicionar Cliente</a>
                 {% endif %}
             </div>
         </section>
