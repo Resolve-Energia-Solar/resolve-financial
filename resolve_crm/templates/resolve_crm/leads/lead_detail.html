@@ -70,10 +70,10 @@
                         <button class="nav-link go-to-section" data-section="address"><i class="bx bx-map-alt me-1"></i> Endereço</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link go-to-section" data-section="proposal"><i class="bx bx-file me-1"></i> Proposta</button>
+                        <button class="nav-link go-to-section" data-section="customer"><i class="bx bxs-user-detail me-1"></i> Cliente</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link go-to-section" data-section="budget"><i class="bx bx-spreadsheet me-1"></i> Orçamento</button>
+                        <button class="nav-link go-to-section" data-section="sales"><i class="bx bx-file me-1"></i> Vendas</button>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'resolve_crm:lead_update' object.pk %}"><i class="bx bx-pencil me-1"></i> Editar</a>
@@ -1748,16 +1748,18 @@
             </div>
         </section>
 
-        <section class="row d-none" id="proposal">
+        <section class="row d-none" id="customer">
             <div class="col-lg-5 col-md-5">
-                <small class="text-muted text-uppercase">Propostas</small>
-
+                <small class="text-muted text-uppercase">Informações do Cliente</small>
+                {% if object. %}
+                  
+                {% endif %}
             </div>
         </section>
 
-        <section class="row d-none" id="budget">
+        <section class="row d-none" id="sales">
             <div class="col-lg-5 col-md-5">
-                <small class="text-muted text-uppercase">Orçamentos</small>
+                <small class="text-muted text-uppercase">Vendas</small>
 
             </div>
         </section>

@@ -16,12 +16,15 @@ class Lead(models.Model):
     contact_email = models.EmailField(verbose_name="E-mail")
     phone = models.CharField(max_length=20, verbose_name="Telefone")
     address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True)
+    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
     
     # CRM Information
     origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
     seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", related_name="lead_seller", blank=True, null=True)
+
     # Kanban
     column = models.ForeignKey("core.Column", on_delete=models.CASCADE, verbose_name="Coluna", related_name="cards_leads", blank=True, null=True)
+
     # Logs
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     history = HistoricalRecords()
