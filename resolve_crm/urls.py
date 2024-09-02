@@ -24,6 +24,6 @@ urlpatterns = [
     path('campanhas/<int:pk>/editar/', MarketingCampaignUpdateView.as_view(), name='campaign_update'),
 
     # ComercialProposal
-    path('proposta/<int:pk>/', ComercialProposalDetailView.as_view(), name='proposal_detail'),
+    # path('proposta/<int:pk>/', ComercialProposalDetailView.as_view(), name='proposal_detail'),
     # path('proposta/<int:pk>/preview/', ComercialProposalPreview, name='proposal_detail')
 ]

@@ -183,12 +183,12 @@ class ContractSubmission(models.Model):
 class Sale(models.Model):
 
     # Stakeholders
-    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente")
-    borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador")
-    seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor")
-    sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas")
-    sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas")
-    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador")
+    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
+    borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador", related_name="borrower_sales")
+    seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
+    sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
+    sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
+    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_sales")
 
     # Sale Information
     contract_number = models.CharField("Número do Contrato", max_length=20)

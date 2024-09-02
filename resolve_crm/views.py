@@ -138,9 +138,9 @@ class MarketingCampaignUpdateView(UserPassesTestMixin, UpdateView):
         return self.object.get_absolute_url()
 
 
-class ComercialProposalDetailView(UserPassesTestMixin, DetailView):
-    model = ComercialProposal
-    template_name = 'resolve_crm/proposal/proposal_detail.html'
+# class ComercialProposalDetailView(UserPassesTestMixin, DetailView):
+#     model = ComercialProposal
+#     template_name = 'resolve_crm/proposal/proposal_detail.html'
 
-    def test_func(self):
-        return self.request.user.has_perm('resolve_crm.view_comercialproposal')
+#     def test_func(self):
+#         return self.request.user.has_perm('resolve_crm.view_comercialproposal')
