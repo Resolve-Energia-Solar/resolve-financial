@@ -10,6 +10,7 @@ urlpatterns = [
     path("usuarios/<slug:slug>/", UserDetailView.as_view(), name="user_detail"),
     path("usuarios/<slug:slug>/editar/", UserUpdateView.as_view(), name="user_update"),
     path("usuarios/<slug:username>/excluir/", delete_user, name="delete_user"),
+    path('create-customer/', create_customer, name='create-customer'),
     # Permissions
     path("permissoes/criar/", PermissionCreateView.as_view(), name="permission_create"),
     path("permissoes/", PermissionsListView.as_view(), name="permission_list"),

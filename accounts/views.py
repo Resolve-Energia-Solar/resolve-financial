@@ -120,6 +120,18 @@ class UserUpdateView(UserPassesTestMixin, UpdateView):
 
     def get_success_url(self):
         return self.object.get_absolute_url()
+    
+
+def create_customer(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        
+        # Supondo que o nome completo seja armazenado no campo `first_name`
+        user = get_user_model().objects.create_user(username=email, first_name=name, email=email)
+        
+        messages.success(request, 'Cliente criado com sucesso!')
+        return redirect('resolve_crm:lead_detail')
 
 
 class PermissionCreateView(UserPassesTestMixin, CreateView):

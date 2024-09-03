@@ -1764,7 +1764,31 @@
                 </ul>
                 {% else %}
                 <p class="h3 my-3">Nenhum cliente associado.</p>
-                <a class="btn btn-success" href="#">Adicionar Cliente</a>
+                <a class="btn btn-success" role="button" data-bs-target="#addCustomerModal" data-bs-toggle="modal">Adicionar Cliente</a>
+                <div class="modal modal-xl fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Adicionar Cliente</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                              <form id="customer-create-form" action="{% url 'create-customer' %}" method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nome</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-mail</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Salvar</button>
+                              </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </section>
