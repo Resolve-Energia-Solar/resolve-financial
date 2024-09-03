@@ -37,7 +37,7 @@
                                         </li>
                                         <li class="list-inline-item fw-medium" title="Cargo"><i class="bx bx-pen"></i> {{ object.role }}
                                         </li>
-                                        <li class="list-inline-item fw-medium" title="Filial"><i class="bx bx-map"></i> {{ object.branch }}
+                                        <li class="list-inline-item fw-medium" title="Unidade"><i class="bx bx-map"></i> {{ object.branch }}
                                         </li>
                                         <li class="list-inline-item fw-medium" title="Data de Contratação">
                                             <i class="bx bx-calendar-alt"></i> Desde {{ object.hire_date }}
@@ -146,7 +146,7 @@
                                 <i class="bx bx-briefcase"></i><span class="fw-medium mx-2">Cargo:</span> <span>{{ object.role }}</span>
                             </li>
                             <li class="d-flex align-items-center mb-3">
-                                <i class="bx bx-building"></i><span class="fw-medium mx-2">Filial:</span> <span>{{ object.branch }}</span>
+                                <i class="bx bx-building"></i><span class="fw-medium mx-2">Unidade:</span> <span>{{ object.branch }}</span>
                             </li>
                             <li class="d-flex align-items-center mb-3">
                                 <i class="bx bx-building-house"></i><span class="fw-medium mx-2">Departamento:</span> <span>{{ object.department }}</span>
@@ -203,12 +203,15 @@
                 <!-- Recent Activities -->
                 <div class="card mb-4">
                     <div class="card-header align-items-center">
-                        <h5 class="card-title"><i class="bx bx-key me-2"></i>Permissões</h5>
-                        <ul class="list-group">
+                        <h5 class="card-title"> <i class="bx bx-key me-2"></i> Permissões</h5>
+                        <ul class="list-group" id="all_user_permissions">
                         {% for permission in object.get_all_permissions %}
                             <li class="list-group-item">&dash; {{ permission }}</li>    
                         {% endfor %}
+                            <a class="ms-1 mt-3" href="#!" id="seeMorePermissions">Ver mais</a>
                         </ul>
+                    </div>
+                </div>
             </div>
             {% comment %}
             <div class="col-lg-7 col-md-7">
@@ -602,6 +605,36 @@
         var phonenumber = document.getElementById('phonenumber').innerText;
         phonenumber = phonenumber.replace(/(\d{2})(\d{1})(\d{4})(\d{4})/, "($1) $2 $3-$4");
         document.getElementById('phonenumber').innerText = phonenumber;
+
+
+        var all_user_permissions = document.getElementById('all_user_permissions');
+        var permissions = all_user_permissions.getElementsByTagName('li');
+        var seeMorePermissions = document.getElementById('seeMorePermissions');
+        var hiddenPermissions = 0;
+        var permissionsToShow = 12;
+        for (var i = 0; i < permissions.length; i++) {
+            if (i >= permissionsToShow) {
+                permissions[i].style.display = 'none';
+                hiddenPermissions++;
+            }
+        }
+        if (hiddenPermissions > 12) {
+            seeMorePermissions.style.display = 'block';
+        }
+        seeMorePermissions.onclick = function() {
+            permissionsToShow += 12;
+            for (var i = 0; i < permissions.length; i++) {
+                if (i < permissionsToShow) {
+                    permissions[i].style.display = 'block';
+                } else {
+                    permissions[i].style.display = 'none';
+                    hiddenPermissions++;
+                }
+            }
+            if (permissionsToShow >= permissions.length) {
+                seeMorePermissions.style.display = 'none';
+            }
+        }
     }
 </script>
 <script src="{% static 'sneat-template/assets/js/app-user-view-account.js' %}"></script>
