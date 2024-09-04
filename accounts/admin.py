@@ -11,12 +11,12 @@ admin.site.index_title = "Administração"
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email")
-    search_fields = ("username", "complete_name", "email", "cpf")
+    search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined") 
 
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "cpf", "profile_picture")}),
+        ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
         ("Contact", {"fields": ("phone", "email")}),
         ("Address", {"fields": ("address",)}),
         ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
