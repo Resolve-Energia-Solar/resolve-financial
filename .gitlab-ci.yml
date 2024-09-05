@@ -1,7 +1,7 @@
-image: docker:20.10.7
+image: docker:latest
 
 services:
-  - docker:20.10.7-dind
+  - docker:dind
 
 stages:
   - build
@@ -11,13 +11,13 @@ variables:
   DOCKER_DRIVER: overlay2
 
 before_script:
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > /tmp/deploy_key.pem
+  - echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key.pem
   - chmod 600 /tmp/deploy_key.pem
-  - cat /tmp/deploy_key.pem  
   - eval $(ssh-agent -s)
   - ssh-add /tmp/deploy_key.pem
   - mkdir -p ~/.ssh
   - ssh-keyscan -H $CI_SERVER >> ~/.ssh/known_hosts
+
 
 build:
   stage: build
