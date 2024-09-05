@@ -30,7 +30,7 @@ class User(AbstractUser):
     email = models.EmailField("E-mail", unique=True)
 
     # Address
-    address = models.ForeignKey("accounts.Address", verbose_name="Endereço", max_length=255, on_delete=models.CASCADE, blank=True, null=True)
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
 
     # Employee Info
     contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")), default="C")

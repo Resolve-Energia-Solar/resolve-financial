@@ -11,16 +11,22 @@ class Lead(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nome")
     type = models.CharField(max_length=200, verbose_name="Tipo", help_text="Pessoa Física ou Jurídica?", choices=[("PF", "Pessoa Física"), ("PJ", "Pessoa Jurídica")])
     byname = models.CharField(max_length=200, verbose_name="Apelido", blank=True, null=True)
+    first_document = models.CharField(max_length=20, verbose_name="CPF/CNPJ")
+    second_document = models.CharField(max_length=20, verbose_name="RG/IE", blank=True, null=True)
+    birth_date = models.DateField(verbose_name="Data de Nascimento", blank=True, null=True)
+    gender = models.CharField(max_length=1, verbose_name="Gênero", choices=[("M", "Masculino"), ("F", "Feminino")], blank=True, null=True)
+    
 
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
     phone = models.CharField(max_length=20, verbose_name="Telefone")
-    address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True)
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses")
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
     
     # CRM Information
     origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
     seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", related_name="lead_seller", blank=True, null=True)
+    sdr = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="SDR", related_name="lead_sdr", blank=True, null=True)
 
     # Kanban
     column = models.ForeignKey("core.Column", on_delete=models.CASCADE, verbose_name="Coluna", related_name="cards_leads", blank=True, null=True)
@@ -187,6 +193,7 @@ class Sale(models.Model):
 
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="lead_sales")
     borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador", related_name="borrower_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
     sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
