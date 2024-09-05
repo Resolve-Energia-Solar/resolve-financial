@@ -13,25 +13,25 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicallead',
             name='created_at',
-            field=models.DateTimeField(blank=True, default='2024-08-15 17:34:29.148330', editable=False, verbose_name='Criado em'),
+            field=models.DateTimeField(blank=True, editable=False, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='historicaltask',
             name='created_at',
-            field=models.DateTimeField(blank=True, default='2024-08-15 17:34:29.148330', editable=False, verbose_name='Criado em'),
+            field=models.DateTimeField(blank=True, editable=False, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='lead',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default='2024-08-15 17:34:29.148330', verbose_name='Criado em'),
+            field=models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='task',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default='2024-08-15 17:34:29.148330', verbose_name='Criado em'),
+            field=models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
             preserve_default=False,
         ),
     ]

@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicalsale',
             name='created_at',
-            field=models.DateTimeField(blank=True, default='2024-09-01 00:00:00.000000', editable=False, verbose_name='Criado em'),
+            field=models.DateTimeField(blank=True, editable=False, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -174,7 +174,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sale',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default='2024-09-01 00:00:00.000000', verbose_name='Criado em'),
+            field=models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
