@@ -11,25 +11,24 @@ variables:
   DOCKER_DRIVER: overlay2
 
 before_script:
-  - echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key.pem
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > /tmp/deploy_key.pem
   - chmod 600 /tmp/deploy_key.pem
   - eval $(ssh-agent -s)
   - ssh-add /tmp/deploy_key.pem
   - mkdir -p ~/.ssh
   - ssh-keyscan -H $CI_SERVER >> ~/.ssh/known_hosts
 
-
 build:
   stage: build
   script:
     - docker-compose -f docker-compose-prod.yml build
   only:
-    - development
+    - main
 
 deploy:
   stage: deploy
   script:
     - scp -o StrictHostKeyChecking=no -i /tmp/deploy_key.pem docker-compose-prod.yml $CI_REGISTRY_USER@$CI_SERVER:/home/$CI_REGISTRY_USER/resolve_crm/
-    - ssh -i /tmp/deploy_key.pem $CI_REGISTRY_USER@$CI_SERVER "cd /home/$CI_REGISTRY_USER/resolve_crm && git config --global credential.helper store && echo 'https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com' > ~/.git-credentials && git pull origin development && sudo docker-compose -f docker-compose-prod.yml down && sudo docker-compose -f docker-compose-prod.yml up --build -d"
+    - ssh -i /tmp/deploy_key.pem $CI_REGISTRY_USER@$CI_SERVER "cd /home/$CI_REGISTRY_USER/resolve_crm && git config --global credential.helper store && echo 'https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com' > ~/.git-credentials && git pull origin main && sudo docker-compose -f docker-compose-prod.yml down && sudo docker-compose -f docker-compose-prod.yml up --build -d"
   only:
-    - development
+    - main
