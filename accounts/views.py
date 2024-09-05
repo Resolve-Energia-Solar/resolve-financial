@@ -320,7 +320,7 @@ class RoleUpdateView(UserPassesTestMixin, UpdateView):
     model = Role
     fields = '__all__'
     template_name = "accounts/roles/role_form.html"
-    success_url = reverse_lazy('accounts:department_list')
+    success_url = reverse_lazy('accounts:role_list')
 
     def test_func(self):
         return self.request.user.has_perm('accounts.change_role')

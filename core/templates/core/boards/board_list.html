@@ -51,7 +51,7 @@
                     {% for board in object_list %}
                     <tr>
                         <td>
-                            <a href="{% url 'core:board-detail' board.pk %}">
+                            <a href="{% url 'core:board-admin' board.pk %}">
                                 {{ board.title }}
                             </a>
                         </td>
