@@ -167,7 +167,8 @@
                                 <small>Endereço, origem, apelido</small>
                             </div>
                             <div class="row g-3">
-                                <div class="col-12">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#createAddressModal">Não achou seu endereço?</a>
+                    <div class="col-12">
                                     {{ form.addresses|as_crispy_field }}
                                 </div>
                                 <div class="col-sm-6">
@@ -212,6 +213,7 @@
                             </div>
                         </div>
                     </form>
+                    {% include "snippets/create_address_modal.html" %}
                 </div>
             </div>
 
