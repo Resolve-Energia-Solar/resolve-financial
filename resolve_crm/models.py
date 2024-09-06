@@ -15,7 +15,6 @@ class Lead(models.Model):
     second_document = models.CharField(max_length=20, verbose_name="RG/IE", blank=True, null=True)
     birth_date = models.DateField(verbose_name="Data de Nascimento", blank=True, null=True)
     gender = models.CharField(max_length=1, verbose_name="Gênero", choices=[("M", "Masculino"), ("F", "Feminino")], blank=True, null=True)
-    
 
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
