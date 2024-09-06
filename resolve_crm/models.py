@@ -11,7 +11,7 @@ class Lead(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nome")
     type = models.CharField(max_length=200, verbose_name="Tipo", help_text="Pessoa Física ou Jurídica?", choices=[("PF", "Pessoa Física"), ("PJ", "Pessoa Jurídica")])
     byname = models.CharField(max_length=200, verbose_name="Apelido", blank=True, null=True)
-    first_document = models.CharField(max_length=20, verbose_name="CPF/CNPJ")
+    first_document = models.CharField(max_length=20, verbose_name="CPF/CNPJ", blank=True, null=True)
     second_document = models.CharField(max_length=20, verbose_name="RG/IE", blank=True, null=True)
     birth_date = models.DateField(verbose_name="Data de Nascimento", blank=True, null=True)
     gender = models.CharField(max_length=1, verbose_name="Gênero", choices=[("M", "Masculino"), ("F", "Feminino")], blank=True, null=True)
@@ -19,7 +19,7 @@ class Lead(models.Model):
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
     phone = models.CharField(max_length=20, verbose_name="Telefone")
-    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses")
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses", blank=True, null=True)
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
     
     # CRM Information
