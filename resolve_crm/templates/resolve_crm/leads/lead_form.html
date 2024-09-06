@@ -193,11 +193,14 @@
                         <div id="responsible-info" class="content">
                             <div class="content-header mb-3">
                                 <h6 class="mb-0">Responsável</h6>
-                                <small>Vendedor</small>
+                                <small>Vendedor, SDR</small>
                             </div>
                             <div class="row g-3">
                                 <div class="col-sm-6">
                                     {{ form.seller|as_crispy_field }}
+                                </div>
+                                <div class="col-sm-6">
+                                    {{ form.sdr|as_crispy_field }}
                                 </div>
                                 <div class="col-12 d-flex justify-content-between">
                                     <button type="button" class="btn btn-primary btn-prev">

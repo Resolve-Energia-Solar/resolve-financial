@@ -34,8 +34,8 @@ class LeadForm(forms.ModelForm):
                     'complement__icontains',
                 ]
             ),
-            'seller': Select2Widget,
-            'responsible': Select2Widget
+            'seller': Select2Widget(attrs={'data-placeholder': 'Selecionar vendedor'}),
+            'sdr': Select2Widget(attrs={'data-placeholder': 'Selecionar SDR'})
         }
 
 
