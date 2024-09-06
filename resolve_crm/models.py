@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
@@ -19,7 +20,7 @@ class Lead(models.Model):
     # Lead
     contact_email = models.EmailField(verbose_name="E-mail")
     phone = models.CharField(max_length=20, verbose_name="Telefone")
-    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses", blank=True, null=True)
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses")
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
     
     # CRM Information
@@ -33,6 +34,9 @@ class Lead(models.Model):
     # Logs
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     history = HistoricalRecords()
+    
+    def attachments(self):
+        return Attachment.objects.filter(object_id=self.id, content_type=ContentType.objects.get_for_model(self))
     
     def __str__(self):
         return self.name
@@ -83,18 +87,29 @@ class Task(models.Model):
 
 
 class Attachment(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, verbose_name="Tarefa")
-    file = models.FileField(verbose_name="Arquivo")
-    description = models.TextField(verbose_name="Descrição")
+    object_id = models.PositiveSmallIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    file = models.FileField("Arquivo")
+    description = models.TextField("Descrição")
     # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    def file_name(self):
+        return self.file.name.split('/')[-1]
 
-    def save(self, current_user=None, *args, **kwargs):
-        if not self.id and current_user is not None:
-            self.created_by = self.updated_by = current_user
-        elif current_user is not None:
-            self.updated_by = current_user
-        super().save(*args, **kwargs)
+    def file_or_image(self):
+        if self.file.name.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp')):
+            return 'file-image'
+        else:
+            return 'file'
+
+    def size(self):
+        attachment_size = self.file.size
+        if attachment_size < 1024 * 1024:
+            return f"{attachment_size / 1024:.0f}KB"
+        else:
+            return f"{attachment_size / (1024 * 1024):.2f}MB"
         
     def __str__(self):
         return self.file.name

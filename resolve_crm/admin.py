@@ -22,4 +22,4 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("task", "file", "description")
+    list_display = ("file", "description")

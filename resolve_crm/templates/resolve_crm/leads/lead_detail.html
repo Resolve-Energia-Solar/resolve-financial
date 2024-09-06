@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static iam_tags %}
 
 {% block extra_head %}
 <title>ERP &mdash; Resolve</title>
@@ -70,10 +70,10 @@
                         <button class="nav-link go-to-section" data-section="address"><i class="bx bx-map-alt me-1"></i> Endereços</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link go-to-section" data-section="customer"><i class="bx bxs-user-detail me-1"></i> Cliente</button>
+                        <button class="nav-link go-to-section" data-section="attachments"><i class="bx bx-file me-1"></i> Anexos</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link go-to-section" data-section="sales"><i class="bx bx-file me-1"></i> Vendas</button>
+                        <button class="nav-link go-to-section" data-section="sales"><i class="bx bx-coin me-1"></i> Vendas</button>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'resolve_crm:lead_update' object.pk %}"><i class="bx bx-pencil me-1"></i> Editar</a>
@@ -1752,49 +1752,52 @@
           {% endfor %}
         </section>
 
-        <section class="row d-none" id="customer">
-            <div class="col-lg-5 col-md-5">
-                <small class="text-muted text-uppercase">Informações do Cliente</small>
-                {% if object.customer %}
-                <ul class="list-unstyled mb-4 mt-3">
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="bx bx-user"></i><span class="fw-medium mx-2">Nome:</span>
-                        <span>{{ object.customer.name }}</span>
-                    </li>
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="bx bx-mail"></i><span class="fw-medium mx-2">E-mail:</span>
-                        <span>{{ object.customer.email }}</span>
-                    </li>
-                </ul>
-                {% else %}
-                <p class="h3 my-3">Nenhum cliente associado.</p>
-                <a class="btn btn-success" role="button" data-bs-target="#addCustomerModal" data-bs-toggle="modal">Adicionar Cliente</a>
-                <div class="modal modal-xl fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Adicionar Cliente</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                              <form id="customer-create-form" action="{% url 'accounts:create-customer' %}" method="post">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Nome</label>
-                                    <input type="text" class="form-control" id="name" name="name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">E-mail</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Salvar</button>
-                              </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
+        <section class="row d-none" id="attachments">
+            <div class="col-12">
+              <small class="text-muted text-uppercase mb-3">Anexos</small>
+              {% if object.attachments.count > 0 %}
+              <div class="card-body table-responsive">
+                  <table class="table align-middle table-nowrap table-hover mb-0">
+                      <thead class="table-light">
+                          <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Adicionado em</th>
+                            <th scope="col">Tamanho</th>
+                            {% if user|has_perm:'resolve_crm.delete_attachment' %}
+                            <th scope="col">Deletar</th>
+                            {% endif %}
+                          </tr>
+                        </thead>
+                      <tbody>
+                          {% for attachment in object.attachments %}
+                          <tr>
+                              <td>
+                                  <a href="{{ attachment.attachment.url }}" class="text-dark fw-medium" target="_blank">
+                                      <i class="bx bxs-{{ attachment.file_or_image }} text-primary me-2"></i>
+                                      {{ attachment.file_name }}
+                                  </a>
+                              </td>
+                              <td>{{ attachment.created_at|date:'d/m/Y H:m' }}</td>
+                              <td>{{ attachment.size }}</td>
+                              {% if user|has_perm:'resolve_crm.delete_attachment' %}
+                              <td>
+                                  <a href="#"><i class="bx bx-trash"></i></a>
+                              </td>
+                              {% endif %}
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+                  </table>
+              </div>
+              {% else %}
+              <div class="card-footer">
+                  <div class="alert alert-warning mx-3">
+                      <strong>Ops!</strong> Nenhum anexo inserido.
+                      Anexe uma para começar!
+                  </div>
+              </div>
+              {% endif %}
+          </div>
         </section>
 
         <section class="row d-none" id="sales">
