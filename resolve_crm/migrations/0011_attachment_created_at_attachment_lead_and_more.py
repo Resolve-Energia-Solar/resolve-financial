@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='attachment',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default='2024-09-06 12:51:29.099311', verbose_name='Criado em'),
+            field=models.DateTimeField(auto_now_add=True, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicalattachment',
             name='created_at',
-            field=models.DateTimeField(blank=True, default='2024-09-06 12:51:29.09931', editable=False, verbose_name='Criado em'),
+            field=models.DateTimeField(blank=True, editable=False, verbose_name='Criado em'),
             preserve_default=False,
         ),
         migrations.AddField(
