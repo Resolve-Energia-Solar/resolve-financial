@@ -1,7 +1,7 @@
 from django import forms
 
 from .models import Task, Lead, MarketingCampaign
-from django_select2.forms import Select2Widget, Select2MultipleWidget, ModelSelect2Widget
+from django_select2.forms import Select2Widget, Select2MultipleWidget, ModelSelect2MultipleWidget
 
 
 class TaskForm(forms.ModelForm):
@@ -21,7 +21,7 @@ class LeadForm(forms.ModelForm):
         fields = "__all__"
         exclude = ['created_by', 'created_at', 'updated_by', 'updated_at', 'customer']
         widgets = {
-            'address': ModelSelect2Widget(
+            'addresses': ModelSelect2MultipleWidget(
                 attrs={'data-placeholder': 'Selecionar endereço'},
                 search_fields=[
                     'zip_code__icontains',

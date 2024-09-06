@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group
 from django.forms import ModelForm, DateInput
-from .models import Branch, User, Squad
-from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2Widget
+from .models import Address, Branch, User, Squad
+from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2MultipleWidget
 
 
 class UserForm(ModelForm):
@@ -17,7 +17,7 @@ class UserForm(ModelForm):
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
             'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
-            'address': ModelSelect2Widget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
+            'addresses': ModelSelect2MultipleWidget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
                 'zip_code__icontains',
                 'country__icontains',
                 'state__icontains',
@@ -34,7 +34,7 @@ class UserUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         super().__init__(*args, **kwargs)
-        self.fields['address'].widget.attrs['value'] = instance.address.__str__()
+        self.fields['addresses'].widget.attrs['value'] = instance.addresses.__str__()
 
     class Meta:
         model = User
@@ -49,7 +49,7 @@ class UserUpdateForm(ModelForm):
             'user_manager': Select2Widget(attrs={'data-placeholder': 'Selecionar gestor'}),
             'user_permissions': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar permissões'}),
             'groups': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar perfis'}),
-            'address': ModelSelect2Widget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
+            'addresses': ModelSelect2MultipleWidget(attrs={'data-placeholder': 'Selecionar endereço'}, search_fields=[
                 'zip_code__icontains',
                 'country__icontains',
                 'state__icontains',

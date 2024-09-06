@@ -1,53 +1,3 @@
-document.addEventListener('DOMContentLoaded', function () {
-    fetch('contas/api/addresses/')
-        .then(response => response.json())
-        .then(data => {
-            const addressesDatalist = document.getElementById('addresses');
-            addressesDatalist.innerHTML = '';
-            data.forEach(address => {
-                const option = document.createElement('option');
-                option.value = address.complete_address;
-                option.setAttribute('data-address-id', address.id);
-                addressesDatalist.appendChild(option);
-            });
-        })
-        .catch(error => console.error('Erro ao buscar endereços:', error));
-
-    const addressInput = document.getElementById('address-input');
-    const addressIdInput = document.getElementById('id_address');
-
-    addressInput.addEventListener('input', function () {
-        const inputValue = addressInput.value;
-        const options = document.querySelectorAll('#addresses option');
-
-        options.forEach(option => {
-            if (option.value === inputValue) {
-                addressIdInput.value = option.getAttribute('data-address-id');
-                console.log('Endereço selecionado:', option.value);
-                console.log('ID do endereço:', addressIdInput.value);
-            }
-        });
-    });
-
-    addressInput.addEventListener('change', function () {
-        const inputValue = addressInput.value;
-        const options = document.querySelectorAll('#addresses option');
-        let isValid = false;
-
-        options.forEach(option => {
-            if (option.value === inputValue) {
-                addressIdInput.value = option.getAttribute('data-address-id');
-                isValid = true;
-            }
-        });
-
-        if (!isValid) {
-            addressIdInput.value = '';
-        }
-    });
-});
-
-
 document.getElementById('createAddressForm').addEventListener('submit', function (e) {
     e.preventDefault(); // Impede o envio padrão do formulário
 
@@ -64,7 +14,7 @@ document.getElementById('createAddressForm').addEventListener('submit', function
     };
 
     // Envia os dados para a API
-    fetch('{% url "accounts:addresses_api" %}', {
+    fetch('/conta/api/addresses/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -74,11 +24,6 @@ document.getElementById('createAddressForm').addEventListener('submit', function
         .then(response => response.json())
         .then(data => {
             console.log('Sucesso:', data);
-
-            // Cria um novo option com o endereço retornado e adiciona o novo option ao select de endereços
-            var newOption = new Option(data.address_text, data.address_id, false, true);
-            var selectElement = $('#id_address');
-            selectElement.append(newOption).trigger('change');
 
             // Fecha o modal
             var modalElement = document.getElementById('createAddressModal');
@@ -143,44 +88,4 @@ document.getElementById('id_zip_code').addEventListener('blur', function () {
     } else {
         alert("CEP inválido. O CEP deve conter 8 dígitos.");
     }
-});
-
-$(document).ready(function () {
-    $('#id_is_paid_now_yes').change(function () {
-        $('#id_payment_method').prop('disabled', false);
-    });
-    $('#id_is_paid_now_no').change(function () {
-        $('#id_payment_method').prop('disabled', true);
-    });
-
-    if ($('#id_is_paid_now_no').is(':checked')) {
-        $('#id_payment_method').hide();
-    }
-
-    $('#id_is_paid_now_no').click(function () {
-        $('#id_payment_method').hide();
-    });
-
-    $('#id_is_paid_now_yes').click(function () {
-        $('#id_payment_method').show();
-    });
-
-    $('#id_customer_wants_invoice').change(function () {
-        if ($(this).is(':checked') && $('#id_price').val() != '') {
-            var price = parseFloat($('#id_price').val());
-            var confirmAdd = confirm('Deseja acrescentar R$ 30,00 ao preço?');
-            if (confirmAdd) {
-                price += 30;
-                $('#id_price').val(price.toFixed(2));
-            }
-        }
-        if (!$(this).is(':checked') && $('#id_price').val() != '') {
-            var price = parseFloat($('#id_price').val());
-            var confirmAdd = confirm('Deseja subtrair R$ 30,00 ao preço?');
-            if (confirmAdd) {
-                price -= 30;
-                $('#id_price').val(price.toFixed(2));
-            }
-        }
-    });
 });
