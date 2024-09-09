@@ -89,7 +89,7 @@ class Task(models.Model):
 class Attachment(models.Model):
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    file = models.FileField("Arquivo")
+    file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
     description = models.TextField("Descrição")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)

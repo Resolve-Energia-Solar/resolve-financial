@@ -25,5 +25,9 @@ urlpatterns = [
 
     # ComercialProposal
     # path('proposta/<int:pk>/', ComercialProposalDetailView.as_view(), name='proposal_detail'),
-    # path('proposta/<int:pk>/preview/', ComercialProposalPreview, name='proposal_detail')
+    # path('proposta/<int:pk>/preview/', ComercialProposalPreview, name='proposal_detail'),
+    
+    # Attachments
+    path('add-attachment/<int:lead_id>', add_lead_attachment, name='add_lead_attachment'),
+    path('delete-attachment/<int:id>', delete_attachment, name='delete_attachment'),
 ]

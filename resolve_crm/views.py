@@ -1,7 +1,9 @@
-from django.urls import reverse
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from .forms import LeadForm, TaskForm, MarketingCampaignForm
+from django.contrib import messages
 from .models import *
 
 
@@ -144,3 +146,33 @@ class MarketingCampaignUpdateView(UserPassesTestMixin, UpdateView):
 
 #     def test_func(self):
 #         return self.request.user.has_perm('resolve_crm.view_comercialproposal')
+
+
+def add_lead_attachment(request, lead_id):
+    lead = Lead.objects.get(pk=lead_id)
+
+    if request.method == 'POST':
+        file = request.FILES.get('attachment')
+        if file:
+            attachment = Attachment()
+            attachment.file = file
+            attachment.object_id = lead.id
+            attachment.content_type = ContentType.objects.get_for_model(lead)
+            attachment.save()
+            messages.success(request, 'Anexo adicionado com sucesso!')
+            return redirect('resolve_crm:lead_detail', pk=lead_id)
+        messages.error(request, 'Erro ao adicionar anexo!')
+        return redirect('resolve_crm:lead_detail', pk=lead_id)
+    
+    else:
+        messages.error(request, 'Erro na requisição!')
+        return redirect('resolve_crm:lead_detail', pk=lead_id)
+
+
+def delete_attachment(request, id):
+    attachment = Attachment.objects.get(pk=id)
+    object_id = attachment.object_id
+    get_object = attachment.content_type.get_object_for_this_type(id=object_id)
+    attachment.delete()
+    messages.success(request, 'Anexo deletado com sucesso!')
+    return redirect(get_object.get_absolute_url())

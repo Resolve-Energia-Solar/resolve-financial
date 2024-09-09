@@ -1754,7 +1754,32 @@
 
         <section class="row d-none" id="attachments">
             <div class="col-12">
-              <small class="text-muted text-uppercase mb-3">Anexos</small>
+              <div class="d-flex w-100 justify-content-between align-items-center mb-3">
+                <small class="text-muted text-uppercase">Anexos</small>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#AddAttachment">Adicionar Anexo</button>
+              </div>
+              <div class="modal fade" id="AddAttachment" tabindex="-1" aria-labelledby="AddAttachmentLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="AddAttachmentLabel">Adicionar Anexo</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="{% url 'resolve_crm:add_lead_attachment' object.pk %}" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                          <label for="attachment" class="form-label">Anexo</label>
+                          <input type="file" class="form-control" id="attachment" name="attachment">
+                          <label for="description" class="form-label mt-3">Descrição</label>
+                          <input type="text" name="description" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Adicionar</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {% if object.attachments.count > 0 %}
               <div class="card-body table-responsive">
                   <table class="table align-middle table-nowrap table-hover mb-0">
@@ -1763,6 +1788,7 @@
                             <th scope="col">Nome</th>
                             <th scope="col">Adicionado em</th>
                             <th scope="col">Tamanho</th>
+                            <th scope="col">Descrição</th>
                             {% if user|has_perm:'resolve_crm.delete_attachment' %}
                             <th scope="col">Deletar</th>
                             {% endif %}
@@ -1779,10 +1805,31 @@
                               </td>
                               <td>{{ attachment.created_at|date:'d/m/Y H:m' }}</td>
                               <td>{{ attachment.size }}</td>
+                              <td>{{ attachment.description|default:"-" }}</td>
                               {% if user|has_perm:'resolve_crm.delete_attachment' %}
                               <td>
-                                  <a href="#"><i class="bx bx-trash"></i></a>
+                                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAttachment{{ forloop.counter }}">
+                                  <i class="bx bx-trash"></i>
+                                </button>
                               </td>
+                              <div class="modal fade" id="deleteAttachment{{ forloop.counter }}" tabindex="-1" aria-labelledby="deleteAttachment{{ forloop.counter }}Label" aria-hidden="true">
+                                <div class="modal-dialog">
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <h5 class="modal-title" id="deleteAttachment{{ forloop.counter }}Label">Deletar Anexo</h5>
+                                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                      Deseja mesmo deletar este anexo?<br>
+                                      {{ attachment.file_name }} - {{ attachment.description|default:""}}
+                                    </div>
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                      <a href="{% url 'resolve_crm:delete_attachment' attachment.pk %}" class="btn btn-danger">Deletar</a>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                               {% endif %}
                           </tr>
                       {% endfor %}
