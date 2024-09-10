@@ -254,6 +254,23 @@ def menu_items(request):
                     "permission": "auth.add_permission"
                 }
             ]
+        },
+                {
+            "label": "Materiais",
+            "icon": "bx bx-package",
+            "section": "Logística",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "logistics:materials_list",
+                    "permission": "logistics.view_materials"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "logistics:materials_create",
+                    "permission": "logistics.add_materials"
+                }
+            ]
         }
     ]
 
