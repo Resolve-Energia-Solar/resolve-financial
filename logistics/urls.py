@@ -8,7 +8,7 @@ urlpatterns = [
     path('materiais/criar/', MaterialsCreateView.as_view(), name='materials_create'),
     path('materiais/', MaterialsListView.as_view(), name='materials_list'),
     path('materiais/<int:pk>/', MaterialsDetailView.as_view(), name='materials_detail'),
-    path('materiais/<int:pk>/editar/', MaterialsUpdateView.as_view(), name='materials_update'),
+    path('materiais/<int:pk>  /editar/', MaterialsUpdateView.as_view(), name='materials_update'),
     # Material Types
     path('tipos-de-materiais/criar/', MaterialTypesCreateView.as_view(), name='material_type_create'),
     path('tipos-de-materiais/', MaterialTypesListView.as_view(), name='material_type_list'),

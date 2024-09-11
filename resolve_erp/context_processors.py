@@ -255,7 +255,7 @@ def menu_items(request):
                 }
             ]
         },
-                {
+        {
             "label": "Materiais",
             "icon": "bx bx-package",
             "section": "Logística",
@@ -269,6 +269,23 @@ def menu_items(request):
                     "label": "Criar",
                     "url_name": "logistics:materials_create",
                     "permission": "logistics.add_materials"
+                }
+            ]
+        },
+        {
+            "label": "Tipos de Materiais",
+            "icon": "bx bx-package",
+            "section": "Logística",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "logistics:material_type_list",
+                    "permission": "logistics.view_materialtypes"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "logistics:material_type_create",
+                    "permission": "logistics.add_materialtypes"
                 }
             ]
         }

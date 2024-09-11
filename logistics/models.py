@@ -4,15 +4,15 @@ from simple_history.models import HistoricalRecords
 
 class MaterialTypes(models.Model):
 
-    name = models.CharField(max_length=50, verbose_name="Nome")
+    name = models.CharField(max_length=50, verbose_name="Nome", blank=True, null=True)
     description = models.CharField(max_length=255, verbose_name="Descrição")
-    created_at = models.DateTimeField(verbose_name="Criado em")
+    created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
 
     # Logs
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.description
+        return self.name
 
     class Meta:
         verbose_name = "Tipo de Material"
@@ -21,16 +21,16 @@ class MaterialTypes(models.Model):
 
 class Materials(models.Model):
 
-    bar_code = models.CharField(max_length=20, verbose_name="Código de Barras")
-    image = models.CharField(max_length=100, verbose_name="Imagem")
-    description = models.CharField(max_length=80, verbose_name="Descrição")
-    technical_description = models.CharField(max_length=50, null=True, verbose_name="Descrição Técnica")
+    bar_code = models.CharField("Código de Barras", max_length=20, null=True, blank=True)
+    image = models.ImageField("Imagem", max_length=100, null=True, blank=True)
+    description = models.CharField("Descrição", max_length=80)
+    technical_description = models.CharField("Descrição Técnica", max_length=50, null=True, blank=True)
     type = models.ForeignKey(MaterialTypes, on_delete=models.CASCADE, verbose_name="Tipo")
-    measure_unit = models.CharField(max_length=8, verbose_name="Unidade de Medida")
-    is_serialized = models.BooleanField(default=False, verbose_name="Serializado")
-    current_type = models.CharField(max_length=8, verbose_name="Tipo Atual")
-    current_type_category = models.CharField(max_length=20, verbose_name="Categoria do Tipo Atual")
-    created_at = models.DateTimeField(verbose_name="Criado em")
+    measure_unit = models.CharField("Unidade de Medida", max_length=8)
+    is_serialized = models.BooleanField(verbose_name="Serializado", default=False)
+    current_type = models.CharField("Tipo Atual", max_length=8, null=True, blank=True)
+    current_type_category = models.CharField("Categoria do Tipo Atual", max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     
     # Logs
     history = HistoricalRecords()
@@ -46,13 +46,13 @@ class Materials(models.Model):
 class SalesMaterials(models.Model):
 
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material")
-    amount = models.DecimalField(max_digits=20, decimal_places=6, default=0, verbose_name="Quantidade")
-    material_class = models.CharField(max_length=256, verbose_name="Classe do Material")
-    created_at = models.DateTimeField(verbose_name="Criado em")
+    amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0)
+    material_class = models.CharField("Classe do Material", max_length=256)
+    created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
 
     def __str__(self):
         return f"Sale: {self.id_sale}, Material: {self.id_material}"
 
     class Meta:
-        verbose_name = "Sales Material"
-        verbose_name_plural = "Sales Materials"
+        verbose_name = "Material da Venda"
+        verbose_name_plural = "Materiais das Vendas"
