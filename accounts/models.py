@@ -69,7 +69,7 @@ class User(AbstractUser):
     def get_absolute_url(self):
         return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})
     
-    REQUIRED_FIELDS = ['complete_name', 'gender']
+    REQUIRED_FIELDS = ['complete_name', 'username']
     USERNAME_FIELD = 'email'
 
     class Meta:
