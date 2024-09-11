@@ -232,7 +232,7 @@
           <div id="permissions" class="content">
             <div class="content-header mb-3">
               <h6 class="mb-0">Permissões</h6>
-              <small>Grupos, permissões específicas</small>
+              <small>Grupos, permissões específicas, tipo</small>
             </div>
             <div class="row g-3">
               <div class="col-md-6">
@@ -247,6 +247,9 @@
               </div>
               {% endif %}
               {% if user.is_staff %}
+              <div class="col-md-6">
+                {{ form.user_types|as_crispy_field }}
+              </div>
               <div class="col-md-6">
                 {{ form.is_staff|as_crispy_field }}
               </div>

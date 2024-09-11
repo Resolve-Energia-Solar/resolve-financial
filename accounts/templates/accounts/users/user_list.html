@@ -73,7 +73,7 @@
                                     <div class="d-flex flex-column"><a
                                             href="{% url 'accounts:user_detail' user_obj.username %}"
                                             class="text-body text-truncate"><span class="fw-medium">{{ user_obj.complete_name|default:"&mdash;" }}</span></a><small
-                                            class="text-truncate text-muted">{{ user_obj.get_full_name|default:"&mdash;" }}</small></div>
+                                            class="text-truncate text-muted">{{ user_obj.department.name|default:"&mdash;" }} | {{ user_obj.role.name|default:"&mdash;" }}</small></div>
                                 </div>
                             </td>
                             <td>{{ user_obj.department|default:"&mdash;" }}</td>

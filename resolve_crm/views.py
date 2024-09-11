@@ -76,6 +76,30 @@ class LeadDetailView(UserPassesTestMixin, DetailView):
     def test_func(self):
         return self.request.user.has_perm('resolve_crm.view_lead')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lead = self.get_object()
+        history = lead.history.all().order_by('-history_date')
+
+        for record in history:
+            changes = []
+            old_record = lead.history.filter(history_date__lt=record.history_date).first()
+            if old_record:
+                delta = record.diff_against(old_record)
+                for change in delta.changes:
+                    changes.append({
+                        'field': change.field,
+                        'old': change.old,
+                        'new': change.new,
+                        'user': record.history_user,
+                        'date': record.history_date
+                    })
+            record.get_changes = changes
+
+        context['history'] = history
+        
+        return context
+
 
 class LeadUpdateView(UserPassesTestMixin, UpdateView):
     model = Lead
