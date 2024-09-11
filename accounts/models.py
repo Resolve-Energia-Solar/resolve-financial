@@ -104,6 +104,7 @@ class Address(models.Model):
     street = models.CharField("Rua", max_length=255)
     number = models.CharField("Número", max_length=10)
     complement = models.CharField("Complemento", max_length=255, blank=True, null=True)
+    is_deleted = models.BooleanField("Deletado?", default=False)
     # Logs
     history = HistoricalRecords()
 
@@ -130,6 +131,7 @@ class Branch(models.Model):
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     owners = models.ManyToManyField("accounts.User", verbose_name="Proprietários", related_name='branch_owners', blank=True)
     history = HistoricalRecords()
+    is_deleted = models.BooleanField("Deletado?", default=False)
 
     class Meta:
         verbose_name = "Unidade"
@@ -143,6 +145,7 @@ class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
     email = models.EmailField("E-mail", unique=True)
     history = HistoricalRecords()
+    is_deleted = models.BooleanField("Deletado?", default=False)
 
     class Meta:
         verbose_name = "Departamento"
@@ -155,6 +158,8 @@ class Department(models.Model):
 class Role(models.Model):
     name = models.CharField("Nome", max_length=255)
     history = HistoricalRecords()
+    is_deleted = models.BooleanField("Deletado?", default=False)
+
 
     class Meta:
         verbose_name = "Cargo"
@@ -170,6 +175,8 @@ class Squad(models.Model):
     manager = models.ForeignKey("accounts.User", verbose_name="Supervisor", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
     boards = models.ManyToManyField("core.Board", verbose_name="Quadros", related_name='squad_boards', blank=True)
+    is_deleted = models.BooleanField("Deletado?", default=False)
+
     # Logs
     history = HistoricalRecords()
 
