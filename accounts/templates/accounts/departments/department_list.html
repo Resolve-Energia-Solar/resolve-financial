@@ -81,9 +81,28 @@
                                 data-bs-original-title="Editar Setor"><i class="bx bx-pencil mx-1"></i></a>
                             {% endif %}
                             {% if user|has_perm:'accounts.delete_department' %}
-                            <a href="#departmentDeleteModel" data-bs-toggle="tooltip" class="text-body"
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ department.pk }}" data-bs-toggle="tooltip" class="text-body"
                                 data-bs-placement="top" aria-label="Deletar Setor"
-                                data-bs-original-title="Deletar Setor"><i class="bx bx-trash mx-1"></i></a>
+                                data-bs-original-title="Deletar Setor"><i class="bx bx-trash mx-1"></i>
+                            </a>
+
+                            <div class="modal fade" id="deleteModal{{ department.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ department.pk }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ department.pk }}">Deletar Setor</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Deseja realmente deletar o setor "{{ department.name|capfirst }}"?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='department' pk=department.pk %}" class="btn btn-danger">Deletar</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
                     </td>

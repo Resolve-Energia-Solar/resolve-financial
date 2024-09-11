@@ -59,13 +59,33 @@
                                     </a>
                                     {% endif %}
                                     {% if user|has_perm:'accounts.delete_address' %}
-                                    <a href="#" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir endereço" data-bs-original-title="Excluir">
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ address.pk }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir endereço" data-bs-original-title="Excluir">
                                         <i class="bx bx-trash text-danger mx-1"></i>
                                     </a>
+
+                                    <div class="modal fade" id="deleteModal{{ address.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ address.pk }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ address.pk }}">Excluir Endereço</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Deseja realmente excluir este endereço?</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='address' pk=address.pk %}" class="btn btn-danger">Excluir</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     {% endif %}                                    
                                 </div>
                             </td>
                             {% endif %}
+                            {% empty %}
+                            <td colspan="5">Nenhum endereço encontrado.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

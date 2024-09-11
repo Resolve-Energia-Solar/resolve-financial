@@ -10,10 +10,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
-
+from django.shortcuts import get_object_or_404
 from .models import Address, Branch, Department, Role, Squad
-from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm
-
+from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm, AddressForm
+from django.contrib.contenttypes.models import ContentType
 
 class UsersListView(UserPassesTestMixin, ListView):
     model = get_user_model()
@@ -45,7 +45,6 @@ class UsersListView(UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.all()
         return context
-
 
 class UserDetailView(UserPassesTestMixin, DetailView):
     model = get_user_model()
@@ -196,6 +195,10 @@ class GroupsListView(UserPassesTestMixin, ListView):
     ordering = ['name']
     paginate_by = 10
     
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
+    
     def test_func(self):
         return self.request.user.has_perm('accounts.view_group')
 
@@ -239,6 +242,10 @@ class BranchListView(UserPassesTestMixin, ListView):
     template_name = "accounts/branches/branch_list.html"
     ordering = ['name']
     paginate_by = 10 
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
 
     def test_func(self):
         return self.request.user.has_perm('accounts.view_branch')
@@ -281,7 +288,10 @@ class DepartmentListView(UserPassesTestMixin, ListView):
     template_name = "accounts/departments/department_list.html"
     ordering = ['name']
     paginate_by = 10
-
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
     def test_func(self):
         return self.request.user.has_perm('accounts.view_department')
 
@@ -298,7 +308,7 @@ class DepartmentUpdateView(UserPassesTestMixin, UpdateView):
 
 class RoleCreateView(UserPassesTestMixin, CreateView):
     model = Role
-    fields = '__all__'
+    fields = ['name',]
     template_name = "accounts/roles/role_form.html"
     success_url = reverse_lazy('accounts:role_list')
 
@@ -311,14 +321,17 @@ class RoleListView(UserPassesTestMixin, ListView):
     template_name = "accounts/roles/role_list.html"
     ordering = ['name']
     paginate_by = 10
-
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
     def test_func(self):
         return self.request.user.has_perm('accounts.view_role')
 
 
 class RoleUpdateView(UserPassesTestMixin, UpdateView):
     model = Role
-    fields = '__all__'
+    fields = ('name',)
     template_name = "accounts/roles/role_form.html"
     success_url = reverse_lazy('accounts:role_list')
 
@@ -328,7 +341,7 @@ class RoleUpdateView(UserPassesTestMixin, UpdateView):
 
 class AddressCreateView(UserPassesTestMixin, CreateView):
     model = Address
-    fields = '__all__'
+    form_class = AddressForm
     template_name = "accounts/address/address_form.html"
     success_url = reverse_lazy('accounts:address_list')
 
@@ -341,6 +354,15 @@ class AddressListView(UserPassesTestMixin, ListView):
     template_name = "accounts/address/address_list.html"
     ordering = ['street']
     paginate_by = 10
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(street__icontains=search_query)
+
+        return queryset
 
     def test_func(self):
         return self.request.user.has_perm('accounts.view_address')
@@ -348,7 +370,7 @@ class AddressListView(UserPassesTestMixin, ListView):
 
 class AddressUpdateView(UserPassesTestMixin, UpdateView):
     model = Address
-    fields = '__all__'
+    fields = ['street', 'city', 'state', 'zip_code', 'country', 'neighborhood', 'number', 'complement']
     template_name = "accounts/address/address_form.html"
     success_url = reverse_lazy('accounts:address_list')
 
@@ -425,25 +447,6 @@ def addresses_api(request):
         return JsonResponse(data, safe=False)
 
 
-def delete_user(request, username):
-    try:
-        user = get_user_model().objects.get(username=username)
-    except get_user_model().DoesNotExist:
-        messages.error(request, "Usuário não encontrado.")
-        return redirect('accounts:users_list')
-    
-    if request.user.username == username:
-        messages.error(request, "Você não pode excluir sua própria conta.")
-        return redirect(user.get_absolute_url())
-    elif not request.user.is_superuser:
-        messages.error(request, "Você não tem permissão para excluir usuários.")
-        return redirect(user.get_absolute_url())
-    else:
-        messages.success(request, f"Usuário {user.username} excluído com sucesso.")
-        user.delete()
-    return redirect('accounts:users_list')
-
-
 class SquadCreateView(UserPassesTestMixin, CreateView):
     model = Squad
     form_class = SquadForm
@@ -466,7 +469,7 @@ class SquadListView(UserPassesTestMixin, ListView):
         return self.request.user.has_perm('accounts.view_squad')
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_deleted=False)
         search_query = self.request.GET.get('name')
 
         if search_query:
@@ -493,3 +496,16 @@ class SquadUpdateView(UserPassesTestMixin, UpdateView):
 
     def get_success_url(self):
         return self.object.get_absolute_url()
+
+
+def soft_delete(request, app_label, model_name, pk):
+    content_type = get_object_or_404(ContentType, app_label=app_label, model=model_name)
+    model_class = content_type.model_class()
+    obj = get_object_or_404(model_class, pk=pk)
+    
+    obj.is_deleted = True 
+    obj.save()
+    
+    list_url = 'accounts:{}_list'.format(model_name)
+    
+    return redirect(list_url)

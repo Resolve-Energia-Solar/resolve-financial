@@ -22,7 +22,7 @@ class BoardList(UserPassesTestMixin, ListView):
         return self.request.user.has_perm('core.view_board')
     
     def get_queryset(self):
-        self.queryset = super().get_queryset()
+        self.queryset = super().get_queryset().filter(is_active=True)
         title = self.request.GET.get('title')
         self.queryset = self.queryset.filter(title__icontains=title) if title else self.queryset
         return self.queryset
@@ -107,7 +107,7 @@ class BoardDetailView(UserPassesTestMixin, DetailView):
 
 class BoardCreateView(UserPassesTestMixin, CreateView):
     model = Board
-    fields = "__all__"
+    fields = ['title', 'description', 'branch' ]
     template_name = "core/boards/board_create.html"
     success_url = reverse_lazy("core:board-list")
 

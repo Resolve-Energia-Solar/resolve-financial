@@ -9,7 +9,6 @@ urlpatterns = [
     path("usuarios/", UsersListView.as_view(), name="users_list"),
     path("usuarios/<slug:slug>/", UserDetailView.as_view(), name="user_detail"),
     path("usuarios/<slug:slug>/editar/", UserUpdateView.as_view(), name="user_update"),
-    path("usuarios/<slug:username>/excluir/", delete_user, name="delete_user"),
     path('create-customer/', create_customer, name='create-customer'),
     # Permissions
     path("permissoes/criar/", PermissionCreateView.as_view(), name="permission_create"),
@@ -41,6 +40,9 @@ urlpatterns = [
     path('squads/', SquadListView.as_view(), name='squad_list'),
     path('squads/<int:pk>/', SquadDetailView.as_view(), name='squad_detail'),
     path('squads/<int:pk>/editar', SquadUpdateView.as_view(), name='squad_update'),
+    
+    path('delete/<str:app_label>/<str:model_name>/<int:pk>/', soft_delete, name='soft_delete'),
+    
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),
 ]

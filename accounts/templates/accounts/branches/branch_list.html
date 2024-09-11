@@ -71,9 +71,34 @@
                                         <a href="{% url 'accounts:branch_update' branch.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar unidade" data-bs-original-title="Editar">
                                             <i class="bx bx-pencil mx-1"></i>
                                         </a>
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ branch.pk }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir unidade" data-bs-original-title="Excluir">
+                                            <i class="bx bx-trash text-danger mx-1"></i>
+                                        </a>
+                                    </div>
+
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteModal{{ branch.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ branch.pk }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ branch.pk }}">Excluir Unidade</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Deseja realmente excluir esta unidade?</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='branch' pk=branch.pk %}" class="btn btn-danger">Excluir</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     </div>
                                 </td>
                                 {% endif %}
+                                {% empty %}
+                                <td colspan="4">Nenhuma unidade encontrada.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

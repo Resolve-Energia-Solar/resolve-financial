@@ -102,7 +102,26 @@
                                 {% if user|has_perm:'accounts.delete_squad' %}
                                 <a href="#squadDeleteModel" data-bs-toggle="tooltip" class="text-body"
                                     data-bs-placement="top" aria-label="Deletar Perfil"
-                                    data-bs-original-title="Deletar Perfil"><i class="bx bx-trash mx-1"></i></a>
+                                    data-bs-original-title="Deletar Perfil"><i class="bx bx-trash mx-1"></i>
+                                </a>
+                                <!-- Modal -->
+                                <div class="modal fade" id="squadDeleteModel" tabindex="-1" aria-labelledby="squadDeleteModelLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="squadDeleteModelLabel">Deletar Squad</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Tem certeza que deseja deletar este squad?</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='branch' pk=branch.pk %}" class="btn btn-danger">Deletar</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 {% endif %}
                             </div>
                         </td>

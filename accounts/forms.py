@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group
 from django.forms import ModelForm, DateInput
-from .models import Address, Branch, User, Squad
+from .models import User, Branch, Address, Squad
 from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2MultipleWidget
 
 
@@ -74,19 +74,31 @@ class GroupForm(ModelForm):
 class BranchForm(ModelForm):
     class Meta:
         model = Branch
-        fields = '__all__'
+        exclude = ['is_deleted']
         widgets = {
             'owners': Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar proprietários'})
+        }
+        
+class AddressForm(ModelForm):
+    class Meta:
+        model = Address
+        exclude = ['is_deleted']
+        widgets = {
+            'country': Select2Widget,
+            'state': Select2Widget,
+            'city': Select2Widget,
+            'neighborhood': Select2Widget,
         }
 
 
 class SquadForm(ModelForm):
     class Meta:
         model = Squad
-        fields = "__all__"
+        exclude = ['is_deleted']
         widgets = {
             'branch': Select2Widget,
             'manager': Select2Widget,
             'members': Select2MultipleWidget,
             'boards': Select2MultipleWidget
         }
+        

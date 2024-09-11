@@ -101,8 +101,26 @@
                                             {% endif %}
                                             {% if user|has_perm:'accounts.delete_user' %}
                                             <div class="dropdown-divider"></div>
-                                            <a href="javascript:;"
-                                                class="dropdown-item delete-record text-danger">Deletar</a>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_obj.pk }}"
+                                            class="dropdown-item delete-record text-danger">Deletar</a>
+                                            <!-- Modal -->
+                                            <div class="modal fade" id="deleteModal{{ user_obj.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Deletar</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                    Você tem certeza de que deseja deletar este item?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="button" class="btn btn-danger">Deletar</button>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                            </div>
                                             {% endif %}
                                         </div>
                                     </div>

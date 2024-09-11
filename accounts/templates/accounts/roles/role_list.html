@@ -76,9 +76,29 @@
                                 data-bs-original-title="Editar Cargo"><i class="bx bx-pencil mx-1"></i></a>
                             {% endif %}
                             {% if user|has_perm:'accounts.delete_role' %}
-                            <a href="#roleDeleteModel" data-bs-toggle="tooltip" class="text-body"
-                                data-bs-placement="top" aria-label="Deletar Cargo"
-                                data-bs-original-title="Deletar Cargo"><i class="bx bx-trash mx-1"></i></a>
+                            <!-- Link para acionar o modal -->
+                            <a href="#roleDeleteModel" data-bs-toggle="modal" class="text-body" data-bs-placement="top" aria-label="Deletar Cargo" data-bs-original-title="Deletar Cargo">
+                                <i class="bx bx-trash mx-1"></i>
+                            </a>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="roleDeleteModel" tabindex="-1" aria-labelledby="roleDeleteModelLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="roleDeleteModelLabel">Deletar Cargo</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Tem certeza que deseja deletar este cargo?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='role' pk=role.pk %}" class="btn btn-danger">Deletar</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
                     </td>
