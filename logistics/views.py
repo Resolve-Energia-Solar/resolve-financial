@@ -90,8 +90,8 @@ class SalesMaterialsUpdateView(UserPassesTestMixin, UpdateView):
 
 class MaterialTypesCreateView(UserPassesTestMixin, CreateView):
     model = MaterialTypes
-    fields = '__all__'
-    template_name = 'logistics/material_types_create.html'
+    fields = ['name', 'description']
+    template_name = 'logistics/material_types/material_types_form.html'
 
     def test_func(self):
         return self.request.user.has_perm('logistics.add_materialtypes')
@@ -102,7 +102,7 @@ class MaterialTypesCreateView(UserPassesTestMixin, CreateView):
     
 class MaterialTypesListView(UserPassesTestMixin, ListView):
     model = MaterialTypes
-    template_name = 'logistics/material_types_list.html'
+    template_name = 'logistics/material_types/material_types_list.html'
     context_object_name = 'material_types'
 
     def test_func(self):
@@ -111,7 +111,7 @@ class MaterialTypesListView(UserPassesTestMixin, ListView):
     
 class MaterialTypesDetailView(UserPassesTestMixin, ListView):
     model = MaterialTypes
-    template_name = 'logistics/material_types_detail.html'
+    template_name = 'logistics/material_types/material_types_detail.html'
     context_object_name = 'material_types'
 
     def test_func(self):
@@ -120,8 +120,8 @@ class MaterialTypesDetailView(UserPassesTestMixin, ListView):
     
 class MaterialTypesUpdateView(UserPassesTestMixin, UpdateView):
     model = MaterialTypes
-    fields = '__all__'
-    template_name = 'logistics/material_types_update.html'
+    fields = ['name', 'description']
+    template_name = 'logistics/material_types/material_types_form.html'
 
     def test_func(self):
         return self.request.user.has_perm('logistics.change_materialtypes')
