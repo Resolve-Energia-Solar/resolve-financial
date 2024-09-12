@@ -32,6 +32,7 @@ class Lead(models.Model):
     column = models.ForeignKey("core.Column", on_delete=models.CASCADE, verbose_name="Coluna", related_name="cards_leads", blank=True, null=True)
 
     # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     history = HistoricalRecords()
     
