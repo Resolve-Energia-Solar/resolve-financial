@@ -143,6 +143,10 @@ class MarketingCampaign(models.Model):
     end_datetime = models.DateTimeField("Data de Término")
     description = models.TextField("Descrição")
     banner = models.ImageField("Banner", upload_to="resolve_crm/img/marketing_campaign/")
+    is_deleted = models.BooleanField("Deletado", default=False)
+    
+    def get_absolute_url(self):
+        return reverse_lazy('resolve_crm:marketing_campaign_detail', kwargs={'pk': self.pk})
 
     class Meta:
         verbose_name = "Campanha de Marketing"

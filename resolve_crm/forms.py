@@ -2,9 +2,23 @@ from django import forms
 
 from .models import Task, Lead, MarketingCampaign
 from django_select2.forms import Select2Widget, Select2MultipleWidget, ModelSelect2MultipleWidget
+from django.core.exceptions import FieldDoesNotExist
 
+class FormBase(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            try:
+                related_model = field.queryset.model
+                if hasattr(related_model, 'is_deleted'):
+                    field.queryset = related_model.objects.filter(is_deleted=False)
+            except AttributeError:
+                continue
 
-class TaskForm(forms.ModelForm):
+    class Meta:
+        exclude = ['is_deleted']
+
+class TaskForm(FormBase):
     class Meta:
         model = Task
         fields = "__all__"
@@ -15,7 +29,7 @@ class TaskForm(forms.ModelForm):
         }
 
 
-class LeadForm(forms.ModelForm):
+class LeadForm(FormBase):
     class Meta:
         model = Lead
         fields = "__all__"
@@ -39,10 +53,10 @@ class LeadForm(forms.ModelForm):
         }
 
 
-class MarketingCampaignForm(forms.ModelForm):
+class MarketingCampaignForm(FormBase):
     class Meta:
         model = MarketingCampaign
-        fields = "__all__"
+        exclude = ['is_deleted']
         widgets = {
             'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
             'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')

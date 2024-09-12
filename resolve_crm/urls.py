@@ -30,4 +30,8 @@ urlpatterns = [
     # Attachments
     path('add-attachment/<int:lead_id>', add_lead_attachment, name='add_lead_attachment'),
     path('delete-attachment/<int:id>', delete_attachment, name='delete_attachment'),
+    
+    # Soft Delete
+    path('delete/<int:pk>/', soft_delete_campaign, name='soft_delete_campaign'),
+    path('delete/<str:app_label>/<str:model_name>/<int:pk>/', soft_delete, name='soft_delete'),
 ]

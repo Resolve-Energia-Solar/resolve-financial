@@ -54,6 +54,28 @@
                             <a href="{% url 'resolve_crm:campaign_update' campaign.pk %}">
                                 <i class="bx bx-edit fs-3"></i>
                             </a>
+                            <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#deleteCampaignModal{{ campaign.id }}">
+                                <i class="bx bx-trash fs-3"></i>
+                            </a>
+                            
+                            <div class="modal fade" id="deleteCampaignModal{{ campaign.id }}"
+                                tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteCampaignModal{{ campaign.id }}Label">Excluir Campanha</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Deseja realmente excluir a campanha "{{ campaign.name }}"?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{% url 'resolve_crm:soft_delete_campaign' campaign.pk %}" class="btn btn-danger">Excluir</a>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {% endif %}
                         </td>
                     </tr>

@@ -69,7 +69,7 @@
                                         {% endif %}
                                         {% if user|has_perm:'core.delete_board' %}
                                         <div class="dropdown-divider"></div>
-                                        <a href="javascript:;" class="dropdown-item delete-record text-danger">Deletar</a>
+                                        <a href="{% url 'accounts:soft_delete' app_label='core' model_name='board' pk=board.pk %}" class="dropdown-item delete-record text-danger">Deletar</a>
                                         {% endif %}
                                     </div>
                                 </div>

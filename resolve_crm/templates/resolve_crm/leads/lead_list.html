@@ -78,8 +78,11 @@
                                     <div class="d-flex align-items-center">
                                         {# <a href="{% url 'resolve_crm:lead_update' lead.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar lead" data-bs-original-title="Editar"><i class="bx bx-pencil mx-1"></i></a> #}
                                         <a href="{% url 'resolve_crm:lead_detail' lead.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Lead" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
+                                        <a href="{% url 'resolve_crm:soft_delete' app_label='resolve_crm' model_name='lead' pk=lead.pk %}" role="button" data-bs-toggle="modal" data-bs-target="#deleteLeadModal{{ lead.id }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir lead" data-bs-original-title="Excluir"><i class="bx bx-trash mx-1"></i></a>
                                     </div>
                                 </td>
+                                {%empty%}
+                                <td colspan="5">Nenhum lead encontrado</td>
                             </tr>
                             {% endfor %}
                         </tbody>

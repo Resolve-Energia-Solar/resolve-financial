@@ -1,4 +1,4 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -117,12 +117,10 @@ class MarketingCampaignCreateView(UserPassesTestMixin, CreateView):
     model = MarketingCampaign
     form_class = MarketingCampaignForm
     template_name = "resolve_crm/marketing_campaings/marketing_campaign_form.html"
+    success_url = reverse_lazy("resolve_crm:campaign_list")
 
     def test_func(self):
         return self.request.user.has_perm('resolve_crm.create_marketingcampaign')
-    
-    def get_success_url(self):
-        return self.object.get_absolute_url()
 
 
 class MarketingCampaignListView(UserPassesTestMixin, ListView):
@@ -135,7 +133,7 @@ class MarketingCampaignListView(UserPassesTestMixin, ListView):
         return self.request.user.has_perm('resolve_crm.view_marketingcampaign')
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_deleted=False)
         search_query = self.request.GET.get('search')
 
         if search_query:
@@ -200,3 +198,20 @@ def delete_attachment(request, id):
     attachment.delete()
     messages.success(request, 'Anexo deletado com sucesso!')
     return redirect(get_object.get_absolute_url())
+
+
+def soft_delete(request, app_label, model_name, pk):
+    content_type = get_object_or_404(ContentType, app_label=app_label, model=model_name)
+    model_class = content_type.model_class()
+    obj = get_object_or_404(model_class, pk=pk)
+    
+    obj.is_deleted = True 
+    obj.save()
+    
+    return redirect(list_url)
+
+def soft_delete_campaign(request, pk):
+    campaign = get_object_or_404(MarketingCampaign, pk=pk)
+    campaign.is_deleted = True
+    campaign.save()
+    return redirect('resolve_crm:campaign_list')

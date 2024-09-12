@@ -22,12 +22,11 @@ class BoardList(UserPassesTestMixin, ListView):
         return self.request.user.has_perm('core.view_board')
     
     def get_queryset(self):
-        self.queryset = super().get_queryset().filter(is_active=True)
+        self.queryset = super().get_queryset().filter(is_deleted=False)
         title = self.request.GET.get('title')
         self.queryset = self.queryset.filter(title__icontains=title) if title else self.queryset
         return self.queryset
-
-
+    
 def board_api(request, pk):
     try:
         board = Board.objects.get(pk=pk)

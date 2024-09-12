@@ -33,6 +33,7 @@ class Board(models.Model):
     title = models.CharField("Título", max_length=200)
     description = models.TextField("Descrição")
     branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
+    is_deleted = models.BooleanField("Deletado", default=False)
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
