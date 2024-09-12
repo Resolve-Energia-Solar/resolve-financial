@@ -79,14 +79,14 @@ class LeadDetailView(UserPassesTestMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         lead = self.get_object()
-        history = lead.history.all().order_by('-history_date')
+        history = lead.history.all().order_by('-history_date')[:5]
 
         for record in history:
             changes = []
             old_record = lead.history.filter(history_date__lt=record.history_date).first()
             if old_record:
                 delta = record.diff_against(old_record)
-                for change in delta.changes:
+                for change in delta.changes[:3]:
                     changes.append({
                         'field': change.field,
                         'old': change.old,
