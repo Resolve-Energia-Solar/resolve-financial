@@ -19,4 +19,5 @@ urlpatterns = [
     path('materiais-vendas/', SalesMaterialsListView.as_view(), name='sales_materials_list'),
     path('materiais-vendas/<int:pk>/', SalesMaterialsDetailView.as_view(), name='sales_materials_detail'),
     path('materiais-vendas/<int:pk>/editar/', SalesMaterialsUpdateView.as_view(), name='sales_materials_update'),
+    # Solar Energy Kit 
 ]

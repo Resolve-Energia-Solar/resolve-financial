@@ -1,6 +1,6 @@
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
 from django.contrib.auth.mixins import UserPassesTestMixin
-from .models import Materials, SalesMaterials, MaterialTypes
+from .models import Materials, SalesMaterials, MaterialTypes, SolarEnergyKit
 from django.urls import reverse_lazy
 
 
@@ -72,7 +72,7 @@ class SalesMaterialsDetailView(UserPassesTestMixin, DetailView):
         return self.request.user.has_perm('logistics.view_salesmaterials')
     
     
-class SalesMaterialsUpdateView(UserPassesTestMixin, UpdateView):
+class  SalesMaterialsUpdateView(UserPassesTestMixin, UpdateView):
     model = SalesMaterials
     fields = '__all__'
     template_name = 'logistics/sales_materials_form.html'
@@ -122,3 +122,43 @@ class MaterialTypesUpdateView(UserPassesTestMixin, UpdateView):
     
     def get_success_url(self):
         return reverse_lazy('logistics:material_type_list')
+
+
+class SolarEnergyKitCreateView(UserPassesTestMixin, CreateView):
+    model = SolarEnergyKit
+    fields = '__all__'
+    template_name = 'logistics/solar_energy_kit_form.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('logistics.add_solarenergykit')
+    
+    def get_success_url(self):
+        return reverse_lazy('logistics:solar_energy_kit_detail', kwargs={'pk': self.object.pk})
+    
+    
+class SolarEnergyKitListView(UserPassesTestMixin, ListView):
+    model = SolarEnergyKit
+    template_name = 'logistics/solar_energy_kit_list.html'
+    
+    def test_func(self):
+        return self.request.user.has_perm('logistics.view_solarenergykit')
+    
+    
+class SolarEnergyKitDetailView(UserPassesTestMixin, DetailView):
+    model = SolarEnergyKit
+    template_name = 'logistics/solar_energy_kit_detail.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('logistics.view_solarenergykit')
+    
+    
+class SolarEnergyKitUpdateView(UserPassesTestMixin, UpdateView):
+    model = SolarEnergyKit
+    fields = '__all__'
+    template_name = 'logistics/solar_energy_kit_form.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('logistics.change_solarenergykit')
+    
+    def get_success_url(self):
+        return reverse_lazy('logistics:solar_energy_kit_detail', kwargs={'pk': self.object.pk})
