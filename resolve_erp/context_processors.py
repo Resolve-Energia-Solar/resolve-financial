@@ -288,6 +288,23 @@ def menu_items(request):
                     "permission": "logistics.add_materialtypes"
                 }
             ]
+        },
+        {
+            "label": "Tipos de Telhado",
+            "icon": "bx bxs-up-arrow",
+            "section": "Vistoria",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "inspections:roof_type_list",
+                    "permission": "inspections.view_rooftype"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "inspections:roof_type_create",
+                    "permission": "inspections.add_rooftype"
+                }
+            ]
         }
     ]
 
