@@ -78,7 +78,26 @@
                                     <div class="d-flex align-items-center">
                                         {# <a href="{% url 'resolve_crm:lead_update' lead.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar lead" data-bs-original-title="Editar"><i class="bx bx-pencil mx-1"></i></a> #}
                                         <a href="{% url 'resolve_crm:lead_detail' lead.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Ver Lead" data-bs-original-title="Ver detalhes"><i class="bx bx-detail mx-1"></i></a>
-                                        <a href="{% url 'resolve_crm:soft_delete' app_label='resolve_crm' model_name='lead' pk=lead.pk %}" role="button" data-bs-toggle="modal" data-bs-target="#deleteLeadModal{{ lead.id }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir lead" data-bs-original-title="Excluir"><i class="bx bx-trash mx-1"></i></a>
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ lead.pk }}" class="text-body" data-bs-placement="top" aria-label="Excluir Lead" data-bs-original-title="Excluir"><i class="bx bx-trash mx-1"></i></a>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteModal{{ lead.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ lead.pk }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ lead.pk }}">Excluir Lead</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Deseja realmente excluir o lead "{{ lead.name }}"?</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <a href="{% url 'resolve_crm:soft_delete' app_label='resolve_crm' model_name='lead' pk=lead.pk %}" class="btn btn-danger">Excluir</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 {%empty%}

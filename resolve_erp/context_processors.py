@@ -49,7 +49,7 @@ def menu_items(request):
             "sub_items": [
                 {
                     "label": "Lista",
-                    "url_name": "accounts:users_list",
+                    "url_name": "accounts:user_list",
                     "permission": "accounts.view_user"
                 },
                 {

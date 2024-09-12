@@ -116,7 +116,7 @@ class BoardCreateView(UserPassesTestMixin, CreateView):
 
 class BoardUpdateView(UserPassesTestMixin, UpdateView):
     model = Board
-    fields = "__all__"
+    fields = ['title', 'description', 'branch']
     template_name = "core/boards/board_update.html"
 
     def test_func(self):

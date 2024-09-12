@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import *
 
-
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
@@ -10,7 +9,7 @@ admin.site.index_title = "Administração"
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
-    list_display = ("username", "complete_name", "email")
+    list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined") 
 
@@ -18,7 +17,7 @@ class UserAdmin(UserAdmin):
         (None, {"fields": ("username", "password")}),
         ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
         ("Contact", {"fields": ("phone", "email")}),
-        ("Address", {"fields": ("address",)}),
+        ("Address", {"fields": ("addresses",)}),
         ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
     )
 
@@ -31,7 +30,6 @@ class AddressAdmin(admin.ModelAdmin):
     list_filter = ("country", "state", "city")
     list_per_page = 10
     list_max_show_all = 100
-
 
     class Media:
         js = ('admin/js/autocomplete_address.js',)

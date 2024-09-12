@@ -9,7 +9,6 @@ class UserForm(ModelForm):
         model = User
         exclude = ["last_login", "date_joined", "is_superuser", "is_staff", "is_active", "password", "resignation_date"]
         widgets = {
-            "user_types": Select2MultipleWidget(attrs={'data-placeholder': 'Selecionar tipos de usuário'}),
             "hire_date": DateInput(attrs={'type': 'date'}),
             "birth_date": DateInput(attrs={'type': 'date'}),
             'branch': Select2Widget(attrs={'data-placeholder': 'Selecionar unidade'}),
@@ -29,6 +28,10 @@ class UserForm(ModelForm):
                 'complement__icontains',
             ])
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['user_types'].required = False
 
 
 class UserUpdateForm(ModelForm):

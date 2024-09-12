@@ -108,7 +108,7 @@
                                 <button type="button" class="btn btn-primary btn-label-secondary" data-bs-dismiss="modal">
                                     Cancelar
                                 </button>
-                                <a role="button" href="{% url 'accounts:delete_user' object.username %}" class="btn btn-danger">
+                                <a role="button" href="{% url 'accounts:delete_user' pk=user_obj.pk %}" class="btn btn-danger">
                                     <i class="bx bx-trash me-1"></i> Sim, deletar!
                                 </a>
                             </div>

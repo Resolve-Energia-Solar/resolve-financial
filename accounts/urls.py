@@ -6,7 +6,7 @@ app_name = "accounts"
 urlpatterns = [
     path("", include("django.contrib.auth.urls")),
     path("usuarios/criar/", UserCreateView.as_view(), name="user_create"),
-    path("usuarios/", UsersListView.as_view(), name="users_list"),
+    path("usuarios/", UsersListView.as_view(), name="user_list"),
     path("usuarios/<slug:slug>/", UserDetailView.as_view(), name="user_detail"),
     path("usuarios/<slug:slug>/editar/", UserUpdateView.as_view(), name="user_update"),
     path('create-customer/', create_customer, name='create-customer'),
@@ -19,6 +19,7 @@ urlpatterns = [
     path("perfis/", GroupsListView.as_view(), name="group_list"),
     path("perfis/<int:pk>/", GroupDetailView.as_view(), name="group_detail"),
     path("perfis/<int:pk>/editar/", GroupUpdateView.as_view(), name="group_update"),
+    path("perfis/<int:pk>/delete/", delete_group, name="group_delete"),
     # Units
     path("unidades/criar/", BranchCreateView.as_view(), name="branch_create"),
     path("unidades/", BranchListView.as_view(), name="branch_list"),
@@ -41,7 +42,9 @@ urlpatterns = [
     path('squads/<int:pk>/', SquadDetailView.as_view(), name='squad_detail'),
     path('squads/<int:pk>/editar', SquadUpdateView.as_view(), name='squad_update'),
     
+    # Soft Delete
     path('delete/<str:app_label>/<str:model_name>/<int:pk>/', soft_delete, name='soft_delete'),
+    path('usuario/<int:pk>/delete/', deactive_user, name='delete_user'),
     
     # API
     path("api/addresses/", addresses_api, name="addresses_api"),

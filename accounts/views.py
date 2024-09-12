@@ -11,7 +11,7 @@ from django.contrib.auth.models import Permission, Group
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
-from .models import Address, Branch, Department, Role, Squad
+from .models import Address, Branch, Department, Role, Squad, UserType
 from .forms import BranchForm, SquadForm, UserForm, UserUpdateForm, GroupForm, AddressForm
 from django.contrib.contenttypes.models import ContentType
 
@@ -25,7 +25,7 @@ class UsersListView(UserPassesTestMixin, ListView):
         return self.request.user.has_perm('accounts.view_user')
     
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_active=True)
         search_query = self.request.GET.get('search')
         department_id = self.request.GET.get('department')
 
@@ -72,7 +72,8 @@ class UserCreateView(UserPassesTestMixin, CreateView):
         # Set the generated password for the user
         user = form.save(commit=False)
         user.set_password(password)
-        
+        # Save the user first to generate the user ID
+
         # Get the address_id from the POST data
         address_id = self.request.POST.get('address')
         if address_id:
@@ -92,6 +93,10 @@ class UserCreateView(UserPassesTestMixin, CreateView):
             from_email='ti@resolvenergiasolar.com',
             recipient_list=[user.email],
         )
+
+        # Now that the user has an ID, set the ManyToMany relationship
+        funcionario_type = UserType.objects.get(id=3)
+        user.user_types.set([funcionario_type])
         
         return super().form_valid(form)
     
@@ -196,8 +201,7 @@ class GroupsListView(UserPassesTestMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
-    
+        return super().get_queryset()
     
     def test_func(self):
         return self.request.user.has_perm('accounts.view_group')
@@ -502,10 +506,32 @@ def soft_delete(request, app_label, model_name, pk):
     content_type = get_object_or_404(ContentType, app_label=app_label, model=model_name)
     model_class = content_type.model_class()
     obj = get_object_or_404(model_class, pk=pk)
+    self_user = request.user
     
-    obj.is_deleted = True 
-    obj.save()
+    if model_name == 'user':
+        if self_user == obj:
+            return redirect('accounts:user_list')
+        obj.is_active = False
+    else:
+        obj.is_deleted = True
+        obj.save()
     
-    list_url = 'accounts:{}_list'.format(model_name)
-    
+    if model_name == 'user':
+        list_url = 'accounts:user_list'
+    elif model_name == 'board':
+        list_url = 'core:board-list'
+    else:
+        list_url = 'accounts:{}_list'.format(model_name)
+        
     return redirect(list_url)
+
+def deactive_user(request, pk):
+    user = get_object_or_404(get_user_model(), pk=pk)
+    user.is_active = False
+    user.save()
+    return redirect('accounts:user_list')
+
+def delete_group(request, pk):
+    group = get_object_or_404(Group, pk=pk)
+    group.delete()
+    return redirect('accounts:group_list')
