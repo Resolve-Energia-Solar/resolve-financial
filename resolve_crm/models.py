@@ -91,6 +91,8 @@ class Attachment(models.Model):
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
+    status = models.CharField("Status", max_length=50)
+    document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento")
     description = models.TextField("Descrição")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -123,7 +125,7 @@ class Attachment(models.Model):
 class Contact(models.Model):
     contact_type_choices = [
         ("email", "E-mail"),
-        ("sms", "SMS")
+        ("sms", "SMS"),
     ]
 
     contact_type = models.CharField(max_length=10, choices=contact_type_choices, verbose_name="Tipo de Contato")
@@ -212,30 +214,32 @@ class Sale(models.Model):
 
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="lead_sales")
-    borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador", related_name="borrower_sales")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="lead_sales") 
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
     sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
-    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_sales")
 
     # Sale Information
-    contract_number = models.CharField("Número do Contrato", max_length=20)
-    contract_date = models.DateField("Data do Contrato")
+    payment = models.ManyToManyField("Payment", verbose_name="Pagamento", related_name="sale_payment")
+    value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
+    contract_number = models.CharField("Número do Contrato", max_length=20) #
+    signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing")
+    is_sale = models.BooleanField("Pré-venda", default=False)
+    status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
+    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, verbose_name="Pagamento")
 
     # Document Information
-    document_status = models.CharField("Status do Documento", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
     is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
-    document_situation = models.CharField("Situação do Documento", max_length=256, null=True, blank=True)
+    # document_situation = models.CharField("Situação do Documento", max_length=256, null=True, blank=True)
     document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
 
     # Financial Information
-    financial_status = models.CharField("Status Financeiro", max_length=2, choices=[("P", "Pendente"), ("PA", "Parcial"), ("L", "Liquidado")])
-    is_completed_financial = models.BooleanField("Financeiro Completo", null=True, blank=True)
-    financial_completion_date = models.DateTimeField("Data de Conclusão Financeira", null=True, blank=True)
-    project_value = models.DecimalField("Valor do Projeto", max_digits=20, decimal_places=6, default=0.000000)
+    # financial_status = models.CharField("Status Financeiro", max_length=2, choices=[("P", "Pendente"), ("PA", "Parcial"), ("L", "Liquidado")])
+    # is_completed_financial = models.BooleanField("Financeiro Completo", null=True, blank=True)
+    # financial_completion_date = models.DateTimeField("Data de Conclusão Financeira", null=True, blank=True)
+    # project_value = models.DecimalField("Valor do Projeto", max_digits=20, decimal_places=6, default=0.000000)
 
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -247,19 +251,146 @@ class Sale(models.Model):
     
     def __str__(self):
         return f'{self.contract_number} - {self.customer.name}'
-
-
-class SaleDocument(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-    document = models.FileField("Documento", upload_to="resolve_crm/sale_documents/")
-    document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento")
-    status = models.CharField("Status", max_length=2, choices=[("P", "Pendente"), ("A", "Aprovado"), ("R", "Reprovado")])
-    description = models.TextField("Descrição")
+    
+    
+class CircuitBreaker(models.Model):
+    material = models.ForeignKey("logistics.Materials", on_delete=models.CASCADE, verbose_name="Material")
+    pole = models.IntegerField("Pólos")
+    current = models.DecimalField("Corrente", max_digits=10, decimal_places=2)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
     
     class Meta:
-        verbose_name = "Documento da Venda"
-        verbose_name_plural = "Documentos das Vendas"
+        verbose_name = "Disjuntor"
+        verbose_name_plural = "Disjuntores"
     
     def __str__(self):
-        return self.document.name
+        return self.material.description
+
+
+class Project(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects")
+    project_number = models.CharField("Número do Projeto", max_length=20)
+    start_date = models.DateField("Data de Início")
+    end_date = models.DateField("Data de Término")
+    is_completed = models.BooleanField("Projeto Completo", default=False) #se status estiver finalizado, is_completed = True
+    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
+    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects")
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="project_addresses")
+    supply_type = models.CharField("Tipo de Fornecimento", choices=[("M", "Monofásico"), ("B", "Bifásico"), ("T", "Trifásico")], max_length=50)
+    kwp = models.DecimalField("kWp", max_digits=10, decimal_places=2)
+    registered_circuit_breaker = models.ForeignKey(CircuitBreaker, on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado")
+    instaled_circuit_breaker = models.ForeignKey(CircuitBreaker, on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado")
+    project_circuit_breaker = models.ForeignKey(CircuitBreaker, on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto")
+    # input_pattern_value = models.DecimalField("Valor do Padrão de Entrada", max_digits=10, decimal_places=2)
+
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Projeto"
+        verbose_name_plural = "Projetos"
+    
+    def __str__(self):
+        return self.project_number
+
+
+class Payment(models.Model):
+    TYPE_CHOICES = [
+        ("C", "Crédito"),
+        ("D", "Débito"),
+        ("B", "Boleto"),
+        ("F", "Financiamento"),
+        ("PI", "Parcelamento interno")
+    ]
+    payment_type = models.CharField("Tipo de Pagamento",choices=TYPE_CHOICES, max_length=2)
+    installments_number = models.PositiveSmallIntegerField("Número de Parcelas")
+    financier = models.ForeignKey("Financier", on_delete=models.CASCADE, verbose_name="Financiadora")
+    value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
+    due_date = models.DateField("Data de Vencimento")
+    is_paid = models.BooleanField("Pago", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Pagamento"
+        verbose_name_plural = "Pagamentos"
+
+
+class PaymentInstallment(models.Model):
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, verbose_name="Pagamento")
+    value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
+    due_date = models.DateField("Data de Vencimento")
+    is_paid = models.BooleanField("Pago", default=False)
+    paid_at = models.DateTimeField("Pago em", auto_now_add=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Parcela"
+        verbose_name_plural = "Parcelas"
+
+
+class Financier(models.Model):
+    name = models.CharField("Nome", max_length=200, null=True, blank=True)
+    cnpj = models.CharField("CNPJ", max_length=20, null=True, blank=True)
+    address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço")
+    phone = models.CharField("Telefone", max_length=20)
+    email = models.EmailField("E-mail")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Financiadora"
+        verbose_name_plural = "Financiadoras"
+    
+    def __str__(self):
+        return self.name
+
+# class SaleDocument(models.Model):
+#     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+#     document = models.FileField("Documento", upload_to="resolve_crm/sale_documents/")
+#     document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento")
+#     status = models.CharField("Status", max_length=2, choices=[("P", "Pendente"), ("A", "Aprovado"), ("R", "Reprovado")])
+#     description = models.TextField("Descrição")
+#     created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    
+#     class Meta:
+#         verbose_name = "Documento da Venda"
+#         verbose_name_plural = "Documentos das Vendas"
+    
+#     def __str__(self):
+#         return self.document.name
+
+
+class EnergyDealership(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    cnpj = models.CharField("CNPJ", max_length=20, null=False, blank=False)
+    address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", null=False, blank=False)
+    phone = models.CharField("Telefone", max_length=20, null=False, blank=False)
+    email = models.EmailField("E-mail", null=False, blank=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Distribuidora de Energia"
+        verbose_name_plural = "Distribuidoras de Energia"
+    
+    def __str__(self):
+        return self.name
+
+class RequestsEnergyDealership(models.Model):
+    dealership = models.ForeignKey(EnergyDealership, on_delete=models.CASCADE, verbose_name="Distribuidora de Energia")
+    limit_date = models.DateField("Data Limite")
+    #ANALISA OS STATUS
+    status = models.CharField("Status", max_length=2, choices=[("P", "Pendente"), ("A", "Aprovado"), ("R", "Reprovado")])
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Solicitação de Distribuidora de Energia"
+        verbose_name_plural = "Solicitações de Distribuidoras de Energia"
+    
+    def __str__(self):
+        return self.dealership.name
