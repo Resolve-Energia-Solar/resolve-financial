@@ -27,6 +27,7 @@ urlpatterns = [
     path("conta/", include("accounts.urls")),
     path('crm/', include('resolve_crm.urls')),
     path('logistica/', include('logistics.urls')),
+    path('vistoria/', include('inspections.urls')),
     path('', include('core.urls')),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]

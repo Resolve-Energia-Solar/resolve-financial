@@ -274,7 +274,7 @@ def menu_items(request):
         },
         {
             "label": "Tipos de Materiais",
-            "icon": "bx bx-package",
+            "icon": "bx bx-collection",
             "section": "Logística",
             "sub_items": [
                 {
