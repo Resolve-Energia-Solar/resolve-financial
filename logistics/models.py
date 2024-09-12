@@ -43,6 +43,28 @@ class Materials(models.Model):
         verbose_name_plural = "Materiais"
 
 
+class SolarEnergyKit(models.Model):
+
+    inversors_model = models.ForeignKey("logistics.Materials", on_delete=models.CASCADE, verbose_name="Modelo dos Inversores", related_name="inversors_kit_set")
+    inversor_amount = models.PositiveSmallIntegerField("Quantidade de Inversores", default=0)
+    modules_model = models.ForeignKey("logistics.Materials", on_delete=models.CASCADE, verbose_name="Modelo dos Módulos", related_name="modules_kit_set")
+    modules_amount = models.PositiveSmallIntegerField("Quantidade de Módulos", default=0)
+    branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial")
+    roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado")
+    price = models.DecimalField("Preço", max_digits=20, decimal_places=6, default=0)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    # Logs
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return f'{self.inversor_amount}x {self.inversors_model}, {self.modules_amount}x {self.modules_model} - {self.branch.name}, {self.roof_type.name}'
+
+    class Meta:
+        verbose_name = "Kit de Materiais de Energia Solar"
+        verbose_name_plural = "Kits de Materiais de Energia Solar"
+
+
 class SalesMaterials(models.Model):
 
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material")

@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'resolve_crm.apps.ResolveCRMConfig',
     'contracts.apps.ContractsConfig',
     'logistics.apps.LogisticsConfig',
+    'inspections.apps.InspectionsConfig',
     'notifications',
     'widget_tweaks',
     'django_select2',

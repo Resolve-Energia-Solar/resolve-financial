@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load iam_tags %}
+
+{% block extra_head %}
+    <title>
+        ERP &mdash; Tipos de Materiais
+    </title>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Tipos de Materiais /</span> Lista</h4>
+
+    <!-- Invoice List Table -->
+    <div class="card">
+        <div class="card-datatable table-responsive">
+            <div class="card-datatable-header d-flex justify-content-between p-3">
+                {% if user|has_perm:'logistics.add_solar_energy_kit' %}
+                <div class="card-datatable-header-actions">
+                    <a href="{% url 'logistics:kit_create' %}" class="btn btn-primary">Novo Kit</a>
+                </div>
+                {% endif %}
+                <div class="card-datatable-header-actions">
+                    <form method="get">
+                        <div class="input-group">
+                            <input type="search" class="form-control" placeholder="Pesquisar kit" name="search" id="search-input" value="{{ request.GET.search }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="bx bx-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <table class="invoice-list-table table border-top">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Criado em<th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kit in object_list %}
+                    <tr>
+                        <td>{{ kit.name }}</td>
+                        <td>{{ kit.description }}</td>
+                        <td>{{ kit.created_at }}</td>
+                        <td>
+                            <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#kitDetailModal{{ kit.id }}">
+                                <i class="bx bx-detail fs-3"></i>
+                            </a>
+                            {% if user|has_perm:'logistics.change_solar_energy_kit' %}
+                            <a href="{% url 'logistics:kit_update' kit.pk %}">
+                                <i class="bx bx-edit fs-3"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <div class="modal fade animate__animated animate__rotateInUpLeft" id="kitDetailModal{{ kit.id }}"
+                        tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="kitDetailModal{{ kit.id }}Label">{{ kit.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <figure class="col-12 figure text-center mb-3">
+                                            <img src="{{ kit.banner.url }}" class="img-fluid" alt="">
+                                            <figcaption class="figure-caption fs-5">{{ kit.description }}</figcaption>
+                                        </figure>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="{% url 'logistics:kit_update' kit.pk %}" class="btn btn-warning">Editar</a>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">Nenhum material encontrado</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('search-input').addEventListener('input', function() {
+        if (this.value === '') {
+            this.form.submit();
+        }
+    });
+</script>
+{% endblock extra_scripts %}
