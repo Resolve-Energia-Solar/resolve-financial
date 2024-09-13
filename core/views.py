@@ -152,10 +152,10 @@ class BoardUpdateView(UserPassesTestMixin, UpdateView):
 #         return JsonResponse({'status': 'success'})
 
 
-class CreateColumnView(UserPassesTestMixin, View):
+class CreateColumnView(View):
 
-    def test_func(self):
-        return self.request.user.has_perm('core.add_column')
+    # def test_func(self):
+        # return self.request.user.has_perm('core.add_column')
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)

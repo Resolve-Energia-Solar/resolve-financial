@@ -10,6 +10,33 @@
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/quill/katex.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/libs/quill/editor.css' %}" />
 <link rel="stylesheet" href="{% static 'sneat-template/assets/vendor/css/pages/app-kanban.css' %}" />
+<style>
+    .kanban-title-board {
+        text-transform: uppercase !important;
+    }
+
+    .kanban-item {
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+    }
+
+    .kanban-title {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .kanban-footer {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .avatar-group {
+        margin-left: auto;
+    }
+</style>
 {% endblock extra_head %}
 
 {% block content %}
@@ -25,7 +52,7 @@
             <div class="modal-dialog modal-dialog-centered modal-xl modal-simple">
                 <div class="modal-content">
                     <div class="modal-body">
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         <h5 class="modal-title" id="taskModalLabel">Detalhes da Tarefa</h5>
                         <h5 id="task-title"></h5>
                         <p><strong>Comentários:</strong> <span id="task-comments"></span></p>
@@ -55,5 +82,9 @@
 <script src="{% static 'sneat-template/assets/vendor/libs/jkanban/jkanban.js' %}"></script>
 <script src="{% static 'sneat-template/assets/vendor/libs/quill/katex.js' %}"></script>
 <script src="{% static 'sneat-template/assets/vendor/libs/quill/quill.js' %}"></script>
+{% if object %}
 <script src="{% static 'sneat-template/assets/js/app-kanban-user.js' %}"></script>
+{% else %}
+<script src="{% static 'sneat-template/assets/js/app-kanban-leads.js' %}"></script>
+{% endif %}
 {% endblock extra_scripts %}

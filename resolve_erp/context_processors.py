@@ -24,6 +24,11 @@ def menu_items(request):
                     "label": "Criar",
                     "url_name": "resolve_crm:lead_create",
                     "permission": "resolve_crm.add_lead"
+                },
+                {
+                    "label": "Kanban",
+                    "url_name": "resolve_crm:lead_kanban",
+                    "permission": "resolve_crm.view_lead"
                 }
             ],
             "section": "CRM"

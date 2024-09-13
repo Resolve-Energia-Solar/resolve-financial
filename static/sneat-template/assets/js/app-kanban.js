@@ -6,7 +6,10 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   const boardId = document.querySelector('.app-kanban').getAttribute('data-board-id');
+  console.log('boardId:', boardId);
   const apiUrl = `/quadros/api/${boardId}/`;
+
+  let boards = [];
 
   // Função para transformar os dados recebidos no formato desejado
   function transformKanbanData(data) {
@@ -63,14 +66,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Função para buscar os dados da API e inicializar o Kanban
   function loadKanbanBoard() {
-    fetch(apiUrl)
+    return fetch(apiUrl)
       .then(response => response.json())
       .then(data => {
         const columns = transformKanbanData(data);
         initializeKanban(columns);
+        return columns; // Retorna as colunas para serem usadas
       })
       .catch(error => console.error('Erro ao carregar os dados do Kanban:', error));
   }
+
+  // Inicialização do Kanban
+  loadKanbanBoard().then(columns => {
+    boards = columns; // Agora boards contém os dados corretamente
+  }).catch(error => {
+    console.error('Erro ao inicializar o Kanban:', error);
+  });
+
 
   const kanbanSidebar = document.querySelector('.kanban-update-item-sidebar'),
     kanbanWrapper = document.querySelector('.kanban-wrapper'),
@@ -81,9 +93,6 @@ document.addEventListener('DOMContentLoaded', function () {
     select2 = $('.select2'), // ! Using jquery vars due to select2 jQuery dependency
     assetsPath = document.querySelector('html').getAttribute('data-assets-path');
 
-
-  // Fetch data from API
-  boards = loadKanbanBoard()
 
   // datepicker init
   if (datePicker) {
@@ -447,115 +456,123 @@ document.addEventListener('DOMContentLoaded', function () {
       const thisEle = this,
         value = thisEle.querySelector('.form-control').value,
         id = value.replace(/\s+/g, '-').toLowerCase();
-      kanban.addBoards([
-        {
-          id: id,
-          title: value
+
+      // Pegue o ID do board (quadro) onde a coluna será adicionada
+      const boardId = document.querySelector('.app-kanban').getAttribute('data-board-id');
+      console.log('boardId:', boardId);
+
+      // Chama a função para criar a coluna no banco de dados via API
+      createColumn(boardId, value).then((data) => {
+        if (data.id) {
+          // Após a coluna ser criada na API, adicione a coluna no Kanban visual
+          kanban.addBoards([
+            {
+              id: `column-${data.id}`, // Use o ID retornado pela API
+              title: value
+            }
+          ]);
+
+          // Código para adicionar as interações na nova coluna criada
+          const kanbanBoardLastChild = document.querySelectorAll('.kanban-board:last-child')[0];
+          if (kanbanBoardLastChild) {
+            const header = kanbanBoardLastChild.querySelector('.kanban-title-board');
+            header.insertAdjacentHTML('afterend', renderBoardDropdown());
+
+            kanbanBoardLastChild.querySelector('.kanban-title-board').addEventListener('mouseenter', function () {
+              this.contentEditable = 'true';
+            });
+          }
+
+          const deleteNewBoards = kanbanBoardLastChild.querySelector('.delete-board');
+          if (deleteNewBoards) {
+            deleteNewBoards.addEventListener('click', function () {
+              const id = this.closest('.kanban-board').getAttribute('data-id');
+              kanban.removeBoard(id);
+            });
+          }
+
+          if (kanbanAddNewInput) {
+            kanbanAddNewInput.forEach(el => {
+              el.classList.add('d-none');
+            });
+          }
+
+          if (kanbanContainer) {
+            kanbanContainer.appendChild(kanbanAddNewBoard);
+          }
         }
-      ]);
-
-      // Adds delete board option to new board, delete new boards & updates data-order
-      const kanbanBoardLastChild = document.querySelectorAll('.kanban-board:last-child')[0];
-      if (kanbanBoardLastChild) {
-        const header = kanbanBoardLastChild.querySelector('.kanban-title-board');
-        header.insertAdjacentHTML('afterend', renderBoardDropdown());
-
-        // To make newly added boards title editable
-        kanbanBoardLastChild.querySelector('.kanban-title-board').addEventListener('mouseenter', function () {
-          this.contentEditable = 'true';
-        });
-      }
-
-      // Add delete event to delete newly added boards
-      const deleteNewBoards = kanbanBoardLastChild.querySelector('.delete-board');
-      if (deleteNewBoards) {
-        deleteNewBoards.addEventListener('click', function () {
-          const id = this.closest('.kanban-board').getAttribute('data-id');
-          kanban.removeBoard(id);
-        });
-      }
-
-      // Remove current append new add new form
-      if (kanbanAddNewInput) {
-        kanbanAddNewInput.forEach(el => {
-          el.classList.add('d-none');
-        });
-      }
-
-      // To place inline add new btn after clicking add btn
-      if (kanbanContainer) {
-        kanbanContainer.appendChild(kanbanAddNewBoard);
-      }
+      }).catch(error => console.error('Erro ao criar a coluna:', error));
     });
   }
-})();
 
-function createColumn(boardId, title) {
-  fetch('/coluna/criar/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({ board_id: boardId, title: title, order: 0 })
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.id) {
-        // Adiciona a coluna ao Kanban
-        console.log('Coluna criada:', data);
-      }
+  function createColumn(boardId, title) {
+    return fetch('/coluna/criar/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ board_id: boardId, title: title, order: 0 })
     })
-    .catch(error => console.error('Erro ao criar coluna:', error));
-}
-
-function updateColumn(columnId, newTitle, newOrder) {
-  fetch(`/coluna/${columnId}/atualizar/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({ title: newTitle, order: newOrder })
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        // Atualiza a coluna no Kanban
-        console.log('Coluna atualizada:', data);
-      }
-    })
-    .catch(error => console.error('Erro ao atualizar coluna:', error));
-}
-
-function deleteColumn(columnId) {
-  fetch(`/coluna/${columnId}/deletar/`, {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': getCookie('csrftoken')
-    }
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        // Remove a coluna do Kanban
-        console.log('Coluna deletada:', columnId);
-      }
-    })
-    .catch(error => console.error('Erro ao deletar coluna:', error));
-}
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
+      .then(response => response.json())
+      .then(data => {
+        if (data.id) {
+          return data;
+        } else {
+          throw new Error('Erro ao criar coluna.');
+        }
+      });
   }
-  return cookieValue;
-}
+
+
+  function updateColumn(columnId, newTitle, newOrder) {
+    fetch(`/coluna/${columnId}/atualizar/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ title: newTitle, order: newOrder })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Atualiza a coluna no Kanban
+          console.log('Coluna atualizada:', data);
+        }
+      })
+      .catch(error => console.error('Erro ao atualizar coluna:', error));
+  }
+
+  function deleteColumn(columnId) {
+    fetch(`/coluna/${columnId}/deletar/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Remove a coluna do Kanban
+          console.log('Coluna deletada:', columnId);
+        }
+      })
+      .catch(error => console.error('Erro ao deletar coluna:', error));
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+});

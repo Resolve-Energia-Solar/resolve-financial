@@ -14,6 +14,8 @@ urlpatterns = [
     # Leads
     path('leads/criar/', LeadCreateView.as_view(), name='lead_create'),
     path('leads/', LeadListView.as_view(), name='lead_list'),
+    path('leads/kanban/', LeadKanbanView.as_view(), name='lead_kanban'),
+    path('leads/kanban/api/<int:pk>/', leads_kanban_api, name='lead_kanban_api'),
     path('leads/<int:pk>/', LeadDetailView.as_view(), name='lead_detail'),
     path('leads/<int:pk>/editar/', LeadUpdateView.as_view(), name='lead_update'),
     

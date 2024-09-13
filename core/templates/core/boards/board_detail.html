@@ -89,29 +89,10 @@
             <h3 class="text-center m-2 p-2">Preview</h3>
             {% csrf_token %}
             <div class="app-kanban" data-board-id="{{ object.pk }}">
-                <div class="row">
-                    <div class="col-12">
-                        <form class="kanban-add-new-board">
-                            <label class="kanban-add-board-btn" for="kanban-add-board-input">
-                                <i class="bx bx-plus me-1"></i>
-                                <span class="align-middle">Nova coluna</span>
-                            </label>
-                            <input type="text" class="form-control w-px-250 kanban-add-board-input mb-2 d-none"
-                                placeholder="Adicionar título à nova coluna" id="kanban-add-board-input" required />
-                            <div class="mb-3 kanban-add-board-input d-none">
-                                <button class="btn btn-primary btn-sm me-2">Adicionar</button>
-                                <button type="button"
-                                    class="btn btn-label-secondary btn-sm kanban-add-board-cancel-btn">
-                                    Cancelar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
 
                 <!-- Kanban Wrapper -->
                 <div class="kanban-wrapper"></div>
-
+                
                 <!-- Modal -->
                 <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel"
                     aria-hidden="true">
@@ -136,8 +117,22 @@
                         </div>
                     </div>
                 </div>
-
             </div>
+                <form class="kanban-add-new-board">
+                    <label class="kanban-add-board-btn" for="kanban-add-board-input">
+                        <i class="bx bx-plus me-1"></i>
+                        <span class="align-middle">Nova coluna</span>
+                    </label>
+                    <input type="text" class="form-control w-px-250 kanban-add-board-input mb-2 d-none"
+                        placeholder="Adicionar título à nova coluna" id="kanban-add-board-input" required />
+                    <div class="mb-3 kanban-add-board-input d-none">
+                        <button class="btn btn-primary btn-sm me-2">Adicionar</button>
+                        <button type="button"
+                            class="btn btn-label-secondary btn-sm kanban-add-board-cancel-btn">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
         </div>
     </div>
 </div>
