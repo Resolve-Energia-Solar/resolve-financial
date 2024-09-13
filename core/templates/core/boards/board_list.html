@@ -69,7 +69,25 @@
                                         {% endif %}
                                         {% if user|has_perm:'core.delete_board' %}
                                         <div class="dropdown-divider"></div>
-                                        <a href="{% url 'accounts:soft_delete' app_label='core' model_name='board' pk=board.pk %}" class="dropdown-item delete-record text-danger">Deletar</a>
+                                        <a href="#" class="dropdown-item delete-record text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ board.pk }}">Deletar</a>
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteModal{{ board.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ board.pk }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ board.pk }}">Confirmar exclusão</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Tem certeza de que deseja excluir o quadro "{{ board.title }}"?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <a href="{% url 'accounts:soft_delete' app_label='core' model_name='board' pk=board.pk %}" class="btn btn-danger">Excluir</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </div>

@@ -6,6 +6,7 @@ class MaterialTypes(models.Model):
 
     name = models.CharField(max_length=50, verbose_name="Nome", blank=True, null=True)
     description = models.CharField(max_length=255, verbose_name="Descrição")
+    is_deleted = models.BooleanField(verbose_name="Deletado", default=False)
     created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
 
     # Logs
@@ -30,6 +31,7 @@ class Materials(models.Model):
     is_serialized = models.BooleanField(verbose_name="Serializado", default=False)
     current_type = models.CharField("Tipo Atual", max_length=8, null=True, blank=True)
     current_type_category = models.CharField("Categoria do Tipo Atual", max_length=20, null=True, blank=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     
     # Logs
@@ -52,6 +54,7 @@ class SolarEnergyKit(models.Model):
     branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial")
     roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado")
     price = models.DecimalField("Preço", max_digits=20, decimal_places=6, default=0)
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
 
     # Logs
@@ -70,6 +73,7 @@ class SalesMaterials(models.Model):
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material")
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0)
     material_class = models.CharField("Classe do Material", max_length=256)
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
 
     def __str__(self):

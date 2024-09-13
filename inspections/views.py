@@ -14,6 +14,15 @@ class RoofTypeListView(ListView):
     model = RoofType
     template_name = 'roof_types/roof_type_list.html'
     
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        
+        if 'search' in self.request.GET:
+            search = self.request.GET['search']
+            queryset = queryset.filter(name__icontains=search)
+        
+        return queryset
+    
     
 class RoofTypeUpdateView(UpdateView):
     model = RoofType

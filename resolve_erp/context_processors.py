@@ -256,6 +256,23 @@ def menu_items(request):
             ]
         },
         {
+            "label": "Financiadoras",
+            "icon": "bx bx-dollar",
+            "section": "Administração",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "resolve_crm:financier_list",
+                    "permission": "resolve_crm.view_financier"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "engineering:circuitbreaker_create",
+                    "permission": "engineering.add_circuitbreaker"
+                }
+            ]
+        },
+        {
             "label": "Materiais",
             "icon": "bx bx-package",
             "section": "Logística",
@@ -303,6 +320,23 @@ def menu_items(request):
                     "label": "Criar",
                     "url_name": "inspections:roof_type_create",
                     "permission": "inspections.add_rooftype"
+                }
+            ]
+        },
+        {
+            "label": "Disjuntores",
+            "icon": "bx bx-plug",
+            "section": "Engenharia",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "engineering:circuitbreaker_list",
+                    "permission": "engineering.view_circuitbreaker"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "engineering:circuitbreaker_create",
+                    "permission": "engineering.add_circuitbreaker"
                 }
             ]
         }

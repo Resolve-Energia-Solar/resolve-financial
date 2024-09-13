@@ -31,6 +31,12 @@ urlpatterns = [
     path('add-attachment/<int:lead_id>', add_lead_attachment, name='add_lead_attachment'),
     path('delete-attachment/<int:id>', delete_attachment, name='delete_attachment'),
     
+    #Financier
+    path('financiadoras/', FinancierListView.as_view(), name='financier_list'),
+    path('financiadoras/criar/', FinancierCreateView.as_view(), name='financier_create'),
+    path('financiadoras/<int:pk>/editar/', FinancierUpdateView.as_view(), name='financier_update'),
+    
+    
     # Soft Delete
     path('delete/<int:pk>/', soft_delete_campaign, name='soft_delete_campaign'),
     path('delete/<str:app_label>/<str:model_name>/<int:pk>/', soft_delete, name='soft_delete'),

@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -67,6 +68,15 @@ class LeadListView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.has_perm('resolve_crm.view_lead')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
 
 
 class LeadDetailView(UserPassesTestMixin, DetailView):
@@ -208,6 +218,8 @@ def soft_delete(request, app_label, model_name, pk):
     obj.is_deleted = True 
     obj.save()
     
+    list_url = f'{app_label}:{model_name}_list'
+    
     return redirect(list_url)
 
 def soft_delete_campaign(request, pk):
@@ -215,3 +227,59 @@ def soft_delete_campaign(request, pk):
     campaign.is_deleted = True
     campaign.save()
     return redirect('resolve_crm:campaign_list')
+
+
+class FinancierListView(UserPassesTestMixin, ListView):
+    model = Financier
+    template_name = "resolve_crm/financiers/financier_list.html"
+    ordering = ['name']
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.view_financier')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
+
+class FinancierCreateView(UserPassesTestMixin, CreateView):
+    model = Financier
+    fields = ['name', 'cnpj', 'email', 'phone', 'address']
+    template_name = "resolve_crm/financiers/financier_form.html"
+    success_url = reverse_lazy("resolve_crm:financier_list")
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.create_financier')
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Financiador criado com sucesso!')
+        return super().form_valid(form)
+    
+class FinancierUpdateView(UserPassesTestMixin, UpdateView):
+    model = Financier
+    fields = ['name', 'cnpj', 'email', 'phone', 'address']
+    template_name = "resolve_crm/financiers/financier_form.html"
+    success_url = reverse_lazy("resolve_crm:financier_list")
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.change_financier')
+    
+    def get_queryset(self):
+        query = super().get_queryset().filter(is_deleted=False)
+        return query
+
+class FinancierDetailView(UserPassesTestMixin, DetailView):
+    model = Financier
+    template_name = "resolve_crm/financiers/financier_detail.html"
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.view_financier')
+    
+    def get_queryset(self):
+        query = super().get_queryset().filter(is_deleted=False)
+        return query
