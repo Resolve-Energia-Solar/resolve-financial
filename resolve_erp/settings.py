@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'contracts.apps.ContractsConfig',
     'logistics.apps.LogisticsConfig',
     'inspections.apps.InspectionsConfig',
+    'engineering.apps.EngineeringConfig',
     'notifications',
     'widget_tweaks',
     'django_select2',

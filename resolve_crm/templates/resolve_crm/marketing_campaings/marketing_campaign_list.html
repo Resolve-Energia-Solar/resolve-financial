@@ -53,6 +53,8 @@
                             {% if user|has_perm:'resolve_crm.change_marketingcampaign' %}
                             <a href="{% url 'resolve_crm:campaign_update' campaign.pk %}">
                                 <i class="bx bx-edit fs-3"></i>
+                            {% endif %}
+                            {% if user|has_perm:'resolve_crm.delete_marketingcampaign' %}
                             </a>
                             <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#deleteCampaignModal{{ campaign.id }}">
                                 <i class="bx bx-trash fs-3"></i>

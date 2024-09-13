@@ -44,41 +44,40 @@
                     <tr>
                         <td>{{ roof_type.name }}</td>
                         <td>{{ roof_type.created_at }}</td>
+                        <!-- ajustar erro de tabela -->
+                        <td></td>
                         <td>
-                            <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#roof_typeDetailModal{{ roof_type.id }}">
-                                <i class="bx bx-detail fs-3"></i>
-                            </a>
                             {% if user|has_perm:'inspections.change_rooftype' %}
                             <a href="{% url 'inspections:roof_type_update' roof_type.pk %}">
                                 <i class="bx bx-edit fs-3"></i>
                             </a>
                             {% endif %}
-                        </td>
-                    </tr>
-                    <div class="modal fade animate__animated animate__rotateInUpLeft" id="roof_typeDetailModal{{ roof_type.id }}"
-                        tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="roof_typeDetailModal{{ roof_type.id }}Label">{{ roof_type.name }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Fechar"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <figure class="col-12 figure text-center mb-3">
-                                            <img src="{{ roof_type.banner.url }}" class="img-fluid" alt="">
-                                            <figcaption class="figure-caption fs-5">{{ roof_type.description }}</figcaption>
-                                        </figure>
+                            {% if user|has_perm:'inspections.delete_rooftype' %}
+                            <a href="" role="button" data-bs-toggle="modal" data-bs-target="#roof_typeDetailModal{{ roof_type.id }}">
+                                <i class="bx bx-trash fs-3"></i>
+                            </a>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="roof_typeDetailModal{{ roof_type.id }}" tabindex="-1" aria-labelledby="roof_typeDetailModalLabel{{ roof_type.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="roof_typeDetailModalLabel{{ roof_type.id }}">Excluir Tipo de Telhado</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Deseja realmente excluir o tipo de telhado "{{ roof_type.name }}"?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <a href="{% url 'accounts:soft_delete' app_label='inspections' model_name='rooftype' pk=roof_type.pk %}" class="btn btn-danger">Excluir</a>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="modal-footer">
-                                    <a href="{% url 'inspections:roof_type_update' roof_type.pk %}" class="btn btn-warning">Editar</a>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                                </div>
+                            {% endif %}
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                     {% empty %}
                     <tr>
                         <td colspan="4" class="text-center">Nenhum tipo de telhado encontrado</td>

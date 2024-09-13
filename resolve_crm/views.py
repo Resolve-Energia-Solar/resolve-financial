@@ -70,6 +70,70 @@ class LeadListView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.has_perm('resolve_crm.view_lead')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
+
+
+class LeadKanbanView(UserPassesTestMixin, ListView):
+    model = Lead
+    template_name = "core/boards/board_kanban.html"
+    ordering = ['-created_at']
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.view_lead')
+
+
+def leads_kanban_api(request, pk):
+    try:
+        board = Board.objects.get(pk=pk)
+        columns = board.columns.all()
+        
+        board_data = {
+            'id': board.id,
+            'title': board.title,
+            'description': board.description,
+            'columns': [],
+        }
+        
+        for column in columns:
+            column_data = {
+                'id': column.id,
+                'title': column.title,
+                'tasks': [],
+            }
+            
+            leads = Lead.objects.filter(column=column)
+            for lead in leads:
+                lead_data = {
+                    'id': lead.id,
+                    'title': lead.name,
+                    'description': lead.byname,
+                    'owner': lead.seller.get_full_name(),
+                    'start_date': lead.created_at,
+                    'due_date': lead.birth_date,
+                    'email': lead.contact_email,  # Adicionando email
+                    'phone': lead.phone,  # Adicionando telefone
+                    'url': lead.get_absolute_url(),
+                    'created_at': lead.created_at.strftime('%d/%m/%Y %H:%M'),
+                }
+                column_data['tasks'].append(lead_data)
+            
+            board_data['columns'].append(column_data)
+        
+        return JsonResponse(board_data)
+    except Board.DoesNotExist:
+        return JsonResponse({'error': 'Board does not exist'}, status=404)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 class LeadKanbanView(UserPassesTestMixin, ListView):
@@ -266,6 +330,8 @@ def soft_delete(request, app_label, model_name, pk):
     obj.is_deleted = True 
     obj.save()
     
+    list_url = f'{app_label}:{model_name}_list'
+    
     return redirect(list_url)
 
 def soft_delete_campaign(request, pk):
@@ -273,3 +339,59 @@ def soft_delete_campaign(request, pk):
     campaign.is_deleted = True
     campaign.save()
     return redirect('resolve_crm:campaign_list')
+
+
+class FinancierListView(UserPassesTestMixin, ListView):
+    model = Financier
+    template_name = "resolve_crm/financiers/financier_list.html"
+    ordering = ['name']
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.view_financier')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
+
+        return queryset
+
+class FinancierCreateView(UserPassesTestMixin, CreateView):
+    model = Financier
+    fields = ['name', 'cnpj', 'email', 'phone', 'address']
+    template_name = "resolve_crm/financiers/financier_form.html"
+    success_url = reverse_lazy("resolve_crm:financier_list")
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.create_financier')
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Financiador criado com sucesso!')
+        return super().form_valid(form)
+    
+class FinancierUpdateView(UserPassesTestMixin, UpdateView):
+    model = Financier
+    fields = ['name', 'cnpj', 'email', 'phone', 'address']
+    template_name = "resolve_crm/financiers/financier_form.html"
+    success_url = reverse_lazy("resolve_crm:financier_list")
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.change_financier')
+    
+    def get_queryset(self):
+        query = super().get_queryset().filter(is_deleted=False)
+        return query
+
+class FinancierDetailView(UserPassesTestMixin, DetailView):
+    model = Financier
+    template_name = "resolve_crm/financiers/financier_detail.html"
+
+    def test_func(self):
+        return self.request.user.has_perm('resolve_crm.view_financier')
+    
+    def get_queryset(self):
+        query = super().get_queryset().filter(is_deleted=False)
+        return query

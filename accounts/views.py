@@ -520,8 +520,12 @@ def soft_delete(request, app_label, model_name, pk):
         list_url = 'accounts:user_list'
     elif model_name == 'board':
         list_url = 'core:board-list'
+    elif model_name == 'rooftype':
+        list_url = 'inspections:roof_type_list'
+    elif model_name == 'materialtypes':
+        list_url = 'logistics:material_type_list'
     else:
-        list_url = 'accounts:{}_list'.format(model_name)
+        list_url = '{}:{}_list'.format(app_label,model_name)
         
     return redirect(list_url)
 

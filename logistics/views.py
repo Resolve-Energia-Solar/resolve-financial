@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from .models import Materials, SalesMaterials, MaterialTypes, SolarEnergyKit
@@ -22,6 +23,10 @@ class MaterialsListView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.has_perm('logistics.view_materials')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        return queryset
 
 
 class MaterialsDetailView(UserPassesTestMixin, DetailView):
@@ -102,6 +107,9 @@ class MaterialTypesListView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.has_perm('logistics.view_materialtypes')
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
     
     
 class MaterialTypesDetailView(UserPassesTestMixin, DetailView):

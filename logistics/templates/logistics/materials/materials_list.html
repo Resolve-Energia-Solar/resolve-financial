@@ -46,6 +46,7 @@
                         <td>{{ materials.description }}</td>
                         <td>{{ materials.type.name }}</td>
                         <td>{{ materials.created_at }}</td>
+                        <td></td>
                         <td>
                             <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#materialsDetailModal{{ materials.id }}">
                                 <i class="bx bx-detail fs-3"></i>
@@ -54,6 +55,30 @@
                             <a href="{% url 'logistics:materials_update' materials.pk %}">
                                 <i class="bx bx-edit fs-3"></i>
                             </a>
+                            {% endif %}
+                            {% if user|has_perm:'logistics.delete_materials' %}
+                            <a href="" role="button" data-bs-toggle="modal" data-bs-target="#materialsDeleteModal{{ materials.id }}">
+                                <i class="bx bx-trash fs-3"></i>
+                            </a>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="materialsDeleteModal{{ materials.id }}" tabindex="-1" aria-labelledby="materialsDeleteModal{{ materials.id }}Label" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="materialsDeleteModal{{ materials.id }}Label">Excluir Material</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Deseja realmente excluir este material?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <a href="{% url 'accounts:soft_delete' app_label='logistics' model_name='materials' pk=materials.pk %}" class="btn btn-danger">Excluir</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> 
                             {% endif %}
                         </td>
                     </tr>

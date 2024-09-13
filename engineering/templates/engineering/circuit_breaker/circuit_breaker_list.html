@@ -2,7 +2,7 @@
 {% load static iam_tags %}
 
 {% block extra_head %}
-<title>ERP &mdash; Unidades</title>
+<title>ERP &mdash; Disjuntores</title>
 <link rel="stylesheet"
     href="{% static 'sneat-template/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css' %}" />
 <link rel="stylesheet"
@@ -14,16 +14,16 @@
 {% block content %}
 
     <div class="container-xxl flex-grow-1 container-p-y">
-        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Unidades /</span> Lista</h4>
+        <h4 class="py-3 mb-4"><span class="text-muted fw-light">Disjuntores /</span> Lista</h4>
         <div class="card">
             <div class="card-datatable table-responsive">
                 <div id="DataTables_Table_0_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
                     <div class="row mx-1">
-                        {% if user|has_perm:'accounts.add_branch' %}
+                        {% if user|has_perm:'engineering.add_branch' %}
                         <div class="col-12 col-md-6 d-flex align-items-center justify-content-center justify-content-md-start gap-3 py-3">
                             <div class="dt-action-buttons text-xl-end text-lg-start text-md-end text-start mt-md-0 mt-3">
                                 <div class="dt-buttons btn-group flex-wrap">
-                                    <a href="{% url 'accounts:branch_create' %}" class="btn btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Unidade</span></span></a>
+                                    <a href="{% url "engineering:circuitbreaker_create" %}" class="btn btn-primary" tabindex="0" aria-controls="DataTables_Table_0" role="button"><span><i class="bx bx-plus me-md-1"></i><span class="d-md-inline-block d-none">Criar Disjuntor</span></span></a>
                                 </div>
                             </div>
                         </div>
@@ -33,58 +33,41 @@
                         id="DataTables_Table_0" aria-describedby="DataTables_Table_0_info" style="width: 1211px;">
                         <thead>
                             <tr>
-                                <th style="width: 20%;">Nome</th>
-                                <th style="width: 40%;">Endereço</th>
-                                <th style="width: 20%;">Proprietários</th>
-                                {% if user|has_perm:'accounts.change_branch' %}
+                                <th style="width: 20%;">Descrição</th>
+                                <th style="width: 40%;">Pólos</th>
+                                <th style="width: 20%;">Corrente</th>
+                                {% if user|has_perm:'engineering.change_branch' %}
                                 <th style="width: 20%;">Ações</th>
                                 {% endif %}
                             </tr>
                         </thead>
                         <tbody>
-                            {% for branch in object_list %}
+                            {% for circuitbreaker in object_list %}
                             <tr>
                                 <td>
                                     <a href="#" class="d-flex justify-content-start align-items-center">
-                                        {{ branch.name }}
+                                        {{ circuitbreaker.material }}
                                     </a>
                                 </td>
-                                <td>{{ branch.address }}</td>
-                                <td>
-                                    <ul class="list-unstyled m-0 d-flex align-items-center avatar-group">
-                                        {% for owner in branch.owners.all %} 
-                                        <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar pull-up" aria-label="{{ owner.get_full_name }}" data-bs-original-title="{{ owner.get_full_name }}">
-                                            <a href="{{ owner.get_absolute_url }}">
-                                                <img class="rounded-circle" src="{{ owner.profile_picture.url }}" alt="Avatar">
-                                            </a>
-                                        </li>
-                                        {% empty %}
-                                        <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar pull-up" aria-label="Sem proprietários" data-bs-original-title="Sem proprietários">
-                                            <span class="avatar-initial rounded-circle pull-up bg-secondary">?</span>
-                                        </li>
-                                      {% endfor %}
-                                    </ul>
-                                </td>
+                                <td>{{ circuitbreaker.pole }}</td>
+                                <td>{{ circuitbreaker.current }}</td>
+                                {% if user|has_perm:'engeneering.change_circuitbreaker' %}
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        {% if user|has_perm:'accounts.change_branch' %}
-                                        <a href="{% url 'accounts:branch_update' branch.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar unidade" data-bs-original-title="Editar">
+                                        <a href="{% url 'engineering:circuitbreaker_update' circuitbreaker.pk %}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Editar unidade" data-bs-original-title="Editar">
                                             <i class="bx bx-pencil mx-1"></i>
                                         </a>
-                                        {% endif %}
-                                        {% if user|has_perm:'accounts.delete_branch' %}
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ branch.pk }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir unidade" data-bs-original-title="Excluir">
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#deleteModal{{ circuitbreaker.pk }}" data-bs-toggle="tooltip" class="text-body" data-bs-placement="top" aria-label="Excluir unidade" data-bs-original-title="Excluir">
                                             <i class="bx bx-trash text-danger mx-1"></i>
                                         </a>
-                                        {% endif %}
                                     </div>
 
                                     <!-- Delete Modal -->
-                                    <div class="modal fade" id="deleteModal{{ branch.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ branch.pk }}" aria-hidden="true">
+                                    <div class="modal fade" id="deleteModal{{ circuitbreaker.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ circuitbreaker.pk }}" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteModalLabel{{ branch.pk }}">Excluir Unidade</h5>
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ circuitbreaker.pk }}">Excluir Unidade</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
@@ -92,13 +75,14 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <a href="{% url 'accounts:soft_delete' app_label='accounts' model_name='branch' pk=branch.pk %}" class="btn btn-danger">Excluir</a>
+                                                    <a href="{% url 'accounts:soft_delete' app_label='engineering' model_name='circuitbreaker' pk=circuitbreaker.pk %}" class="btn btn-danger">Excluir</a>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     </div>
                                 </td>
+                                {% endif %}
                                 {% empty %}
                                 <td colspan="4">Nenhuma unidade encontrada.</td>
                             </tr>
