@@ -45,7 +45,7 @@
                             {% for circuitbreaker in object_list %}
                             <tr>
                                 <td>
-                                    <a href="#" class="d-flex justify-content-start align-items-center">
+                                    <a href="{% url 'engineering:circuitbreaker_update' circuitbreaker.pk %}" class="d-flex justify-content-start align-items-center">
                                         {{ circuitbreaker.material }}
                                     </a>
                                 </td>

@@ -2,6 +2,7 @@ from .models import CircuitBreaker
 from django.views.generic import TemplateView, CreateView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib import messages
 
 
 class IndexView(TemplateView):
@@ -27,6 +28,10 @@ class CircuitBreakerCreateView(CreateView):
     model = CircuitBreaker
     fields = ['material', 'pole', 'current']
     success_url = reverse_lazy('engineering:circuitbreaker_list')
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Disjuntor criado com sucesso!')
+        return super().form_valid(form)
     
     def test_func(self):
         return self.request.user.has_perm('engineering.add_circuitbreaker')
