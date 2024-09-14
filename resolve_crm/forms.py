@@ -21,11 +21,12 @@ class FormBase(forms.ModelForm):
 class TaskForm(FormBase):
     class Meta:
         model = Task
-        fields = "__all__"
+        exclude = ['is_deleted',]
         widgets = {
             'lead': Select2Widget,
             'description': forms.Textarea(attrs={'rows': 2}),
-            'members': Select2MultipleWidget
+            'members': Select2MultipleWidget,
+            'delivery_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
         }
 
 

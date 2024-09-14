@@ -18,6 +18,15 @@ class TasksView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.has_perm('resolve_crm.view_task')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_deleted=False)
+        search_query = self.request.GET.get('search')
+
+        if search_query:
+            queryset = queryset.filter(title__icontains=search_query)
+
+        return queryset
 
 
 class TaskDetailView(UserPassesTestMixin, DetailView):
@@ -40,7 +49,7 @@ class TaskCreateView(UserPassesTestMixin, CreateView):
 
 class TaskUpdateView(UserPassesTestMixin, UpdateView):
     model = Task
-    fields = "__all__"
+    form_class = TaskForm
     template_name = "resolve_crm/tasks/task_update.html"
 
     def test_func(self):

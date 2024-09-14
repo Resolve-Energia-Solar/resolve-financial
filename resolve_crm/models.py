@@ -66,6 +66,7 @@ class Task(models.Model):
     task_type = models.CharField(max_length=1, verbose_name="Tipo de Atividade", choices=[("L", "Ligar"), ("R", "Responder"), ("E", "E-mail"), ("V", "Visitar"), ("T", "Tentar passar crédito"), ("I", "Vistoria")])
     members = models.ManyToManyField("accounts.User", verbose_name="Membros")
     # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     history = HistoricalRecords()
     

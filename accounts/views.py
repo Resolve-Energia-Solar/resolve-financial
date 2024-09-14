@@ -524,6 +524,8 @@ def soft_delete(request, app_label, model_name, pk):
         list_url = 'inspections:roof_type_list'
     elif model_name == 'materialtypes':
         list_url = 'logistics:material_type_list'
+    elif model_name == 'task':
+        list_url = 'resolve_crm:tasks'
     else:
         list_url = '{}:{}_list'.format(app_label,model_name)
         
