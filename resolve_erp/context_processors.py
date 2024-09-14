@@ -344,6 +344,40 @@ def menu_items(request):
                     "permission": "engineering.add_circuitbreaker"
                 }
             ]
+        },
+        {
+            "label": "Concessionaria",
+            "icon": "bx bx-plug",
+            "section": "Engenharia",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "engineering:energycompany_list",
+                    "permission": "engineering.view_energycompany"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "engineering:energycompany_create",
+                    "permission": "engineering.add_energycompany"
+                }
+            ]
+        },
+        {
+            "label": "Solicitação da concessionaria",
+            "icon": "bx bx-plug",
+            "section": "Engenharia",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "engineering:requestsenergycompany_list",
+                    "permission": "engineering.view_energycompany"
+                },
+                {
+                    "label": "Criar",
+                    "url_name": "engineering:requestsenergycompany_create",
+                    "permission": "engineering.add_energycompany"
+                }
+            ]
         }
     ]
 

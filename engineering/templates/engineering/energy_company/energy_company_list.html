@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load iam_tags %}
+
+{% block extra_head %}
+    <title>
+        ERP &mdash; Concessionaria
+    </title>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Concessionaria de energia /</span> Lista</h4>
+
+    <!-- Invoice List Table -->
+    <div class="card">
+        <div class="card-datatable table-responsive">
+            <div class="card-datatable-header d-flex justify-content-between p-3">
+                {% if user|has_perm:'engineering.add_energycompany' %}
+                <div class="card-datatable-header-actions">
+                    <a href="{% url 'engineering:energycompany_create' %}" class="btn btn-primary">Nova Concessionaria</a>
+                </div>
+                {% endif %}
+                <div class="card-datatable-header-actions">
+                    <form method="get">
+                        <div class="input-group">
+                            <input type="search" class="form-control" placeholder="Pesquisar material" name="search" id="search-input" value="{{ request.GET.search }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="bx bx-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <table class="invoice-list-table table border-top">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CNPJ<th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for energycompany in object_list %}
+                    <tr>
+                        <td>{{ energycompany.name }}</td>
+                        <td>{{ energycompany.cnpj }}</td>
+                        <td></td>
+                        <td>
+                            <a href="#" role="button" data-bs-toggle="offcanvas" data-bs-target="#energycompanyDetailOffcanvas{{ energycompany.id }}">
+                                <i class="bx bx-detail fs-3"></i>
+                            </a>
+                            {% if user|has_perm:'engineering.change_energycompany' %}
+                            <a href="{% url 'engineering:energycompany_update' energycompany.pk %}">
+                                <i class="bx bx-edit fs-3"></i>
+                            </a>
+                            {% endif %}
+                            {% if user|has_perm:'engineering.delete_energycompany' %}
+                            <a href="" role="button" data-bs-toggle="modal" data-bs-target="#energycompanyDeleteModal{{ energycompany.id }}">
+                                <i class="bx bx-trash fs-3"></i>
+                            </a>
+                            <!-- Modal de exclusão -->
+                            <div class="modal fade" id="energycompanyDeleteModal{{ energycompany.id }}" tabindex="-1" aria-labelledby="energycompanyDeleteModal{{ energycompany.id }}Label" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="energycompanyDeleteModal{{ energycompany.id }}Label">Excluir Material</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Deseja realmente excluir este material?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <a href="{% url 'accounts:soft_delete' app_label='engineering' model_name='energycompany' pk=energycompany.pk %}" class="btn btn-danger">Excluir</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Offcanvas Detalhes -->
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="energycompanyDetailOffcanvas{{ energycompany.id }}" aria-labelledby="energycompanyDetailOffcanvasLabel{{ energycompany.id }}">
+                        <div class="offcanvas-header">
+                            <h5 class="offcanvas-title" id="energycompanyDetailOffcanvasLabel{{ energycompany.id }}">{{ energycompany.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                            <p><strong>Nome:</strong> {{ energycompany.name }}</p>
+                            <p><strong>CNPJ:</strong> {{ energycompany.cnpj }}</p>
+                            <p><strong>Endereço:</strong> {{ energycompany.address }}</p>
+                            <p><strong>Telefone:</strong> {{ energycompany.phone }}</p>
+                            <p><strong>Email:</strong> {{ energycompany.email }}</p>
+                            <a href="{% url 'engineering:energycompany_update' energycompany.pk %}" class="btn btn-warning">Editar</a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Fechar</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('search-input').addEventListener('input', function() {
+        if (this.value === '') {
+            this.form.submit();
+        }
+    });
+</script>
+{% endblock extra_scripts %}
