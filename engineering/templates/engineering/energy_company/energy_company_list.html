@@ -42,7 +42,7 @@
                 <tbody>
                     {% for energycompany in object_list %}
                     <tr>
-                        <td>{{ energycompany.name }}</td>
+                        <td>{{ energycompany.name|title }}</td>
                         <td>{{ energycompany.cnpj }}</td>
                         <td></td>
                         <td>
@@ -86,7 +86,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                         </div>
                         <div class="offcanvas-body">
-                            <p><strong>Nome:</strong> {{ energycompany.name }}</p>
+                            <p><strong>Nome:</strong> {{ energycompany.name|title }}</p>
                             <p><strong>CNPJ:</strong> {{ energycompany.cnpj }}</p>
                             <p><strong>Endereço:</strong> {{ energycompany.address|default:"Não informado" }}</p>
                             <p><strong>Telefone:</strong> {{ energycompany.phone|default:"Não informado" }}</p>

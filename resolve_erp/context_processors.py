@@ -346,8 +346,8 @@ def menu_items(request):
             ]
         },
         {
-            "label": "Concessionaria",
-            "icon": "bx bx-plug",
+            "label": "Concessionária",
+            "icon": "bx bx-building",
             "section": "Engenharia",
             "sub_items": [
                 {
@@ -363,8 +363,8 @@ def menu_items(request):
             ]
         },
         {
-            "label": "Solicitação da concessionaria",
-            "icon": "bx bx-plug",
+            "label": "Solicitação da concessionária",
+            "icon": "bx bx-paper-plane",
             "section": "Engenharia",
             "sub_items": [
                 {
