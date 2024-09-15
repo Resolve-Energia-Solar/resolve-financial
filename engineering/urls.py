@@ -19,7 +19,7 @@ urlpatterns = [
     #Solicitações de Concessionárias de Energia
     path('solicitacoes/', RequestsEnergyCompanyView.as_view(), name='requestsenergycompany_list'),
     path('solicitacoes/novo/', RequestsEnergyCompanyCreateView.as_view(), name='requestsenergycompany_create'),
-    path('solicitacoes/editar/<int:pk>/', RequestsEnergyCompanyUpdateView.as_view(), name='requestenergycompany_update'),
-    path('solicitacoes/detalhes/<int:pk>/', RequestsEnergyCompanyDetailView.as_view(), name='requestenergycompany_detail'),
+    path('solicitacoes/editar/<int:pk>/', RequestsEnergyCompanyUpdateView.as_view(), name='requestsenergycompany_update'),
+    path('solicitacoes/detalhes/<int:pk>/', RequestsEnergyCompanyDetailView.as_view(), name='requestsenergycompany_detail'),
     
 ]

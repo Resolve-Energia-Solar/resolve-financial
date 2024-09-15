@@ -4,7 +4,7 @@ from .models import *
 from django_select2.forms import Select2MultipleWidget, Select2Widget, ModelSelect2MultipleWidget
 
 
-class RequestEnergyCompanyForm(ModelForm):
+class RequestsEnergyCompanyForm(ModelForm):
     class Meta:
         model = RequestsEnergyCompany
         exclude = ['is_deleted', 'conclusion_registred']

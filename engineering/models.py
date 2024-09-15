@@ -25,10 +25,10 @@ class RequestsEnergyCompany(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True)
     request_date = models.DateField("Data da Solicitação")
     #ANALISA OS STATUS
-    status = models.CharField("Status", max_length=2, choices=[("P", "Em andamento"), ("A", "Deferido"), ("R", "Indeferido")])
+    status = models.CharField("Status", max_length=2, choices=[("EA", "Em andamento"), ("D", "Deferido"), ("I", "Indeferido")])
     reason = models.TextField("Motivo", null=True, blank=True)
     conclusion_date = models.DateField("Data da Conclusão", null=True, blank=True)
-    #DATA EM QUE MUDOU DE DEFERIDO OU INDEFERIDO
+    #DATA EM QUE MUDOU DE DEFERIDO OU INDEFERIDO | deve ser date ou datetime? | deve aparecer pro usuário?
     conclusion_registred = models.DateField("Data do Registro da Conclusão", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
