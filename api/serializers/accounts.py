@@ -111,4 +111,3 @@ class SquadSerializer(BaseSerializer):
     class Meta:
         model = Squad
         exclude = ['is_deleted']
-        
