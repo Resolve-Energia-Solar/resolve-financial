@@ -5,6 +5,7 @@ from accounts.models import *
 from resolve_crm.models import *
 from .serializers.accounts import *
 from .serializers.resolve_crm import *
+from .serializers.engineering import *
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from accounts.models import User
 from rest_framework.response import Response
@@ -102,4 +103,22 @@ class RoleViewSet(ModelViewSet):
 class FinancierViewSet(ModelViewSet):
     queryset = Financier.objects.all()
     serializer_class = FinancierSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class EnergyCompanyViewSet(ModelViewSet):
+    queryset = EnergyCompany.objects.all()
+    serializer_class = EnergyCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class RequestsEnergyCompanyViewSet(ModelViewSet):
+    queryset = RequestsEnergyCompany.objects.all()
+    serializer_class = RequestsEnergyCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CircuitBreakerViewSet(ModelViewSet):
+    queryset = CircuitBreaker.objects.all()
+    serializer_class = CircuitBreakerSerializer
     permission_classes = [IsAuthenticated]
