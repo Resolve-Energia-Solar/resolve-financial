@@ -221,7 +221,6 @@ class Sale(models.Model):
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
 
     # Sale Information
-    payment = models.ManyToManyField("Payment", verbose_name="Pagamento", related_name="sale_payment")
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     contract_number = models.CharField("Número do Contrato", max_length=20) #
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True)
@@ -290,6 +289,7 @@ class Payment(models.Model):
         ("F", "Financiamento"),
         ("PI", "Parcelamento interno")
     ]
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     payment_type = models.CharField("Tipo de Pagamento",choices=TYPE_CHOICES, max_length=2)
     installments_number = models.PositiveSmallIntegerField("Número de Parcelas")
