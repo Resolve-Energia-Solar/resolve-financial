@@ -1,19 +1,7 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
-
-
-class BaseSerializer(ModelSerializer):
-    
-    class Meta:
-        model = None
-        exclude = []
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'is_deleted' in self.fields:
-            self.fields.pop('is_deleted')
-
+from api.serializers.accounts import BaseSerializer
 
 class LeadSerializer(BaseSerializer):
   

@@ -14,6 +14,11 @@ router.register('marketing-campaigns', MarketingCampaignViewSet, basename='marke
 router.register('addresses', AdressViewSet, basename='address')
 router.register('roles', RoleViewSet, basename='role')
 router.register('financiers', FinancierViewSet, basename='financier')
+router.register('material-types', MaterialTypesViewSet, basename='material-type')
+router.register('materials', MaterialsViewSet, basename='material')
+router.register('solar-energy-kits', SolarEnergyKitViewSet, basename='solar-energy-kit')
+router.register('roof-types', RoofTypeViewSet, basename='roof-type')
+
 
 app_name = 'api'
 urlpatterns = [
