@@ -8,6 +8,7 @@ from .serializers.resolve_crm import *
 from .serializers.logistics import *
 from .serializers.inspections import *
 from .serializers.core import *
+from .serializers.engineering import *
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from accounts.models import User
 from rest_framework.response import Response
@@ -128,4 +129,20 @@ class SolarEnergyKitViewSet(ModelViewSet):
 class RoofTypeViewSet(ModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
+
+class EnergyCompanyViewSet(ModelViewSet):
+    queryset = EnergyCompany.objects.all()
+    serializer_class = EnergyCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class RequestsEnergyCompanyViewSet(ModelViewSet):
+    queryset = RequestsEnergyCompany.objects.all()
+    serializer_class = RequestsEnergyCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CircuitBreakerViewSet(ModelViewSet):
+    queryset = CircuitBreaker.objects.all()
+    serializer_class = CircuitBreakerSerializer
     permission_classes = [IsAuthenticated]
