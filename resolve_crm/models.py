@@ -157,49 +157,6 @@ class MarketingCampaign(models.Model):
         verbose_name_plural = "Campanhas de Marketing"
 
 
-"""
-class Opportunity(models.Model):
-    Lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Contato")
-    stage = models.CharField(max_length=200, verbose_name="Estágio")
-    value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor")
-    expected_close_date = models.DateField(verbose_name="Data de Fechamento Esperada")
-
-    board = ta:
-        verbose_name = "Oportunidade"
-        verbose_name_plural = "Oportunidades"
-
-
-class ComercialProposal(models.Model):
-    lead = models.CharField(max_length=255)
-    kwp = models.DecimalField(max_digits=10, decimal_places=2)
-    due_date = models.DateField()
-    # inverter_quantity = models.IntegerField()
-    # inverter_simulation = models.CharField(max_length=255)
-    # panel_quantity = models.IntegerField()
-    # panel_name = models.CharField(max_length=255)
-    # panel_power = models.DecimalField(max_digits=10, decimal_places=2)
-    monthly_generation = models.DecimalField(max_digits=10, decimal_places=2)
-    monthly_savings = models.DecimalField(max_digits=10, decimal_places=2)
-    minimum_area = models.DecimalField(max_digits=10, decimal_places=2)
-    # kit_items = models.TextField()
-    roi_years = models.DecimalField(max_digits=10, decimal_places=2)
-    payback_graph = models.TextField()
-    simulation_price = models.DecimalField(max_digits=10, decimal_places=2)
-    financing_options = models.TextField()
-    current_year_bill = models.DecimalField(max_digits=10, decimal_places=2)
-    current_month_bill = models.DecimalField(max_digits=10, decimal_places=2)
-    generator_year_bill = models.DecimalField(max_digits=10, decimal_places=2)
-    generator_month_bill = models.DecimalField(max_digits=10, decimal_places=2)
-    annual_savings = models.DecimalField(max_digits=10, decimal_places=2)
-    monthly_savings = models.DecimalField(max_digits=10, decimal_places=2)
-    seller = models.CharField(max_length=255)
-    branch = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.lead} - {self.kwp} kWp"
-"""
-
-
 class ContractSubmission(models.Model):
     
     submit_datetime = models.DateTimeField("Data e hora do envio")
@@ -228,7 +185,6 @@ class Sale(models.Model):
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing")
     is_sale = models.BooleanField("Pré-venda", default=False)
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
-    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, verbose_name="Pagamento")
 
     # Document Information
     is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
@@ -289,7 +245,7 @@ class Payment(models.Model):
         ("F", "Financiamento"),
         ("PI", "Parcelamento interno")
     ]
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="payments")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     payment_type = models.CharField("Tipo de Pagamento",choices=TYPE_CHOICES, max_length=2)
     installments_number = models.PositiveSmallIntegerField("Número de Parcelas")
@@ -345,18 +301,3 @@ class Financier(models.Model):
     def __str__(self):
         return self.name
     
-
-# class SaleDocument(models.Model):
-#     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-#     document = models.FileField("Documento", upload_to="resolve_crm/sale_documents/")
-#     document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento")
-#     status = models.CharField("Status", max_length=2, choices=[("P", "Pendente"), ("A", "Aprovado"), ("R", "Reprovado")])
-#     description = models.TextField("Descrição")
-#     created_at = models.DateTimeField("Criado em", auto_now_add=True)
-    
-#     class Meta:
-#         verbose_name = "Documento da Venda"
-#         verbose_name_plural = "Documentos das Vendas"
-    
-#     def __str__(self):
-#         return self.document.name
