@@ -91,7 +91,7 @@ class MarketingCampaignViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-class AdressViewSet(ModelViewSet):
+class AddressViewSet(ModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
@@ -100,6 +100,18 @@ class AdressViewSet(ModelViewSet):
 class RoleViewSet(ModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class PermissionViewSet(ModelViewSet):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class GroupViewSet(ModelViewSet):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated]
 
 
