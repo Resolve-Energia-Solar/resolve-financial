@@ -9,7 +9,7 @@ router.get_api_root_view().cls.__doc__ = "API do ERP da Resolve Energia Solar"
 
 router.register('users', UserViewSet, basename='user')
 router.register('leads', LeadViewSet, basename='lead')
-router.register('tasks', TaskViewSet, basename='task')
+router.register('lead-tasks', TaskViewSet, basename='lead-task')
 router.register('attachments', AttachmentViewSet, basename='attachment')
 router.register('squads', SquadViewSet, basename='squad')
 router.register('departments', DepartmentViewSet, basename='department')
@@ -26,6 +26,9 @@ router.register('roof-types', RoofTypeViewSet, basename='roof-type')
 router.register('energy-companies', EnergyCompanyViewSet, basename='energycompany')
 router.register('requests-energy-companies', RequestsEnergyCompanyViewSet, basename='requestsenergycompany')
 router.register('circuit-breakers', CircuitBreakerViewSet, basename='circuitbreaker')
+router.register('boards', BoardViewSet, basename='board')
+router.register('columns', ColumnViewSet, basename='column')
+router.register('tasks', TaskViewSet, basename='task')
 
 app_name = 'api'
 urlpatterns = [

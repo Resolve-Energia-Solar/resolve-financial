@@ -14,7 +14,7 @@ class LeadSerializer(BaseSerializer):
         fields = '__all__'
         
         
-class TaskSerializer(BaseSerializer):
+class LeadTaskSerializer(BaseSerializer):
       
     lead = LeadSerializer()
     members = RelatedUserSerializer(many=True)

@@ -9,6 +9,7 @@ from .serializers.logistics import *
 from .serializers.inspections import *
 from .serializers.core import *
 from .serializers.engineering import *
+from resolve_crm.models import Task as LeadTask
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from accounts.models import User
 from rest_framework.response import Response
@@ -56,8 +57,8 @@ class LeadViewSet(ModelViewSet):
     
 
 class TaskViewSet(ModelViewSet):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
+    queryset = LeadTask.objects.all()
+    serializer_class = LeadTaskSerializer
     permission_classes = [IsAuthenticated]
     
     
@@ -145,4 +146,21 @@ class RequestsEnergyCompanyViewSet(ModelViewSet):
 class CircuitBreakerViewSet(ModelViewSet):
     queryset = CircuitBreaker.objects.all()
     serializer_class = CircuitBreakerSerializer
+    permission_classes = [IsAuthenticated]
+    
+
+class BoardViewSet(ModelViewSet):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+    permission_classes = [IsAuthenticated]
+    
+    
+class LeadTaskViewSet(ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    
+class ColumnViewSet(ModelViewSet):
+    queryset = Column.objects.all()
+    serializer_class = ColumnSerializer
     permission_classes = [IsAuthenticated]
