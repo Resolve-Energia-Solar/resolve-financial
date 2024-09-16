@@ -2,35 +2,45 @@ from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from accounts.models import *
+
+class BaseSerializer(ModelSerializer):
     
+    class Meta:
+        model = None
+        exclude = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'is_deleted' in self.fields:
+            self.fields.pop('is_deleted')
         
-class DepartmentSerializer(ModelSerializer):
+class DepartmentSerializer(BaseSerializer):
     class Meta:
         model = Department
         exclude = ['is_deleted']
         
         
-class RoleSerializer(ModelSerializer):
+class RoleSerializer(BaseSerializer):
     class Meta:
         model = Role
         exclude = ['is_deleted']
         
         
-class RelatedUserSerializer(ModelSerializer):
+class RelatedUserSerializer(BaseSerializer):
         
     class Meta:
         model = User
         fields = ['id', 'complete_name', 'email', 'phone']
 
 
-class AddressSerializer(ModelSerializer):
+class AddressSerializer(BaseSerializer):
     
     class Meta:
         model = Address
         exclude = ['is_deleted']
 
 
-class BranchSerializer(ModelSerializer):
+class BranchSerializer(BaseSerializer):
 
     owners = RelatedUserSerializer(many=True)
     address = AddressSerializer()
@@ -40,21 +50,21 @@ class BranchSerializer(ModelSerializer):
         exclude = ['is_deleted']
 
 
-class UserTypeSerializer(ModelSerializer):
+class UserTypeSerializer(BaseSerializer):
         
         class Meta:
             model = UserType
             fields = '__all__'
 
 
-class ContentTypeSerializer(ModelSerializer):
+class ContentTypeSerializer(BaseSerializer):
         
         class Meta:
             model = ContentType
             fields = '__all__'
 
 
-class PermissionSerializer(ModelSerializer):
+class PermissionSerializer(BaseSerializer):
     
     content_type = ContentTypeSerializer()
     
@@ -63,7 +73,7 @@ class PermissionSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class GroupSerializer(ModelSerializer):
+class GroupSerializer(BaseSerializer):
     
     permissions = PermissionSerializer(many=True)
     
@@ -72,7 +82,7 @@ class GroupSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class UserSerializer(ModelSerializer):
+class UserSerializer(BaseSerializer):
     
     branch = BranchSerializer()
     department = DepartmentSerializer()
@@ -89,3 +99,16 @@ class UserSerializer(ModelSerializer):
 
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
+
+class SquadSerializer(BaseSerializer):
+    
+    branch = BranchSerializer()
+    manager = RelatedUserSerializer()
+    members = RelatedUserSerializer(many=True)
+    #analisar como mandará os boards
+    
+    
+    class Meta:
+        model = Squad
+        exclude = ['is_deleted']
+        
