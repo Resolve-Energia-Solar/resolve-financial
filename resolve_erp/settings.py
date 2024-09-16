@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from datetime import timedelta
 import os
 from pathlib import Path
 from django.urls import reverse_lazy
@@ -147,6 +148,21 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
+
+SIMPLE_JWT = {
+    # Definindo a expiração do token de acesso para uma hora
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    # Tempo de vida do token de atualização
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
+}
 
 # Caches
 

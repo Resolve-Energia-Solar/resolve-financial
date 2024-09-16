@@ -7,5 +7,6 @@ router.register('users', UserViewSet)
 
 app_name = 'api'
 urlpatterns = [
+    path('login/', UserLoginView.as_view(), name='login'),
     path('', include(router.urls)),
 ]
