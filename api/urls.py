@@ -35,5 +35,6 @@ router.register('tasks', TaskViewSet, basename='task')
 app_name = 'api'
 urlpatterns = [
     path('login/', UserLoginView.as_view(), name='login'),
+    path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('', include(router.urls)),
 ]

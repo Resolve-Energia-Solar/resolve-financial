@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import *
@@ -21,27 +21,55 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 
 class UserLoginView(APIView):
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
     http_method_names = ['post']
-    
+
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
+
+        # Validar os campos recebidos
+        if not email or not password:
+            return Response({
+                'message': 'Email e senha são obrigatórios.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(email=email)
-            if user.check_password(password):
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'id': user.id,
-                    'username': user.username
-                })
         except User.DoesNotExist:
-            pass
+            return Response({
+                'message': 'Usuário com esse email não encontrado.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar se o usuário está ativo
+        if not user.is_active:
+            return Response({
+                'message': 'Usuário inativo.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar senha
+        if not user.check_password(password):
+            return Response({
+                'message': 'Senha incorreta.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Gerar e retornar os tokens JWT
+        refresh = RefreshToken.for_user(user)
         return Response({
-            'message': 'Invalid credentials'
-        }, status=400)
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'id': user.id,
+            'username': user.username
+        }, status=status.HTTP_200_OK)
+
+
+class UserTokenRefreshView(TokenRefreshView):
+    http_method_names = ['post']
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class UserViewSet(ModelViewSet):
