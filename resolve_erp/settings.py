@@ -88,6 +88,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
+
 ROOT_URLCONF = 'resolve_erp.urls'
 
 TEMPLATES = [
