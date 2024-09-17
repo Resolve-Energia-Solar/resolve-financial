@@ -162,6 +162,20 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'DELETE',
+    'OPTIONS',
+]
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
+
+
 SIMPLE_JWT = {
     # Definindo a expiração do token de acesso para uma hora
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
