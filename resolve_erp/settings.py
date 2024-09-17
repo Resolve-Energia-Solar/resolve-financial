@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
+    'drf_yasg',
     'corsheaders'
 ]
 

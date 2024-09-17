@@ -1,6 +1,9 @@
-from django.urls import include, path
+from django.urls import path, re_path, include
 from .views import *
 from rest_framework.routers import DefaultRouter
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
 
 router = DefaultRouter()
 
@@ -24,7 +27,6 @@ router.register('material-types', MaterialTypesViewSet, basename='material-type'
 router.register('materials', MaterialsViewSet, basename='material')
 router.register('solar-energy-kits', SolarEnergyKitViewSet, basename='solar-energy-kit')
 router.register('roof-types', RoofTypeViewSet, basename='roof-type')
-
 router.register('energy-companies', EnergyCompanyViewSet, basename='energycompany')
 router.register('requests-energy-companies', RequestsEnergyCompanyViewSet, basename='requestsenergycompany')
 router.register('circuit-breakers', CircuitBreakerViewSet, basename='circuitbreaker')
@@ -32,9 +34,24 @@ router.register('boards', BoardViewSet, basename='board')
 router.register('columns', ColumnViewSet, basename='column')
 router.register('tasks', TaskViewSet, basename='task')
 
+schema_view = get_schema_view(
+    openapi.Info(
+        title="ERP Resolve API",
+        default_version='v1',
+        description="API do ERP da Resolve Energia Solar",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="support@resolvenergiasolar.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 app_name = 'api'
 urlpatterns = [
     path('login/', UserLoginView.as_view(), name='login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('', include(router.urls)),
+    re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
