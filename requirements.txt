@@ -16,8 +16,10 @@ django-simple-history==3.7.0
 django-widget-tweaks==1.5.0
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
+drf-yasg==1.21.7
 gunicorn==22.0.0
 idna==3.10
+inflection==0.5.1
 itypes==1.2.0
 Jinja2==3.1.4
 jsonfield==3.1.0
@@ -29,6 +31,7 @@ pillow==10.2.0
 PyJWT==2.9.0
 python-dotenv==1.0.1
 pytz==2024.1
+PyYAML==6.0.2
 redis==5.0.8
 requests==2.32.3
 setuptools==68.1.2
