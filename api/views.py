@@ -1,3 +1,4 @@
+from datetime import timezone
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -52,14 +53,22 @@ class UserLoginView(APIView):
             return Response({
                 'message': 'Senha incorreta.'
             }, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        last_login = user.last_login
+        
         # Gerar e retornar os tokens JWT
         refresh = RefreshToken.for_user(user)
+        
+        # Atualizar o último login do usuário
+        user.last_login = timezone.now()
+        user.save()
+
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
             'id': user.id,
-            'username': user.username
+            'username': user.username,
+            'last_login': last_login,
         }, status=status.HTTP_200_OK)
 
 
