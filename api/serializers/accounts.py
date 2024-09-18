@@ -1,6 +1,8 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
+
+from core.models import TaskTemplates
 from accounts.models import *
 
 class BaseSerializer(ModelSerializer):
@@ -101,14 +103,25 @@ class UserSerializer(BaseSerializer):
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
 
+
+class TaskTemplatesSerializer(BaseSerializer):
+  
+    depends_on = SerializerMethodField()
+      
+    class Meta:
+        model = TaskTemplates
+        fields = '__all__'
+    
+    def get_depends_on(self, obj):
+        return TaskTemplatesSerializer(obj.depends_on, many=True).data
+
+
 class SquadSerializer(BaseSerializer):
     
     branch = BranchSerializer()
     manager = RelatedUserSerializer()
     members = RelatedUserSerializer(many=True)
-    #analisar como mandará os boards
-    
+    task_templates = TaskTemplatesSerializer(many=True)
     
     class Meta:
         model = Squad
-        exclude = ['is_deleted']

@@ -1,4 +1,3 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from logistics.models import *
 from api.serializers.accounts import BaseSerializer
 from .accounts import BranchSerializer

@@ -33,6 +33,7 @@ router.register('circuit-breakers', CircuitBreakerViewSet, basename='circuitbrea
 router.register('boards', BoardViewSet, basename='board')
 router.register('board-statuses', BoardStatusViewSet, basename='board-status')
 router.register('tasks', TaskViewSet, basename='task')
+router.register('task-templates', TaskTemplatesViewSet, basename='task-template')
 
 schema_view = get_schema_view(
     openapi.Info(

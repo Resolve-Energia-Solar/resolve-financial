@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import SerializerMethodField
 from api.serializers.accounts import BaseSerializer
 from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
@@ -34,4 +34,5 @@ class TaskSerializer(BaseSerializer):
           
       def get_depends_on(self, obj):
           return TaskSerializer(obj.depends_on, many=True).data
-        
+
+
