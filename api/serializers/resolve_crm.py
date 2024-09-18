@@ -1,6 +1,7 @@
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
+from api.serializers.core import BoardSerializer
 
 
 class LeadSerializer(BaseSerializer):
@@ -8,6 +9,7 @@ class LeadSerializer(BaseSerializer):
     seller = RelatedUserSerializer()
     sdr = RelatedUserSerializer()
     addresses = AddressSerializer(many=True)
+    board = BoardSerializer()
     
     class Meta:
         model = Lead

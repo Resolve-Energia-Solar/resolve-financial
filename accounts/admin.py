@@ -57,3 +57,7 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name", "email")
     list_per_page = 10
     list_max_show_all = 100
+
+@admin.register(PhoneNumber)
+class PhoneNumber(admin.ModelAdmin):
+    pass

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Board, BoardStatus
+from .models import Task
 
 
 @admin.register(Board)

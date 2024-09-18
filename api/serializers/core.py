@@ -2,9 +2,17 @@ from rest_framework.serializers import SerializerMethodField
 from api.serializers.accounts import BaseSerializer
 from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
+from resolve_crm.models import Lead
 
+class ReadLeadSerializer(BaseSerializer):
+    
+    class Meta:
+        model = Lead
+        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at']
 
 class BoardSerializer(BaseSerializer):
+    
+    leads = ReadLeadSerializer(many=True)
 
     branch = BranchSerializer()
   
@@ -34,5 +42,4 @@ class TaskSerializer(BaseSerializer):
           
       def get_depends_on(self, obj):
           return TaskSerializer(obj.depends_on, many=True).data
-
-
+        
