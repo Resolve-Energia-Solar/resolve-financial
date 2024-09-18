@@ -53,6 +53,9 @@ class Lead(models.Model):
     def get_absolute_url(self):
         return reverse_lazy('resolve_crm:lead_detail', kwargs={'pk': self.pk})
 
+    def get_detail_api_url(self):
+        return reverse_lazy('api:lead-detail', kwargs={'pk': self.pk})
+
     class Meta:
         verbose_name = "Lead"
         verbose_name_plural = "Leads"

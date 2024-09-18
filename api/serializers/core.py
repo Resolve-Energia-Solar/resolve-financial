@@ -7,14 +7,14 @@ from resolve_crm.models import Lead
 
 class ReadLeadSerializer(BaseSerializer):
     
-    detail_url = SerializerMethodField()
+    detail_api_url = SerializerMethodField()
     
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at', 'detail_url']
+        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at', 'detail_api_url']
         
-    def get_detail_url(self, obj):
-        return obj.get_absolute_url()
+    def get_detail_api_url(self, obj):
+        return obj.get_detail_api_url()
 
 
 class BoardSerializer(BaseSerializer):
