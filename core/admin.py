@@ -10,4 +10,4 @@ class BoardAdmin(admin.ModelAdmin):
 
 @admin.register(BoardStatus)
 class BoardStatusAdmin(admin.ModelAdmin):
-    list_display = ("status", "order")
+    list_display = ("status",)

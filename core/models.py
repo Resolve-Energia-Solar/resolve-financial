@@ -7,7 +7,6 @@ from simple_history.models import HistoricalRecords
 class BoardStatus(models.Model):
     
     status = models.CharField("Status", max_length=200)
-    order = models.PositiveSmallIntegerField("Ordem")
     is_deleted = models.BooleanField("Deletado", default=False)
     
     # Logs
@@ -16,6 +15,21 @@ class BoardStatus(models.Model):
 
     def __str__(self):
         return self.status
+
+
+class BoardStatusesOrder(models.Model):
+        
+        board = models.ForeignKey('core.Board', related_name='statuses_order', on_delete=models.CASCADE)
+        status = models.ForeignKey('core.BoardStatus', related_name='board_order', on_delete=models.CASCADE)
+        order = models.PositiveSmallIntegerField()
+        
+        # Logs
+        created_at = models.DateTimeField(auto_now_add=True)
+        history = HistoricalRecords()
+        
+        def __str__(self):
+            return f'{self.board} - {self.status} - {self.order}'
+
 
 class Board(models.Model):
     
