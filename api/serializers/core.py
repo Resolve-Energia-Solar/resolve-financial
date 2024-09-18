@@ -23,7 +23,8 @@ class BoardStatusSerializer(BaseSerializer):
 class TaskSerializer(BaseSerializer):
   
       owner = RelatedUserSerializer()
-    #   BoardStatus = BoardStatusSerializer()
+      board = BoardSerializer()
+      status = BoardStatusSerializer()
       content_type = ContentTypeSerializer()
       depends_on = SerializerMethodField()
       
