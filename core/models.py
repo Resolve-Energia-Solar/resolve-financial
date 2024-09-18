@@ -36,6 +36,7 @@ class Board(models.Model):
 
 class Task(models.Model):
     
+    task_template = models.ForeignKey('core.TaskTemplates', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=200)
     description = models.TextField()
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE)
@@ -64,3 +65,25 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TaskTemplates(models.Model):
+    
+    title = models.CharField(max_length=200)
+    depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
+    
+
+class Webhook(models.Model):
+    
+    url = models.URLField()
+    secret = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    event = models.CharField(max_length=200)
+    is_active = models.BooleanField(default=True)
+    
+    # Logs
+    created_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.url
