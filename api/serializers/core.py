@@ -45,7 +45,6 @@ class BoardSerializer(BaseSerializer):
         return BoardStatusSerializer(obj.statuses, many=True, context={'board': obj}).data
         
 
-
 class TaskSerializer(BaseSerializer):
   
       owner = RelatedUserSerializer()

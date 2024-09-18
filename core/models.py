@@ -29,6 +29,9 @@ class BoardStatusesOrder(models.Model):
         
         def __str__(self):
             return f'{self.board} - {self.status} - {self.order}'
+        
+        class Meta:
+            unique_together = ['board', 'status', 'order']
 
 
 class Board(models.Model):
