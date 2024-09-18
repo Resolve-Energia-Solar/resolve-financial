@@ -4,16 +4,22 @@ from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead
 
+
 class ReadLeadSerializer(BaseSerializer):
+    
+    detail_url = SerializerMethodField()
     
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at']
+        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at', 'detail_url']
+        
+    def get_detail_url(self, obj):
+        return obj.get_absolute_url()
+
 
 class BoardSerializer(BaseSerializer):
     
     leads = ReadLeadSerializer(many=True)
-
     branch = BranchSerializer()
   
     class Meta:
