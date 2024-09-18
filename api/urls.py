@@ -31,7 +31,7 @@ router.register('energy-companies', EnergyCompanyViewSet, basename='energycompan
 router.register('requests-energy-companies', RequestsEnergyCompanyViewSet, basename='requestsenergycompany')
 router.register('circuit-breakers', CircuitBreakerViewSet, basename='circuitbreaker')
 router.register('boards', BoardViewSet, basename='board')
-# router.register('BoardStatuss', BoardStatusViewSet, basename='board-status')
+router.register('board-statuses', BoardStatusViewSet, basename='board-status')
 router.register('tasks', TaskViewSet, basename='task')
 
 schema_view = get_schema_view(

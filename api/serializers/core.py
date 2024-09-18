@@ -13,13 +13,13 @@ class BoardSerializer(BaseSerializer):
         fields = '__all__'
         
 
-# class BoardStatusSerializer(BaseSerializer):
+class BoardStatusSerializer(BaseSerializer):
   
-#       board = BoardSerializer()
+      board = BoardSerializer()
     
-#       class Meta:
-#           model = BoardStatus
-#           fields = '__all__'
+      class Meta:
+          model = BoardStatus
+          fields = '__all__'
           
 
 class TaskSerializer(BaseSerializer):
