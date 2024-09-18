@@ -4,7 +4,6 @@ from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 
 
-
 class BoardSerializer(BaseSerializer):
 
     branch = BranchSerializer()
@@ -14,19 +13,19 @@ class BoardSerializer(BaseSerializer):
         fields = '__all__'
         
 
-class ColumnSerializer(BaseSerializer):
+# class BoardStatusSerializer(BaseSerializer):
   
-      board = BoardSerializer()
+#       board = BoardSerializer()
     
-      class Meta:
-          model = Column
-          fields = '__all__'
+#       class Meta:
+#           model = BoardStatus
+#           fields = '__all__'
           
 
 class TaskSerializer(BaseSerializer):
   
       owner = RelatedUserSerializer()
-      column = ColumnSerializer()
+    #   BoardStatus = BoardStatusSerializer()
       content_type = ContentTypeSerializer()
       depends_on = SerializerMethodField()
       

@@ -1,7 +1,7 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
+
 
 class LeadSerializer(BaseSerializer):
   
@@ -35,6 +35,7 @@ class AttachmentSerializer(BaseSerializer):
         data = super().to_representation(instance)
         data['file'] = instance.file.url
         return data
+
 
 class MarketingCampaignSerializer(BaseSerializer):
     

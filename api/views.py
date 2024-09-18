@@ -209,7 +209,7 @@ class LeadTaskViewSet(ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     
-class ColumnViewSet(ModelViewSet):
-    queryset = Column.objects.all()
-    serializer_class = ColumnSerializer
-    permission_classes = [IsAuthenticated]
+# class BoardStatusViewSet(ModelViewSet):
+#     queryset = BoardStatus.objects.all()
+#     serializer_class = BoardStatusSerializer
+#     permission_classes = [IsAuthenticated]

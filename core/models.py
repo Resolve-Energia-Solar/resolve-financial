@@ -4,36 +4,25 @@ from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 
 
-class BoardTemplate(models.Model):
-    name = models.CharField('Nome', max_length=200)
-    description = models.TextField("Descrição", blank=True, null=True)
+class BoardStatus(models.Model):
+    
+    status = models.CharField("Status", max_length=200)
+    order = models.PositiveSmallIntegerField("Ordem")
+    is_deleted = models.BooleanField("Deletado", default=False)
+    
     # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-
-    def save(self, current_user=None, *args, **kwargs):
-        if not self.id and current_user is not None:
-            self.created_by = self.updated_by = current_user
-        elif current_user is not None:
-            self.updated_by = current_user
-        super().save(*args, **kwargs)
-    
-    def __str__(self):
-        return self.name
-    
-    def get_absolute_url(self):
-        return reverse_lazy('core:board-template-detail', kwargs={'pk': self.pk})
-
-    class Meta:
-        verbose_name = "Modelo de Quadro"
-        verbose_name_plural = "Modelos de Quadros"
-        ordering = ["name"]
 
 
 class Board(models.Model):
+    
     title = models.CharField("Título", max_length=200)
     description = models.TextField("Descrição")
     branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
     is_deleted = models.BooleanField("Deletado", default=False)
+    statuses = models.ManyToManyField('core.BoardStatus', related_name='boards', verbose_name="Status")
+    
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
@@ -45,32 +34,23 @@ class Board(models.Model):
         return self.title
 
 
-class Column(models.Model):
-    title = models.CharField(max_length=200)
-    board = models.ForeignKey('Board', related_name='columns', on_delete=models.CASCADE)
-    order = models.PositiveSmallIntegerField()
-    # Logs
-    created_at = models.DateTimeField(auto_now_add=True)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return self.title
-
-
 class Task(models.Model):
+    
     title = models.CharField(max_length=200)
     description = models.TextField()
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE)
+    board = models.ForeignKey('core.Board', related_name='board_tasks', on_delete=models.CASCADE)
+    status = models.ForeignKey('core.BoardStatus', related_name='status_tasks', on_delete=models.CASCADE)
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
-    column = models.ForeignKey('core.Column', related_name='tasks', on_delete=models.CASCADE)
     depends_on = models.ManyToManyField('core.Task', related_name='dependents', symmetrical=False)
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(blank=True, null=True)
     id_integration = models.CharField(max_length=200)
+    
     # Logs
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()

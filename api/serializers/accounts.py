@@ -13,7 +13,8 @@ class BaseSerializer(ModelSerializer):
         super().__init__(*args, **kwargs)
         if 'is_deleted' in self.fields:
             self.fields.pop('is_deleted')
-        
+
+
 class DepartmentSerializer(BaseSerializer):
     class Meta:
         model = Department

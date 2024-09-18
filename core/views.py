@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView, CreateView, UpdateView
-from .models import Board, Column, Task
+from .models import Board, BoardStatus, Task
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 
@@ -27,52 +27,52 @@ class BoardList(UserPassesTestMixin, ListView):
         self.queryset = self.queryset.filter(title__icontains=title) if title else self.queryset
         return self.queryset
     
-def board_api(request, pk):
-    try:
-        board = Board.objects.get(pk=pk)
-        columns = board.columns.all()
+# def board_api(request, pk):
+#     try:
+#         board = Board.objects.get(pk=pk)
+#         columns = board.columns.all()
         
-        board_data = {
-            'id': board.id,
-            'title': board.title,
-            'description': board.description,
-            'columns': [],
-        }
+#         board_data = {
+#             'id': board.id,
+#             'title': board.title,
+#             'description': board.description,
+#             'columns': [],
+#         }
         
-        for column in columns:
-            column_data = {
-                'id': column.id,
-                'title': column.title,
-                'tasks': [],
-            }
+#         for column in columns:
+#             column_data = {
+#                 'id': column.id,
+#                 'title': column.title,
+#                 'tasks': [],
+#             }
             
-            tasks = Task.objects.filter(column=column)
-            for task in tasks:
-                task_data = {
-                    'id': task.id,
-                    'title': task.title,
-                    'description': task.description,
-                    'owner': task.owner.get_full_name(),
-                    'start_date': task.start_date,
-                    'due_date': task.due_date,
-                    'is_completed_date': task.is_completed_date,
-                    'depends_on': [t.id for t in task.depends_on.all()],
-                    'is_archived': task.is_archived,
-                    'archived_at': task.archived_at,
-                    'id_integration': task.id_integration,
-                    'url': task.get_absolute_url(),
-                    'created_at': task.created_at.strftime('%d/%m/%Y %H:%M'),
-                }
-                column_data['tasks'].append(task_data)
+#             tasks = Task.objects.filter(column=column)
+#             for task in tasks:
+#                 task_data = {
+#                     'id': task.id,
+#                     'title': task.title,
+#                     'description': task.description,
+#                     'owner': task.owner.get_full_name(),
+#                     'start_date': task.start_date,
+#                     'due_date': task.due_date,
+#                     'is_completed_date': task.is_completed_date,
+#                     'depends_on': [t.id for t in task.depends_on.all()],
+#                     'is_archived': task.is_archived,
+#                     'archived_at': task.archived_at,
+#                     'id_integration': task.id_integration,
+#                     'url': task.get_absolute_url(),
+#                     'created_at': task.created_at.strftime('%d/%m/%Y %H:%M'),
+#                 }
+#                 column_data['tasks'].append(task_data)
             
-            board_data['columns'].append(column_data)
+#             board_data['columns'].append(column_data)
         
-        return JsonResponse(board_data)
-    except Board.DoesNotExist:
-        return JsonResponse({'error': 'Board does not exist'}, status=404)
-    except Exception as e:
-        print(e)
-        return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse(board_data)
+#     except Board.DoesNotExist:
+#         return JsonResponse({'error': 'Board does not exist'}, status=404)
+#     except Exception as e:
+#         print(e)
+#         return JsonResponse({'error': str(e)}, status=500)
 
 
 class KanbanView(UserPassesTestMixin, DetailView):
@@ -85,8 +85,8 @@ class KanbanView(UserPassesTestMixin, DetailView):
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
         board = self.get_object()
-        column = Column(title=name, board=board)
-        column.order = self.get_object().columns.count()
+        column = BoardStatus(title=name, board=board)
+        # column.order = self.get_object().columns.count()
         column.save()
         return redirect('core:board-kanban', pk=board.pk)
 
@@ -129,7 +129,7 @@ class BoardUpdateView(UserPassesTestMixin, UpdateView):
 # class MoveCardView(UserPassesTestMixin, View):
 #     def post(self, request, table_id, column_id, card_id, *args, **kwargs):
 #         card = get_object_or_404(Card, id=card_id)
-#         column = get_object_or_404(Column, id=column_id)
+#         column = get_object_or_404(BoardStatus, id=column_id)
 #         card.column = column
 #         card.save()
 #         return JsonResponse({'status': 'success'})
@@ -138,7 +138,7 @@ class BoardUpdateView(UserPassesTestMixin, UpdateView):
 # class CreateCardView(UserPassesTestMixin, View):
 #     def post(self, request, pk, column_id, *args, **kwargs):
 #         title = request.POST.get('title')
-#         column = get_object_or_404(Column, id=column_id)
+#         column = get_object_or_404(BoardStatus, id=column_id)
 #         order = column.card_set.count() + 1
 #         card = Card(column=column, title=title, order=order)
 #         card.save()
@@ -152,54 +152,54 @@ class BoardUpdateView(UserPassesTestMixin, UpdateView):
 #         return JsonResponse({'status': 'success'})
 
 
-class CreateColumnView(View):
+# class CreateColumnView(View):
 
-    # def test_func(self):
-        # return self.request.user.has_perm('core.add_column')
+#     # def test_func(self):
+#         # return self.request.user.has_perm('core.add_column')
 
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        board_id = data.get('board_id')
-        title = data.get('title')
-        order = data.get('order', 0)
+#     def post(self, request, *args, **kwargs):
+#         data = json.loads(request.body)
+#         board_id = data.get('board_id')
+#         title = data.get('title')
+#         order = data.get('order', 0)
 
-        board = get_object_or_404(Board, id=board_id)
-        column = Column.objects.create(board=board, title=title, order=order)
+#         board = get_object_or_404(Board, id=board_id)
+#         column = BoardStatus.objects.create(board=board, title=title, order=order)
 
-        return JsonResponse({
-            'id': column.id,
-            'title': column.title,
-            'order': column.order,
-            'created_at': column.created_at,
-        })
-
-
-class UpdateColumnView(UserPassesTestMixin, View):
-
-    def test_func(self):
-        return self.request.user.has_perm('core.change_column')
-
-    def post(self, request, column_id, *args, **kwargs):
-        column = get_object_or_404(Column, id=column_id)
-        data = json.loads(request.body)
-        column.title = data.get('title', column.title)
-        column.order = data.get('order', column.order)
-        column.save()
-
-        return JsonResponse({
-            'status': 'success',
-            'id': column.id,
-            'title': column.title,
-            'order': column.order,
-        })
+#         return JsonResponse({
+#             'id': column.id,
+#             'title': column.title,
+#             'order': column.order,
+#             'created_at': column.created_at,
+#         })
 
 
-class DeleteColumnView(UserPassesTestMixin, View):
+# class UpdateColumnView(UserPassesTestMixin, View):
 
-    def test_func(self):
-        return self.request.user.has_perm('core.delete_column')
+#     def test_func(self):
+#         return self.request.user.has_perm('core.change_column')
+
+#     def post(self, request, column_id, *args, **kwargs):
+#         column = get_object_or_404(BoardStatus, id=column_id)
+#         data = json.loads(request.body)
+#         column.title = data.get('title', column.title)
+#         column.order = data.get('order', column.order)
+#         column.save()
+
+#         return JsonResponse({
+#             'status': 'success',
+#             'id': column.id,
+#             'title': column.title,
+#             'order': column.order,
+#         })
+
+
+# class DeleteColumnView(UserPassesTestMixin, View):
+
+#     def test_func(self):
+#         return self.request.user.has_perm('core.delete_column')
     
-    def post(self, request, column_id, *args, **kwargs):
-        column = get_object_or_404(Column, id=column_id)
-        column.delete()
-        return JsonResponse({'status': 'success'})
+#     def post(self, request, column_id, *args, **kwargs):
+#         column = get_object_or_404(BoardStatus, id=column_id)
+#         column.delete()
+#         return JsonResponse({'status': 'success'})

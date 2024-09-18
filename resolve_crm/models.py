@@ -29,7 +29,8 @@ class Lead(models.Model):
     sdr = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="SDR", related_name="lead_sdr", blank=True, null=True)
 
     # Kanban
-    column = models.ForeignKey("core.Column", on_delete=models.CASCADE, verbose_name="Coluna", related_name="cards_leads", blank=True, null=True)
+    board = models.ForeignKey("core.Board", on_delete=models.CASCADE, verbose_name="Quadro", blank=True, null=True)
+    status = models.ForeignKey("core.BoardStatus", on_delete=models.CASCADE, verbose_name="Status", blank=True, null=True)
 
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
