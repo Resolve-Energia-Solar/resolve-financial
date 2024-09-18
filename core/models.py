@@ -15,6 +15,10 @@ class BoardStatus(models.Model):
 
     def __str__(self):
         return self.status
+    
+    class Meta:
+        verbose_name = 'Status do Quadro'
+        verbose_name_plural = 'Status dos Quadros'
 
 
 class BoardStatusesOrder(models.Model):
@@ -32,6 +36,8 @@ class BoardStatusesOrder(models.Model):
         
         class Meta:
             unique_together = ['board', 'status', 'order']
+            verbose_name = 'Ordem dos Status nos Quadros'
+            verbose_name_plural = 'Ordens dos Status nos Quadros'
 
 
 class Board(models.Model):
@@ -51,6 +57,10 @@ class Board(models.Model):
 
     def __str__(self):
         return self.title
+    
+    class Meta:
+        verbose_name = 'Quadro'
+        verbose_name_plural = 'Quadros'
 
 
 class Task(models.Model):
@@ -84,12 +94,23 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+    
+    class Meta:
+        verbose_name = 'Tarefa'
+        verbose_name_plural = 'Tarefas'
 
 
 class TaskTemplates(models.Model):
     
     title = models.CharField(max_length=200)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        verbose_name = 'Modelo de Tarefa'
+        verbose_name_plural = 'Modelos de Tarefas'
     
 
 class Webhook(models.Model):
@@ -106,3 +127,7 @@ class Webhook(models.Model):
     
     def __str__(self):
         return self.url
+    
+    class Meta:
+        verbose_name = 'Webhook'
+        verbose_name_plural = 'Webhooks'
