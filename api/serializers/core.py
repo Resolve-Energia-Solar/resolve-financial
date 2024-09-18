@@ -14,8 +14,6 @@ class BoardSerializer(BaseSerializer):
         
 
 class BoardStatusSerializer(BaseSerializer):
-  
-      board = BoardSerializer()
     
       class Meta:
           model = BoardStatus
