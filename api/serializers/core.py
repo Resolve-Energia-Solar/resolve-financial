@@ -17,22 +17,34 @@ class ReadLeadSerializer(BaseSerializer):
         return obj.get_detail_api_url()
 
 
+class BoardStatusSerializer(BaseSerializer):
+    
+    order = SerializerMethodField()
+    
+    class Meta:
+        model = BoardStatus
+        fields = '__all__'
+          
+    def get_order(self, obj):
+        board = self.context.get('board')
+        order = BoardStatusesOrder.objects.get(board=board, status=obj).order if board else None
+        return order
+
+
 class BoardSerializer(BaseSerializer):
     
     leads = ReadLeadSerializer(many=True)
     branch = BranchSerializer()
+    statuses = SerializerMethodField()
   
     class Meta:
         model = Board
         fields = '__all__'
         
+    def get_statuses(self, obj):
+        return BoardStatusSerializer(obj.statuses, many=True, context={'board': obj}).data
+        
 
-class BoardStatusSerializer(BaseSerializer):
-    
-      class Meta:
-          model = BoardStatus
-          fields = '__all__'
-          
 
 class TaskSerializer(BaseSerializer):
   

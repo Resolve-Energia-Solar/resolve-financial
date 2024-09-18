@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Board, BoardStatus
+from .models import Board, BoardStatus, BoardStatusesOrder
 from .models import Task
 
 
@@ -11,3 +11,8 @@ class BoardAdmin(admin.ModelAdmin):
 @admin.register(BoardStatus)
 class BoardStatusAdmin(admin.ModelAdmin):
     list_display = ("status",)
+
+
+@admin.register(BoardStatusesOrder)
+class BoardStatusesOrderAdmin(admin.ModelAdmin):
+    list_display = ("board", "status", "order")
