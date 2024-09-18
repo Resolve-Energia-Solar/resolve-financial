@@ -27,7 +27,13 @@ class BoardStatusSerializer(BaseSerializer):
           
     def get_order(self, obj):
         board = self.context.get('board')
-        order = BoardStatusesOrder.objects.get(board=board, status=obj).order if board else None
+        if board:
+            try:
+                order = BoardStatusesOrder.objects.get(board=board, status=obj).order
+            except BoardStatusesOrder.DoesNotExist:
+                order = None
+        else:
+            order = None
         return order
 
 
