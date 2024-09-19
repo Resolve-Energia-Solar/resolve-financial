@@ -11,7 +11,3 @@ class BoardAdmin(admin.ModelAdmin):
 @admin.register(Column)
 class ColumnAdmin(admin.ModelAdmin):
     list_display = ("name", "position", "board")
-
-@admin.register(BoardStatusesOrder)
-class BoardStatusesOrderAdmin(admin.ModelAdmin):
-    list_display = ("board", "status", "order")
