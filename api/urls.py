@@ -30,10 +30,10 @@ router.register('roof-types', RoofTypeViewSet, basename='roof-type')
 router.register('energy-companies', EnergyCompanyViewSet, basename='energycompany')
 router.register('requests-energy-companies', RequestsEnergyCompanyViewSet, basename='requestsenergycompany')
 router.register('circuit-breakers', CircuitBreakerViewSet, basename='circuitbreaker')
-router.register('boards', BoardViewSet, basename='board')
-router.register('board-statuses', BoardStatusViewSet, basename='board-status')
 router.register('tasks', TaskViewSet, basename='task')
 router.register('task-templates', TaskTemplatesViewSet, basename='task-template')
+router.register('boards', BoardViewSet, basename='board')
+router.register('columns', ColumnViewSet, basename='column')
 
 schema_view = get_schema_view(
     openapi.Info(

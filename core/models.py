@@ -4,28 +4,28 @@ from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 
 
-class BoardStatus(models.Model):
+class Column(models.Model):
     
-    status = models.CharField("Status", max_length=200)
-    order = models.PositiveSmallIntegerField("Ordem")
-    is_deleted = models.BooleanField("Deletado", default=False)
+    name = models.CharField("Nome", max_length=200)
+    position = models.PositiveSmallIntegerField("Posição")
+    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
     
     # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.status
+        return self.name
 
 class Board(models.Model):
     
     title = models.CharField("Título", max_length=200)
     description = models.TextField("Descrição")
     branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
-    is_deleted = models.BooleanField("Deletado", default=False)
-    statuses = models.ManyToManyField('core.BoardStatus', related_name='boards', verbose_name="Status")
     
     # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
@@ -43,7 +43,6 @@ class Task(models.Model):
     description = models.TextField()
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE)
     board = models.ForeignKey('core.Board', related_name='board_tasks', on_delete=models.CASCADE)
-    status = models.ForeignKey('core.BoardStatus', related_name='status_tasks', on_delete=models.CASCADE)
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)

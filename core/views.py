@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView, CreateView, UpdateView
-from .models import Board, BoardStatus, Task
+from .models import Board, Column, Task
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 
@@ -85,7 +85,7 @@ class KanbanView(UserPassesTestMixin, DetailView):
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
         board = self.get_object()
-        column = BoardStatus(title=name, board=board)
+        column = Column()
         # column.order = self.get_object().columns.count()
         column.save()
         return redirect('core:board-kanban', pk=board.pk)

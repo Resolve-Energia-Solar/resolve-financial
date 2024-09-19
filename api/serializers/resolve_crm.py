@@ -9,7 +9,6 @@ class LeadSerializer(BaseSerializer):
     seller = RelatedUserSerializer()
     sdr = RelatedUserSerializer()
     addresses = AddressSerializer(many=True)
-    board = BoardSerializer()
     
     class Meta:
         model = Lead
@@ -18,7 +17,7 @@ class LeadSerializer(BaseSerializer):
         
 class LeadTaskSerializer(BaseSerializer):
       
-    lead = LeadSerializer()
+    # lead = LeadSerializer()
     members = RelatedUserSerializer(many=True)
     
     class Meta:
@@ -48,7 +47,6 @@ class MarketingCampaignSerializer(BaseSerializer):
 
 class SaleSerializer(BaseSerializer):
     
-    lead = LeadSerializer()
     seller = RelatedUserSerializer()
     sales_supervisor = RelatedUserSerializer()
     sales_manager = RelatedUserSerializer()

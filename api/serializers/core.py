@@ -4,35 +4,45 @@ from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead
 
+
+class ColumnNameSerializer(BaseSerializer):
+        
+        class Meta:
+            model = Column
+            fields = ['id', 'name']
+
 class ReadLeadSerializer(BaseSerializer):
+    
+    column = ColumnNameSerializer()
     
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'contact_email', 'phone', 'status','seller','created_at']
+        fields = ['id', 'name', 'column' , 'contact_email', 'phone','seller','created_at']
+
+
+class ColumnSerializer(BaseSerializer):
+    
+    leads = ReadLeadSerializer(many=True)
+    
+    class Meta:
+        model = Column
+        fields = ['id', 'name', 'board', 'leads']
+
 
 class BoardSerializer(BaseSerializer):
     
-    leads = ReadLeadSerializer(many=True)
-
+    columns = ColumnSerializer(many=True)
     branch = BranchSerializer()
   
     class Meta:
         model = Board
-        fields = '__all__'
-        
-
-class BoardStatusSerializer(BaseSerializer):
+        fields = ['id', 'title', 'description', 'columns', 'branch']
     
-      class Meta:
-          model = BoardStatus
-          fields = '__all__'
-          
 
 class TaskSerializer(BaseSerializer):
   
       owner = RelatedUserSerializer()
       board = BoardSerializer()
-      status = BoardStatusSerializer()
       content_type = ContentTypeSerializer()
       depends_on = SerializerMethodField()
       

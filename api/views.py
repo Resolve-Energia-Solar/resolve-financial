@@ -210,11 +210,11 @@ class LeadTaskViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
  
-class BoardStatusViewSet(ModelViewSet):
-    queryset = BoardStatus.objects.all()
-    serializer_class = BoardStatusSerializer
+class ColumnViewSet(ModelViewSet):
+    queryset = Column.objects.all()
+    serializer_class = ColumnSerializer
     permission_classes = [IsAuthenticated]
-
+    
 
 class TaskTemplatesViewSet(ModelViewSet):
     queryset = TaskTemplates.objects.all()
