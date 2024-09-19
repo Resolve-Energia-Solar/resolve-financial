@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'logistics.apps.LogisticsConfig',
     'inspections.apps.InspectionsConfig',
     'engineering.apps.EngineeringConfig',
+    'financial.apps.FinancialConfig',
     'notifications',
     'widget_tweaks',
     'django_select2',
