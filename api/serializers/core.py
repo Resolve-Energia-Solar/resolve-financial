@@ -11,6 +11,7 @@ class ColumnNameSerializer(BaseSerializer):
             model = Column
             fields = ['id', 'name']
 
+
 class ReadLeadSerializer(BaseSerializer):
     
     column = ColumnNameSerializer()
