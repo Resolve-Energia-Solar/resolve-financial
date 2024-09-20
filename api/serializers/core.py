@@ -36,8 +36,8 @@ class ReadTaskSerializer(BaseSerializer):
 
 class ColumnSerializer(BaseSerializer):
     
-    leads = ReadLeadSerializer(many=True)
-    task = ReadTaskSerializer(many=True)
+    leads = ReadLeadSerializer(many=True, required=False)
+    task = ReadTaskSerializer(many=True, required=False)
     
     class Meta:
         model = Column

@@ -6,14 +6,14 @@ from api.serializers.core import BoardSerializer
 
 class LeadSerializer(BaseSerializer):
   
-    seller = RelatedUserSerializer()
-    sdr = RelatedUserSerializer()
-    addresses = AddressSerializer(many=True)
+    seller = RelatedUserSerializer(required=False, allow_null=True)
+    sdr = RelatedUserSerializer(required=False, allow_null=True)
+    addresses = AddressSerializer(many=True, required=False)
     
     class Meta:
         model = Lead
         fields = '__all__'
-        
+
         
 class LeadTaskSerializer(BaseSerializer):
       

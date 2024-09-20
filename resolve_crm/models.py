@@ -8,7 +8,6 @@ from accounts.models import Branch
 
 class Lead(models.Model):
 
-    # Personal Information
     name = models.CharField(
         max_length=200, 
         verbose_name="Nome"
@@ -21,8 +20,8 @@ class Lead(models.Model):
             ("PF", "Pessoa Física"), 
             ("PJ", "Pessoa Jurídica")
         ],
-        blank=True,  # Make optional in forms
-        null=True    # Allow NULL in the database
+        blank=True, 
+        null=True 
     )
     byname = models.CharField(
         max_length=200, 
