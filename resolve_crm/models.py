@@ -18,7 +18,7 @@ class Lead(models.Model):
     gender = models.CharField(max_length=1, verbose_name="Gênero", choices=[("M", "Masculino"), ("F", "Feminino")], blank=True, null=True)
 
     # Lead
-    contact_email = models.EmailField(verbose_name="E-mail")
+    contact_email = models.EmailField(verbose_name="E-mail", blank=True, null=True)
     phone = models.CharField(max_length=20, verbose_name="Telefone")
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses")
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
