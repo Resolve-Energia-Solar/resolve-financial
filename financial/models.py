@@ -3,11 +3,20 @@ from django.db import models
 
 class PaymentRequest(models.Model):
     protocol = models.CharField("Protocolo", max_length=14)
-    requester = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Requisitante")
-    manager = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Gestor")
-    deparment = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Setor")
-    supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor")
-    id_sale = models.ForeignKey('resolve_crm.Sale', on_delete=models.CASCADE, verbose_name="Venda")
+    requester = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, verbose_name="Requisitante", related_name='requested_payments'
+    )
+    manager = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, verbose_name="Gestor", related_name='managed_payments'
+    )
+    department = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, verbose_name="Setor", related_name='department_payments'
+    )
+    # supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor", related_name='supplier_payments')
+    supplier = models.CharField("Fornecedor", max_length=255)
+    id_sale = models.ForeignKey(
+        'resolve_crm.Sale', on_delete=models.CASCADE, verbose_name="Venda"
+    )
     description = models.TextField("Descrição")
     amount = models.DecimalField("Valor", max_digits=20, decimal_places=6)
     service_date = models.DateField("Data de Serviço")
@@ -34,3 +43,5 @@ class PaymentRequest(models.Model):
         verbose_name = 'Requisição de Pagamento'
         verbose_name_plural = 'Requisições de Pagamento'
         ordering = ['-created_at']
+
+
