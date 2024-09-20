@@ -10,21 +10,23 @@ class PaymentRequest(models.Model):
         'accounts.User', on_delete=models.CASCADE, verbose_name="Gestor", related_name='managed_payments'
     )
     department = models.ForeignKey(
-        'accounts.User', on_delete=models.CASCADE, verbose_name="Setor", related_name='department_payments'
+        'accounts.Department', on_delete=models.CASCADE, verbose_name="Setor", related_name='department_payments'
     )
     supplier_name = models.CharField("Fornecedor", max_length=60, blank=True, null=True)
     supplier = models.IntegerField("ID do Fornecedor no Omie")
     category_name = models.CharField("Categoria", max_length=60, blank=True, null=True)
     category = models.CharField("ID da Categoria no Omie", max_length=20)
     id_sale = models.ForeignKey(
-        'resolve_crm.Sale', on_delete=models.CASCADE, verbose_name="Venda"
+        'resolve_crm.Sale', on_delete=models.CASCADE, verbose_name="Venda", null=True, blank=True
     )
     description = models.TextField("Descrição")
     amount = models.DecimalField("Valor", max_digits=20, decimal_places=6)
     service_date = models.DateField("Data de Serviço")
     due_date = models.DateField("Data de Vencimento")
     category = models.CharField("Categoria", max_length=20)
-    causative_department = models.CharField("Departamento Causador", max_length=8, null=True, blank=True)
+    causative_department = models.ForeignKey(
+        'accounts.Department', on_delete=models.CASCADE, verbose_name="Setor", related_name='causative_department_payments'
+    )
     payment_method = models.CharField("Forma de Pagamento", max_length=50)
     id_bank_account = models.CharField("Conta Bancária", max_length=8, null=True, blank=True)
     requesting_status = models.CharField("Status da Requisição", max_length=50)
@@ -32,7 +34,7 @@ class PaymentRequest(models.Model):
     manager_status_completion_date = models.DateTimeField("Data de Conclusão do Status do Gestor", null=True, blank=True)
     financial_status = models.CharField("Status Financeiro", max_length=50)
     financial_status_completion_date = models.DateTimeField("Data de Conclusão do Status Financeiro", null=True, blank=True)
-    invoice_number = models.CharField("Número da Fatura", max_length=255, null=True, blank=True)
+    invoice_number = models.CharField("Número da NF", max_length=255, null=True, blank=True)
     id_omie = models.CharField("ID Omie", max_length=50, null=True, blank=True)
     
     # Logs
