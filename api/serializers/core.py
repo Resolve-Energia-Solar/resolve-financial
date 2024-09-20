@@ -41,7 +41,7 @@ class ColumnSerializer(BaseSerializer):
     
     class Meta:
         model = Column
-        fields = ['id', 'name', 'board','task' ,'leads']
+        fields = ['id', 'name', 'board','position','task','leads']
 
 
 class BoardSerializer(BaseSerializer):

@@ -31,7 +31,7 @@ class Board(models.Model):
 class Column(models.Model):
     
     name = models.CharField("Nome", max_length=200)
-    position = models.PositiveSmallIntegerField("Posição")
+    position = models.PositiveSmallIntegerField("Posição",blank=False, null=False)
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
     finished = models.BooleanField("Finalizado", default=False)
     
