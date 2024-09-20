@@ -2,7 +2,7 @@ from django.db import models
 
 
 class PaymentRequest(models.Model):
-    protocol = models.CharField("Protocolo", max_length=14)
+    protocol = models.CharField("Protocolo", max_length=14, unique=True)
     requester = models.ForeignKey(
         'accounts.User', on_delete=models.CASCADE, verbose_name="Requisitante", related_name='requested_payments'
     )
@@ -12,8 +12,10 @@ class PaymentRequest(models.Model):
     department = models.ForeignKey(
         'accounts.User', on_delete=models.CASCADE, verbose_name="Setor", related_name='department_payments'
     )
-    # supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor", related_name='supplier_payments')
-    supplier = models.CharField("Fornecedor", max_length=255)
+    supplier_name = models.CharField("Fornecedor", max_length=60, blank=True, null=True)
+    supplier = models.IntegerField("ID do Fornecedor no Omie")
+    category_name = models.CharField("Categoria", max_length=60, blank=True, null=True)
+    category = models.CharField("ID da Categoria no Omie", max_length=20)
     id_sale = models.ForeignKey(
         'resolve_crm.Sale', on_delete=models.CASCADE, verbose_name="Venda"
     )
@@ -21,7 +23,7 @@ class PaymentRequest(models.Model):
     amount = models.DecimalField("Valor", max_digits=20, decimal_places=6)
     service_date = models.DateField("Data de Serviço")
     due_date = models.DateField("Data de Vencimento")
-    category = models.CharField("Categoria", max_length=50)
+    category = models.CharField("Categoria", max_length=20)
     causative_department = models.CharField("Departamento Causador", max_length=8, null=True, blank=True)
     payment_method = models.CharField("Forma de Pagamento", max_length=50)
     id_bank_account = models.CharField("Conta Bancária", max_length=8, null=True, blank=True)
