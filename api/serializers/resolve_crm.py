@@ -65,3 +65,15 @@ class FinancierSerializer(BaseSerializer):
     class Meta:
         model = Financier
         fields = '__all__'
+
+
+class ProjectSerializer(BaseSerializer):
+    
+    branch = BranchSerializer()
+    owner = RelatedUserSerializer()
+    members = RelatedUserSerializer(many=True)
+    financiers = FinancierSerializer(many=True)
+    
+    class Meta:
+        model = Project
+        fields = '__all__'

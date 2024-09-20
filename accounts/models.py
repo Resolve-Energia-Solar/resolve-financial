@@ -174,8 +174,6 @@ class Squad(models.Model):
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     manager = models.ForeignKey("accounts.User", verbose_name="Supervisor", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
-    boards = models.ManyToManyField("core.Board", verbose_name="Quadros", related_name='squad_boards', blank=True)
-    task_templates = models.ManyToManyField("core.TaskTemplates", verbose_name="Templates de Tarefa", related_name='squad_task_templates', blank=True)
     is_deleted = models.BooleanField("Deletado?", default=False)
 
     # Logs

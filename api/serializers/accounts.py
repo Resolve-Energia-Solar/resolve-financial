@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from core.models import TaskTemplates
 from accounts.models import *
 
+
 class BaseSerializer(ModelSerializer):
     
     class Meta:
@@ -121,7 +122,12 @@ class SquadSerializer(BaseSerializer):
     branch = BranchSerializer()
     manager = RelatedUserSerializer()
     members = RelatedUserSerializer(many=True)
-    task_templates = TaskTemplatesSerializer(many=True)
+    squad_boards = SerializerMethodField()
     
     class Meta:
         model = Squad
+        fields = '__all__'
+
+    def get_squad_boards(self, obj):
+        from api.serializers.core import BoardSerializer
+        return BoardSerializer(obj.squad_boards, many=True).data

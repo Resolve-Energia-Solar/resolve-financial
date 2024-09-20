@@ -9,35 +9,130 @@ from accounts.models import Branch
 class Lead(models.Model):
 
     # Personal Information
-    name = models.CharField(max_length=200, verbose_name="Nome")
-    type = models.CharField(max_length=200, verbose_name="Tipo", help_text="Pessoa Física ou Jurídica?", choices=[("PF", "Pessoa Física"), ("PJ", "Pessoa Jurídica")])
-    byname = models.CharField(max_length=200, verbose_name="Apelido", blank=True, null=True)
-    first_document = models.CharField(max_length=20, verbose_name="CPF/CNPJ", blank=True, null=True)
-    second_document = models.CharField(max_length=20, verbose_name="RG/IE", blank=True, null=True)
-    birth_date = models.DateField(verbose_name="Data de Nascimento", blank=True, null=True)
-    gender = models.CharField(max_length=1, verbose_name="Gênero", choices=[("M", "Masculino"), ("F", "Feminino")], blank=True, null=True)
+    name = models.CharField(
+        max_length=200, 
+        verbose_name="Nome"
+    )
+    type = models.CharField(
+        max_length=200, 
+        verbose_name="Tipo", 
+        help_text="Pessoa Física ou Jurídica?", 
+        choices=[
+            ("PF", "Pessoa Física"), 
+            ("PJ", "Pessoa Jurídica")
+        ],
+        blank=True,  # Make optional in forms
+        null=True    # Allow NULL in the database
+    )
+    byname = models.CharField(
+        max_length=200, 
+        verbose_name="Apelido", 
+        blank=True, 
+        null=True
+    )
+    first_document = models.CharField(
+        max_length=20, 
+        verbose_name="CPF/CNPJ", 
+        blank=True, 
+        null=True
+    )
+    second_document = models.CharField(
+        max_length=20, 
+        verbose_name="RG/IE", 
+        blank=True, 
+        null=True
+    )
+    birth_date = models.DateField(
+        verbose_name="Data de Nascimento", 
+        blank=True, 
+        null=True
+    )
+    gender = models.CharField(
+        max_length=1, 
+        verbose_name="Gênero", 
+        choices=[
+            ("M", "Masculino"), 
+            ("F", "Feminino")
+        ], 
+        blank=True, 
+        null=True
+    )
 
     # Lead
-    contact_email = models.EmailField(verbose_name="E-mail", blank=True, null=True)
-    phone = models.CharField(max_length=20, verbose_name="Telefone")
-    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="lead_addresses")
-    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_leads", blank=True, null=True)
+    contact_email = models.EmailField(
+        verbose_name="E-mail", 
+        blank=True, 
+        null=True
+    )
+    phone = models.CharField(
+        max_length=20, 
+        verbose_name="Telefone"
+    )
+    addresses = models.ManyToManyField(
+        "accounts.Address", 
+        verbose_name="Endereços", 
+        related_name="lead_addresses",
+        blank=True 
+    )
+    customer = models.ForeignKey(
+        get_user_model(), 
+        on_delete=models.CASCADE, 
+        verbose_name="Cliente", 
+        related_name="customer_leads", 
+        blank=True, 
+        null=True
+    )
     
     # CRM Information
-    origin = models.CharField(max_length=200, verbose_name="Origem", blank=True, null=True)
-    seller = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Vendedor", related_name="lead_seller", blank=True, null=True)
-    sdr = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="SDR", related_name="lead_sdr", blank=True, null=True)
+    origin = models.CharField(
+        max_length=200, 
+        verbose_name="Origem", 
+        blank=True, 
+        null=True
+    )
+    seller = models.ForeignKey(
+        "accounts.User", 
+        on_delete=models.CASCADE, 
+        verbose_name="Vendedor", 
+        related_name="lead_seller", 
+        blank=True, 
+        null=True
+    )
+    sdr = models.ForeignKey(
+        "accounts.User", 
+        on_delete=models.CASCADE, 
+        verbose_name="SDR", 
+        related_name="lead_sdr", 
+        blank=True, 
+        null=True
+    )
 
     # Kanban
-    column = models.ForeignKey("core.Column", on_delete=models.CASCADE, verbose_name="Coluna", blank=True, null=True, related_name="leads")
+    column = models.ForeignKey(
+        "core.Column", 
+        on_delete=models.CASCADE, 
+        verbose_name="Coluna", 
+        blank=True, 
+        null=True, 
+        related_name="leads"
+    )
 
     # Logs
-    is_deleted = models.BooleanField("Deletado", default=False)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    is_deleted = models.BooleanField(
+        "Deletado", 
+        default=False
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name="Criado em"
+    )
     history = HistoricalRecords()
     
     def attachments(self):
-        return Attachment.objects.filter(object_id=self.id, content_type=ContentType.objects.get_for_model(self))
+        return Attachment.objects.filter(
+            object_id=self.id, 
+            content_type=ContentType.objects.get_for_model(self)
+        )
     
     def __str__(self):
         return self.name

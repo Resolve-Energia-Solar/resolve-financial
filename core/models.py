@@ -4,25 +4,14 @@ from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 
 
-class Column(models.Model):
-    
-    name = models.CharField("Nome", max_length=200)
-    position = models.PositiveSmallIntegerField("Posição")
-    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
-    
-    # Logs
-    is_deleted = models.BooleanField("Deletado", default=False)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return self.name
 
 class Board(models.Model):
     
     title = models.CharField("Título", max_length=200)
+    squad = models.ForeignKey('accounts.Squad', related_name='squad_boards', on_delete=models.CASCADE, verbose_name="Squad")
     description = models.TextField("Descrição")
     branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
+    is_lead = models.BooleanField("lead?", default=False)
     
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
@@ -40,22 +29,40 @@ class Board(models.Model):
         verbose_name_plural = 'Quadros'
 
 
+class Column(models.Model):
+    
+    name = models.CharField("Nome", max_length=200)
+    position = models.PositiveSmallIntegerField("Posição")
+    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    finished = models.BooleanField("Finalizado", default=False)
+    
+    # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.name
+
+
 class Task(models.Model):
     
-    task_template = models.ForeignKey('core.TaskTemplates', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True)
+    project = models.ForeignKey('resolve_crm.Project', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True, verbose_name='Projeto')
     title = models.CharField(max_length=200)
+    column = models.ForeignKey('core.Column', related_name='task', on_delete=models.CASCADE)
     description = models.TextField()
-    owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE)
+    owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável')
     board = models.ForeignKey('core.Board', related_name='board_tasks', on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False, verbose_name='Concluído')
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
-    depends_on = models.ManyToManyField('core.Task', related_name='dependents', symmetrical=False)
-    object_id = models.PositiveSmallIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    is_archived = models.BooleanField(default=False)
+    depends_on = models.ManyToManyField('core.Task', related_name='dependents', symmetrical=False, blank=True)
+    # object_id = models.PositiveSmallIntegerField()
+    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    is_archived = models.BooleanField(default=False, verbose_name='Arquivado')
     archived_at = models.DateTimeField(blank=True, null=True)
-    id_integration = models.CharField(max_length=200)
+    id_integration = models.CharField(max_length=200, verbose_name='ID de Integração', blank=True, null=True)
     
     # Logs
     created_at = models.DateTimeField(auto_now_add=True)
@@ -78,8 +85,12 @@ class Task(models.Model):
 
 class TaskTemplates(models.Model):
     
+    board = models.ForeignKey('core.Board', related_name='board_task_templates', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
+    column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
+    description = models.TextField()
+    
     
     def __str__(self):
         return self.title
