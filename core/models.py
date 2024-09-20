@@ -8,7 +8,6 @@ from simple_history.models import HistoricalRecords
 class Board(models.Model):
     
     title = models.CharField("Título", max_length=200)
-    squad = models.ForeignKey('accounts.Squad', related_name='squad_boards', on_delete=models.CASCADE, verbose_name="Squad")
     description = models.TextField("Descrição")
     branch = models.ForeignKey('accounts.Branch', related_name='boards', on_delete=models.CASCADE, verbose_name="Unidade")
     is_lead = models.BooleanField("lead?", default=False)

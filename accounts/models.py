@@ -171,6 +171,7 @@ class Role(models.Model):
 
 class Squad(models.Model):
     name = models.CharField("Nome", max_length=255)
+    squad = models.ManyToManyField('accounts.Squad', related_name='squad_boards', verbose_name="Squad", blank=True)
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE)
     manager = models.ForeignKey("accounts.User", verbose_name="Supervisor", on_delete=models.CASCADE, related_name='squad_manager')
     members = models.ManyToManyField("accounts.User", verbose_name="Membros", related_name='squad_members')
