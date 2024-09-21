@@ -122,12 +122,12 @@ class SquadSerializer(BaseSerializer):
     branch = BranchSerializer()
     manager = RelatedUserSerializer()
     members = RelatedUserSerializer(many=True)
-    squad_boards = SerializerMethodField()
+    boards = SerializerMethodField()
     
     class Meta:
         model = Squad
         fields = '__all__'
 
-    def get_squad_boards(self, obj):
+    def get_boards(self, obj):
         from api.serializers.core import BoardSerializer
-        return BoardSerializer(obj.squad_boards, many=True).data
+        return BoardSerializer(obj.boards, many=True).data
