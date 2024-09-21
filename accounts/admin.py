@@ -19,6 +19,7 @@ class UserAdmin(UserAdmin):
         ("Contact", {"fields": ("phone", "email")}),
         ("Address", {"fields": ("addresses",)}),
         ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
+        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
     )
 
 
