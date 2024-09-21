@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block extra_head %}
+<title>
+  ERP &mdash; 
+  {% if object %}
+  Editar Solicitação de Pagamento
+  {% else %}
+  Criar Solicitação de Pagamento
+  {% endif %}
+</title>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+  <div class="row justify-content-center py-3">
+    <div class="col-12 col-md-8">
+      <div class="text-center my-2">
+        {% if object %}
+        <h1>Editar Solicitação de Pagamento</h1>
+        {% else %}
+        <h1>Solicitar Pagamento</h1>
+        {% endif %}
+      </div>
+
+      <form method="post" id="branch_form" class="mt-4">
+        {% csrf_token %}
+        <div class="row justify-content-center g-3">
+          <div class="col-12 px-4">
+
+            {{ form|crispy }}
+
+            <div class="submit-row">
+              <button type="submit" class="btn btn-primary me-sm-3 me-1">
+                Criar
+              </button>
+              <button type="button" class="btn btn-secondary me-sm-3 me-1">
+                Cancelar
+              </button>
+              <a href="{% url 'financial:payment_request_list' %}">Voltar para a lista</a>
+            </div>
+
+          </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
