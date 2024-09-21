@@ -1,4 +1,4 @@
-from engineering.models import EnergyCompany, RequestsEnergyCompany, CircuitBreaker
+from engineering.models import EnergyCompany, RequestsEnergyCompany, CircuitBreaker, Units
 from .accounts import BaseSerializer, AddressSerializer
 # from .resolve_crm import ProjectSerializer
 # from .logistics import MaterialsSerializer
@@ -27,3 +27,16 @@ class CircuitBreakerSerializer(BaseSerializer):
     class Meta:
         model = CircuitBreaker
         exclude = ['is_deleted']
+
+class UnitsSerializer(BaseSerializer):
+    
+    class Meta:
+        model = Units
+        fields = '__all__'
+
+
+class UnitBillSerializer(BaseSerializer):
+    
+    class Meta:
+        model = Units
+        fields = ['name', 'bill_file']

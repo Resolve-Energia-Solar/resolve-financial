@@ -1,4 +1,8 @@
+from venv import logger
+from django.forms import ValidationError
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+import requests
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -19,6 +23,9 @@ from .serializers.accounts import UserSerializer
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserLoginView(APIView):
@@ -220,3 +227,57 @@ class TaskTemplatesViewSet(ModelViewSet):
     queryset = TaskTemplates.objects.all()
     serializer_class = TaskTemplatesSerializer
     permission_classes = [IsAuthenticated]
+    
+    
+
+class UnitsViewSet(ModelViewSet):
+    queryset = Units.objects.all()
+    serializer_class = UnitsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        if 'bill_file' in self.request.FILES:
+            self.process_bill_file(instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        if 'bill_file' in self.request.FILES:
+            self.process_bill_file(instance)
+
+    def process_bill_file(self, unit):
+        url = "https://documentation.resolvenergiasolar.com/extract/fatura"
+        headers = {
+            'accept': 'application/json'
+        }
+
+        try:
+            with unit.bill_file.open('rb') as f:
+                files = {
+                    'file': (unit.bill_file.name, f, 'application/pdf')
+                }
+                logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
+                response = requests.post(url, headers=headers, files=files, timeout=5)
+                response.raise_for_status()
+                external_data = response.json()
+
+            unit.name = external_data.get('name', unit.name)
+            unit.account_number = external_data.get('account', unit.account_number)
+            unit.unit_number = external_data.get('uc', unit.unit_number)
+            unit.type = external_data.get('type', unit.type)
+            unit.address = external_data.get('address', unit.address)
+            unit.save()
+            logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
+
+        except requests.exceptions.Timeout:
+            logger.error(f'Timeout ao enviar fatura para a API externa para a unidade ID {unit.id}')
+            raise ValidationError({'error': 'Timeout ao processar o arquivo da fatura.'})
+        except requests.exceptions.HTTPError as http_err:
+            logger.error(f'Erro HTTP ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(http_err)}')
+            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+        except requests.exceptions.RequestException as req_err:
+            logger.error(f'Erro na requisição ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(req_err)}')
+            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+        except Exception as e:
+            logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
+            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})

@@ -56,3 +56,23 @@ class CircuitBreaker(models.Model):
     
     def __str__(self):
         return self.material.description
+
+
+class Units(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True)
+    name = models.CharField("Nome", max_length=200, null=True, blank=True)
+    address = models.CharField("Endereço", max_length=200, null=True, blank=True)
+    type = models.CharField("Tipo", max_length=100, null=True, blank=True)
+    account_number = models.CharField("Número da Conta", max_length=100, null=True, blank=True)
+    bill_file = models.FileField("Arquivo da Fatura", upload_to="units-biils/", null=True, blank=True)
+    unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Unidade"
+        verbose_name_plural = "Unidades"
+    
+    def __str__(self):
+        return self.name
