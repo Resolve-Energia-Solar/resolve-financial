@@ -1,6 +1,5 @@
 from venv import logger
 from django.forms import ValidationError
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 import requests
 from rest_framework import status
