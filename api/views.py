@@ -280,3 +280,15 @@ class UnitsViewSet(ModelViewSet):
         except Exception as e:
             logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
             raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+
+
+class ProjectViewSet(ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class SaleViewSet(ModelViewSet):
+    queryset = Sale.objects.all()
+    serializer_class = SaleSerializer
+    permission_classes = [IsAuthenticated]

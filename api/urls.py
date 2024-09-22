@@ -35,6 +35,8 @@ router.register('task-templates', TaskTemplatesViewSet, basename='task-template'
 router.register('boards', BoardViewSet, basename='board')
 router.register('columns', ColumnViewSet, basename='column')
 router.register('units', UnitsViewSet, basename='unit')
+router.register('projects', ProjectViewSet, basename='project')
+router.register('sales', SaleViewSet, basename='sale')
 
 schema_view = get_schema_view(
     openapi.Info(
