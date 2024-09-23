@@ -82,3 +82,20 @@ class SalesMaterials(models.Model):
     class Meta:
         verbose_name = "Material da Venda"
         verbose_name_plural = "Materiais das Vendas"
+
+
+class ProjectMaterials(models.Model):
+
+    project = models.ForeignKey("resolve_crm.Project", on_delete=models.CASCADE, verbose_name="Projeto", related_name="materials_set")
+    material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="projects_set")
+    amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
+
+    def __str__(self):
+        return f"Project: {self.project}, Material: {self.material}"
+
+    class Meta:
+        verbose_name = "Material do Projeto"
+        verbose_name_plural = "Materiais dos Projetos"
+        

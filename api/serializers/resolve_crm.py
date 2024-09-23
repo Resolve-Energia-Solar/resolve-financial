@@ -1,7 +1,8 @@
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
-from api.serializers.core import BoardSerializer
+from api.serializers.logistics import MaterialsSerializer
+from logistics.models import Materials, ProjectMaterials
 
 
 class LeadSerializer(BaseSerializer):
@@ -69,11 +70,15 @@ class FinancierSerializer(BaseSerializer):
 
 class ProjectSerializer(BaseSerializer):
     
-    branch = BranchSerializer()
-    owner = RelatedUserSerializer()
-    members = RelatedUserSerializer(many=True)
-    financiers = FinancierSerializer(many=True)
+    sale = SaleSerializer()
+    materials = MaterialsSerializer(many=True, read_only=True)
+    designer = RelatedUserSerializer()
+    homologator = RelatedUserSerializer()
+    addresses = AddressSerializer(many=True)
     
     class Meta:
         model = Project
         fields = '__all__'
+        
+    def get_materials(self, obj):
+        return ProjectMaterials.objects.filter(project=obj)

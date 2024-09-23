@@ -279,8 +279,8 @@ class Sale(models.Model):
     contract_number = models.CharField("Número do Contrato", max_length=20) #
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
-    marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing")
-    is_sale = models.BooleanField("Pré-venda", default=False)
+    marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
+    is_sale = models.BooleanField("Pré-venda", default=True)
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
 
     # Document Information
@@ -303,24 +303,24 @@ class Sale(models.Model):
         verbose_name_plural = "Vendas"
     
     def __str__(self):
-        return f'{self.contract_number} - {self.customer.name}'
+        return f'{self.contract_number} - {self.customer}'
 
 
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects")
-    project_number = models.CharField("Número do Projeto", max_length=20)
-    start_date = models.DateField("Data de Início")
-    end_date = models.DateField("Data de Término")
-    is_completed = models.BooleanField("Projeto Completo", default=False) #se status estiver finalizado, is_completed = True
-    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")])
-    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects")
+    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
+    project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
+    start_date = models.DateField("Data de Início", null=True, blank=True)
+    end_date = models.DateField("Data de Término", null=True, blank=True)
+    is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
+    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="project_addresses")
-    supply_type = models.CharField("Tipo de Fornecimento", choices=[("M", "Monofásico"), ("B", "Bifásico"), ("T", "Trifásico")], max_length=50)
-    kwp = models.DecimalField("kWp", max_digits=10, decimal_places=2)
-    registered_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado")
-    instaled_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado")
-    project_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto")
+    supply_type = models.CharField("Tipo de Fornecimento", choices=[("M", "Monofásico"), ("B", "Bifásico"), ("T", "Trifásico")], max_length=50, null=True, blank=True)
+    kwp = models.DecimalField("kWp", max_digits=10, decimal_places=2, null=True, blank=True)
+    registered_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
+    instaled_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado", null=True, blank=True)
+    project_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto", null=True, blank=True)
     # input_pattern_value = models.DecimalField("Valor do Padrão de Entrada", max_digits=10, decimal_places=2)
 
     created_at = models.DateTimeField("Criado em", auto_now_add=True)

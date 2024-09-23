@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Lead, Task, Attachment
+from .models import Lead, Task, Attachment, Project, Sale
 
 
 
@@ -8,6 +8,10 @@ from .models import Lead, Task, Attachment
 class CardAdmin(admin.ModelAdmin):
     list_display = ("lead", "task", "order")
 """
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Lead)
@@ -23,3 +27,8 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ("file", "description")
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    pass
