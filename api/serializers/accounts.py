@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 
@@ -44,10 +44,14 @@ class AddressSerializer(BaseSerializer):
         exclude = ['is_deleted']
 
 
-class BranchSerializer(BaseSerializer):
+class BranchSerializer(ModelSerializer):
+    # Para leitura: usar serializadores completos
+    owners = RelatedUserSerializer(many=True, read_only=True)
+    address = AddressSerializer(read_only=True)
 
-    owners = RelatedUserSerializer(many=True)
-    address = AddressSerializer()
+    # Para escrita: usar apenas IDs
+    owners_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='owners')
+    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
 
     class Meta:
         model = Branch
@@ -68,38 +72,54 @@ class ContentTypeSerializer(BaseSerializer):
             fields = '__all__'
 
 
-class PermissionSerializer(BaseSerializer):
-    
-    content_type = ContentTypeSerializer()
-    
+class PermissionSerializer(ModelSerializer):
+    # Para leitura: usar serializador completo
+    content_type = ContentTypeSerializer(read_only=True)
+
+    # Para escrita: usar apenas ID
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+
     class Meta:
         model = Permission
         fields = '__all__'
 
 
-class GroupSerializer(BaseSerializer):
-    
-    permissions = PermissionSerializer(many=True)
-    
+class GroupSerializer(ModelSerializer):
+    # Para leitura: usar serializador completo
+    permissions = PermissionSerializer(many=True, read_only=True)
+
+    # Para escrita: usar apenas IDs
+    permissions_ids = PrimaryKeyRelatedField(queryset=Permission.objects.all(), many=True, write_only=True, source='permissions')
+
     class Meta:
         model = Group
         fields = '__all__'
 
 
-class UserSerializer(BaseSerializer):
-    
-    branch = BranchSerializer()
-    department = DepartmentSerializer()
-    role = RoleSerializer()
-    user_manager = RelatedUserSerializer()
-    addresses = AddressSerializer(many=True)
+class UserSerializer(ModelSerializer):
+    # Para leitura: usar serializadores completos
+    branch = BranchSerializer(read_only=True)
+    department = DepartmentSerializer(read_only=True)
+    role = RoleSerializer(read_only=True)
+    user_manager = RelatedUserSerializer(read_only=True)
+    addresses = AddressSerializer(many=True, read_only=True)
+    user_types = UserTypeSerializer(many=True, read_only=True)
+    groups = GroupSerializer(many=True, read_only=True)
+
+    # Para escrita: usar apenas IDs
+    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
+    department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
+    role_id = PrimaryKeyRelatedField(queryset=Role.objects.all(), write_only=True, source='role')
+    user_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user_manager')
+    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
+    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types')
+    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups')
+
     user_permissions = SerializerMethodField()
-    user_types = UserTypeSerializer(many=True)
-    groups = GroupSerializer(many=True)
-    
+
     class Meta:
         model = User
-        fields = '__all__'
+        exclude = ['password']
 
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
@@ -117,13 +137,19 @@ class TaskTemplatesSerializer(BaseSerializer):
         return TaskTemplatesSerializer(obj.depends_on, many=True).data
 
 
-class SquadSerializer(BaseSerializer):
-    
-    branch = BranchSerializer()
-    manager = RelatedUserSerializer()
-    members = RelatedUserSerializer(many=True)
+class SquadSerializer(ModelSerializer):
+    # Para leitura: usar serializadores completos
+    branch = BranchSerializer(read_only=True)
+    manager = RelatedUserSerializer(read_only=True)
+    members = RelatedUserSerializer(many=True, read_only=True)
+
+    # Para escrita: usar apenas IDs
+    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
+    manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='manager')
+    members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
+
     boards = SerializerMethodField()
-    
+
     class Meta:
         model = Squad
         fields = '__all__'
