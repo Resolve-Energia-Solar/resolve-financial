@@ -264,7 +264,7 @@ class UnitsViewSet(ModelViewSet):
             unit.account_number = external_data.get('account', unit.account_number)
             unit.unit_number = external_data.get('uc', unit.unit_number)
             unit.type = external_data.get('type', unit.type)
-            unit.address = external_data.get('address', unit.address)
+            # unit.address = external_data.get('address', unit.address)
             unit.save()
             logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
 

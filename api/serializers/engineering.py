@@ -46,13 +46,9 @@ class CircuitBreakerSerializer(BaseSerializer):
 
 class UnitsSerializer(BaseSerializer):
     
+    address = AddressSerializer(read_only=True)
+    
     class Meta:
         model = Units
         fields = '__all__'
 
-
-class UnitBillSerializer(BaseSerializer):
-    
-    class Meta:
-        model = Units
-        fields = ['name', 'bill_file']
