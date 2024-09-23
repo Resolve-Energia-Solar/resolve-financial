@@ -75,7 +75,7 @@ INSTALLED_APPS = [
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-DJANGO_NOTIFICATIONS_CONFIG = { 'SOFT_DELETE': True}
+DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -135,6 +135,9 @@ DATABASES = {
 
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
+
+DATABASE_ROUTERS = ['financial.db_routers.MySQLRouter']
+
 
 # User model
 AUTH_USER_MODEL = "accounts.User"

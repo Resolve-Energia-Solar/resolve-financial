@@ -18,9 +18,10 @@ class PaymentRequestForm(forms.ModelForm):
             'department': Select2Widget(),
             'supplier': HeavySelect2Widget(data_view='financial:suppliers_list', attrs={'data-placeholder': 'Selecionar fornecedor', 'data-minimum-input-length': 11}),
             'category': HeavySelect2Widget(data_view='financial:categories_list', attrs={'data-placeholder': 'Selecionar categoria', 'data-minimum-input-length': 3}),
-            'id_sale': Select2Widget(),
+            'id_sale': Select2Widget(attrs={'data-placeholder': 'Selecionar venda', 'data-minimum-input-length': 3}),
             'service_date': forms.DateInput(attrs={'type': 'date'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
             'payment_method': Select2Widget(),
-            'causative_department': Select2Widget()
+            'causative_department': Select2Widget(),
+            'id_bank_account': Select2Widget(),
         }

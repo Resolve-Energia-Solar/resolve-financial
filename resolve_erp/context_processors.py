@@ -378,6 +378,23 @@ def menu_items(request):
                     "permission": "engineering.add_energycompany"
                 }
             ]
+        },
+        {
+            "label": "Solicitação de Pagamento",
+            "icon": "bx bx-coin",
+            "section": "Financeiro",
+            "sub_items": [
+                {
+                    "label": "Lista",
+                    "url_name": "financial:payment_request_list",
+                    "permission": "financial.view_paymentrequest"
+                },
+                {
+                    "label": "Solicitar",
+                    "url_name": "financial:payment_request_create",
+                    "permission": "financial.add_paymentrequest"
+                }
+            ]
         }
     ]
 
