@@ -18,6 +18,7 @@ class PaymentRequest(models.Model):
     )
     
     protocol = models.CharField("Protocolo", max_length=14, unique=True)
+    id_omie = models.CharField("ID Omie", max_length=50, null=True, blank=True)
     requester = models.ForeignKey(
         'accounts.User', on_delete=models.CASCADE, verbose_name="Requisitante", related_name='requested_payments'
     )
@@ -35,7 +36,7 @@ class PaymentRequest(models.Model):
         'financial.SaleResume', on_delete=models.CASCADE, verbose_name="Venda", null=True, blank=True
     )
     description = models.TextField("Descrição")
-    amount = models.DecimalField("Valor", max_digits=20, decimal_places=6)
+    amount = models.DecimalField("Valor", max_digits=20, decimal_places=2)
     service_date = models.DateField("Data de Serviço")
     due_date = models.DateField("Data de Vencimento")
     category = models.CharField("Categoria", max_length=20)
@@ -50,7 +51,6 @@ class PaymentRequest(models.Model):
     financial_status = models.CharField("Status Financeiro", max_length=50)
     financial_status_completion_date = models.DateTimeField("Data de Conclusão do Status Financeiro", null=True, blank=True)
     invoice_number = models.CharField("Número da NF", max_length=255, null=True, blank=True)
-    id_omie = models.CharField("ID Omie", max_length=50, null=True, blank=True)
     
     # Logs
     created_at = models.DateTimeField(auto_now_add=True)
