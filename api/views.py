@@ -23,6 +23,7 @@ from .serializers.accounts import UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 import logging
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -245,27 +246,37 @@ class UnitsViewSet(ModelViewSet):
             self.process_bill_file(instance)
 
     def process_bill_file(self, unit):
-        url = "https://documentation.resolvenergiasolar.com/extract/fatura"
+        # Resolve a URL para o endpoint API
+        # Garante que a URL é absoluta (pode ser ajustado para usar seu domínio se necessário)
+        url = self.request.build_absolute_uri(reverse('api:invoice_information'))
+
         headers = {
             'accept': 'application/json'
         }
 
         try:
+            # Abre o arquivo da unidade
             with unit.bill_file.open('rb') as f:
                 files = {
-                    'file': (unit.bill_file.name, f, 'application/pdf')
+                    'bill_file': (unit.bill_file.name, f, 'application/pdf')
                 }
                 logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
+                
+                # Faz a requisição POST para a API
                 response = requests.post(url, headers=headers, files=files, timeout=5)
-                response.raise_for_status()
+                response.raise_for_status()  # Lança exceção em caso de status de erro HTTP
+
+                # Pega os dados retornados pela API
                 external_data = response.json()
 
+            # Atualiza os dados da unidade com base nos dados da API
             unit.name = external_data.get('name', unit.name)
-            unit.account_number = external_data.get('account', unit.account_number)
-            unit.unit_number = external_data.get('uc', unit.unit_number)
+            unit.account_number = external_data.get('uc', unit.unit_number)
+            unit.unit_number = external_data.get('account', unit.account_number)
             unit.type = external_data.get('type', unit.type)
-            # unit.address = external_data.get('address', unit.address)
+            # unit.address = external_data.get('address', unit.address)  # Se você precisar adicionar o campo de endereço
             unit.save()
+
             logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
 
         except requests.exceptions.Timeout:
@@ -292,3 +303,29 @@ class SaleViewSet(ModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticated]
+    
+from rest_framework.parsers import MultiPartParser
+from .utils import extract_data_from_pdf
+
+
+class InformacaoFaturaAPIView(APIView):
+    parser_classes = [MultiPartParser]
+    http_method_names = ['post']
+
+    def post(self, request):
+        if 'bill_file' not in request.FILES:
+            return Response({
+                'message': 'Arquivo da fatura é obrigatório.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        bill_file = request.FILES['bill_file']
+
+        try:
+            data = extract_data_from_pdf(bill_file)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'message': 'Erro ao processar a fatura.',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

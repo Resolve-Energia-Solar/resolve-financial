@@ -56,6 +56,7 @@ urlpatterns = [
     path('login/', UserLoginView.as_view(), name='login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('', include(router.urls)),
+    path('fatura/', InformacaoFaturaAPIView.as_view(), name='invoice_information'),
     re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

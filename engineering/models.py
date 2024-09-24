@@ -63,7 +63,8 @@ class Units(models.Model):
     name = models.CharField("Nome", max_length=200, null=True, blank=True)
     address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", null=True, blank=True)
     type = models.CharField("Tipo", max_length=100, null=True, blank=True)
-    account_number = models.CharField("Número da Conta", max_length=100, null=True, blank=True)
+    #Trocar nome para meter_number
+    account_number = models.CharField("Número do medidor", max_length=100, null=True, blank=True)
     bill_file = models.FileField("Arquivo da Fatura", upload_to="units-biils/", null=True, blank=True)
     change_owner = models.BooleanField("Troca de Titularidade", default=False)
     unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
