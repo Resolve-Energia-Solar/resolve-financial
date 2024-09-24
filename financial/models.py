@@ -2,6 +2,161 @@ from django.db import models
 
 
 class PaymentRequest(models.Model):
+    id = models.CharField(
+        primary_key=True,
+        max_length=8,
+        verbose_name='ID',
+        help_text='Identificador único da solicitação de pagamento'
+    )
+    protocol = models.CharField(
+        max_length=14,
+        verbose_name='Protocolo',
+        help_text='Protocolo da solicitação'
+    )
+    id_user = models.CharField(
+        max_length=8,
+        verbose_name='ID do Usuário',
+        help_text='Identificador do usuário que realizou a solicitação'
+    )
+    id_user_manager = models.CharField(
+        max_length=8,
+        verbose_name='ID do Gerente',
+        help_text='Identificador do gerente responsável'
+    )
+    id_user_department = models.ForeignKey(
+        'financial.UserDepartment',
+        verbose_name='ID do Departamento do Usuário',
+        help_text='Identificador do departamento do usuário',
+        on_delete=models.CASCADE,
+        db_column='id_user_department'
+    )
+    id_payment_request_supplier = models.CharField(
+        max_length=256,
+        verbose_name='ID do Fornecedor da Solicitação de Pagamento',
+        help_text='Identificador do fornecedor associado à solicitação de pagamento'
+    )
+    id_sale = models.CharField(
+        max_length=256,
+        null=True,
+        blank=True,
+        verbose_name='ID da Venda',
+        help_text='Identificador da venda associada (se aplicável)'
+    )
+    description = models.TextField(
+        verbose_name='Descrição',
+        help_text='Descrição detalhada da solicitação de pagamento'
+    )
+    amount = models.DecimalField(
+        max_digits=20,
+        decimal_places=6,
+        verbose_name='Valor',
+        help_text='Valor total da solicitação de pagamento'
+    )
+    service_date = models.DateField(
+        verbose_name='Data do Serviço',
+        help_text='Data em que o serviço foi realizado'
+    )
+    due_date = models.DateField(
+        verbose_name='Data de Vencimento',
+        help_text='Data de vencimento da solicitação de pagamento'
+    )
+    category = models.CharField(
+        max_length=50,
+        verbose_name='Categoria',
+        help_text='Categoria da solicitação de pagamento'
+    )
+    id_causative_department = models.CharField(
+        max_length=8,
+        null=True,
+        blank=True,
+        verbose_name='ID do Departamento Causador',
+        help_text='Identificador do departamento que causou a solicitação (se aplicável)'
+    )
+    id_payment_detail = models.CharField(
+        max_length=50,
+        verbose_name='ID do Detalhe do Pagamento',
+        help_text='Identificador do detalhe do pagamento'
+    )
+    id_bank_account = models.CharField(
+        max_length=8,
+        null=True,
+        blank=True,
+        verbose_name='ID da Conta Bancária',
+        help_text='Identificador da conta bancária para o pagamento (se aplicável)'
+    )
+    requesting_status = models.CharField(
+        max_length=50,
+        verbose_name='Status da Solicitação',
+        help_text='Status atual da solicitação de pagamento'
+    )
+    manager_status = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name='Status do Gerente',
+        help_text='Status atualizado pelo gerente (se aplicável)'
+    )
+    manager_status_completion_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Data de Conclusão do Status do Gerente',
+        help_text='Data e hora em que o gerente concluiu o status'
+    )
+    financial_status = models.CharField(
+        max_length=50,
+        verbose_name='Status Financeiro',
+        help_text='Status financeiro da solicitação de pagamento'
+    )
+    financial_status_completion_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Data de Conclusão do Status Financeiro',
+        help_text='Data e hora em que o status financeiro foi concluído'
+    )
+    action_date = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name='Data da Ação',
+        help_text='Data da ação relacionada à solicitação (se aplicável)'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Data de Criação',
+        help_text='Data e hora em que a solicitação foi criada'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Data de Atualização',
+        help_text='Data e hora da última atualização da solicitação'
+    )
+    invoice_number = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name='Número da Fatura',
+        help_text='Número da fatura associada (se aplicável)'
+    )
+    id_omie = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name='ID Omie',
+        help_text='Identificador no sistema Omie (se aplicável)'
+    )
+
+    class Meta:
+        db_table = 'payment_requests'
+        verbose_name = 'Solicitação de Pagamento'
+        verbose_name_plural = 'Solicitações de Pagamento'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Solicitação {self.id} - {self.description[:50]}..."
+
+
+"""
+class PaymentRequest(models.Model):
     
     PAYMENT_METHOD_CHOICES = (
         ('PIX', 'PIX'),
@@ -62,6 +217,8 @@ class PaymentRequest(models.Model):
         verbose_name = 'Requisição de Pagamento'
         verbose_name_plural = 'Requisições de Pagamento'
         ordering = ['-created_at']
+        db_table = 'payment_requests'
+"""
 
 
 class SaleResume(models.Model): 
