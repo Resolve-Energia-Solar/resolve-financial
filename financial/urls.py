@@ -8,6 +8,8 @@ urlpatterns = [
     path('solicitacao-de-pagamento/', PaymentRequestListView.as_view(), name='payment_request_list'),
     path('solicitacao-de-pagamento/<int:pk>/', PaymentRequestDetailView.as_view(), name='payment_request_detail'),
     path('solicitacao-de-pagamento/<int:pk>/editar/', PaymentRequestUpdateView.as_view(), name='payment_request_update'),
+    # Omie API
     path('fornecedores/', SuppliersListView.as_view(), name='suppliers_list'),
     path('categorias/', CategoriesListView.as_view(), name='categories_list'),
+    path('criar-fornecedor/', CreateSupplierView.as_view(), name='create_supplier'),
 ]

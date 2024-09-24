@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<title>
+    ERP &mdash; Solicitação de Pagamento
+</title>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <div class="row justify-content-center py-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Solicitação de Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped table-hover table-bordered">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Protocolo</th>
+                                <td>{{ payment_request.protocol }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">ID Omie</th>
+                                <td>{{ payment_request.id_omie }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Requisitante</th>
+                                <td>{{ payment_request.requester.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Gestor</th>
+                                <td>{{ payment_request.manager.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Setor</th>
+                                <td>{{ payment_request.department.name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Fornecedor</th>
+                                <td>{{ payment_request.supplier_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">ID do Fornecedor no Omie</th>
+                                <td>{{ payment_request.supplier }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Categoria</th>
+                                <td>{{ payment_request.category_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">ID da Categoria no Omie</th>
+                                <td>{{ payment_request.category }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Venda</th>
+                                <td>{{ payment_request.id_sale }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Descrição</th>
+                                <td>{{ payment_request.description|linebreaks }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Valor</th>
+                                <td>R$ {{ payment_request.amount }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Data de Serviço</th>
+                                <td>{{ payment_request.service_date }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Data de Vencimento</th>
+                                <td>{{ payment_request.due_date }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Setor Causador</th>
+                                <td>{{ payment_request.causative_department.name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Forma de Pagamento</th>
+                                <td>{{ payment_request.payment_method }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Status da Requisição</th>
+                                <td>{{ payment_request.requesting_status }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Status do Gestor</th>
+                                <td>{{ payment_request.manager_status }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Data de Conclusão do Status do Gestor</th>
+                                <td>{{ payment_request.manager_status_completion_date }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Status Financeiro</th>
+                                <td>{{ payment_request.financial_status }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Data de Conclusão do Status Financeiro</th>
+                                <td>{{ payment_request.financial_status_completion_date }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Número da NF</th>
+                                <td>{{ payment_request.invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Ações</th>
+                                <td>
+                                    <a href="{% url 'financial:payment_requests_edit' payment_request.id %}" class="btn btn-primary">Editar</a>
+                                    <a href="{% url 'financial:payment_requests_delete' payment_request.id %}" class="btn btn-danger">Excluir</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}{% endblock extra_scripts %}

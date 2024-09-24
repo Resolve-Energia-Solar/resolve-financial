@@ -13,6 +13,55 @@ from .forms import PaymentRequestForm
 from dotenv import load_dotenv
 load_dotenv()
 
+
+class PaymentRequestListView(UserPassesTestMixin, ListView):
+    model = PaymentRequest
+    template_name = 'financial/payment_requests_list.html'
+    context_object_name = 'payment_requests'
+    paginate_by = 10
+    
+    def test_func(self):
+        return self.request.user.has_perm('financial.view_paymentrequest')
+    
+    """
+    def get_queryset(self):
+        return PaymentRequest.objects.filter(requester=self.request.user) | PaymentRequest.objects.filter(manager=self.request.user) | PaymentRequest.objects.filter(department=self.request.user.department) | PaymentRequest.objects.filter(supplier=self.request.user)
+    """
+    
+
+class PaymentRequestDetailView(UserPassesTestMixin, DetailView):
+    
+    model = PaymentRequest
+    template_name = 'financial/payment_requests_detail.html'
+    
+    def test_func(self):
+        return self.request.user.has_perm('financial.view_paymentrequest') or self.request.user == self.get_object().requester or self.request.user == self.get_object().manager or self.request.user.department == self.get_object().department
+    
+
+class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
+        
+        model = PaymentRequest
+        form_class = PaymentRequestForm
+        template_name = 'financial/payment_requests_form.html'
+        success_url = reverse_lazy('financial:payment_requests_list')
+        
+        def test_func(self):
+            return self.request.user.has_perm('financial.add_paymentrequest')
+
+
+class PaymentRequestUpdateView(UserPassesTestMixin, UpdateView):
+    
+    model = PaymentRequest
+    template_name = 'financial/payment_requests_form.html'
+    fields = '__all__'
+    success_url = reverse_lazy('financial:payment_requests_list')
+    
+    def test_func(self):
+        return self.request.user.has_perm('financial.change_paymentrequest')
+
+
+# Omie API
+
 class OmieService:
     def __init__(self):
         self.base_url = os.getenv('OMIE_API_URL')
@@ -99,6 +148,75 @@ class OmieService:
                     return None
 
             return categorias
+        
+    def create_supplier(self, cnpj_cpf, name):
+        data = {
+            "call": "IncluirCliente",
+            "app_key": self.omie_app_key,
+            "app_secret": self.omie_app_secret,
+            "param": [
+                {
+                    "codigo_cliente_integracao": cnpj_cpf,
+                    "cnpj_cpf": cnpj_cpf,
+                    "razao_social": name,
+                    "nome_fantasia": name,
+                    "pessoa_fisica": "N" if len(cnpj_cpf) == 14 else "S",
+                    "tags": [
+                        {
+                            "tag": "Fornecedor"
+                        }
+                    ]
+                }
+            ]
+        }
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
+        try:
+            response = requests.post(f'{self.base_url}/clientes/', json=data, headers=headers)
+            try:
+                response_data = response.json()
+            except ValueError:
+                response_data = None
+
+            if response.status_code != 200:
+                # Extrair mensagem de erro específica
+                if response_data:
+                    if "faultstring" in response_data:
+                        error_message = response_data["faultstring"]
+                    elif "descricao_status" in response_data:
+                        error_message = response_data["descricao_status"]
+                    else:
+                        error_message = response.text
+                else:
+                    error_message = response.reason
+                return {"error": error_message}
+
+            # Verificar se o Omie retornou um status de erro mesmo com status HTTP 200
+            if response_data and response_data.get("codigo_status") != "0":
+                error_message = response_data.get("descricao_status", "Erro desconhecido do Omie.")
+                return {"error": error_message}
+
+            return response_data
+
+        except requests.RequestException as e:
+            # Verificar se há uma resposta associada à exceção
+            if e.response:
+                try:
+                    error_data = e.response.json()
+                    if "faultstring" in error_data:
+                        error_message = error_data["faultstring"]
+                    elif "descricao_status" in error_data:
+                        error_message = error_data["descricao_status"]
+                    else:
+                        error_message = e.response.text
+                except ValueError:
+                    error_message = e.response.text or str(e)
+            else:
+                error_message = str(e)
+            return {"error": error_message}
 
 
 class SuppliersListView(APIView):
@@ -175,45 +293,40 @@ class CategoriesListView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class PaymentRequestListView(UserPassesTestMixin, ListView):
-    model = PaymentRequest
-    template_name = 'financial/payment_requests_list.html'
-    context_object_name = 'payment_requests'
-    paginate_by = 10
-    
-    def test_func(self):
-        return self.request.user.has_perm('financial.view_paymentrequest')
-    
-    def get_queryset(self):
-        return PaymentRequest.objects.filter(requester=self.request.user) | PaymentRequest.objects.filter(manager=self.request.user) | PaymentRequest.objects.filter(deparment=self.request.user) | PaymentRequest.objects.filter(supplier=self.request.user)
-    
+class CreateSupplierView(APIView):
 
-class PaymentRequestDetailView(UserPassesTestMixin, DetailView):
-    
-    model = PaymentRequest
-    template_name = 'financial/payment_requests_detail.html'
-    
-    def test_func(self):
-        return self.request.user.has_perm('financial.view_paymentrequest') or self.request.user == self.get_object().requester or self.request.user == self.get_object().manager or self.request.user == self.get_object().deparment or self.request.user == self.get_object().supplier
-    
+    def post(self, request):
+        omie_service = OmieService()
 
-class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
-        
-        model = PaymentRequest
-        form_class = PaymentRequestForm
-        template_name = 'financial/payment_requests_form.html'
-        success_url = reverse_lazy('financial:payment_requests_list')
-        
-        def test_func(self):
-            return self.request.user.has_perm('financial.add_paymentrequest')
+        if omie_service is None:
+            return JsonResponse({"error": "Failed to initialize Omie service"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        cpf_cnpj = request.data.get('cpfcnpj')
+        name = request.data.get('name')
 
-class PaymentRequestUpdateView(UserPassesTestMixin, UpdateView):
-    
-    model = PaymentRequest
-    template_name = 'financial/payment_requests_form.html'
-    fields = '__all__'
-    success_url = reverse_lazy('financial:payment_requests_list')
-    
-    def test_func(self):
-        return self.request.user.has_perm('financial.change_paymentrequest')
+        if not cpf_cnpj or not name:
+            return JsonResponse({"error": "Missing required fields: 'cpfcnpj' and 'name'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = omie_service.create_supplier(
+            cnpj_cpf=cpf_cnpj,
+            name=name
+        )
+
+        if "error" in response:
+            return JsonResponse({"error": response["error"]}, status=status.HTTP_400_BAD_REQUEST)
+
+        if response.get("codigo_status") != "0":
+            return JsonResponse({
+                "error": response.get("descricao_status", "Unknown error"),
+                "codigo_cliente_integracao": response.get("codigo_cliente_integracao"),
+                "codigo_cliente_omie": response.get("codigo_cliente_omie"),
+                "codigo_status": response.get("codigo_status")
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return JsonResponse({
+            'message': 'Fornecedor criado com sucesso!',
+            'data': {
+                'cnpj_cpf': cpf_cnpj,
+                'name': name
+            }
+        }, status=status.HTTP_201_CREATED)

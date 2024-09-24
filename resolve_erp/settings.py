@@ -136,7 +136,7 @@ DATABASES = {
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
 
-# DATABASE_ROUTERS = ['financial.db_routers.MySQLRouter']
+DATABASE_ROUTERS = ['financial.db_routers.MySQLRouter']
 
 
 # User model

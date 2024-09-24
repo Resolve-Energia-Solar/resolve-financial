@@ -13,6 +13,7 @@ class PaymentRequestForm(forms.ModelForm):
             'supplier': 'Beneficiário (CPF/CNPJ)'
         }
         widgets = {
+            'amount': forms.NumberInput(attrs={'class': 'mask-money', 'type': 'text'}),
             'requester': Select2Widget(),
             'manager': Select2Widget(),
             'department': Select2Widget(),
