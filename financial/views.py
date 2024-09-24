@@ -1,9 +1,12 @@
+from datetime import datetime, timedelta
+import random
+import string
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from rest_framework.views import APIView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.urls import reverse_lazy
-from .models import PaymentRequest
+from .models import AppsheetUser, PaymentRequest
 import os
 
 import requests
@@ -43,10 +46,43 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
         model = PaymentRequest
         form_class = PaymentRequestForm
         template_name = 'financial/payment_requests_form.html'
-        success_url = reverse_lazy('financial:payment_requests_list')
+        success_url = reverse_lazy('financial:payment_request_list')
         
         def test_func(self):
             return self.request.user.has_perm('financial.add_paymentrequest')
+        
+        def calc_due_date(self, service_date, amount):
+            if amount <= 3000:
+                due_date = service_date + timedelta(days=2)
+            elif amount <= 6000:
+                due_date = service_date + timedelta(days=3)
+            elif amount <= 10000:
+                due_date = service_date + timedelta(days=4)
+            elif amount <= 20000:
+                due_date = service_date + timedelta(days=10)
+            else:
+                due_date = service_date + timedelta(days=15)
+            return due_date
+            
+        def form_valid(self, form):
+            appsheet_user = AppsheetUser.objects.get(email=self.request.user.email)
+            form.instance.id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+            now = datetime.now()
+            form.instance.protocol = (
+                f"{now.strftime('%H%M%S')}"
+                f"{now.year}"
+                f"{now.strftime('%m')}"
+                f"{now.strftime('%d')}"
+            )
+            form.instance.requester = appsheet_user
+            form.instance.department = appsheet_user.user_department
+            form.instance.manager = appsheet_user.user_manager
+            form.instance.due_date = self.calc_due_date(form.instance.service_date, form.instance.amount)
+            form.instance.requesting_status = 'Solicitado'
+            form.instance.manager_status = 'Pendente'
+            form.instance.financial_status = 'Pendente'
+            form.instance.created_at = now
+            return super().form_valid(form)
 
 
 class PaymentRequestUpdateView(UserPassesTestMixin, UpdateView):

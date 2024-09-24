@@ -3,13 +3,13 @@
 
 {% block extra_head %}
     <title>
-        ERP &mdash; Concessionaria
+        ERP &mdash; Solicitação de Pagamento
     </title>
 {% endblock extra_head %}
 
 {% block content %}
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Concessionaria de energia /</span> Lista</h4>
+    <h4 class="py-3 mb-4"><span class="text-muted fw-light">Solicitação de Pagamento /</span> Lista</h4>
 
     <!-- Invoice List Table -->
     <div class="card">
@@ -17,7 +17,7 @@
             <div class="card-datatable-header d-flex justify-content-between p-3">
                 {% if user|has_perm:'financial.add_paymentrequest' %}
                 <div class="card-datatable-header-actions">
-                    <a href="{% url 'financial:payment_request_create' %}" class="btn btn-primary">Nova Concessionaria</a>
+                    <a href="{% url 'financial:payment_request_create' %}" class="btn btn-primary">Nova Solicitação de Pagamento</a>
                 </div>
                 {% endif %}
                 <div class="card-datatable-header-actions">
@@ -34,27 +34,28 @@
             <table class="invoice-list-table table border-top">
                 <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>CNPJ<th>
+                        <th>Protocolo</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for payment_request in object_list %}
                     <tr>
-                        <td>{{ payment_request.name|title }}</td>
-                        <td>{{ payment_request.cnpj }}</td>
-                        <td></td>
+                        <td>{{ payment_request.protocol }}</td>
+                        <td>{{ payment_request.description|truncatewords:'5' }}</td>
+                        <td>R$ {{ payment_request.amount|floatformat:'2' }}</td>
                         <td>
                             <a href="#" role="button" data-bs-toggle="offcanvas" data-bs-target="#payment_requestDetailOffcanvas{{ payment_request.id }}">
                                 <i class="bx bx-detail fs-3"></i>
                             </a>
-                            {% if user|has_perm:'financial.change_payment_request' %}
-                            <a href="{% url 'financial:payment_request_update' payment_request.pk %}">
+                            {% if user|has_perm:'financial.change_paymentrequest' %}
+                            {# <a href="{% url 'financial:payment_request_update' payment_request.pk %}"> #}
                                 <i class="bx bx-edit fs-3"></i>
                             </a>
                             {% endif %}
-                            {% if user|has_perm:'financial.delete_payment_request' %}
+                            {% if user|has_perm:'financial.delete_paymentrequest' %}
                             <a href="" role="button" data-bs-toggle="modal" data-bs-target="#payment_requestDeleteModal{{ payment_request.id }}">
                                 <i class="bx bx-trash fs-3"></i>
                             </a>
@@ -71,7 +72,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <a href="{% url 'accounts:soft_delete' app_label='financial' model_name='payment_request' pk=payment_request.pk %}" class="btn btn-danger">Excluir</a>
+                                            {# <a href="{% url 'accounts:soft_delete' app_label='financial' model_name='payment_request' pk=payment_request.pk %}" class="btn btn-danger">Excluir</a> #}
                                         </div>
                                     </div>
                                 </div>
@@ -91,7 +92,7 @@
                             <p><strong>Endereço:</strong> {{ payment_request.address|default:"Não informado" }}</p>
                             <p><strong>Telefone:</strong> {{ payment_request.phone|default:"Não informado" }}</p>
                             <p><strong>Email:</strong> {{ payment_request.email|default:"Não informado" }}</p>
-                            <a href="{% url 'financial:payment_request_update' payment_request.pk %}" class="btn btn-warning">Editar</a>
+                            {# <a href="{% url 'financial:payment_request_update' payment_request.pk %}" class="btn btn-warning">Editar</a> #}
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Fechar</button>
                         </div>
                     </div>

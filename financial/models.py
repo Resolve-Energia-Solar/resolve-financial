@@ -2,6 +2,21 @@ from django.db import models
 
 
 class PaymentRequest(models.Model):
+    
+    PAYMENT_METHOD_CHOICES = (
+        ('PIX', 'PIX'),
+        ('TED', 'TED'),
+        ('DOC', 'DOC'),
+        ('Boleto', 'Boleto'),
+        ('Cartão de Crédito', 'Cartão de Crédito'),
+        ('Cartão de Débito', 'Cartão de Débito'),
+        ('Dinheiro', 'Dinheiro'),
+        ('Cheque', 'Cheque'),
+        ('Transferência Bancária', 'Transferência Bancária'),
+        ('Depósito Bancário', 'Depósito Bancário'),
+        ('Outros', 'Outros'),
+    )
+    
     id = models.CharField(
         primary_key=True,
         max_length=8,
@@ -13,34 +28,43 @@ class PaymentRequest(models.Model):
         verbose_name='Protocolo',
         help_text='Protocolo da solicitação'
     )
-    id_user = models.CharField(
-        max_length=8,
-        verbose_name='ID do Usuário',
-        help_text='Identificador do usuário que realizou a solicitação'
+    requester = models.ForeignKey(
+        "financial.AppsheetUser",
+        on_delete=models.CASCADE,
+        verbose_name='Usuário Solicitante',
+        help_text='Usuário que realizou a solicitação',
+        db_column='id_user',
+        related_name='requested_payments'
     )
-    id_user_manager = models.CharField(
-        max_length=8,
+    manager = models.ForeignKey(
+        "financial.AppsheetUser",
+        on_delete=models.CASCADE,
         verbose_name='ID do Gerente',
-        help_text='Identificador do gerente responsável'
+        help_text='Identificador do gerente responsável',
+        db_column='id_user_manager',
+        related_name='managed_payments'
     )
-    id_user_department = models.ForeignKey(
+    department = models.ForeignKey(
         'financial.UserDepartment',
         verbose_name='ID do Departamento do Usuário',
         help_text='Identificador do departamento do usuário',
         on_delete=models.CASCADE,
-        db_column='id_user_department'
+        db_column='id_user_deparment'
     )
-    id_payment_request_supplier = models.CharField(
+    supplier = models.CharField(
         max_length=256,
         verbose_name='ID do Fornecedor da Solicitação de Pagamento',
-        help_text='Identificador do fornecedor associado à solicitação de pagamento'
+        help_text='Identificador do fornecedor associado à solicitação de pagamento',
+        db_column='id_payment_request_supplier'
     )
-    id_sale = models.CharField(
-        max_length=256,
+    sale = models.ForeignKey(
+        "financial.SaleResume",
         null=True,
         blank=True,
-        verbose_name='ID da Venda',
-        help_text='Identificador da venda associada (se aplicável)'
+        on_delete=models.CASCADE,
+        verbose_name='Venda',
+        help_text='Venda associada (se aplicável)',
+        db_column='id_sale'
     )
     description = models.TextField(
         verbose_name='Descrição',
@@ -65,24 +89,29 @@ class PaymentRequest(models.Model):
         verbose_name='Categoria',
         help_text='Categoria da solicitação de pagamento'
     )
-    id_causative_department = models.CharField(
-        max_length=8,
+    causative_department = models.ForeignKey(
+        "financial.UserDepartment",
         null=True,
         blank=True,
-        verbose_name='ID do Departamento Causador',
-        help_text='Identificador do departamento que causou a solicitação (se aplicável)'
+        on_delete=models.CASCADE,
+        verbose_name='Departamento Causador',
+        help_text='Departamento que causou a solicitação (se aplicável)',
+        db_column='id_causative_department',
+        related_name='causative_department_payments'
     )
-    id_payment_detail = models.CharField(
+    payment_method = models.CharField(
         max_length=50,
-        verbose_name='ID do Detalhe do Pagamento',
-        help_text='Identificador do detalhe do pagamento'
+        verbose_name='Forma de Pagamento',
+        db_column='id_payment_detail',
+        choices=PAYMENT_METHOD_CHOICES
     )
-    id_bank_account = models.CharField(
+    bank_account = models.CharField(
         max_length=8,
         null=True,
         blank=True,
         verbose_name='ID da Conta Bancária',
-        help_text='Identificador da conta bancária para o pagamento (se aplicável)'
+        help_text='Identificador da conta bancária para o pagamento (se aplicável)',
+        db_column='id_bank_account'
     )
     requesting_status = models.CharField(
         max_length=50,
@@ -134,8 +163,8 @@ class PaymentRequest(models.Model):
         max_length=255,
         null=True,
         blank=True,
-        verbose_name='Número da Fatura',
-        help_text='Número da fatura associada (se aplicável)'
+        verbose_name='Número da Nota Fiscal',
+        help_text='Número da nota fiscal associada (se aplicável)'
     )
     id_omie = models.CharField(
         max_length=50,
@@ -305,3 +334,43 @@ class BankAccount(models.Model):
         verbose_name_plural = 'Contas Bancárias'
         ordering = ['account_holder_name']
 """
+
+
+class AppsheetUser(models.Model):
+    id = models.CharField(primary_key=True, max_length=8)
+    register = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(max_length=50, unique=True)
+    preferred_name = models.CharField(max_length=50)
+    profile_image = models.CharField(max_length=100, null=True, blank=True)
+    birth_date = models.DateField()
+    gender = models.CharField(max_length=1)
+    document = models.CharField(max_length=11, unique=True)
+    contact_number = models.CharField(max_length=18)
+    email = models.CharField(max_length=50)
+    password = models.CharField(max_length=256, null=True, blank=True)
+    password_reset_token = models.TextField(null=True, blank=True)
+    password_reset_token_expiration_time = models.TextField(null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    # user_role = models.ForeignKey('UserRole', on_delete=models.CASCADE, db_column='id_user_roles')
+    # contract_type = models.ForeignKey('ContractType', on_delete=models.CASCADE, db_column='id_contract_types')
+    user_department = models.ForeignKey('UserDepartment', on_delete=models.CASCADE, db_column='id_user_departments')
+    # unit = models.ForeignKey('Unit', on_delete=models.CASCADE, db_column='id_units')
+    user_manager = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, db_column='id_user_manager')
+    is_gps_location_allowed = models.BooleanField(default=False)
+    termination_date = models.DateField(null=True, blank=True)
+    hire_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=False)
+    global_updated_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=50)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=50)
+
+    class Meta:
+        db_table = 'users'
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
