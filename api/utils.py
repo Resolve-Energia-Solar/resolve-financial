@@ -33,14 +33,14 @@ def extract_name(text):
 
 
 def account_number(text):
-    match = re.search(r'Conta Contrato\s*([0-9]{10})', text, re.IGNORECASE)
+    match = re.search(r'Conta Contrato\s*([0-9]{6,10})', text, re.IGNORECASE)
     if match:
         return match.group(1)
     return "Número da Conta Contrato não disponível"
 
 
 def uc_number(text):
-    match = re.search(r'Instalação:\s*([^\n]+)', text, re.IGNORECASE)
+    match = re.search(r'([0-9]+)\s+Consumo', text, re.IGNORECASE)
     if match:
         return match.group(1)
-    return "Número da UC não disponível"
+    return "Número não encontrado"

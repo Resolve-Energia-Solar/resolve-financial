@@ -11,7 +11,7 @@ class CardAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("lead", "total_value", "contract_number")
 
 
 @admin.register(Lead)
