@@ -125,11 +125,19 @@ DATABASES = {
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get("DB_NAME"),
-        'USER': os.environ.get("DB_USER"),
-        'PASSWORD': os.environ.get("DB_PASSWORD"),
-        'HOST': os.environ.get("DB_HOST"),
-        'PORT': os.environ.get("DB_PORT"),
+        'NAME': os.environ.get("DB1_NAME"),
+        'USER': os.environ.get("DB1_USER"),
+        'PASSWORD': os.environ.get("DB1_PASSWORD"),
+        'HOST': os.environ.get("DB1_HOST"),
+        'PORT': os.environ.get("DB1_PORT"),
+    },
+    'mysql_old': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get("DB2_NAME"),
+        'USER': os.environ.get("DB2_USER"),
+        'PASSWORD': os.environ.get("DB2_PASSWORD"),
+        'HOST': os.environ.get("DB2_HOST"),
+        'PORT': os.environ.get("DB2_PORT"),
     }
 }
 
