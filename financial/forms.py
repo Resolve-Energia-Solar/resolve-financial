@@ -5,10 +5,13 @@ from django_select2.forms import Select2Widget, HeavySelect2Widget
 
 class PaymentRequestForm(forms.ModelForm):
     
+    supplier_name = forms.CharField(widget=forms.HiddenInput(), required=False)
+    supplier_cpf = forms.CharField(widget=forms.HiddenInput(), required=False)
+    
     class Meta:
         model = PaymentRequest
         fields = '__all__'
-        fields = ['causative_department', 'sale', 'supplier', 'description', 'category', 'amount', 'payment_method', 'service_date', 'invoice_number']
+        fields = ['causative_department', 'sale', 'supplier', 'description', 'category', 'amount', 'payment_method', 'service_date', 'invoice_number', 'supplier_name', 'supplier_cpf']
         labels = {
             'supplier': 'Beneficiário (CPF/CNPJ)'
         }

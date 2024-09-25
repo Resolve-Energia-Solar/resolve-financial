@@ -12,4 +12,5 @@ urlpatterns = [
     path('fornecedores/', SuppliersListView.as_view(), name='suppliers_list'),
     path('categorias/', CategoriesListView.as_view(), name='categories_list'),
     path('criar-fornecedor/', CreateSupplierView.as_view(), name='create_supplier'),
+    path('aprovacao-gestor/', ManagerApprovalView.as_view(), name='manager_response'),
 ]

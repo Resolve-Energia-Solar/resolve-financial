@@ -3,7 +3,7 @@
 
 {% block extra_head %}
 <title>
-  ERP &mdash; 
+  ERP &mdash;
   {% if object %}
   Editar Solicitação de Pagamento
   {% else %}
@@ -13,11 +13,11 @@
 <style>
   /* Posicionamento fixo para os alertas no canto superior direito */
   #alert-container {
-      position: fixed;
-      top: 100px;
-      right: 20px;
-      z-index: 1050;
-      width: 500px;
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1050;
+    width: 500px;
   }
 </style>
 {% endblock extra_head %}
@@ -50,7 +50,8 @@
         </a>
       </div>
 
-      <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+      <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
@@ -77,7 +78,8 @@
         </div>
       </div>
 
-      <div class="modal fade" id="addAttachmentModal" tabindex="-1" aria-labelledby="addAttachmentModalLabel" aria-hidden="true">
+      <div class="modal fade" id="addAttachmentModal" tabindex="-1" aria-labelledby="addAttachmentModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
@@ -95,7 +97,8 @@
         </div>
       </div>
 
-      <div class="modal fade" id="dueDateForecastModal" tabindex="-1" aria-labelledby="dueDateForecastModalLabel" aria-hidden="true">
+      <div class="modal fade" id="dueDateForecastModal" tabindex="-1" aria-labelledby="dueDateForecastModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
@@ -140,7 +143,7 @@
 
       <form method="post" id="branch_form" class="w-100 mt-4">
         {% csrf_token %}
-        <div class="row justify-content-center g-3">        
+        <div class="row justify-content-center g-3">
           <div class="col-12 px-4">
 
             {{ form|crispy }}
@@ -156,32 +159,34 @@
             </div>
 
           </div>
-          </div>
         </div>
-      </form>
     </div>
+    </form>
   </div>
+</div>
 </div>
 {% endblock content %}
 
 {% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js" integrity="sha512-pHVGpX7F/27yZ0ISY+VVjyULApbDlD0/X0rgGbTqCE7WFW5MezNTWG/dnhtbBuICzsd0WQPgpE4REBLv+UqChw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"
+  integrity="sha512-pHVGpX7F/27yZ0ISY+VVjyULApbDlD0/X0rgGbTqCE7WFW5MezNTWG/dnhtbBuICzsd0WQPgpE4REBLv+UqChw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-  $(document).ready(function() {
+  $(document).ready(function () {
     // Aplicar máscara
-    $('.mask-money').mask('000.000.000.000.000,00', {reverse: true});
+    $('.mask-money').mask('000.000.000.000.000,00', { reverse: true });
 
-    $('.mask-cpf-cnpj').on('input', function() {
+    $('.mask-cpf-cnpj').on('input', function () {
       var value = $(this).val().replace(/\D/g, '');
       if (value.length > 11) {
-      $(this).mask('00.000.000/0000-00', {reverse: true});
+        $(this).mask('00.000.000/0000-00', { reverse: true });
       } else {
-      $(this).mask('000.000.000-00', {reverse: true});
+        $(this).mask('000.000.000-00', { reverse: true });
       }
     }).trigger('input').attr('maxlength', '18');
 
     // Converter o valor antes do envio do formulário
-    $('form').on('submit', function() {
+    $('form').on('submit', function () {
       // Capturar o valor e substituir a vírgula por ponto
       var value = $('#id_amount').val().replace(/\./g, '').replace(',', '.');
       $('#id_amount').val(value);
@@ -194,86 +199,121 @@
    * @param {string} type - Tipo de alerta (e.g., 'success', 'danger', 'warning', 'info').
   */
   function showBootstrapAlert(message, type) {
-     // Cria o elemento do alerta
-     var alert = $(`
+    // Cria o elemento do alerta
+    var alert = $(`
          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
              ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
           </div>`);
 
-      // Adiciona o alerta ao contêiner
-      $('#alert-container').append(alert);
+    // Adiciona o alerta ao contêiner
+    $('#alert-container').append(alert);
 
-      // Opcional: Remover o alerta após alguns segundos
-      setTimeout(function() {
-          alert.alert('close');
-      }, 5000); // Remove após 5 segundos
+    // Opcional: Remover o alerta após alguns segundos
+    setTimeout(function () {
+      alert.alert('close');
+    }, 5000); // Remove após 5 segundos
   }
 
-        // Manipulador de clique para adicionar fornecedor
-        $('#addSupplierModal button.btn-primary').on('click', function() {
-            var name = $('#supplierName').val().trim();
-            var cpfcnpj = $('#supplierCPFCNPJ').val().replace(/\D/g, '');
-            var csrftoken = getCookie('csrftoken');
+  // Manipulador de clique para adicionar fornecedor
+  $('#addSupplierModal button.btn-primary').on('click', function () {
+    var name = $('#supplierName').val().trim();
+    var cpfcnpj = $('#supplierCPFCNPJ').val().replace(/\D/g, '');
+    var csrftoken = getCookie('csrftoken');
 
-            // Validação no lado do cliente
-            if (!name || !cpfcnpj) {
-                showBootstrapAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
-                return;
-            }
+    // Validação no lado do cliente
+    if (!name || !cpfcnpj) {
+      showBootstrapAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
+      return;
+    }
 
-            $.ajax({
-                url: '{% url "financial:create_supplier" %}',
-                type: 'POST',
-                data: JSON.stringify({
-                    name: name,
-                    cpfcnpj: cpfcnpj
-                }),
-                contentType: 'application/json',
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                },
-                success: function(response) {
-                    // Exibir alerta de sucesso
-                    showBootstrapAlert('Fornecedor criado com sucesso!', 'success');
+    $.ajax({
+      url: '{% url "financial:create_supplier" %}',
+      type: 'POST',
+      data: JSON.stringify({
+        name: name,
+        cpfcnpj: cpfcnpj
+      }),
+      contentType: 'application/json',
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+      },
+      success: function (response) {
+        // Exibir alerta de sucesso
+        showBootstrapAlert('Fornecedor criado com sucesso!', 'success');
 
-                    // Opcional: Atualizar a interface do usuário ou limpar campos
-                    $('#supplierName').val('');
-                    $('#supplierCPFCNPJ').val('');
-                },
-                error: function(xhr, status, error) {
-                    // Tratar a resposta de erro
-                    var errorMessage = 'Erro ao criar fornecedor.';
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        if (response.error) {
-                            errorMessage += ' ' + response.error;
-                        }
-                    } catch (e) {
-                        errorMessage += ' ' + xhr.statusText;
-                    }
-                    // Exibir alerta de erro
-                    showBootstrapAlert(errorMessage, 'danger');
-                }
-            });
-
-            // Fechar o modal após a ação (opcional)
-            $('#addSupplierModal').modal('hide');
-        });
-    
-  function getCookie(name) {
-      var cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-          var cookies = document.cookie.split(';');
-          for (var i = 0; i < cookies.length; i++) {
-              var cookie = cookies[i].trim();
-              if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                  break;
-              }
+        // Opcional: Atualizar a interface do usuário ou limpar campos
+        // $('#supplierName').val('');
+        // $('#supplierCPFCNPJ').val('');
+      },
+      error: function (xhr, status, error) {
+        // Tratar a resposta de erro
+        var errorMessage = 'Erro ao criar fornecedor.';
+        try {
+          var response = JSON.parse(xhr.responseText);
+          if (response.error) {
+            errorMessage += ' ' + response.error;
           }
+        } catch (e) {
+          errorMessage += ' ' + xhr.statusText;
+        }
+        // Exibir alerta de erro
+        showBootstrapAlert(errorMessage, 'danger');
       }
-      return cookieValue;
+    });
+
+    // Fechar o modal após a ação (opcional)
+    $('#addSupplierModal').modal('hide');
+  });
+
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
   }
+
+  $(document).ready(function () {
+
+    // Função para extrair nome e CPF do texto da opção
+    function extrairDadosFornecedor(texto) {
+      var partes = texto.split(' - ');
+      if (partes.length === 2) {
+        return {
+          nome: partes[0].trim(),
+          cpf: partes[1].trim()
+        };
+      }
+      return {
+        nome: '',
+        cpf: ''
+      };
+    }
+
+    // Evento de seleção no Select2
+    $('#id_supplier').on('select2:select', function (e) {
+      var textoSelecionado = $(this).find('option:selected').text();
+      var dados = extrairDadosFornecedor(textoSelecionado);
+
+      $('#id_supplier_name').val(dados.nome);
+      $('#id_supplier_cpf').val(dados.cpf);
+    });
+
+    // Preencher campos ocultos se houver um valor selecionado ao carregar a página
+    var textoSelecionadoInicial = $('#id_supplier').find('option:selected').text();
+    if ($('#id_supplier').val()) {
+      var dadosIniciais = extrairDadosFornecedor(textoSelecionadoInicial);
+      $('#id_supplier_name').val(dadosIniciais.nome);
+      $('#id_supplier_cpf').val(dadosIniciais.cpf);
+    }
+  });
 </script>
 {% endblock extra_scripts %}

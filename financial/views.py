@@ -1,20 +1,25 @@
-from datetime import datetime, timedelta
+import os
 import random
 import string
-from django.http import JsonResponse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from rest_framework.views import APIView
-from django.contrib.auth.mixins import UserPassesTestMixin
-from django.urls import reverse_lazy
-from .models import AppsheetUser, PaymentRequest
-import os
+import logging
+from datetime import datetime, timedelta
 
 import requests
+from dotenv import load_dotenv
+from django.http import JsonResponse
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import UserPassesTestMixin
 from rest_framework import status
+from rest_framework.views import APIView
+
+from .models import AppsheetUser, PaymentRequest
 from .forms import PaymentRequestForm
 
-from dotenv import load_dotenv
+
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 class PaymentRequestListView(UserPassesTestMixin, ListView):
@@ -42,47 +47,93 @@ class PaymentRequestDetailView(UserPassesTestMixin, DetailView):
     
 
 class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
+    model = PaymentRequest
+    form_class = PaymentRequestForm
+    template_name = 'financial/payment_requests_form.html'
+    success_url = reverse_lazy('financial:payment_request_list')
+    
+    def test_func(self):
+        return self.request.user.has_perm('financial.add_paymentrequest')
+    
+    def calc_due_date(self, service_date, amount):
+        if amount <= 3000:
+            due_date = service_date + timedelta(days=2)
+        elif amount <= 6000:
+            due_date = service_date + timedelta(days=3)
+        elif amount <= 10000:
+            due_date = service_date + timedelta(days=4)
+        elif amount <= 20000:
+            due_date = service_date + timedelta(days=10)
+        else:
+            due_date = service_date + timedelta(days=15)
+        return due_date
         
-        model = PaymentRequest
-        form_class = PaymentRequestForm
-        template_name = 'financial/payment_requests_form.html'
-        success_url = reverse_lazy('financial:payment_request_list')
-        
-        def test_func(self):
-            return self.request.user.has_perm('financial.add_paymentrequest')
-        
-        def calc_due_date(self, service_date, amount):
-            if amount <= 3000:
-                due_date = service_date + timedelta(days=2)
-            elif amount <= 6000:
-                due_date = service_date + timedelta(days=3)
-            elif amount <= 10000:
-                due_date = service_date + timedelta(days=4)
-            elif amount <= 20000:
-                due_date = service_date + timedelta(days=10)
-            else:
-                due_date = service_date + timedelta(days=15)
-            return due_date
-            
-        def form_valid(self, form):
+    def form_valid(self, form):
+        try:
             appsheet_user = AppsheetUser.objects.get(email=self.request.user.email)
-            form.instance.id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-            now = datetime.now()
-            form.instance.protocol = (
-                f"{now.strftime('%H%M%S')}"
-                f"{now.year}"
-                f"{now.strftime('%m')}"
-                f"{now.strftime('%d')}"
+        except AppsheetUser.DoesNotExist:
+            form.add_error(None, "Usuário não encontrado.")
+            return self.form_invalid(form)
+
+        form.instance.id = ''.join(random.choices(string.ascii_letters + string.digits, k=8)).lower()
+        now = datetime.now()
+        form.instance.protocol = (
+            f"{now.strftime('%H%M%S')}"
+            f"{now.year}"
+            f"{now.strftime('%m')}"
+            f"{now.strftime('%d')}"
+        )
+        form.instance.requester = appsheet_user
+        form.instance.department = appsheet_user.user_department
+        form.instance.manager = appsheet_user.user_manager
+        form.instance.due_date = self.calc_due_date(form.instance.service_date, form.instance.amount)
+        form.instance.requesting_status = 'Solicitado'
+        form.instance.manager_status = 'Pendente'
+        form.instance.financial_status = 'Pendente'
+        form.instance.created_at = now
+
+        response = super().form_valid(form)
+
+        # Obter supplier_id, supplier_name e supplier_cpf
+        supplier_id = form.cleaned_data.get('id_supplier')
+        supplier_name = form.cleaned_data.get('supplier_name')
+        supplier_cpf = form.cleaned_data.get('supplier_cpf')
+
+        # Validar os campos do fornecedor
+        if not all([supplier_id, supplier_name, supplier_cpf]):
+            logger.warning("Informações do fornecedor incompletas.")
+            # Opcional: Adicionar mensagens de erro ou tomar outras ações
+            messages.warning(self.request, "Informações do fornecedor estão incompletas.")
+
+        # Preparar o corpo da requisição para o webhook
+        webhook_body = {
+            "id": form.instance.id,
+            "user_manager_email": form.instance.manager.email,
+            "description": (
+                f"Solicitação de Autorização de Pagamento - nº {form.instance.protocol}\n"
+                f"Criada em {form.instance.created_at.strftime('%d/%m/%Y %H:%M:%S')} por {form.instance.requester.name} "
+                f"do setor {form.instance.department.name}.\n"
+                f"Valor da solicitação: {form.instance.amount}.\n"
+                f"Descrição: {form.instance.description}.\n"
+                f"Fornecedor: {supplier_name} ({supplier_cpf})"
             )
-            form.instance.requester = appsheet_user
-            form.instance.department = appsheet_user.user_department
-            form.instance.manager = appsheet_user.user_manager
-            form.instance.due_date = self.calc_due_date(form.instance.service_date, form.instance.amount)
-            form.instance.requesting_status = 'Solicitado'
-            form.instance.manager_status = 'Pendente'
-            form.instance.financial_status = 'Pendente'
-            form.instance.created_at = now
-            return super().form_valid(form)
+        }
+
+        # Enviar a requisição POST para o webhook com tratamento de erros
+        webhook_url = "https://prod-15.brazilsouth.logic.azure.com:443/workflows/378509394cc24a5d9568d886b8aaa7cd/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=aE_oGAJAt-2bdt8YXcus_tksAl8BHweHnGj58i6DlvI"
+        headers = {'Content-Type': 'application/json'}
+
+        try:
+            response_webhook = requests.post(webhook_url, json=webhook_body, headers=headers)
+            response_webhook.raise_for_status()  # Levanta uma exceção para status de erro HTTP
+            logger.info(f"Webhook enviado com sucesso para {webhook_url}. Resposta: {response_webhook.status_code}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro ao enviar para o webhook: {e}")
+            # Opcional: Adicionar mensagens de erro para o usuário ou tomar outras ações
+            messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
+
+        return response
+
 
 
 class PaymentRequestUpdateView(UserPassesTestMixin, UpdateView):
@@ -366,3 +417,22 @@ class CreateSupplierView(APIView):
                 'name': name
             }
         }, status=status.HTTP_201_CREATED)
+
+
+class ManagerApprovalView(APIView):
+
+    def post(self, request):
+        data = request.data
+        payment_request_id = data.get('id')
+        manager_answer = data.get('manager_answer')
+
+        if manager_answer not in ["Aprovado", "Reprovado"]:
+            return requests.Response({"error": "Resposta do gestor inválida. Deve ser 'Aprovado' ou 'Reprovado'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            payment_request = PaymentRequest.objects.get(id=payment_request_id)
+            payment_request.manager_status = manager_answer
+            payment_request.save()
+            return requests.Response({"message": "Status do gestor atualizado com sucesso."}, status=status.HTTP_200_OK)
+        except PaymentRequest.DoesNotExist:
+            return requests.Response({"error": "Solicitação de pagamento não encontrada."}, status=status.HTTP_404_NOT_FOUND)
