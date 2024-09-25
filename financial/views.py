@@ -155,6 +155,7 @@ class OmieService:
         self.base_url = os.getenv('OMIE_API_URL')
         self.omie_app_key = os.getenv('OMIE_ACESSKEY')
         self.omie_app_secret = os.getenv('OMIE_ACESSTOKEN')
+        self.logger = logging.getLogger(__name__)
 
     def listar_clientes(self, cnpj_cpf):
         data = {
@@ -177,7 +178,8 @@ class OmieService:
         }
 
         try:
-            response = requests.post(f'{self.base_url}/clientes/', json=data, headers=headers)
+            # Endpoint correto para clientes
+            response = requests.post(f'{self.base_url}/geral/clientes/', json=data, headers=headers)
             response.raise_for_status()
             clientes = response.json().get('clientes_cadastro', [])
             fornecedores = [
@@ -186,56 +188,57 @@ class OmieService:
             ]
             return fornecedores
         except requests.RequestException as e:
-            print(f'Erro na requisição Omie: {e}')
+            self.logger.error(f'Erro na requisição Omie: {e}')
             return None
         
     def listar_categorias(self):
-            pagina = 1
-            registros_por_pagina = 300  # Ajuste conforme necessário
-            categorias = []
+        pagina = 1
+        registros_por_pagina = 300  # Ajuste conforme necessário
+        categorias = []
 
-            while True:
-                data = {
-                    "call": "ListarCategorias",
-                    "app_key": self.omie_app_key,
-                    "app_secret": self.omie_app_secret,
-                    "param": [
-                        {
-                            "pagina": pagina,
-                            "registros_por_pagina": registros_por_pagina
-                        }
-                    ]
-                }
+        while True:
+            data = {
+                "call": "ListarCategorias",
+                "app_key": self.omie_app_key,
+                "app_secret": self.omie_app_secret,
+                "param": [
+                    {
+                        "pagina": pagina,
+                        "registros_por_pagina": registros_por_pagina
+                    }
+                ]
+            }
 
-                headers = {
-                    'Content-Type': 'application/json'
-                }
+            headers = {
+                'Content-Type': 'application/json'
+            }
 
-                try:
-                    response = requests.post(f'{self.base_url}/categorias/', json=data, headers=headers)
-                    response.raise_for_status()
-                    response_data = response.json()
-                    categorias_pagina = response_data.get('categoria_cadastro', [])
-                    total_de_paginas = response_data.get('total_de_paginas', 1)
+            try:
+                # Endpoint correto para categorias
+                response = requests.post(f'{self.base_url}/financas/categorias/', json=data, headers=headers)
+                response.raise_for_status()
+                response_data = response.json()
+                categorias_pagina = response_data.get('categoria_cadastro', [])
+                total_de_paginas = response_data.get('total_de_paginas', 1)
 
-                    # Filtrar apenas as categorias ativas (conta_inativa = 'N')
-                    categorias_ativas = [
-                        categoria for categoria in categorias_pagina
-                        if categoria.get('conta_inativa') == 'N'
-                    ]
+                # Filtrar apenas as categorias ativas (conta_inativa = 'N')
+                categorias_ativas = [
+                    categoria for categoria in categorias_pagina
+                    if categoria.get('conta_inativa') == 'N'
+                ]
 
-                    categorias.extend(categorias_ativas)
+                categorias.extend(categorias_ativas)
 
-                    if pagina >= total_de_paginas:
-                        break
+                if pagina >= total_de_paginas:
+                    break
 
-                    pagina += 1
+                pagina += 1
 
-                except requests.RequestException as e:
-                    print(f'Erro na requisição Omie: {e}')
-                    return None
+            except requests.RequestException as e:
+                self.logger.error(f'Erro na requisição Omie: {e}')
+                return None
 
-            return categorias
+        return categorias
         
     def create_supplier(self, cnpj_cpf, name):
         data = {
@@ -263,7 +266,8 @@ class OmieService:
         }
 
         try:
-            response = requests.post(f'{self.base_url}/clientes/', json=data, headers=headers)
+            # Endpoint correto para incluir clientes
+            response = requests.post(f'{self.base_url}/geral/clientes/', json=data, headers=headers)
             try:
                 response_data = response.json()
             except ValueError:
@@ -304,6 +308,7 @@ class OmieService:
                     error_message = e.response.text or str(e)
             else:
                 error_message = str(e)
+            self.logger.error(f'Erro na requisição Omie: {error_message}')
             return {"error": error_message}
 
     def criar_conta_pagar(self, payment_request):
@@ -317,15 +322,15 @@ class OmieService:
             "param": [
                 {
                     "codigo_lancamento_integracao": payment_request.id,
-                    "codigo_cliente_fornecedor": payment_request.supplier,
+                    "codigo_cliente_fornecedor": payment_request.supplier.id_omie,  # Usar ID do Omie
                     "data_vencimento": payment_request.due_date.strftime('%d/%m/%Y'),
                     "data_entrada": payment_request.service_date.strftime('%d/%m/%Y'),
                     "valor_documento": float(payment_request.amount),
-                    "codigo_categoria": payment_request.category,
+                    "codigo_categoria": payment_request.category.id_omie,  # Usar ID do Omie
                     "observacao": f"nº {payment_request.protocol}: {payment_request.description}",
                     "distribuicao": [
                         {
-                            "cCodDep": payment_request.department.id_omie,
+                            "cCodDep": payment_request.department.id_omie,  # Usar ID do Omie
                             "nPerDep": "100",
                             "nValDep": float(payment_request.amount)
                         }
@@ -339,7 +344,8 @@ class OmieService:
         }
 
         try:
-            response = requests.post(f'{self.base_url}/contas_pagar/', json=data, headers=headers)
+            # Endpoint correto para contas a pagar
+            response = requests.post(f'{self.base_url}/financas/contapagar/', json=data, headers=headers)
             response.raise_for_status()
             response_data = response.json()
 
@@ -348,11 +354,12 @@ class OmieService:
                 error_message = response_data.get("descricao_status", "Erro desconhecido do Omie.")
                 return {"error": error_message}
 
+            self.logger.info(f"Conta a pagar criada com sucesso no Omie para solicitação {payment_request.id}.")
             return response_data
 
         except requests.RequestException as e:
-            # Log o erro ou trate conforme necessário
-            print(f'Erro ao criar conta a pagar no Omie: {e}')
+            # Log do erro
+            self.logger.error(f'Erro ao criar conta a pagar no Omie: {e}')
             return {"error": str(e)}
 
 
