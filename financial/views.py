@@ -13,6 +13,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from .models import AppsheetUser, PaymentRequest
 from .forms import PaymentRequestForm
@@ -427,12 +428,21 @@ class ManagerApprovalView(APIView):
         manager_answer = data.get('manager_answer')
 
         if manager_answer not in ["Aprovado", "Reprovado"]:
-            return requests.Response({"error": "Resposta do gestor inválida. Deve ser 'Aprovado' ou 'Reprovado'."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Resposta do gestor inválida. Deve ser 'Aprovado' ou 'Reprovado'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             payment_request = PaymentRequest.objects.get(id=payment_request_id)
             payment_request.manager_status = manager_answer
             payment_request.save()
-            return requests.Response({"message": "Status do gestor atualizado com sucesso."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Status do gestor atualizado com sucesso."},
+                status=status.HTTP_200_OK
+            )
         except PaymentRequest.DoesNotExist:
-            return requests.Response({"error": "Solicitação de pagamento não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Solicitação de pagamento não encontrada."},
+                status=status.HTTP_404_NOT_FOUND
+            )
