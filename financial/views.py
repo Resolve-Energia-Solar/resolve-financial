@@ -109,7 +109,7 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
         # Preparar o corpo da requisição para o webhook
         webhook_body = {
             "id": form.instance.id,
-            "user_manager_email": form.instance.manager.email,
+            "manager_email": form.instance.manager.email,
             "description": (
                 f"Solicitação de Autorização de Pagamento - nº {form.instance.protocol}\n"
                 f"Criada em {form.instance.created_at.strftime('%d/%m/%Y %H:%M:%S')} por {form.instance.requester.name} "
