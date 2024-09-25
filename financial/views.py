@@ -215,7 +215,7 @@ class OmieService:
 
             try:
                 # Endpoint correto para categorias
-                response = requests.post(f'{self.base_url}/financas/categorias/', json=data, headers=headers)
+                response = requests.post(f'{self.base_url}/geral/categorias/', json=data, headers=headers)
                 response.raise_for_status()
                 response_data = response.json()
                 categorias_pagina = response_data.get('categoria_cadastro', [])
