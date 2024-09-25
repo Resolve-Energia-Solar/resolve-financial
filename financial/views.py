@@ -306,6 +306,55 @@ class OmieService:
                 error_message = str(e)
             return {"error": error_message}
 
+    def criar_conta_pagar(self, payment_request):
+        """
+        Cria uma conta a pagar no Omie baseada na solicitação de pagamento.
+        """
+        data = {
+            "call": "IncluirContaPagar",
+            "app_key": self.omie_app_key,
+            "app_secret": self.omie_app_secret,
+            "param": [
+                {
+                    "codigo_lancamento_integracao": payment_request.id,
+                    "codigo_cliente_fornecedor": payment_request.supplier,
+                    "data_vencimento": payment_request.due_date.strftime('%d/%m/%Y'),
+                    "data_entrada": payment_request.service_date.strftime('%d/%m/%Y'),
+                    "valor_documento": float(payment_request.amount),
+                    "codigo_categoria": payment_request.category,
+                    "observacao": f"nº {payment_request.protocol}: {payment_request.description}",
+                    "distribuicao": [
+                        {
+                            "cCodDep": payment_request.department.id_omie,
+                            "nPerDep": "100",
+                            "nValDep": float(payment_request.amount)
+                        }
+                    ]
+                }
+            ]
+        }
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
+        try:
+            response = requests.post(f'{self.base_url}/contas_pagar/', json=data, headers=headers)
+            response.raise_for_status()
+            response_data = response.json()
+
+            # Verifique a resposta para erros específicos do Omie
+            if response_data.get("codigo_status") != "0":
+                error_message = response_data.get("descricao_status", "Erro desconhecido do Omie.")
+                return {"error": error_message}
+
+            return response_data
+
+        except requests.RequestException as e:
+            # Log o erro ou trate conforme necessário
+            print(f'Erro ao criar conta a pagar no Omie: {e}')
+            return {"error": str(e)}
+
 
 class SuppliersListView(APIView):
 
@@ -427,6 +476,7 @@ class ManagerApprovalView(APIView):
         payment_request_id = data.get('payment_request_id')
         manager_answer = data.get('manager_answer')
 
+        # Validação da resposta do gestor
         if manager_answer not in ["Aprovado", "Reprovado"]:
             return Response(
                 {"error": "Resposta do gestor inválida. Deve ser 'Aprovado' ou 'Reprovado'."},
@@ -435,14 +485,40 @@ class ManagerApprovalView(APIView):
 
         try:
             payment_request = PaymentRequest.objects.get(id=payment_request_id)
-            payment_request.manager_status = manager_answer
-            payment_request.save()
-            return Response(
-                {"message": "Status do gestor atualizado com sucesso."},
-                status=status.HTTP_200_OK
-            )
         except PaymentRequest.DoesNotExist:
             return Response(
                 {"error": "Solicitação de pagamento não encontrada."},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # Atualizar o status do gestor
+        payment_request.manager_status = manager_answer
+        payment_request.requesting_status = "Em andamento" if manager_answer == "Aprovado" else "Cancelado"
+        payment_request.save()
+        logger.info(f"Solicitação de pagamento {payment_request_id} atualizada para status '{manager_answer}'.")
+
+        # Se aprovado, enviar para o Omie
+        if manager_answer == "Aprovado":
+            omie_service = OmieService()
+            omie_response = omie_service.criar_conta_pagar(payment_request)
+
+            if "error" in omie_response:
+                # Log do erro
+                logger.error(f"Erro ao enviar para o Omie: {omie_response['error']}")
+                # Opcional: Reverter o status ou tomar outra ação
+                # Retornar uma resposta indicando o erro
+                return Response(
+                    {"error": f"Falha ao enviar para o Omie: {omie_response['error']}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            else:
+                # Sucesso ao enviar para o Omie
+                logger.info(f"Solicitação de pagamento {payment_request_id} enviada com sucesso para o Omie.")
+                # Opcional: Atualizar o status financeiro ou outros campos
+                payment_request.financial_status = "Enviado para Omie"
+                payment_request.save()
+
+        return Response(
+            {"message": "Status do gestor atualizado com sucesso."},
+            status=status.HTTP_200_OK
+        )
