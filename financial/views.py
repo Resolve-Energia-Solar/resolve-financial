@@ -498,7 +498,7 @@ class ManagerApprovalView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Atualizar o status do gestor
+        # Atualizar o status do gestor e o status de solicitação
         payment_request.manager_status = manager_answer
         payment_request.requesting_status = "Em andamento" if manager_answer == "Aprovado" else "Cancelado"
         payment_request.save()
@@ -510,19 +510,15 @@ class ManagerApprovalView(APIView):
             omie_response = omie_service.criar_conta_pagar(payment_request)
 
             if "error" in omie_response:
-                # Log do erro
                 logger.error(f"Erro ao enviar para o Omie: {omie_response['error']}")
-                # Opcional: Reverter o status ou tomar outra ação
-                # Retornar uma resposta indicando o erro
                 return Response(
                     {"error": f"Falha ao enviar para o Omie: {omie_response['error']}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             else:
-                # Sucesso ao enviar para o Omie
                 logger.info(f"Solicitação de pagamento {payment_request_id} enviada com sucesso para o Omie.")
-                # Opcional: Atualizar o status financeiro ou outros campos
                 payment_request.financial_status = "Enviado para Omie"
+                payment_request.id_omie = omie_response.get('codigo_lancamento_omie')
                 payment_request.save()
 
         return Response(
