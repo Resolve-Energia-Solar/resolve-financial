@@ -322,15 +322,15 @@ class OmieService:
             "param": [
                 {
                     "codigo_lancamento_integracao": payment_request.id,
-                    "codigo_cliente_fornecedor": payment_request.supplier.id_omie,  # Usar ID do Omie
+                    "codigo_cliente_fornecedor": payment_request.supplier,
                     "data_vencimento": payment_request.due_date.strftime('%d/%m/%Y'),
                     "data_entrada": payment_request.service_date.strftime('%d/%m/%Y'),
                     "valor_documento": float(payment_request.amount),
-                    "codigo_categoria": payment_request.category.id_omie,  # Usar ID do Omie
+                    "codigo_categoria": payment_request.category,
                     "observacao": f"nº {payment_request.protocol}: {payment_request.description}",
                     "distribuicao": [
                         {
-                            "cCodDep": payment_request.department.id_omie,  # Usar ID do Omie
+                            "cCodDep": payment_request.department.id_omie,
                             "nPerDep": "100",
                             "nValDep": float(payment_request.amount)
                         }
