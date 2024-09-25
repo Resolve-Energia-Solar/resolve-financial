@@ -424,7 +424,7 @@ class ManagerApprovalView(APIView):
 
     def post(self, request):
         data = request.data
-        payment_request_id = data.get('id')
+        payment_request_id = data.get('payment_request_id')
         manager_answer = data.get('manager_answer')
 
         if manager_answer not in ["Aprovado", "Reprovado"]:
