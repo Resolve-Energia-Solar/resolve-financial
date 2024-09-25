@@ -558,7 +558,7 @@ class PaymentPaidWebhookView(APIView):
 
                 if codigo_lancamento_integracao:
                     try:
-                        payment_request = PaymentRequest.objects.get(id_omie=codigo_lancamento_integracao)
+                        payment_request = PaymentRequest.objects.get(id=codigo_lancamento_integracao)
                     except PaymentRequest.DoesNotExist:
                         logger.error(f"PaymentRequest com código de integração '{codigo_lancamento_integracao}' não encontrado.")
                         continue
