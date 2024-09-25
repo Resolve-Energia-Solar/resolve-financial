@@ -525,3 +525,68 @@ class ManagerApprovalView(APIView):
             {"message": "Status do gestor atualizado com sucesso."},
             status=status.HTTP_200_OK
         )
+
+
+class PaymentPaidWebhookView(APIView):
+    """
+    View para receber webhooks do Omie quando uma conta a pagar for paga.
+    Atualiza o status financeiro e do solicitante na solicitação de pagamento.
+    """
+
+    def post(self, request):
+        data = request.data
+        logger.info(f"Recebido webhook de baixa do Omie: {data}")
+
+        # Verificar se o tópico é o esperado
+        topic = data.get('topic', '')
+        if topic != "Financas.ContaPagar.BaixaRealizada":
+            logger.warning(f"Tópico inesperado: {topic}")
+            return Response({"error": "Tópico inválido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        events = data.get('event', [])
+
+        if not events:
+            logger.warning("Nenhum evento encontrado no webhook.")
+            return Response({"error": "Nenhum evento encontrado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for event in events:
+            codigo_baixa = event.get('codigo_baixa')
+            contas_a_pagar = event.get('conta_a_pagar', [])
+
+            for conta in contas_a_pagar:
+                codigo_lancamento_integracao = conta.get('codigo_lancamento_integracao')
+                codigo_lancamento_omie = conta.get('codigo_lancamento_omie')
+
+                if codigo_lancamento_integracao:
+                    try:
+                        payment_request = PaymentRequest.objects.get(id_omie=codigo_lancamento_integracao)
+                    except PaymentRequest.DoesNotExist:
+                        logger.error(f"PaymentRequest com código de integração '{codigo_lancamento_integracao}' não encontrado.")
+                        continue
+
+                    # Atualizar os status
+                    payment_request.financial_status = "Pago"
+                    payment_request.requesting_status = "Concluído"
+                    payment_request.save()
+
+                    logger.info(f"PaymentRequest '{payment_request.id}' atualizado para 'Pago' e solicitante para 'Concluído'.")
+
+                elif codigo_lancamento_omie:
+                    # Caso 'codigo_lancamento_integracao' não esteja disponível, tente mapear pelo 'codigo_lancamento_omie'
+                    try:
+                        payment_request = PaymentRequest.objects.get(id_omie=codigo_lancamento_omie)
+                    except PaymentRequest.DoesNotExist:
+                        logger.error(f"PaymentRequest com código de lançamento Omie '{codigo_lancamento_omie}' não encontrado.")
+                        continue
+
+                    # Atualizar os status
+                    payment_request.financial_status = "Pago"
+                    payment_request.requesting_status = "Concluído"
+                    payment_request.save()
+
+                    logger.info(f"PaymentRequest '{payment_request.id}' atualizado para 'Pago' e solicitante para 'Concluído'.")
+                else:
+                    logger.error("Nenhum identificador encontrado na conta a pagar para mapear a solicitação de pagamento.")
+                    continue
+
+        return Response({"message": "Webhook processado com sucesso."}, status=status.HTTP_200_OK)
