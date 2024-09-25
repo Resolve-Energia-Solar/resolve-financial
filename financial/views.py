@@ -550,7 +550,6 @@ class PaymentPaidWebhookView(APIView):
             return Response({"error": "Nenhum evento encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
         for event in events:
-            codigo_baixa = event.get('codigo_baixa')
             contas_a_pagar = event.get('conta_a_pagar', [])
 
             for conta in contas_a_pagar:

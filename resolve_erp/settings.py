@@ -250,6 +250,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = reverse_lazy('accounts:login')
 LOGIN_REDIRECT_URL = reverse_lazy('resolve_crm:index')
 
+
 # Configuração de envio de e-mail
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -257,3 +258,119 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+
+# Admins
+ADMINS = [
+    (os.getenv('ADMIN_NAME'), os.getenv('ADMIN_EMAIL')),
+]
+
+# Configuração do Logging
+if DEBUG == False:
+
+    import logging
+    import logging.handlers
+    
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "-"*60 + "\n{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+                "style": "{",
+            },
+        },
+        "filters": {
+            "debug_filter": {
+                "()": "django.utils.log.CallbackFilter",
+                "callback": lambda record: record.levelno == logging.DEBUG,
+            },
+            "info_filter": {
+                "()": "django.utils.log.CallbackFilter",
+                "callback": lambda record: record.levelno == logging.INFO,
+            },
+            "warning_filter": {
+                "()": "django.utils.log.CallbackFilter",
+                "callback": lambda record: record.levelno == logging.WARNING,
+            },
+            "error_filter": {
+                "()": "django.utils.log.CallbackFilter",
+                "callback": lambda record: record.levelno == logging.ERROR,
+            },
+            "critical_filter": {
+                "()": "django.utils.log.CallbackFilter",
+                "callback": lambda record: record.levelno == logging.CRITICAL,
+            },
+        },
+        "handlers": {
+            "mail_admins": {
+                "level": "ERROR",
+                "class": "django.utils.log.AdminEmailHandler",
+                "include_html": True,
+                "formatter": "verbose",
+            },
+            "debug_file": {
+                "level": "DEBUG",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/debug.log",
+                "formatter": "verbose",
+                "maxBytes": 50 * 1024 * 1024,
+                "backupCount": 10,
+                "filters": ["debug_filter"],
+            },
+            "info_file": {
+                "level": "INFO",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/info.log",
+                "formatter": "verbose",
+                "maxBytes": 50 * 1024 * 1024,
+                "backupCount": 10,
+                "filters": ["info_filter"],
+            },
+            "warning_file": {
+                "level": "WARNING",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/warning.log",
+                "formatter": "verbose",
+                "maxBytes": 50 * 1024 * 1024,
+                "backupCount": 10,
+                "filters": ["warning_filter"],
+            },
+            "error_file": {
+                "level": "ERROR",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/error.log",
+                "formatter": "verbose",
+                "maxBytes": 50 * 1024 * 1024,
+                "backupCount": 10,
+                "filters": ["error_filter"],
+            },
+            "critical_file": {
+                "level": "CRITICAL",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/critical.log",
+                "formatter": "verbose",
+                "maxBytes": 50 * 1024 * 1024,
+                "backupCount": 10,
+                "filters": ["critical_filter"],
+            },
+        },
+        "loggers": {
+            "django": {
+                "handlers": ["mail_admins"],
+                "level": "ERROR",
+                "propagate": True,
+            },
+            "": {
+                "handlers": ["debug_file", "info_file", "warning_file", "error_file", "critical_file"],
+                "level": "DEBUG",
+                "propagate": True,
+            },
+        },
+    }
+
+    LOGGING["handlers"]["debug_file"]["filters"] = ["debug_filter"]
+    LOGGING["handlers"]["info_file"]["filters"] = ["info_filter"]
+    LOGGING["handlers"]["warning_file"]["filters"] = ["warning_filter"]
+    LOGGING["handlers"]["error_file"]["filters"] = ["error_filter"]
+    LOGGING["handlers"]["critical_file"]["filters"] = ["critical_filter"]
