@@ -12,6 +12,6 @@ urlpatterns = [
     # Payment Requests
     path('solicitacao-de-pagamento/criar/', PaymentRequestCreateView.as_view(), name='payment_request_create'),
     path('solicitacao-de-pagamento/', PaymentRequestListView.as_view(), name='payment_request_list'),
-    path('solicitacao-de-pagamento/<int:pk>/', PaymentRequestDetailView.as_view(), name='payment_request_detail'),
-    path('solicitacao-de-pagamento/<int:pk>/editar/', PaymentRequestUpdateView.as_view(), name='payment_request_update'),
+    path('solicitacao-de-pagamento/<str:pk>/', PaymentRequestDetailView.as_view(), name='payment_request_detail'),
+    path('solicitacao-de-pagamento/<str:pk>/editar/', PaymentRequestUpdateView.as_view(), name='payment_request_update'),
 ]

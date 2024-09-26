@@ -12,104 +12,132 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title">Solicitação de Pagamento</h5>
+                    <h3 class="card-title text-center">Solicitação de Pagamento<br>nº {{ object.protocol }}</h3>
                 </div>
                 <div class="card-body">
                     <table class="table table-striped table-hover table-bordered">
                         <tbody>
                             <tr>
                                 <th scope="row">Protocolo</th>
-                                <td>{{ payment_request.protocol }}</td>
+                                <td>{{ object.protocol }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">ID Omie</th>
-                                <td>{{ payment_request.id_omie }}</td>
+                                <td>{{ object.id_omie|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Requisitante</th>
-                                <td>{{ payment_request.requester.get_full_name }}</td>
+                                <td>{{ object.requester.preferred_name }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Gestor</th>
-                                <td>{{ payment_request.manager.get_full_name }}</td>
+                                <td>{{ object.manager.preferred_name }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Setor</th>
-                                <td>{{ payment_request.department.name }}</td>
+                                <td>{{ object.department.name }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Fornecedor</th>
-                                <td>{{ payment_request.supplier_name }}</td>
+                                <td>{{ object.supplier_name|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">ID do Fornecedor no Omie</th>
-                                <td>{{ payment_request.supplier }}</td>
+                                <td>{{ object.supplier|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Categoria</th>
-                                <td>{{ payment_request.category_name }}</td>
+                                <td>{{ object.category_name|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">ID da Categoria no Omie</th>
-                                <td>{{ payment_request.category }}</td>
+                                <td>{{ object.category|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Venda</th>
-                                <td>{{ payment_request.id_sale }}</td>
+                                <td>{{ object.id_sale.contract_number|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Descrição</th>
-                                <td>{{ payment_request.description|linebreaks }}</td>
+                                <td>{{ object.description|linebreaks }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Valor</th>
-                                <td>R$ {{ payment_request.amount }}</td>
+                                <td>R$ {{ object.amount|floatformat:'2' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Data de Serviço</th>
-                                <td>{{ payment_request.service_date }}</td>
+                                <td>{{ object.service_date }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Data de Vencimento</th>
-                                <td>{{ payment_request.due_date }}</td>
+                                <td>{{ object.due_date }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Setor Causador</th>
-                                <td>{{ payment_request.causative_department.name }}</td>
+                                <td>{{ object.causative_department.name }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Forma de Pagamento</th>
-                                <td>{{ payment_request.payment_method }}</td>
+                                <td>{{ object.payment_method }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Status da Requisição</th>
-                                <td>{{ payment_request.requesting_status }}</td>
+                                <td>
+                                    {% if object.requesting_status == "Concluído" %}
+                                        <span class="badge bg-success">{{ object.requesting_status }}</span>
+                                    {% elif object.requesting_status == "Em andamento" %}
+                                        <span class="badge bg-warning">{{ object.requesting_status }}</span>
+                                    {% elif object.requesting_status == "Solicitado" %}
+                                        <span class="badge bg-info">{{ object.requesting_status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ object.requesting_status }}</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row">Status do Gestor</th>
-                                <td>{{ payment_request.manager_status }}</td>
+                                <td>
+                                    {% if object.manager_status == "Pendente" %}
+                                        <span class="badge bg-warning">{{ object.manager_status }}</span>
+                                    {% elif object.manager_status == "Aprovado" %}
+                                        <span class="badge bg-success">{{ object.manager_status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ object.manager_status }}</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row">Data de Conclusão do Status do Gestor</th>
-                                <td>{{ payment_request.manager_status_completion_date }}</td>
+                                <td>{{ object.manager_status_completion_date|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Status Financeiro</th>
-                                <td>{{ payment_request.financial_status }}</td>
+                                <td>
+                                    {% if object.financial_status == "Pendente" %}
+                                        <span class="badge bg-warning">{{ object.financial_status }}</span>
+                                    {% elif object.financial_status == "Lançado" %}
+                                        <span class="badge bg-info">{{ object.financial_status }}</span>
+                                    {% elif object.financial_status == "Pago" %}
+                                        <span class="badge bg-success">{{ object.financial_status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ object.financial_status }}</span>
+                                    {% endif %}
                             </tr>
                             <tr>
                                 <th scope="row">Data de Conclusão do Status Financeiro</th>
-                                <td>{{ payment_request.financial_status_completion_date }}</td>
+                                <td>{{ object.financial_status_completion_date|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Número da NF</th>
-                                <td>{{ payment_request.invoice_number }}</td>
+                                <td>{{ object.invoice_number|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Ações</th>
                                 <td>
-                                    <a href="{% url 'financial:payment_requests_edit' payment_request.id %}" class="btn btn-primary">Editar</a>
-                                    <a href="{% url 'financial:payment_requests_delete' payment_request.id %}" class="btn btn-danger">Excluir</a>
+                                    <a href="{% url 'financial:payment_request_update' object.id %}" class="btn btn-primary">Editar</a>
+                                    <a href="#" class="btn btn-danger">Excluir</a>
+                                    <a href="{% url 'financial:payment_request_list' %}" class="btn btn-secondary">Voltar</a>
                                 </td>
                             </tr>
                         </tbody>

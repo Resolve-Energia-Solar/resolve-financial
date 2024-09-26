@@ -28,9 +28,38 @@ class PaymentRequestListView(UserPassesTestMixin, ListView):
     template_name = 'financial/payment_requests_list.html'
     context_object_name = 'payment_requests'
     paginate_by = 10
-    
+
     def test_func(self):
         return self.request.user.has_perm('financial.view_paymentrequest')
+
+    def get_queryset(self):
+        query = super().get_queryset()
+        search_query = self.request.GET.get('search', '')
+        protocol_query = self.request.GET.get('protocol', '')
+        due_date = self.request.GET.get('due_date', '')
+        requesting_status = self.request.GET.get('requesting_status', '')
+        manager_status = self.request.GET.get('manager_status', '')
+        financial_status = self.request.GET.get('financial_status', '')
+
+        if search_query:
+            query = query.filter(description__icontains=search_query)
+            
+        if protocol_query:
+            query = query.filter(protocol__icontains=protocol_query)
+        
+        if due_date:
+            query = query.filter(due_date=due_date)
+        
+        if requesting_status:
+            query = query.filter(requesting_status=requesting_status)
+        
+        if manager_status:
+            query = query.filter(manager_status=manager_status)
+        
+        if financial_status:
+            query = query.filter(financial_status=financial_status)
+        
+        return query        
     
     """
     def get_queryset(self):
@@ -517,7 +546,6 @@ class ManagerApprovalView(APIView):
                 )
             else:
                 logger.info(f"Solicitação de pagamento {payment_request_id} enviada com sucesso para o Omie.")
-                payment_request.financial_status = "Enviado para Omie"
                 payment_request.id_omie = omie_response.get('codigo_lancamento_omie')
                 payment_request.save()
 

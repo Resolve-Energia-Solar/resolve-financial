@@ -72,7 +72,7 @@ class PaymentRequest(models.Model):
     )
     amount = models.DecimalField(
         max_digits=20,
-        decimal_places=6,
+        decimal_places=2,
         verbose_name='Valor',
         help_text='Valor total da solicitação de pagamento'
     )
@@ -173,6 +173,9 @@ class PaymentRequest(models.Model):
         verbose_name='ID Omie',
         help_text='Identificador no sistema Omie (se aplicável)'
     )
+    
+    def appsheet_user(self):
+        return AppsheetUser.objects.get(id=self.requester)
 
     class Meta:
         db_table = 'payment_requests'
