@@ -99,7 +99,7 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
             )
         }
     
-        webhook_url = "https://prod-15.brazilsouth.logic.azure.com:443/workflows/378509394cc24a5d9568d886b8aaa7cd/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=aE_oGAJAt-2bdt8YXcus_tksAl8BHweHnGj58i6DlvI"
+        webhook_url = os.getenv('PAYMENT_REQUEST_APPROVAL_WEBHOOK_URL')
         headers = {'Content-Type': 'application/json'}
     
         try:
