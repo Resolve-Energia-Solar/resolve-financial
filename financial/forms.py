@@ -11,7 +11,7 @@ class PaymentRequestForm(forms.ModelForm):
     class Meta:
         model = PaymentRequest
         fields = '__all__'
-        fields = ['causative_department', 'sale', 'supplier', 'description', 'category', 'amount', 'payment_method', 'service_date', 'invoice_number', 'supplier_name', 'supplier_cpf']
+        fields = ['causative_department', 'sale', 'supplier', 'description', 'category', 'amount', 'payment_method', 'service_date', 'due_date', 'invoice_number', 'supplier_name', 'supplier_cpf']
         labels = {
             'supplier': 'Beneficiário (CPF/CNPJ)'
         }

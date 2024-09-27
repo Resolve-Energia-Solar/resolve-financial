@@ -312,5 +312,51 @@
       $('#id_supplier_cpf').val(dadosIniciais.cpf);
     }
   });
+
+
+  function checkFieldsAndEnableDueDate() {
+    const amount = document.getElementById('id_amount').value;
+    const category = document.getElementById('id_category').value;
+    const dueDateInput = document.getElementById('id_due_date');
+    var csrftoken = getCookie('csrftoken');
+
+    if (amount && category) {
+      // Faz a solicitação para a API
+      fetch('/financeiro/solicitacao-de-pagamento/calcular-vencimento/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({ amount: amount, category: category }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          const dueDate = data.due_date;
+          // Verifica se a data foi retornada corretamente
+          if (dueDate) {
+            dueDateInput.disabled = false;
+            dueDateInput.min = dueDate;
+            dueDateInput.value = dueDate;
+          } else {
+            console.error("Erro ao calcular a data mínima");
+            dueDateInput.disabled = true;
+          }
+        })
+        .catch(error => {
+          console.error("Erro na solicitação para a API", error);
+          dueDateInput.disabled = true;
+        });
+    } else {
+      dueDateInput.disabled = true;
+    }
+  }
+
+  // Desabilita o campo inicialmente
+  document.getElementById('id_due_date').disabled = true;
+
+  // Adiciona eventos de verificação em todos os campos obrigatórios
+  document.getElementById('id_amount').addEventListener('change', checkFieldsAndEnableDueDate);
+  document.getElementById('id_category').addEventListener('change', checkFieldsAndEnableDueDate);
 </script>
 {% endblock extra_scripts %}

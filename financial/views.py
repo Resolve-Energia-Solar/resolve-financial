@@ -84,6 +84,11 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
     
     def test_func(self):
         return self.request.user.has_perm('financial.add_paymentrequest')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['appsheet_user'] = AppsheetUser.objects.get(email=self.request.user.email)
+        return context
         
     def send_webhook(self, form_instance, supplier_name, supplier_cpf):
         webhook_body = {
@@ -110,50 +115,6 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
             logger.error(f"Erro ao enviar para o webhook: {e}")
             messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
 
-    def calc_due_date(self, service_date, amount, category, department, request_time):
-        # Regras para dias úteis normais
-        due_dates = {
-            3000: 2,
-            6000: 3,
-            10000: 4,
-            20000: 10,
-        }
-
-        # Exceção 1: Categorias que podem solicitar para dois dias úteis
-        two_day_categories = {"2.05.87", "2.05.84", "2.05.83", "2.05.90", "2.05.91"}
-        if category in two_day_categories:
-            return workdays.workday(service_date, 2)
-
-        # Exceção 2: Setores e categorias especiais que podem ser processados no mesmo dia ou próximo dia
-        special_departments = {"5b4ceda5", "a80f0c71"}
-        special_categories = {"2.02.94", "2.03.67"}
-
-        # Verifica se a solicitação está dentro do horário limite de 15h
-        if department in special_departments or category in special_categories:
-            # Considera que request_time é uma string no formato 'HH:MM' ou um objeto datetime.time
-            request_time = datetime.strptime(request_time, "%H:%M").time() if isinstance(request_time, str) else request_time
-            if request_time < datetime.strptime("15:00", "%H:%M").time():
-                return service_date  # Hoje, se for antes das 15h
-            else:
-                return workdays.workday(service_date, 1)  # Próximo dia útil, se for após às 15h
-
-        # Exceção 3: Setores que podem ser processados no sábado, mas nunca no domingo
-        saturday_departments = {"2", "d84735f0"}
-        if department in saturday_departments:
-            # Se o resultado cair no domingo, move para o próximo dia útil (segunda-feira)
-            due_date = workdays.workday(service_date, 1)
-            if due_date.weekday() == 6:  # 6 == Domingo
-                return workdays.workday(due_date, 1)
-            return due_date
-
-        # Regra geral para calcular dias úteis com base no valor
-        for limit, days in due_dates.items():
-            if amount <= limit:
-                return workdays.workday(service_date, days)
-
-        # Caso o valor seja maior que 20.000, aplica 15 dias úteis
-        return workdays.workday(service_date, 15)
-        
     def form_valid(self, form):
         try:
             appsheet_user = AppsheetUser.objects.get(email=self.request.user.email)
@@ -176,13 +137,6 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
         form.instance.manager_status = 'Pendente'
         form.instance.financial_status = 'Pendente'
         form.instance.created_at = now
-        form.instance.due_date = self.calc_due_date(
-            form.instance.service_date,
-            form.instance.amount,
-            form.instance.category,
-            form.instance.department.id,
-            now.strftime('%H:%M')
-        )
 
         response = super().form_valid(form)
 
@@ -590,6 +544,84 @@ class ManagerApprovalView(APIView):
             {"message": "Status do gestor atualizado com sucesso."},
             status=status.HTTP_200_OK
         )
+
+
+class CalculateDueDateAPIView(APIView):
+    
+    http_method_names = ['post']
+    
+    def calc_due_date(self, now, amount, category, department, request_time):
+        # Regras para dias úteis normais
+        due_dates = {
+            3000: 2,
+            6000: 3,
+            10000: 4,
+            20000: 10,
+        }
+
+        # Exceção 1: Categorias que podem solicitar para dois dias úteis
+        two_day_categories = {"2.05.87", "2.05.84", "2.05.83", "2.05.90", "2.05.91"}
+        if category in two_day_categories:
+            return workdays.workday(now, 2)
+
+        # Exceção 2: Setores e categorias especiais que podem ser processados no mesmo dia ou no próximo dia
+        special_departments = {"5b4ceda5", "a80f0c71"}
+        special_categories = {"2.02.94", "2.03.67"}
+
+        # Verifica se a solicitação está dentro do horário limite de 15h
+        request_time = datetime.strptime(request_time, "%H:%M").time() if isinstance(request_time, str) else request_time
+        if department in special_departments or category in special_categories:
+            if request_time < datetime.strptime("15:00", "%H:%M").time():
+                return now  # Hoje, se for antes das 15h
+            else:
+                return workdays.workday(now, 1)  # Próximo dia útil, se for após às 15h
+
+        # Exceção 3: Setores que podem ser processados no sábado, mas nunca no domingo
+        saturday_departments = {"2", "d84735f0"}
+        if department in saturday_departments:
+            due_date = workdays.workday(now, 1)
+            if due_date.weekday() == 6:  # Se cair no domingo, move para o próximo dia útil (segunda-feira)
+                return workdays.workday(due_date, 1)
+            return due_date
+
+        # Regra geral para calcular dias úteis com base no valor
+        for limit, days in due_dates.items():
+            if amount <= limit:
+                return workdays.workday(now, days)
+
+        # Caso o valor seja maior que 20.000, aplica 15 dias úteis
+        return workdays.workday(now, 15)
+
+    def post(self, request):
+        # Extrai os parâmetros da requisição
+        amount = request.data.get('amount')
+        category = request.data.get('category')
+
+        if not amount or not category:
+            return Response({"error": "Parâmetros 'amount' e 'category' são obrigatórios."}, status=400)
+
+        try:
+            # Remove pontos e substitui vírgula por ponto no valor do amount
+            amount = amount.replace('.', '').replace(',', '.')
+
+            # Usa a data e hora atuais
+            now = datetime.now()
+            request_time = now.strftime("%H:%M")
+            
+            # Adiciona logs para depuração
+            logger.debug(f"Calculando data de vencimento para amount: {amount}, category: {category}, request_time: {request_time}")
+
+            department = AppsheetUser.objects.get(email=self.request.user.email).user_department
+
+            # Calcula a data mínima
+            due_date = self.calc_due_date(now, float(amount), category, department, request_time)
+
+            logger.debug(f"Data de vencimento calculada: {due_date}")
+
+            return Response({"due_date": due_date.strftime("%Y-%m-%d")})
+        except Exception as e:
+            logger.error(f"Erro ao calcular data de vencimento: {e}")
+            return Response({"error": str(e)}, status=500)
 
 
 class PaymentPaidWebhookView(APIView):
