@@ -86,17 +86,19 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
         return self.request.user.has_perm('financial.add_paymentrequest')
     
     def calc_due_date(self, service_date, amount):
-        if amount <= 3000:
-            due_date = service_date + timedelta(days=2)
-        elif amount <= 6000:
-            due_date = service_date + timedelta(days=3)
-        elif amount <= 10000:
-            due_date = service_date + timedelta(days=4)
-        elif amount <= 20000:
-            due_date = service_date + timedelta(days=10)
-        else:
-            due_date = service_date + timedelta(days=15)
-        return due_date
+        due_dates = {
+            3000: 2,
+            6000: 3,
+            10000: 4,
+            20000: 10,
+        }
+        
+        for limit, days in due_dates.items():
+            if amount <= limit:
+                return service_date + timedelta(days=days)
+        
+        return service_date + timedelta(days=15)
+
         
     def form_valid(self, form):
         try:
