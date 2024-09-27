@@ -42,3 +42,4 @@ swapper==1.4.0
 uritemplate==4.1.1
 urllib3==2.2.3
 wheel==0.42.0
+workdays==1.4

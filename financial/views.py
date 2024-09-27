@@ -3,6 +3,7 @@ import random
 import string
 import logging
 from datetime import datetime, timedelta
+import workdays
 
 import requests
 from dotenv import load_dotenv
@@ -80,25 +81,53 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
     model = PaymentRequest
     form_class = PaymentRequestForm
     template_name = 'financial/payment_requests_form.html'
-    success_url = reverse_lazy('financial:payment_request_list')
     
     def test_func(self):
         return self.request.user.has_perm('financial.add_paymentrequest')
     
-    def calc_due_date(self, service_date, amount):
+    def calc_due_date(self, service_date, amount, category, department, request_time):
+        # Regras para dias úteis normais
         due_dates = {
             3000: 2,
             6000: 3,
             10000: 4,
             20000: 10,
         }
-        
+
+        # Exceção 1: Categorias que podem solicitar para dois dias úteis
+        two_day_categories = {"2.05.87", "2.05.84", "2.05.83", "2.05.90", "2.05.91"}
+        if category in two_day_categories:
+            return workdays.workday(service_date, 2)
+
+        # Exceção 2: Setores e categorias especiais que podem ser processados no mesmo dia ou próximo dia
+        special_departments = {"5b4ceda5", "a80f0c71"}
+        special_categories = {"2.02.94", "2.03.67"}
+
+        # Verifica se a solicitação está dentro do horário limite de 15h
+        if department in special_departments or category in special_categories:
+            # Considera que request_time é uma string no formato 'HH:MM' ou um objeto datetime.time
+            request_time = datetime.strptime(request_time, "%H:%M").time() if isinstance(request_time, str) else request_time
+            if request_time < datetime.strptime("15:00", "%H:%M").time():
+                return service_date  # Hoje, se for antes das 15h
+            else:
+                return workdays.workday(service_date, 1)  # Próximo dia útil, se for após às 15h
+
+        # Exceção 3: Setores que podem ser processados no sábado, mas nunca no domingo
+        saturday_departments = {"2", "d84735f0"}
+        if department in saturday_departments:
+            # Se o resultado cair no domingo, move para o próximo dia útil (segunda-feira)
+            due_date = workdays.workday(service_date, 1)
+            if due_date.weekday() == 6:  # 6 == Domingo
+                return workdays.workday(due_date, 1)
+            return due_date
+
+        # Regra geral para calcular dias úteis com base no valor
         for limit, days in due_dates.items():
             if amount <= limit:
-                return service_date + timedelta(days=days)
-        
-        return service_date + timedelta(days=15)
+                return workdays.workday(service_date, days)
 
+        # Caso o valor seja maior que 20.000, aplica 15 dias úteis
+        return workdays.workday(service_date, 15)
         
     def form_valid(self, form):
         try:
@@ -118,11 +147,17 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
         form.instance.requester = appsheet_user
         form.instance.department = appsheet_user.user_department
         form.instance.manager = appsheet_user.user_manager
-        form.instance.due_date = self.calc_due_date(form.instance.service_date, form.instance.amount)
         form.instance.requesting_status = 'Solicitado'
         form.instance.manager_status = 'Pendente'
         form.instance.financial_status = 'Pendente'
         form.instance.created_at = now
+        form.instance.due_date = self.calc_due_date(
+            form.instance.service_date,
+            form.instance.amount,
+            form.instance.category,
+            form.instance.department.id,
+            now.strftime('%H:%M')
+        )
 
         response = super().form_valid(form)
 
@@ -165,6 +200,9 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
             messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
 
         return response
+    
+    def get_success_url(self):
+        return reverse_lazy('financial:payment_requests_detail', kwargs={'pk': self.object.pk})
 
 
 
