@@ -85,6 +85,31 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
     def test_func(self):
         return self.request.user.has_perm('financial.add_paymentrequest')
     
+    def send_webhook(self, form_instance, supplier_name, supplier_cpf):
+        webhook_body = {
+            "id": form_instance.id,
+            "manager_email": form_instance.manager.email,
+            "description": (
+                f"Solicitação de Autorização de Pagamento - nº {form_instance.protocol}\n"
+                f"Criada em {form_instance.created_at.strftime('%d/%m/%Y %H:%M:%S')} por {form_instance.requester.name} "
+                f"do setor {form_instance.department.name}.\n"
+                f"Valor da solicitação: {form_instance.amount}.\n"
+                f"Descrição: {form_instance.description}.\n"
+                f"Fornecedor: {supplier_name} ({supplier_cpf})"
+            )
+        }
+
+        webhook_url = "https://prod-15.brazilsouth.logic.azure.com:443/workflows/..."
+        headers = {'Content-Type': 'application/json'}
+
+        try:
+            response = requests.post(webhook_url, json=webhook_body, headers=headers)
+            response.raise_for_status()
+            logger.info(f"Webhook enviado com sucesso. Resposta: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro ao enviar para o webhook: {e}")
+            messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
+
     def calc_due_date(self, service_date, amount, category, department, request_time):
         # Regras para dias úteis normais
         due_dates = {
@@ -168,41 +193,16 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
 
         # Validar os campos do fornecedor
         if not all([supplier_id, supplier_name, supplier_cpf]):
-            logger.warning("Informações do fornecedor incompletas.")
-            # Opcional: Adicionar mensagens de erro ou tomar outras ações
-            messages.warning(self.request, "Informações do fornecedor estão incompletas.")
+            form.add_error(None, "Informações do fornecedor estão incompletas.")
+            return self.form_invalid(form)
 
-        # Preparar o corpo da requisição para o webhook
-        webhook_body = {
-            "id": form.instance.id,
-            "manager_email": form.instance.manager.email,
-            "description": (
-                f"Solicitação de Autorização de Pagamento - nº {form.instance.protocol}\n"
-                f"Criada em {form.instance.created_at.strftime('%d/%m/%Y %H:%M:%S')} por {form.instance.requester.name} "
-                f"do setor {form.instance.department.name}.\n"
-                f"Valor da solicitação: {form.instance.amount}.\n"
-                f"Descrição: {form.instance.description}.\n"
-                f"Fornecedor: {supplier_name} ({supplier_cpf})"
-            )
-        }
 
-        # Enviar a requisição POST para o webhook com tratamento de erros
-        webhook_url = "https://prod-15.brazilsouth.logic.azure.com:443/workflows/378509394cc24a5d9568d886b8aaa7cd/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=aE_oGAJAt-2bdt8YXcus_tksAl8BHweHnGj58i6DlvI"
-        headers = {'Content-Type': 'application/json'}
-
-        try:
-            response_webhook = requests.post(webhook_url, json=webhook_body, headers=headers)
-            response_webhook.raise_for_status()  # Levanta uma exceção para status de erro HTTP
-            logger.info(f"Webhook enviado com sucesso para {webhook_url}. Resposta: {response_webhook.status_code}")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Erro ao enviar para o webhook: {e}")
-            # Opcional: Adicionar mensagens de erro para o usuário ou tomar outras ações
-            messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
+        self.send_webhook(form.instance, supplier_name, supplier_cpf)
 
         return response
     
     def get_success_url(self):
-        return reverse_lazy('financial:payment_requests_detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy('financial:payment_request_detail', kwargs={'pk': self.object.pk})
 
 
 
