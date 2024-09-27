@@ -2,7 +2,7 @@ import os
 import random
 import string
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 import workdays
 
 import requests
@@ -84,7 +84,7 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
     
     def test_func(self):
         return self.request.user.has_perm('financial.add_paymentrequest')
-    
+        
     def send_webhook(self, form_instance, supplier_name, supplier_cpf):
         webhook_body = {
             "id": form_instance.id,
@@ -98,15 +98,15 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
                 f"Fornecedor: {supplier_name} ({supplier_cpf})"
             )
         }
-
+    
         webhook_url = "https://prod-15.brazilsouth.logic.azure.com:443/workflows/..."
         headers = {'Content-Type': 'application/json'}
-
+    
         try:
             response = requests.post(webhook_url, json=webhook_body, headers=headers)
             response.raise_for_status()
             logger.info(f"Webhook enviado com sucesso. Resposta: {response.status_code}")
-        except requests.exceptions.RequestException as e:
+        except requests.RequestException as e:
             logger.error(f"Erro ao enviar para o webhook: {e}")
             messages.error(self.request, "Falha ao enviar dados para o webhook. Por favor, tente novamente mais tarde.")
 
@@ -186,16 +186,13 @@ class PaymentRequestCreateView(UserPassesTestMixin, CreateView):
 
         response = super().form_valid(form)
 
-        # Obter supplier_id, supplier_name e supplier_cpf
-        supplier_id = form.cleaned_data.get('id_supplier')
         supplier_name = form.cleaned_data.get('supplier_name')
         supplier_cpf = form.cleaned_data.get('supplier_cpf')
 
         # Validar os campos do fornecedor
-        if not all([supplier_id, supplier_name, supplier_cpf]):
+        if not all([supplier_name, supplier_cpf]):
             form.add_error(None, "Informações do fornecedor estão incompletas.")
             return self.form_invalid(form)
-
 
         self.send_webhook(form.instance, supplier_name, supplier_cpf)
 
