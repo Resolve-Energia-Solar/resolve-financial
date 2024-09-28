@@ -48,13 +48,9 @@ class ColumnSerializer(BaseSerializer):
     leads = ReadLeadSerializer(many=True, read_only=True)
     task = ReadTaskSerializer(many=True, read_only=True)
 
-    # Para escrita: usar apenas IDs
-    leads_ids = PrimaryKeyRelatedField(queryset=Lead.objects.all(), many=True, write_only=True, source='leads')
-    task_ids = PrimaryKeyRelatedField(queryset=Task.objects.all(), many=True, write_only=True, source='task')
-
     class Meta:
         model = Column
-        fields = ['id', 'name', 'board', 'position', 'task', 'leads', 'leads_ids', 'task_ids']
+        fields = ['id', 'name', 'board', 'position', 'task', 'leads']
 
 
 class BoardSerializer(BaseSerializer):
