@@ -235,6 +235,18 @@ class UnitsViewSet(ModelViewSet):
     serializer_class = UnitsSerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields', None)
+        if fields:
+            fields = fields.split(',')
+            DynamicSerializer = UnitsSerializer.get_dynamic_serializer(Units, fields)
+            serializer = DynamicSerializer(self.queryset, many=True)
+        else:
+            serializer = UnitsSerializer(self.queryset, many=True)
+
+        return Response(serializer.data)
+
+
     def perform_create(self, serializer):
         instance = serializer.save()
         if 'bill_file' in self.request.FILES:

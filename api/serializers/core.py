@@ -4,6 +4,7 @@ from api.serializers.accounts import BaseSerializer
 from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead
+from api.mixins import DynamicSerializerMixin
 
 
 class ColumnNameSerializer(BaseSerializer):
