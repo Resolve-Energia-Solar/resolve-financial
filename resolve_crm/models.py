@@ -7,6 +7,13 @@ from accounts.models import Branch
 
 
 class Lead(models.Model):
+    
+    FUNNEL_CHOICES = [
+        ("C", "Quente"),
+        ("P", "Moderado"),
+        ("N", "Negociação"),
+
+    ]
 
     name = models.CharField(
         max_length=200, 
@@ -104,6 +111,14 @@ class Lead(models.Model):
         related_name="lead_sdr", 
         blank=True, 
         null=True
+    )
+    
+    funnel = models.CharField(
+        max_length=200, 
+        verbose_name="Funil", 
+        blank=True, 
+        null=True,
+        choices=FUNNEL_CHOICES
     )
 
     # Kanban

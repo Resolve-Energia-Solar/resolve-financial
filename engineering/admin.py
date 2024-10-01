@@ -8,4 +8,4 @@ class CircuitBreakerAdmin(admin.ModelAdmin):
 
 @admin.register(Units)
 class UnitsAdmin(admin.ModelAdmin):
-    list_display = ("project", "name")
+    list_display = ("project", "name", "type")

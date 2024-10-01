@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'graphene_django',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -119,7 +120,7 @@ WSGI_APPLICATION = 'resolve_erp.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'sqlite': {
+    'sqlite3': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
@@ -139,6 +140,13 @@ DATABASES = {
         'HOST': os.environ.get("DB2_HOST"),
         'PORT': os.environ.get("DB2_PORT"),
     }
+}
+
+GRAPHENE = {
+    'SCHEMA': 'api.schema.schema',
+    # 'MIDDLEWARE': [
+    #     'graphene_django.debug.DjangoDebugMiddleware',
+    # ],
 }
 
 # choose the database to use
