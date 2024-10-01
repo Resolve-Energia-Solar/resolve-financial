@@ -88,164 +88,180 @@ class UserTokenRefreshView(TokenRefreshView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class UserViewSet(ModelViewSet):
+class BaseModelViewSet(ModelViewSet):
+    def list(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        if fields:
+            fields = fields.split(',')
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+
+            # Filtrando os dados com base nos campos passados
+            filtered_data = [
+                {field: self._get_field_data(lead, field) for field in fields}
+                for lead in serializer.data
+            ]
+
+            return Response(filtered_data)
+        return super().list(request, *args, **kwargs)
+
+    def _get_field_data(self, obj, field):
+        """Método auxiliar para obter dados de campos aninhados."""
+        if '.' in field:
+            keys = field.split('.')
+            value = obj
+            for key in keys:
+                value = value.get(key, None)  # .get() para evitar erros se a chave não existir
+            return value
+        return obj.get(field, None)
+
+
+
+class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
     
-class LeadViewSet(ModelViewSet):
+class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
-    permission_classes = [IsAuthenticated]
     
 
-class TaskViewSet(ModelViewSet):
+class TaskViewSet(BaseModelViewSet):
     queryset = LeadTask.objects.all()
     serializer_class = LeadTaskSerializer
     permission_classes = [IsAuthenticated]
+
     
-    
-class AttachmentViewSet(ModelViewSet):
+class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
     permission_classes = [IsAuthenticated]
 
 
-class SquadViewSet(ModelViewSet):
+class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
     serializer_class = SquadSerializer
     permission_classes = [IsAuthenticated]
     
     
-class DepartmentViewSet(ModelViewSet):
+class DepartmentViewSet(BaseModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]    
     
 
-class BranchViewSet(ModelViewSet):
+class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
     permission_classes = [IsAuthenticated]
     
 
-class MarketingCampaignViewSet(ModelViewSet):
+class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
     permission_classes = [IsAuthenticated]
 
 
-class AddressViewSet(ModelViewSet):
+class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
 
 
-class RoleViewSet(ModelViewSet):
+class RoleViewSet(BaseModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
     permission_classes = [IsAuthenticated]
 
 
-class PermissionViewSet(ModelViewSet):
+class PermissionViewSet(BaseModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
     permission_classes = [IsAuthenticated]
 
 
-class GroupViewSet(ModelViewSet):
+class GroupViewSet(BaseModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated]
 
 
-class FinancierViewSet(ModelViewSet):
+class FinancierViewSet(BaseModelViewSet):
     queryset = Financier.objects.all()
     serializer_class = FinancierSerializer
     permission_classes = [IsAuthenticated]
 
-class MaterialTypesViewSet(ModelViewSet):
+class MaterialTypesViewSet(BaseModelViewSet):
     queryset = MaterialTypes.objects.all()
     serializer_class = MaterialTypesSerializer
     permission_classes = [IsAuthenticated]
     
 
-class MaterialsViewSet(ModelViewSet):
+class MaterialsViewSet(BaseModelViewSet):
     queryset = Materials.objects.all()
     serializer_class = MaterialsSerializer
     permission_classes = [IsAuthenticated]
 
 
-class SolarEnergyKitViewSet(ModelViewSet):
+class SolarEnergyKitViewSet(BaseModelViewSet):
     queryset = SolarEnergyKit.objects.all()
     serializer_class = SolarEnergyKitSerializer
     permission_classes = [IsAuthenticated]
     
 
-class RoofTypeViewSet(ModelViewSet):
+class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
 
-class EnergyCompanyViewSet(ModelViewSet):
+class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()
     serializer_class = EnergyCompanySerializer
     permission_classes = [IsAuthenticated]
 
 
-class RequestsEnergyCompanyViewSet(ModelViewSet):
+class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
     permission_classes = [IsAuthenticated]
 
 
-class CircuitBreakerViewSet(ModelViewSet):
+class CircuitBreakerViewSet(BaseModelViewSet):
     queryset = CircuitBreaker.objects.all()
     serializer_class = CircuitBreakerSerializer
     permission_classes = [IsAuthenticated]
     
 
-class BoardViewSet(ModelViewSet):
+class BoardViewSet(BaseModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated]
     
     
-class LeadTaskViewSet(ModelViewSet):
+class LeadTaskViewSet(BaseModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
  
-class ColumnViewSet(ModelViewSet):
+class ColumnViewSet(BaseModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
     permission_classes = [IsAuthenticated]
     
 
-class TaskTemplatesViewSet(ModelViewSet):
+class TaskTemplatesViewSet(BaseModelViewSet):
     queryset = TaskTemplates.objects.all()
     serializer_class = TaskTemplatesSerializer
     permission_classes = [IsAuthenticated]
     
     
 
-class UnitsViewSet(ModelViewSet):
+class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
     serializer_class = UnitsSerializer
     permission_classes = [IsAuthenticated]
-
-    def list(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields', None)
-        if fields:
-            fields = fields.split(',')
-            DynamicSerializer = UnitsSerializer.get_dynamic_serializer(Units, fields)
-            serializer = DynamicSerializer(self.queryset, many=True)
-        else:
-            serializer = UnitsSerializer(self.queryset, many=True)
-
-        return Response(serializer.data)
-
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -305,13 +321,13 @@ class UnitsViewSet(ModelViewSet):
             raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
 
 
-class ProjectViewSet(ModelViewSet):
+class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 
 
-class SaleViewSet(ModelViewSet):
+class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticated]

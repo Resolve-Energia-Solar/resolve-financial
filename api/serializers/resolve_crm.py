@@ -9,6 +9,7 @@ from rest_framework.serializers import PrimaryKeyRelatedField
  
 class LeadSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
+    customer = RelatedUserSerializer(read_only=True)
     seller = RelatedUserSerializer(read_only=True, allow_null=True)
     sdr = RelatedUserSerializer(read_only=True, allow_null=True)
     addresses = AddressSerializer(many=True, read_only=True)
@@ -20,6 +21,7 @@ class LeadSerializer(BaseSerializer):
 
     class Meta:
         model = Lead
+        depth = 1
         fields = '__all__'
 
 

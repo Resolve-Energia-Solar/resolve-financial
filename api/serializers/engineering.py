@@ -4,7 +4,6 @@ from .accounts import BaseSerializer, AddressSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 # from .resolve_crm import ProjectSerializer
 # from .logistics import MaterialsSerializer
-from api.mixins import DynamicSerializerMixin
 
 
 class EnergyCompanySerializer(BaseSerializer):
@@ -45,7 +44,7 @@ class CircuitBreakerSerializer(BaseSerializer):
         model = CircuitBreaker
         exclude = ['is_deleted']
 
-class UnitsSerializer(DynamicSerializerMixin, BaseSerializer):
+class UnitsSerializer(BaseSerializer):
     
     address = AddressSerializer(read_only=True)
     
