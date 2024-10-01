@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'graphene_django',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -140,13 +139,6 @@ DATABASES = {
         'HOST': os.environ.get("DB2_HOST"),
         'PORT': os.environ.get("DB2_PORT"),
     }
-}
-
-GRAPHENE = {
-    'SCHEMA': 'api.schema.schema',
-    # 'MIDDLEWARE': [
-    #     'graphene_django.debug.DjangoDebugMiddleware',
-    # ],
 }
 
 # choose the database to use
