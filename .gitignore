@@ -161,5 +161,10 @@ cython_debug/
 
 # Media files
 /media
+
 # Environment configuration
 **/.env
+/staticfiles
+
+# Ignore redis binary file
+dump.rdb
