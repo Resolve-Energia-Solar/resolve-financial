@@ -22,16 +22,9 @@ from notifications import urls as notifications_urls
 
 
 urlpatterns = [
-    path('api/', include('api.urls')),
+    path('api/', include('api.urls'), name='api'),
     path("select2/", include("django_select2.urls")),
-    path('admin/', admin.site.urls),
-    path("conta/", include("accounts.urls")),
-    path('crm/', include('resolve_crm.urls')),
-    path('logistica/', include('logistics.urls')),
-    path('vistoria/', include('inspections.urls')),
-    path('engenharia/', include('engineering.urls')),
-    path('financeiro/', include('financial.urls')),
-    path('', include('core.urls')),
+    path('', admin.site.urls),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]
 

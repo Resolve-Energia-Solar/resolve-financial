@@ -13,9 +13,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from datetime import timedelta
 import os
 from pathlib import Path
-from django.urls import reverse_lazy
 from dotenv import load_dotenv
 load_dotenv()
+from .jazzmin import JAZZMIN_SETTINGS
+from .jazzmin import JAZZMIN_UI_TWEAKS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,6 +47,7 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -98,7 +100,7 @@ ROOT_URLCONF = 'resolve_erp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates/'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,7 +108,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'resolve_erp.context_processors.menu_items',
             ],
         },
     },
@@ -249,9 +250,6 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = reverse_lazy('accounts:login')
-LOGIN_REDIRECT_URL = reverse_lazy('resolve_crm:index')
-
 
 # Configuração de envio de e-mail
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -376,3 +374,7 @@ if DEBUG == False:
     LOGGING["handlers"]["warning_file"]["filters"] = ["warning_filter"]
     LOGGING["handlers"]["error_file"]["filters"] = ["error_filter"]
     LOGGING["handlers"]["critical_file"]["filters"] = ["critical_filter"]
+
+
+JAZZMIN_SETTINGS = JAZZMIN_SETTINGS
+# JAZZMIN_SETTINGS["show_ui_builder"] = True
