@@ -67,6 +67,7 @@ class MarketingCampaignSerializer(BaseSerializer):
 
 class SaleSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
+    customer = RelatedUserSerializer(read_only=True)
     seller = RelatedUserSerializer(read_only=True)
     sales_supervisor = RelatedUserSerializer(read_only=True)
     sales_manager = RelatedUserSerializer(read_only=True)
@@ -74,6 +75,7 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
+    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
     sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
