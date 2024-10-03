@@ -108,7 +108,7 @@ class Webhook(models.Model):
     )
     
     url = models.URLField()
-    secret = models.CharField(max_length=200)
+    secret = models.CharField(max_length=200, blank=True, null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     event = models.CharField(max_length=1, choices=EVENT_CHOICES)  # Usa choices e define o tamanho correto
     is_active = models.BooleanField(default=True)
