@@ -247,6 +247,9 @@ class Contact(models.Model):
     body = models.TextField(verbose_name="Corpo")
     sent_at = models.DateTimeField(verbose_name="Enviado em")
     history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.subject
 
     class Meta:
         verbose_name = "Contato"
@@ -263,6 +266,9 @@ class MarketingCampaign(models.Model):
     
     def get_absolute_url(self):
         return reverse_lazy('resolve_crm:marketing_campaign_detail', kwargs={'pk': self.pk})
+    
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = "Campanha de Marketing"
@@ -278,6 +284,10 @@ class ContractSubmission(models.Model):
     
     def __str__(self):
         self.submit_datetime
+    
+    class Meta:
+        verbose_name = "Envio de Contrato"
+        verbose_name_plural = "Envios de Contrato"
 
 
 class Sale(models.Model):
