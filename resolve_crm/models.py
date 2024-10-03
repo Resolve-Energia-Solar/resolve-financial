@@ -247,6 +247,9 @@ class Contact(models.Model):
     body = models.TextField(verbose_name="Corpo")
     sent_at = models.DateTimeField(verbose_name="Enviado em")
     history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.subject
 
     class Meta:
         verbose_name = "Contato"
