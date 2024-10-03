@@ -284,6 +284,10 @@ class ContractSubmission(models.Model):
     
     def __str__(self):
         self.submit_datetime
+    
+    class Meta:
+        verbose_name = "Envio de Contrato"
+        verbose_name_plural = "Envios de Contrato"
 
 
 class Sale(models.Model):
