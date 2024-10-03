@@ -263,6 +263,9 @@ class MarketingCampaign(models.Model):
     
     def get_absolute_url(self):
         return reverse_lazy('resolve_crm:marketing_campaign_detail', kwargs={'pk': self.pk})
+    
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = "Campanha de Marketing"
