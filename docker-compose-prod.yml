@@ -9,10 +9,3 @@ services:
     command: sh -c "python3 manage.py collectstatic --noinput && python3 manage.py migrate && gunicorn -c ./configs/configs.py resolve_erp.wsgi"
     ports:
       - "8060:8060"
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"

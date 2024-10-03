@@ -17,12 +17,5 @@ services:
     #   - seccomp:unconfined
 
     command: /bin/zsh -c "while sleep 1000; do :; done"
-    depends_on:
-      - redis
     ports:
       - "8060:8060"
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"

@@ -63,9 +63,6 @@ INSTALLED_APPS = [
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'notifications',
-    'widget_tweaks',
-    'django_select2',
-    'crispy_forms',
     'crispy_bootstrap5',
     'simple_history',
     'api.apps.ApiConfig',
@@ -203,23 +200,6 @@ SIMPLE_JWT = {
     # Tempo de vida do token de atualização
     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
 }
-
-# Caches
-
-CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
-    "select2": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/2",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
-
-# Tell select2 which cache configuration to use:
-SELECT2_CACHE_BACKEND = "select2"
 
 
 # Internationalization
