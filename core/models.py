@@ -101,10 +101,16 @@ class TaskTemplates(models.Model):
 
 class Webhook(models.Model):
     
+    EVENT_CHOICES = (
+        ('C', 'Create'),
+        ('U', 'Update'),
+        ('D', 'Delete'),
+    )
+    
     url = models.URLField()
     secret = models.CharField(max_length=200)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    event = models.CharField(max_length=200)
+    event = models.CharField(max_length=1, choices=EVENT_CHOICES)  # Usa choices e define o tamanho correto
     is_active = models.BooleanField(default=True)
     
     # Logs

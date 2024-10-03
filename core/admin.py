@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Board, Column
-from .models import Task
+from .models import Task, Webhook
 
 
 @admin.register(Board)
@@ -18,3 +18,8 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
     list_filter = ("is_completed",)
     search_fields = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
+    
+
+@admin.register(Webhook)
+class WebhookAdmin(admin.ModelAdmin):
+    list_display = ("url", "content_type")
