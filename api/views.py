@@ -121,6 +121,13 @@ class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(complete_name__icontains=name)
+        return queryset
     
     
 class LeadViewSet(BaseModelViewSet):
