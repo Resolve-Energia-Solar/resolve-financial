@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'notifications',
-    'crispy_bootstrap5',
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
