@@ -145,8 +145,8 @@ class AttachmentViewSet(BaseModelViewSet):
     
     def get_queryset(self):
         queryset = super().get_queryset()
-        object_id = self.request.query_params.get('lead_id')
-        content_type = self.request.query_params.get('lead_id')
+        object_id = self.request.query_params.get('object_id')
+        content_type = self.request.query_params.get('content_type_id')
 
         if object_id:
             queryset = queryset.filter(object_id=object_id)
@@ -203,19 +203,19 @@ class AddressViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        street = self.request.query_params.get('street')
-        number = self.request.query_params.get('number')
-        city = self.request.query_params.get('city')
-        state = self.request.query_params.get('state')
+        search = self.request.query_params.get('q')
 
-        if street:
-            queryset = queryset.filter(street__icontains=street)
-        if number:
-            queryset = queryset.filter(number__icontains=number)
-        if city:
-            queryset = queryset.filter(city__icontains=city)
-        if state:
-            queryset = queryset.filter(state__icontains=state)
+        if search:
+            queryset = queryset.filter(
+                Q(zip_code__icontains=search) |
+                Q(country__icontains=search) |
+                Q(state__icontains=search) |
+                Q(city__icontains=search) |
+                Q(neighborhood__icontains=search) |
+                Q(street__icontains=search) |
+                Q(number__icontains=search) |
+                Q(complement__icontains=search)
+            )
 
         return queryset
 
@@ -368,16 +368,10 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        customer_doc = self.request.query_params.get('customer_doc')
-        customer_name = self.request.query_params.get('customer_name')
-        contract_number = self.request.query_params.get('contract_number')
+        search = self.request.query_params.get('q')
 
-        if customer_doc:
-            queryset = queryset.filter(Q(customer__first_document__icontains=customer_doc) | Q(customer__second_document__icontains=customer_doc))
-        if customer_name:
-            queryset = queryset.filter(customer__complete_name__icontains=customer_name)
-        if contract_number:
-            queryset = queryset.filter(contract_number__icontains=contract_number)
+        if search:
+            queryset = queryset.filter(Q(customer__first_document__icontains=search) | Q(customer__second_document__icontains=search)) |Q(customer__complete_name__icontains=search) |Q (contract_number__icontains=search)
 
         return queryset
     
