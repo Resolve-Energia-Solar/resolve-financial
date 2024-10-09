@@ -341,4 +341,3 @@ class InformacaoFaturaAPIView(APIView):
 class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
-    permission_classes = [IsAuthenticated]
