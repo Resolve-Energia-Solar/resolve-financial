@@ -125,18 +125,81 @@ class UserViewSet(BaseModelViewSet):
         queryset = super().get_queryset()
         name = self.request.query_params.get('name')
         user_type = self.request.query_params.get('type')
-        
+        email = self.request.query_params.get('email')
+        phone = self.request.query_params.get('phone')
+        branch = self.request.query_params.get('branch')
+        department = self.request.query_params.get('department')
+        role = self.request.query_params.get('role')
+        person_type = self.request.query_params.get('person_type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
         if user_type:
-            queryset = queryset.filter(user_type__name=user_type)
-        
+            queryset = queryset.filter(user_types__name=user_type)
+        if email:
+            queryset = queryset.filter(email__icontains=email)
+        if phone:
+            queryset = queryset.filter(phone__number__icontains=phone)
+        if branch:
+            queryset = queryset.filter(branch__name__icontains=branch)
+        if department:
+            queryset = queryset.filter(department__name__icontains=department)
+        if role:
+            queryset = queryset.filter(role__name__icontains=role)
+        if person_type:
+            queryset = queryset.filter(person_type=person_type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_document)
+
         return queryset
     
     
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        type = self.request.query_params.get('type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+        contact_email = self.request.query_params.get('contact_email')
+        phone = self.request.query_params.get('phone')
+        origin = self.request.query_params.get('origin')
+        seller = self.request.query_params.get('seller')
+        sdr = self.request.query_params.get('sdr')
+        funnel = self.request.query_params.get('funnel')
+        column = self.request.query_params.get('column')
+
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        if type:
+            queryset = queryset.filter(type=type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_document)
+        if contact_email:
+            queryset = queryset.filter(contact_email__icontains=contact_email)
+        if phone:
+            queryset = queryset.filter(phone__icontains=phone)
+        if origin:
+            queryset = queryset.filter(origin__icontains=origin)
+        if seller:
+            queryset = queryset.filter(seller__name__icontains=seller)
+        if sdr:
+            queryset = queryset.filter(sdr__name__icontains=sdr)
+        if funnel:
+            queryset = queryset.filter(funnel=funnel)
+        if column:
+            queryset = queryset.filter(column__id=column)
+
+        return queryset
     
 
 class TaskViewSet(BaseModelViewSet):
