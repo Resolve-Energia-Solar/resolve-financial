@@ -142,6 +142,18 @@ class TaskViewSet(BaseModelViewSet):
 class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        object_id = self.request.query_params.get('lead_id')
+        content_type = self.request.query_params.get('lead_id')
+
+        if object_id:
+            queryset = queryset.filter(object_id=object_id)
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+
+        return queryset
 
 
 class SquadViewSet(BaseModelViewSet):
@@ -151,22 +163,61 @@ class SquadViewSet(BaseModelViewSet):
     
 class DepartmentViewSet(BaseModelViewSet):
     queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer    
+    serializer_class = DepartmentSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
 
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
 
 class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+
 
 class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        street = self.request.query_params.get('street')
+        number = self.request.query_params.get('number')
+        city = self.request.query_params.get('city')
+        state = self.request.query_params.get('state')
+
+        if street:
+            queryset = queryset.filter(street__icontains=street)
+        if number:
+            queryset = queryset.filter(number__icontains=number)
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        if state:
+            queryset = queryset.filter(state__icontains=state)
+
+        return queryset
 
 
 class RoleViewSet(BaseModelViewSet):
@@ -314,6 +365,21 @@ class ProjectViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        customer_doc = self.request.query_params.get('customer_doc')
+        customer_name = self.request.query_params.get('customer_name')
+        contract_number = self.request.query_params.get('contract_number')
+
+        if customer_doc:
+            queryset = queryset.filter(Q(customer__first_document__icontains=customer_doc) | Q(customer__second_document__icontains=customer_doc))
+        if customer_name:
+            queryset = queryset.filter(customer__complete_name__icontains=customer_name)
+        if contract_number:
+            queryset = queryset.filter(contract_number__icontains=contract_number)
+
+        return queryset
     
 
 class InformacaoFaturaAPIView(APIView):
@@ -342,4 +408,3 @@ class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
     http_method_names = ['get']
-
