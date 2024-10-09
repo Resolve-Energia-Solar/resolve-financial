@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'notifications',
-    'crispy_bootstrap5',
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
@@ -71,8 +70,6 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
