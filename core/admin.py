@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
 
 from .models import Board, Column
-from .models import Task
+from .models import Task, Webhook
 
 
 @admin.register(Board)
@@ -21,15 +21,29 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
     list_filter = ("is_completed",)
     search_fields = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
+    
+
+@admin.register(Webhook)
+class WebhookAdmin(admin.ModelAdmin):
+    list_display = ("url", "content_type")
 
 
 @admin.register(ContentType)
 class ContentTypeAdmin(admin.ModelAdmin):
-    list_display = ("app_label", "model")
-    list_display_links = ("app_label", "model")
-    search_fields = ("app_label", "model")
+    list_display = ("model", "id", "app_label")
+    list_display_links = ("model", "id", "app_label")
+    search_fields = ("model", "id", "app_label")
     list_per_page = 10
     list_max_show_all = 100
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Permission)
