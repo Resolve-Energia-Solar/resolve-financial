@@ -63,9 +63,6 @@ INSTALLED_APPS = [
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'notifications',
-    'widget_tweaks',
-    'django_select2',
-    'crispy_forms',
     'crispy_bootstrap5',
     'simple_history',
     'api.apps.ApiConfig',
@@ -92,8 +89,21 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
-# CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
 
 ROOT_URLCONF = 'resolve_erp.urls'
 
@@ -173,25 +183,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',   
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
-
-CORS_ALLOW_METHODS = [
-    'GET',
-    'POST',
-    'PUT',
-    'PATCH'
-    'DELETE',
-    'OPTIONS',
-]
-
-CORS_ALLOW_HEADERS = [
-    'content-type',
-    'authorization',
-]
 
 
 SIMPLE_JWT = {
@@ -200,23 +199,6 @@ SIMPLE_JWT = {
     # Tempo de vida do token de atualização
     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
 }
-
-# Caches
-
-CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
-    "select2": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/2",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
-
-# Tell select2 which cache configuration to use:
-SELECT2_CACHE_BACKEND = "select2"
 
 
 # Internationalization

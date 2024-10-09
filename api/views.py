@@ -1,29 +1,29 @@
-from venv import logger
-from django.forms import ValidationError
-from django.utils import timezone
+import logging
 import requests
+from django.db.models import Q
+from django.forms import ValidationError
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
-from accounts.models import *
-from resolve_crm.models import *
-from .serializers.accounts import *
-from .serializers.resolve_crm import *
-from .serializers.logistics import *
-from .serializers.inspections import *
-from .serializers.core import *
-from .serializers.engineering import *
-from resolve_crm.models import Task as LeadTask
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from accounts.models import User
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers.accounts import UserSerializer
-
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-import logging
-from django.urls import reverse
+
+from accounts.models import User
+from resolve_crm.models import *
+from resolve_crm.models import Task as LeadTask
+from .serializers.accounts import UserSerializer
+from .serializers.accounts import *
+from .serializers.core import *
+from .serializers.engineering import *
+from .serializers.inspections import *
+from .serializers.logistics import *
+from .serializers.resolve_crm import *
+from .utils import extract_data_from_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,6 @@ class BaseModelViewSet(ModelViewSet):
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -138,137 +137,116 @@ class LeadViewSet(BaseModelViewSet):
 class TaskViewSet(BaseModelViewSet):
     queryset = LeadTask.objects.all()
     serializer_class = LeadTaskSerializer
-    permission_classes = [IsAuthenticated]
 
     
 class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
     serializer_class = SquadSerializer
-    permission_classes = [IsAuthenticated]
     
     
 class DepartmentViewSet(BaseModelViewSet):
     queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticated]    
+    serializer_class = DepartmentSerializer    
     
 
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    permission_classes = [IsAuthenticated]
     
 
 class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class RoleViewSet(BaseModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class PermissionViewSet(BaseModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class GroupViewSet(BaseModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class FinancierViewSet(BaseModelViewSet):
     queryset = Financier.objects.all()
     serializer_class = FinancierSerializer
-    permission_classes = [IsAuthenticated]
+
 
 class MaterialTypesViewSet(BaseModelViewSet):
     queryset = MaterialTypes.objects.all()
     serializer_class = MaterialTypesSerializer
-    permission_classes = [IsAuthenticated]
     
 
 class MaterialsViewSet(BaseModelViewSet):
     queryset = Materials.objects.all()
     serializer_class = MaterialsSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class SolarEnergyKitViewSet(BaseModelViewSet):
     queryset = SolarEnergyKit.objects.all()
     serializer_class = SolarEnergyKitSerializer
-    permission_classes = [IsAuthenticated]
     
 
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
 
+
 class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()
     serializer_class = EnergyCompanySerializer
-    permission_classes = [IsAuthenticated]
 
 
 class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
-    permission_classes = [IsAuthenticated]
 
 
 class CircuitBreakerViewSet(BaseModelViewSet):
     queryset = CircuitBreaker.objects.all()
     serializer_class = CircuitBreakerSerializer
-    permission_classes = [IsAuthenticated]
     
 
 class BoardViewSet(BaseModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
-    permission_classes = [IsAuthenticated]
     
     
 class LeadTaskViewSet(BaseModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
 
  
 class ColumnViewSet(BaseModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
-    permission_classes = [IsAuthenticated]
     
 
 class TaskTemplatesViewSet(BaseModelViewSet):
     queryset = TaskTemplates.objects.all()
     serializer_class = TaskTemplatesSerializer
-    permission_classes = [IsAuthenticated]
-    
-    
+
 
 class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
     serializer_class = UnitsSerializer
-    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -331,17 +309,12 @@ class UnitsViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
     
-from rest_framework.parsers import MultiPartParser
-from .utils import extract_data_from_pdf
-
 
 class InformacaoFaturaAPIView(APIView):
     parser_classes = [MultiPartParser]

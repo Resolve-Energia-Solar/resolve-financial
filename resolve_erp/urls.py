@@ -23,7 +23,6 @@ from notifications import urls as notifications_urls
 
 urlpatterns = [
     path('api/', include('api.urls'), name='api'),
-    path("select2/", include("django_select2.urls")),
     path('', admin.site.urls),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]

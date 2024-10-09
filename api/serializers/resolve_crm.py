@@ -73,6 +73,7 @@ class SaleSerializer(BaseSerializer):
     sales_manager = RelatedUserSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
+    lead = LeadSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -81,6 +82,7 @@ class SaleSerializer(BaseSerializer):
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign')
+    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
 
     class Meta:
         model = Sale
