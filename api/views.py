@@ -111,7 +111,7 @@ class BaseModelViewSet(ModelViewSet):
             keys = field.split('.')
             value = obj
             for key in keys:
-                value = value.get(key, None)  # .get() para evitar erros se a chave não existir
+                value = value.get(key, None)
             return value
         return obj.get(field, None)
 
@@ -124,8 +124,13 @@ class UserViewSet(BaseModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         name = self.request.query_params.get('name')
+        user_type = self.request.query_params.get('type')
+        
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
+        if user_type:
+            queryset = queryset.filter(user_type__name=user_type)
+        
         return queryset
     
     
