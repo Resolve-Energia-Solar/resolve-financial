@@ -439,7 +439,12 @@ class SaleViewSet(BaseModelViewSet):
         search = self.request.query_params.get('q')
 
         if search:
-            queryset = queryset.filter(Q(customer__first_document__icontains=search) | Q(customer__second_document__icontains=search)) |Q(customer__complete_name__icontains=search) |Q (contract_number__icontains=search)
+            queryset = queryset.filter(
+                Q(customer__first_document__icontains=search) |
+                Q(customer__second_document__icontains=search) |
+                Q(customer__complete_name__icontains=search) |
+                Q(contract_number__icontains=search)
+            )
 
         return queryset
     
