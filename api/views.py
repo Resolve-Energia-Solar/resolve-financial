@@ -341,3 +341,5 @@ class InformacaoFaturaAPIView(APIView):
 class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
+    http_method_names = ['get']
+
