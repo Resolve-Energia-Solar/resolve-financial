@@ -1,4 +1,7 @@
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
+
 from .models import Board, Column
 from .models import Task, Webhook
 
@@ -23,3 +26,22 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):
     list_display = ("url", "content_type")
+
+
+@admin.register(ContentType)
+class ContentTypeAdmin(admin.ModelAdmin):
+    list_display = ("app_label", "model")
+    list_display_links = ("app_label", "model")
+    search_fields = ("app_label", "model")
+    list_per_page = 10
+    list_max_show_all = 100
+
+
+@admin.register(Permission)
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ("name", "content_type", "codename")
+    list_display_links = ("name", "content_type", "codename")
+    search_fields = ("name", "content_type", "codename")
+    list_filter = ("content_type",)
+    list_per_page = 10
+    list_max_show_all = 100

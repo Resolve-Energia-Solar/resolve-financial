@@ -336,3 +336,8 @@ class InformacaoFaturaAPIView(APIView):
                 'message': 'Erro ao processar a fatura.',
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class ContentTypeViewSet(BaseModelViewSet):
+    queryset = ContentType.objects.all()
+    serializer_class = ContentTypeSerializer
