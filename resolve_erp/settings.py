@@ -138,22 +138,11 @@ DATABASES = {
         'PASSWORD': os.environ.get("DB1_PASSWORD"),
         'HOST': os.environ.get("DB1_HOST"),
         'PORT': os.environ.get("DB1_PORT"),
-    },
-    'mysql_old': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get("DB2_NAME"),
-        'USER': os.environ.get("DB2_USER"),
-        'PASSWORD': os.environ.get("DB2_PASSWORD"),
-        'HOST': os.environ.get("DB2_HOST"),
-        'PORT': os.environ.get("DB2_PORT"),
     }
 }
 
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
-
-DATABASE_ROUTERS = ['financial.db_routers.MySQLRouter']
-
 
 # User model
 AUTH_USER_MODEL = "accounts.User"
