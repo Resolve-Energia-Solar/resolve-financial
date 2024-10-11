@@ -1,4 +1,6 @@
 from accounts.models import Address, User
+from api.serializers.core import ColumnSerializer
+from core.models import Column
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
@@ -13,11 +15,13 @@ class LeadSerializer(BaseSerializer):
     seller = RelatedUserSerializer(read_only=True, allow_null=True)
     sdr = RelatedUserSerializer(read_only=True, allow_null=True)
     addresses = AddressSerializer(many=True, read_only=True)
+    column = ColumnSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True)
     sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
+    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
 
     class Meta:
         model = Lead
