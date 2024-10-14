@@ -105,16 +105,32 @@ class BaseModelViewSet(ModelViewSet):
             return Response(filtered_data)
         return super().list(request, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        if fields:
+            fields = fields.split(',')
+            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
+            return Response(filtered_data)
+
+        return super().retrieve(request, *args, **kwargs)
+
     def _get_field_data(self, obj, field):
         """Método auxiliar para obter dados de campos aninhados."""
         if '.' in field:
             keys = field.split('.')
             value = obj
             for key in keys:
-                value = value.get(key, None)  # .get() para evitar erros se a chave não existir
+                if isinstance(value, list):
+                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
+                elif isinstance(value, dict):
+                    value = value.get(key, None)
+                else:
+                    return None
             return value
         return obj.get(field, None)
-
 
 
 class UserViewSet(BaseModelViewSet):
