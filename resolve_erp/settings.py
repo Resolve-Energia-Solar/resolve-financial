@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'logistics.apps.LogisticsConfig',
     'inspections.apps.InspectionsConfig',
     'engineering.apps.EngineeringConfig',
-    'financial.apps.FinancialConfig',
     'notifications',
     'simple_history',
     'api.apps.ApiConfig',
@@ -144,6 +143,8 @@ DATABASES = {
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
 
+
+
 # User model
 AUTH_USER_MODEL = "accounts.User"
 
@@ -199,6 +200,9 @@ USE_I18N = True
 USE_TZ = True
 
 USE_THOUSAND_SEPARATOR = True
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
 
 
 # Static files (CSS, JavaScript, Images)

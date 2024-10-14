@@ -25,7 +25,7 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):
-    list_display = ("url", "content_type")
+    list_display = ("url", "content_type", "event", "is_active")
 
 
 @admin.register(ContentType)

@@ -1,9 +1,11 @@
-import json
-import requests
+from asyncio import Task
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Lead, Webhook
 from django.contrib.contenttypes.models import ContentType
+import requests
+from .models import Lead, Sale, Task
+from core.models import Webhook
+
 
 def send_webhook_request(web_hook_url, data, secret):
     headers = {
@@ -11,69 +13,24 @@ def send_webhook_request(web_hook_url, data, secret):
         'X-Hook-Secret': secret
     }
     try:
-        response = requests.post(web_hook_url, data=json.dumps(data), headers=headers)
+        response = requests.post(web_hook_url, json=data, headers=headers)
         response.raise_for_status()
+        print(f"Webhook enviado com sucesso: {response.status_code}")
     except requests.exceptions.RequestException as e:
         print(f"Erro ao enviar o webhook: {e}")
 
-@receiver(post_save, sender=Lead)
-def send_webhook_on_save(instance, created, **kwargs):
-    event_type = 'C' if created else 'U'
 
-    lead_content_type = ContentType.objects.get_for_model(Lead)
-
-    webhooks = Webhook.objects.filter(
-        content_type=lead_content_type,
-        event=event_type,
-        is_active=True
-    )
-
-    if webhooks.exists():
-            data = {
-      "id": instance.id,
-      "name": instance.name,
-      "type": instance.type,
-      "byname": instance.byname,
-      "first_document": instance.first_document,
-      "second_document": instance.second_document,
-      "birth_date": instance.birth_date.isoformat() if instance.birth_date else None,
-      "gender": instance.gender,
-      "contact_email": instance.contact_email,
-      "phone": instance.phone,
-      "addresses": [address.id for address in instance.addresses.all()],
-      "customer": instance.customer.id if instance.customer else None,
-      "origin": instance.origin,
-      "seller": instance.seller.id if instance.seller else None,
-      "sdr": instance.sdr.id if instance.sdr else None,
-      "funnel": instance.funnel,
-      "column": instance.column.id if instance.column else None,
-      "is_deleted": instance.is_deleted,
-      "created_at": instance.created_at.isoformat(),
-    }
-    for webhook in webhooks:
-        send_webhook_request(webhook.url, data, webhook.secret)
-
-
-@receiver(post_delete, sender=Lead)
-def send_webhook_on_delete(instance, **kwargs):
-    lead_content_type = ContentType.objects.get_for_model(Lead)
-
-    webhooks = Webhook.objects.filter(
-        content_type=lead_content_type,
-        event='D',  # 'D' para Delete
-        is_active=True
-    )
-
-    if webhooks.exists():
-            data = {
+def get_model_data(instance):
+    if isinstance(instance, Lead):
+        return {
             "id": instance.id,
             "name": instance.name,
-            "type": instance.type,
+            "type": instance.get_type_display(), 
             "byname": instance.byname,
             "first_document": instance.first_document,
             "second_document": instance.second_document,
             "birth_date": instance.birth_date.isoformat() if instance.birth_date else None,
-            "gender": instance.gender,
+            "gender": instance.get_gender_display(),
             "contact_email": instance.contact_email,
             "phone": instance.phone,
             "addresses": [address.id for address in instance.addresses.all()],
@@ -81,12 +38,59 @@ def send_webhook_on_delete(instance, **kwargs):
             "origin": instance.origin,
             "seller": instance.seller.id if instance.seller else None,
             "sdr": instance.sdr.id if instance.sdr else None,
-            "funnel": instance.funnel,
+            "funnel": instance.get_funnel_display(), 
             "column": instance.column.id if instance.column else None,
             "is_deleted": instance.is_deleted,
             "created_at": instance.created_at.isoformat(),
-          }
-    for webhook in webhooks:
-        send_webhook_request(webhook.url, data, webhook.secret)
+        }
+    
+    elif isinstance(instance, Task):
+        return {
+            "id": instance.id,
+            "lead": instance.lead.id,
+            "title": instance.title,
+            "delivery_date": instance.delivery_date.isoformat(),
+            "description": instance.description,
+            "status": instance.get_status_display(),
+            "task_type": instance.get_task_type_display(),
+            "members": [member.id for member in instance.members.all()],
+            "is_deleted": instance.is_deleted,
+            "created_at": instance.created_at.isoformat(),
+        }
+
+    return {}
+
+
+@receiver(post_save)
+def send_webhook_on_save(sender, instance, created, **kwargs):
+    content_type = ContentType.objects.get_for_model(sender)
+    event_type = 'C' if created else 'U'
+    
+    webhooks = Webhook.objects.filter(
+        content_type=content_type,
+        event=event_type,
+        is_active=True
+    )
+
+    if webhooks.exists():
+        data = get_model_data(instance)
         
+        for webhook in webhooks:
+            send_webhook_request(webhook.url, data, webhook.secret)
+
+
+@receiver(post_delete)
+def send_webhook_on_delete(sender, instance, **kwargs):
+    content_type = ContentType.objects.get_for_model(sender)
+
+    webhooks = Webhook.objects.filter(
+        content_type=content_type,
+        event='D',
+        is_active=True
+    )
+
+    if webhooks.exists():
+        data = get_model_data(instance)
         
+        for webhook in webhooks:
+            send_webhook_request(webhook.url, data, webhook.secret)
