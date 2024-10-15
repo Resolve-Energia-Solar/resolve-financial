@@ -6,3 +6,11 @@ from .models import MaterialTypes, Materials, SolarEnergyKit
 @admin.register(MaterialTypes)
 class MaterialTypesAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(Materials)
+class MaterialsAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(SolarEnergyKit)
+class SolarEnergyKitAdmin(admin.ModelAdmin):
+    pass

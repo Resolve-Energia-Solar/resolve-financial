@@ -14,15 +14,16 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.models import User
+from inspections.models import Category, Service
 from resolve_crm.models import *
 from resolve_crm.models import Task as LeadTask
 from .serializers.accounts import UserSerializer
 from .serializers.accounts import *
 from .serializers.core import *
 from .serializers.engineering import *
-from .serializers.inspections import *
 from .serializers.logistics import *
 from .serializers.resolve_crm import *
+from .serializers.inspections import *
 from .utils import extract_data_from_pdf
 
 logger = logging.getLogger(__name__)
@@ -342,6 +343,22 @@ class SolarEnergyKitViewSet(BaseModelViewSet):
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
+
+class CategoryViewSet(BaseModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+class ServiceViewSet(BaseModelViewSet):
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+
+class FormsViewSet(BaseModelViewSet):
+    queryset = Forms.objects.all()
+    serializer_class = FormsSerializer
+
+class AnswerViewSet(BaseModelViewSet):
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
 
 
 class EnergyCompanyViewSet(BaseModelViewSet):
