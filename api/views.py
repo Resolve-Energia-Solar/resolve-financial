@@ -244,6 +244,13 @@ class AttachmentViewSet(BaseModelViewSet):
 class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
     serializer_class = SquadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
     
 class DepartmentViewSet(BaseModelViewSet):
@@ -347,6 +354,13 @@ class RoofTypeViewSet(BaseModelViewSet):
 class CategoryViewSet(BaseModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
 
 class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()
