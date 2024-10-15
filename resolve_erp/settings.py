@@ -85,8 +85,21 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
-# CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
 
 ROOT_URLCONF = 'resolve_erp.urls'
 
@@ -124,14 +137,6 @@ DATABASES = {
         'PASSWORD': os.environ.get("DB1_PASSWORD"),
         'HOST': os.environ.get("DB1_HOST"),
         'PORT': os.environ.get("DB1_PORT"),
-    },
-    'mysql_old': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get("DB2_NAME"),
-        'USER': os.environ.get("DB2_USER"),
-        'PASSWORD': os.environ.get("DB2_PASSWORD"),
-        'HOST': os.environ.get("DB2_HOST"),
-        'PORT': os.environ.get("DB2_PORT"),
     }
 }
 
@@ -173,20 +178,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
-
-CORS_ALLOW_METHODS = [
-    'GET',
-    'POST',
-    'PUT',
-    'PATCH'
-    'DELETE',
-    'OPTIONS',
-]
-
-CORS_ALLOW_HEADERS = [
-    'content-type',
-    'authorization',
-]
 
 
 SIMPLE_JWT = {

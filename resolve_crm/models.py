@@ -273,6 +273,7 @@ class MarketingCampaign(models.Model):
     class Meta:
         verbose_name = "Campanha de Marketing"
         verbose_name_plural = "Campanhas de Marketing"
+        ordering = ['-start_datetime']
 
 
 class ContractSubmission(models.Model):
@@ -336,6 +337,7 @@ class Sale(models.Model):
     class Meta:
         verbose_name = "Venda"
         verbose_name_plural = "Vendas"
+        ordering = ['-created_at']
     
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
@@ -432,4 +434,3 @@ class Financier(models.Model):
     
     def __str__(self):
         return self.name
-    

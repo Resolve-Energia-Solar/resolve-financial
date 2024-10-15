@@ -105,16 +105,32 @@ class BaseModelViewSet(ModelViewSet):
             return Response(filtered_data)
         return super().list(request, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        if fields:
+            fields = fields.split(',')
+            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
+            return Response(filtered_data)
+
+        return super().retrieve(request, *args, **kwargs)
+
     def _get_field_data(self, obj, field):
         """Método auxiliar para obter dados de campos aninhados."""
         if '.' in field:
             keys = field.split('.')
             value = obj
             for key in keys:
-                value = value.get(key, None)  # .get() para evitar erros se a chave não existir
+                if isinstance(value, list):
+                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
+                elif isinstance(value, dict):
+                    value = value.get(key, None)
+                else:
+                    return None
             return value
         return obj.get(field, None)
-
 
 
 class UserViewSet(BaseModelViewSet):
@@ -124,14 +140,82 @@ class UserViewSet(BaseModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         name = self.request.query_params.get('name')
+        user_type = self.request.query_params.get('type')
+        email = self.request.query_params.get('email')
+        phone = self.request.query_params.get('phone')
+        branch = self.request.query_params.get('branch')
+        department = self.request.query_params.get('department')
+        role = self.request.query_params.get('role')
+        person_type = self.request.query_params.get('person_type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
+        if user_type:
+            queryset = queryset.filter(user_types__name=user_type)
+        if email:
+            queryset = queryset.filter(email__icontains=email)
+        if phone:
+            queryset = queryset.filter(phone__number__icontains=phone)
+        if branch:
+            queryset = queryset.filter(branch__name__icontains=branch)
+        if department:
+            queryset = queryset.filter(department__name__icontains=department)
+        if role:
+            queryset = queryset.filter(role__name__icontains=role)
+        if person_type:
+            queryset = queryset.filter(person_type=person_type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_document)
+
         return queryset
     
     
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        type = self.request.query_params.get('type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+        contact_email = self.request.query_params.get('contact_email')
+        phone = self.request.query_params.get('phone')
+        origin = self.request.query_params.get('origin')
+        seller = self.request.query_params.get('seller')
+        sdr = self.request.query_params.get('sdr')
+        funnel = self.request.query_params.get('funnel')
+        column = self.request.query_params.get('column')
+
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        if type:
+            queryset = queryset.filter(type=type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_document)
+        if contact_email:
+            queryset = queryset.filter(contact_email__icontains=contact_email)
+        if phone:
+            queryset = queryset.filter(phone__icontains=phone)
+        if origin:
+            queryset = queryset.filter(origin__icontains=origin)
+        if seller:
+            queryset = queryset.filter(seller__name__icontains=seller)
+        if sdr:
+            queryset = queryset.filter(sdr__name__icontains=sdr)
+        if funnel:
+            queryset = queryset.filter(funnel=funnel)
+        if column:
+            queryset = queryset.filter(column__id=column)
+
+        return queryset
     
 
 class TaskViewSet(BaseModelViewSet):
@@ -142,6 +226,18 @@ class TaskViewSet(BaseModelViewSet):
 class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        object_id = self.request.query_params.get('object_id')
+        content_type = self.request.query_params.get('content_type_id')
+
+        if object_id:
+            queryset = queryset.filter(object_id=object_id)
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+
+        return queryset
 
 
 class SquadViewSet(BaseModelViewSet):
@@ -151,22 +247,61 @@ class SquadViewSet(BaseModelViewSet):
     
 class DepartmentViewSet(BaseModelViewSet):
     queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer    
+    serializer_class = DepartmentSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
 
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
 
 class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+
 
 class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get('q')
+
+        if search:
+            queryset = queryset.filter(
+                Q(zip_code__icontains=search) |
+                Q(country__icontains=search) |
+                Q(state__icontains=search) |
+                Q(city__icontains=search) |
+                Q(neighborhood__icontains=search) |
+                Q(street__icontains=search) |
+                Q(number__icontains=search) |
+                Q(complement__icontains=search)
+            )
+
+        return queryset
 
 
 class RoleViewSet(BaseModelViewSet):
@@ -314,6 +449,20 @@ class ProjectViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get('q')
+
+        if search:
+            queryset = queryset.filter(
+                Q(customer__first_document__icontains=search) |
+                Q(customer__second_document__icontains=search) |
+                Q(customer__complete_name__icontains=search) |
+                Q(contract_number__icontains=search)
+            )
+
+        return queryset
     
 
 class InformacaoFaturaAPIView(APIView):
@@ -336,3 +485,9 @@ class InformacaoFaturaAPIView(APIView):
                 'message': 'Erro ao processar a fatura.',
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class ContentTypeViewSet(BaseModelViewSet):
+    queryset = ContentType.objects.all()
+    serializer_class = ContentTypeSerializer
+    http_method_names = ['get']

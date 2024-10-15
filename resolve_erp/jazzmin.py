@@ -45,7 +45,7 @@ JAZZMIN_SETTINGS = {
         # Url that gets reversed (Permissions can be added)
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
         
-        {"name": "API Docs", "url": "api", "new_window": True},
+        {"name": "API Docs", "url": "/api", "new_window": True},
         
         {"name": "Swagger", "url": "api:schema-swagger-ui", "new_window": True},
         
