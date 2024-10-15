@@ -20,7 +20,7 @@ class CategorySerializer(BaseSerializer):
     squads = SquadSimpleSerializer(many=True, read_only=True)
 
     # escrita de squads por id
-    squads = PrimaryKeyRelatedField(queryset=Squad.objects.all(), many=True)
+    squads = PrimaryKeyRelatedField(queryset=Squad.objects.all(), many=True, required=False)
 
     class Meta:
         model = Category
