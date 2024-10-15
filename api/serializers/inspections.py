@@ -16,7 +16,11 @@ class SquadSimpleSerializer(BaseSerializer):
         fields = ['id', 'name']
 
 class CategorySerializer(BaseSerializer): 
+    # leitura de squads
     squads = SquadSimpleSerializer(many=True, read_only=True)
+
+    # escrita de squads por id
+    squads = PrimaryKeyRelatedField(queryset=Squad.objects.all(), many=True)
 
     class Meta:
         model = Category
