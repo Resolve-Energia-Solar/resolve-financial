@@ -25,6 +25,10 @@ from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .serializers.inspections import *
 from .utils import extract_data_from_pdf
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
+from .filters import GenericFilter
+
 
 logger = logging.getLogger(__name__)
 
@@ -90,21 +94,34 @@ class UserTokenRefreshView(TokenRefreshView):
 
 
 class BaseModelViewSet(ModelViewSet):
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = '__all__'
+
+    def get_filterset_class(self):
+        return GenericFilter
+
+    def get_filterset_kwargs(self):
+        kwargs = super().get_filterset_kwargs()
+        kwargs['model'] = self.get_queryset().model
+        return kwargs
+
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
+        
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset)
+
         if fields:
             fields = fields.split(',')
-            queryset = self.get_queryset()
             serializer = self.get_serializer(queryset, many=True)
-
-            # Filtrando os dados com base nos campos passados
             filtered_data = [
-                {field: self._get_field_data(lead, field) for field in fields}
-                for lead in serializer.data
+                {field: self._get_field_data(item, field) for field in fields}
+                for item in serializer.data
             ]
+            return self.get_paginated_response(filtered_data)
 
-            return Response(filtered_data)
-        return super().list(request, *args, **kwargs)
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
@@ -114,9 +131,9 @@ class BaseModelViewSet(ModelViewSet):
         if fields:
             fields = fields.split(',')
             filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
-            return Response(filtered_data)
+            return Response(filtered_data, status=status.HTTP_200_OK)
 
-        return super().retrieve(request, *args, **kwargs)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def _get_field_data(self, obj, field):
         """Método auxiliar para obter dados de campos aninhados."""
@@ -132,11 +149,12 @@ class BaseModelViewSet(ModelViewSet):
                     return None
             return value
         return obj.get(field, None)
-
-
+    
+    
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    
 
     def get_queryset(self):
         queryset = super().get_queryset()
