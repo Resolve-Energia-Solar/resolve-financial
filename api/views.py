@@ -25,8 +25,8 @@ from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .utils import extract_data_from_pdf
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
-from .filters import GenericFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
+
 
 
 logger = logging.getLogger(__name__)
@@ -96,13 +96,6 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
 
-    def get_filterset_class(self):
-        return GenericFilter
-
-    def get_filterset_kwargs(self):
-        kwargs = super().get_filterset_kwargs()
-        kwargs['model'] = self.get_queryset().model
-        return kwargs
 
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
@@ -195,6 +188,7 @@ class UserViewSet(BaseModelViewSet):
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
+    filter_fields = '__all__'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -278,6 +272,7 @@ class DepartmentViewSet(BaseModelViewSet):
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
+    # filterset_fields = ['id','name']
 
     def get_queryset(self):
         queryset = super().get_queryset()
