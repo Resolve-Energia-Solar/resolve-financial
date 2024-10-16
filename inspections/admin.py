@@ -21,3 +21,11 @@ class FormsAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ("form", "created_at")
+
+@admin.register(Deadline)
+class DeadlineAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+@admin.register(Schedule)
+class ScheduleAdmin(admin.ModelAdmin):
+    list_display = ("schedule_date", "project", "service")
