@@ -379,6 +379,17 @@ class CategoryViewSet(BaseModelViewSet):
         if name:
             queryset = queryset.filter(name__icontains=name)
         return queryset
+    
+class DeadlineViewSet(BaseModelViewSet):
+    queryset = Deadline.objects.all()
+    serializer_class = DeadlineSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
 
 class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()

@@ -20,11 +20,18 @@ class CategorySerializer(BaseSerializer):
         model = Category
         fields = '__all__'
 
+class DeadlineSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = Deadline
+        fields = '__all__'
+
 class ServiceSerializer(BaseSerializer):  
     # Para leitura: usar serializador completo
     category = CategorySerializer(read_only=True, many=False)
+    deadline = DeadlineSerializer(read_only=True, many=False)
     # Para escrita: usar apenas ID
     category_id = PrimaryKeyRelatedField(queryset=Category.objects.all(), write_only=True, source='category')
+    deadline_id = PrimaryKeyRelatedField(queryset=Deadline.objects.all(), write_only=True, source='deadline')
 
     class Meta(BaseSerializer.Meta):
         model = Service
