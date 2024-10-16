@@ -10,17 +10,9 @@ class RoofTypeSerializer(BaseSerializer):
         model = RoofType
         fields = '__all__'
 
-class SquadSimpleSerializer(BaseSerializer):
-    class Meta(BaseSerializer.Meta):
-        model = Squad
-        fields = ['id', 'name']
-
 class CategorySerializer(BaseSerializer): 
-    # leitura de squads
-    squads = SquadSimpleSerializer(many=True, read_only=True)
+    squads = SquadSerializer(read_only=True, many=True)
 
-    # escrita de squads por id
-    squads = PrimaryKeyRelatedField(queryset=Squad.objects.all(), many=True, required=False)
 
     class Meta:
         model = Category
