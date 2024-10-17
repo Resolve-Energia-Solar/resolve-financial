@@ -403,6 +403,24 @@ class AnswerViewSet(BaseModelViewSet):
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
 
+class ScheduleViewSet(BaseModelViewSet):
+    queryset = Schedule.objects.all()
+    serializer_class = ScheduleSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project = self.request.query_params.get('project')
+        service = self.request.query_params.get('service')
+        schedule_agent = self.request.query_params.get('schedule_agent')
+
+        if project:
+            queryset = queryset.filter(project__id=project)
+        if service:
+            queryset = queryset.filter(service__id=service)
+        if schedule_agent:
+            queryset = queryset.filter(schedule_agent__id=schedule_agent)
+
+        return queryset
 
 class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()

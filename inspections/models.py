@@ -85,10 +85,11 @@ class Answer(models.Model):
         verbose_name_plural = "Respostas"
 
 class Schedule(models.Model):
-    schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE)
+    schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateTimeField("Data do Agendamento")
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE)
+    schedule_agent = models.ForeignKey("accounts.User", verbose_name="Agente do Agendamento", on_delete=models.CASCADE, related_name='schedule_agent')
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()

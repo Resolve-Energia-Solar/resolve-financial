@@ -1,7 +1,8 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
-from accounts.models import Squad
+from accounts.models import Squad, User
 from inspections.models import *
-from api.serializers.accounts import BaseSerializer, SquadSerializer
+from api.serializers.accounts import BaseSerializer, SquadSerializer, UserSerializer
+from resolve_crm.models import Project
 
 
 class RoofTypeSerializer(BaseSerializer):
@@ -55,4 +56,17 @@ class AnswerSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = Answer
+        fields = '__all__'
+
+class ScheduleSerializer(BaseSerializer):
+    # Para leitura: usar serializador completo
+    service = ServiceSerializer(read_only=True)
+    schedule_agent = UserSerializer(read_only=True)
+    # Para escrita: usar apenas ID
+    service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
+    schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
+
+    class Meta(BaseSerializer.Meta):
+        model = Schedule
         fields = '__all__'

@@ -68,3 +68,7 @@ class PhoneNumber(admin.ModelAdmin):
 @admin.register(Squad)
 class SquadAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(UserType)
+class UserTypeAdmin(admin.ModelAdmin):
+    pass
