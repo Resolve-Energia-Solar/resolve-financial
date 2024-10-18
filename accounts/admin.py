@@ -7,6 +7,13 @@ admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
 
 
+class PhoneNumberInline(admin.TabularInline):
+    model = PhoneNumber
+    extra = 1
+
+    fields = ("country_code", "phone_number", "is_main")
+
+
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
@@ -16,12 +23,14 @@ class UserAdmin(UserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
-        ("Contact", {"fields": ("phone", "email")}),
+        ("Contact", {"fields": ("email",)}),
         ("Address", {"fields": ("addresses",)}),
         ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
         ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
     )
+
+    inlines = [PhoneNumberInline]
 
 
 @admin.register(Address)

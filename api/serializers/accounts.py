@@ -28,13 +28,22 @@ class RoleSerializer(BaseSerializer):
     class Meta:
         model = Role
         exclude = ['is_deleted']
+
+
+class PhoneNumberSerializer(BaseSerializer):
         
-        
+        class Meta:
+            model = PhoneNumber
+            fields = '__all__'
+
+
 class RelatedUserSerializer(BaseSerializer):
+
+    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
         
     class Meta:
         model = User
-        fields = ['id', 'complete_name', 'birth_date', 'first_document', 'email', 'phone', 'user_manager']
+        fields = ['id', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers', 'user_manager']
 
 
 class AddressSerializer(BaseSerializer):

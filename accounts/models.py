@@ -26,7 +26,6 @@ class User(AbstractUser):
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
 
     # Contact
-    phone = models.ForeignKey("accounts.PhoneNumber", verbose_name="Telefone", on_delete=models.CASCADE, blank=True, null=True)
     email = models.EmailField("E-mail", unique=True)
 
     # Address
@@ -78,22 +77,26 @@ class User(AbstractUser):
 
 
 class PhoneNumber(models.Model):
-    phone_number = models.CharField("Número de Telefone", max_length=20, validators=[RegexValidator(r'^\d{1,11}$')], unique=True)
+
+    country_code = models.PositiveSmallIntegerField("Código do País", default=55)
+    phone_number = models.CharField("Número de Telefone", max_length=20, validators=[RegexValidator(r'^\d+$')])
     is_main = models.BooleanField("Principal?", default=False)
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Cliente")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário", related_name="phone_numbers")
     
     def __str__(self):
-        return self.phone_number
+        return f'+{self.country_code} {self.phone_number}'
     
     def save(self):
         if self.is_main:
-            PhoneNumber.objects.filter(customer=self.customer).update(is_main=False)
+            PhoneNumber.objects.filter(user=self.user).update(is_main=False)
         super(PhoneNumber, self).save()
     
     class Meta:
         verbose_name = "Número de Telefone"
         verbose_name_plural = "Números de Telefone"
-    
+        ordering = ['is_main', 'user__complete_name']
+        unique_together = ['country_code', 'phone_number']
+
 
 class Address(models.Model):
     zip_code = models.CharField("CEP", max_length=8, validators=[RegexValidator(r'^\d{1,8}$')])
