@@ -94,7 +94,7 @@ class PhoneNumber(models.Model):
     class Meta:
         verbose_name = "Número de Telefone"
         verbose_name_plural = "Números de Telefone"
-        ordering = ['is_main', 'user__complete_name']
+        ordering = ['-is_main', 'user__complete_name']
         unique_together = ['country_code', 'phone_number']
 
 
