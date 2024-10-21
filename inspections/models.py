@@ -12,7 +12,7 @@ class RoofType(models.Model):
 
 class Category(models.Model):
     name = models.CharField("Nome da Categoria", max_length=50, unique=True)
-    squads = models.ManyToManyField("accounts.Squad", verbose_name="Squads", related_name='categories', blank=True)
+    members = models.ManyToManyField("accounts.User", verbose_name="Membros", blank=True)
     main_category = models.ForeignKey("self", verbose_name="Categoria Principal", on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
@@ -95,7 +95,8 @@ class Schedule(models.Model):
     schedule_date = models.DateTimeField("Data do Agendamento")
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE)
-    location = models.CharField("Local", max_length=50, blank=True, null=True)
+    latitude = models.FloatField("Latitude", blank=True, null=True)
+    longitude = models.FloatField("Longitude", blank=True, null=True)
     schedule_agent = models.ForeignKey("accounts.User", verbose_name="Agente de Campo", on_delete=models.CASCADE, related_name='schedule_agent')
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
