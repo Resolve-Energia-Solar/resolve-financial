@@ -168,6 +168,7 @@ class UserViewSet(BaseModelViewSet):
         person_type = self.request.query_params.get('person_type')
         first_document = self.request.query_params.get('first_document')
         second_document = self.request.query_params.get('second_document')
+        category = self.request.query_params.get('category')
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -189,6 +190,9 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(first_document__icontains=first_document)
         if second_document:
             queryset = queryset.filter(second_document__icontains=second_document)
+        if category:
+            members = Category.objects.get(id=category).members.all()
+            queryset = queryset.filter(id__in=members)
 
         return queryset
     
