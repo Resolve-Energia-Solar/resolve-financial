@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from django.utils.dateparse import parse_datetime, parse_time
 from accounts.models import User
 from inspections.models import Category, Service
 from resolve_crm.models import *
@@ -28,6 +28,8 @@ from .utils import extract_data_from_pdf
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .filters import GenericFilter
+from geopy.distance import geodesic
+from django.db.models import Case, When
 
 
 logger = logging.getLogger(__name__)
@@ -169,6 +171,11 @@ class UserViewSet(BaseModelViewSet):
         first_document = self.request.query_params.get('first_document')
         second_document = self.request.query_params.get('second_document')
         category = self.request.query_params.get('category')
+        date = self.request.query_params.get('date')
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+        latitude = self.request.query_params.get('latitude')
+        longitude = self.request.query_params.get('longitude')
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -189,13 +196,56 @@ class UserViewSet(BaseModelViewSet):
         if first_document:
             queryset = queryset.filter(first_document__icontains=first_document)
         if second_document:
-            queryset = queryset.filter(second_document__icontains=second_document)
+            queryset = queryset.filter(second_document__icontains=second_Jdocument)
         if category:
             members = Category.objects.get(id=category).members.all()
             queryset = queryset.filter(id__in=members)
+            
+            if date and start_time and end_time:
+                # Verificar sobreposições de horários
+                schedules = Schedule.objects.filter(
+                    schedule_date=date,
+                    schedule_start_time__lt=parse_time(end_time),
+                    schedule_end_time__gt=(parse_time(start_time))
+                )
+                if schedules.exists():
+                    users = schedules.values_list('schedule_agent_id', flat=True)
+                    queryset = queryset.exclude(id__in=users)
+                
+                if latitude and longitude:
+                    latitude = float(latitude)
+                    longitude = float(longitude)
+ 
+                    users_distance = []
+                    for user in queryset:
+                        last_schedule = Schedule.objects.filter(
+                            schedule_agent=user,
+                            schedule_date=date
+                        ).order_by('-schedule_end_time').first()
 
+                        if last_schedule:
+                            user.distance = calculate_distance(
+                                latitude, longitude,
+                                last_schedule.latitude, last_schedule.longitude
+                            )
+                            users_distance.append((user, user.distance))
+                        else:
+                            user.distance = None
+                            users_distance.append((user, float('inf'))) 
+
+                    ordered_users = sorted(users_distance, key=lambda x: (x[1] == float('inf'), x[1]))
+                    ordered_ids = [user[0].id for user in ordered_users]
+                    print(ordered_users)
+                    queryset = queryset.filter(id__in=ordered_ids).order_by(
+                        Case(
+                            *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
+                        )
+                    )
         return queryset
     
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    return geodesic((lat1, lon1), (lat2, lon2)).kilometers
     
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()

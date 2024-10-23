@@ -92,7 +92,9 @@ class Schedule(models.Model):
     ]
 
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
-    schedule_date = models.DateTimeField("Data do Agendamento")
+    schedule_date = models.DateField("Data do Agendamento")
+    schedule_start_time = models.TimeField("Horário de Início")
+    schedule_end_time = models.TimeField("Horário de Fim")
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE)
     latitude = models.FloatField("Latitude", blank=True, null=True)
