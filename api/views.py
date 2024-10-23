@@ -520,7 +520,7 @@ class PaymentViewSet(BaseModelViewSet):
             self.create_installments(instance)
 
     def create_installments(self, payment):
-        num_installments = self.request.data.get('num_installments', 1)
+        num_installments = payment.installments_number
         installment_amount = payment.amount / num_installments
 
         for i in range(num_installments):
