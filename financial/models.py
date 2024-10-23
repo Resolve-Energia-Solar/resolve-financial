@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 
 
@@ -21,7 +22,6 @@ class Financier(models.Model):
 
 
 class Payment(models.Model):
-
     TYPE_CHOICES = [
         ("C", "Crédito"),
         ("D", "Débito"),
@@ -32,7 +32,7 @@ class Payment(models.Model):
 
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="payments")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
-    payment_type = models.CharField("Tipo de Pagamento",choices=TYPE_CHOICES, max_length=2)
+    payment_type = models.CharField("Tipo de Pagamento", choices=TYPE_CHOICES, max_length=2)
     installments_number = models.PositiveSmallIntegerField("Número de Parcelas")
     financier = models.ForeignKey("financial.Financier", on_delete=models.CASCADE, verbose_name="Financiadora")
     due_date = models.DateField("Data de Vencimento")
@@ -64,6 +64,12 @@ class PaymentInstallment(models.Model):
     def __str__(self):
         return f"{self.payment.sale.customer} - Parcela {self.installment_number}: {self.installment_value}"
     
+    def clean(self):
+        super().clean()
+        total_installments_value = sum(installment.installment_value for installment in self.payment.paymentinstallment_set.all())
+        if total_installments_value + self.installment_value > self.payment.value:
+            raise ValidationError("A soma do valor das parcelas, incluindo esta nova parcela, não pode ser maior que o valor do pagamento.")
+
     class Meta:
         verbose_name = "Parcela"
         verbose_name_plural = "Parcelas"
