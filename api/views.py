@@ -521,14 +521,14 @@ class PaymentViewSet(BaseModelViewSet):
 
     def create_installments(self, payment):
         num_installments = payment.installments_number
-        installment_amount = payment.amount / num_installments
+        installment_amount = payment.value / num_installments
 
         for i in range(num_installments):
             PaymentInstallment.objects.create(
-            payment=payment,
-            installment_value=installment_amount,
-            due_date=payment.due_date + timezone.timedelta(days=30 * i),
-            installment_number=i + 1
+                payment=payment,
+                installment_value=installment_amount,
+                due_date=payment.due_date + timezone.timedelta(days=30 * i),
+                installment_number=i + 1
             )
 
 
