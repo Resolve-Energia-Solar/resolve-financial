@@ -24,7 +24,6 @@ router.register('roles', RoleViewSet, basename='role')
 router.register('content-types', ContentTypeViewSet, basename='content-type')
 router.register('permissions', PermissionViewSet, basename='permission')
 router.register('groups', GroupViewSet, basename='group')
-router.register('financiers', FinancierViewSet, basename='financier')
 router.register('material-types', MaterialTypesViewSet, basename='material-type')
 router.register('materials', MaterialsViewSet, basename='material')
 router.register('solar-energy-kits', SolarEnergyKitViewSet, basename='solar-energy-kit')
@@ -39,6 +38,9 @@ router.register('columns', ColumnViewSet, basename='column')
 router.register('units', UnitsViewSet, basename='unit')
 router.register('projects', ProjectViewSet, basename='project')
 router.register('sales', SaleViewSet, basename='sale')
+router.register('financiers', FinancierViewSet, basename='financier')
+router.register('payments', PaymentViewSet, basename='payment')
+router.register('payment-installments', PaymentInstallmentViewSet, basename='payment-installment')
 
 schema_view = get_schema_view(
     openapi.Info(

@@ -1,6 +1,7 @@
 from accounts.models import Address, User
 from api.serializers.core import ColumnSerializer
 from core.models import Column
+from financial.models import Financier
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
@@ -90,19 +91,6 @@ class SaleSerializer(BaseSerializer):
 
     class Meta:
         model = Sale
-        fields = '__all__'
-
-
-class FinancierSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos
-    address = AddressSerializer(read_only=True)
-    
-    # Para escrita: usar apenas ID
-    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
-    
-    class Meta:
-        model = Financier
         fields = '__all__'
 
 

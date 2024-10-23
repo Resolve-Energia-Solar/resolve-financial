@@ -14,6 +14,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.models import User
+from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
+from financial.models import Payment, PaymentInstallment
 from resolve_crm.models import *
 from resolve_crm.models import Task as LeadTask
 from .serializers.accounts import UserSerializer
@@ -25,7 +27,7 @@ from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .utils import extract_data_from_pdf
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.filters import OrderingFilter
 
 
 
@@ -332,11 +334,6 @@ class GroupViewSet(BaseModelViewSet):
     serializer_class = GroupSerializer
 
 
-class FinancierViewSet(BaseModelViewSet):
-    queryset = Financier.objects.all()
-    serializer_class = FinancierSerializer
-
-
 class MaterialTypesViewSet(BaseModelViewSet):
     queryset = MaterialTypes.objects.all()
     serializer_class = MaterialTypesSerializer
@@ -504,3 +501,18 @@ class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
     http_method_names = ['get']
+
+
+class FinancierViewSet(BaseModelViewSet):
+    queryset = Financier.objects.all()
+    serializer_class = FinancierSerializer
+
+
+class PaymentViewSet(BaseModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+
+class PaymentInstallmentViewSet(BaseModelViewSet):
+    queryset = PaymentInstallment.objects.all()
+    serializer_class = PaymentInstallmentSerializer

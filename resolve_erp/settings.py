@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'logistics.apps.LogisticsConfig',
     'inspections.apps.InspectionsConfig',
     'engineering.apps.EngineeringConfig',
+    'financial.apps.FinancialConfig',
     'notifications',
     'simple_history',
     'api.apps.ApiConfig',
