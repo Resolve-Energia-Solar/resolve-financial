@@ -30,9 +30,61 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
 
-
 logger = logging.getLogger(__name__)
 
+
+class BaseModelViewSet(ModelViewSet):
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = '__all__'
+
+
+    def list(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset)
+
+        if fields:
+            fields = fields.split(',')
+            serializer = self.get_serializer(queryset, many=True)
+            filtered_data = [
+                {field: self._get_field_data(item, field) for field in fields}
+                for item in serializer.data
+            ]
+            return self.get_paginated_response(filtered_data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        if fields:
+            fields = fields.split(',')
+            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
+            return Response(filtered_data, status=status.HTTP_200_OK)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def _get_field_data(self, obj, field):
+        """Método auxiliar para obter dados de campos aninhados."""
+        if '.' in field:
+            keys = field.split('.')
+            value = obj
+            for key in keys:
+                if isinstance(value, list):
+                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
+                elif isinstance(value, dict):
+                    value = value.get(key, None)
+                else:
+                    return None
+            return value
+        return obj.get(field, None)
+    
+
+# Accounts views
 
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
@@ -94,57 +146,6 @@ class UserTokenRefreshView(TokenRefreshView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class BaseModelViewSet(ModelViewSet):
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    ordering_fields = '__all__'
-
-
-    def list(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        
-        queryset = self.filter_queryset(self.get_queryset())
-        queryset = self.paginate_queryset(queryset)
-
-        if fields:
-            fields = fields.split(',')
-            serializer = self.get_serializer(queryset, many=True)
-            filtered_data = [
-                {field: self._get_field_data(item, field) for field in fields}
-                for item in serializer.data
-            ]
-            return self.get_paginated_response(filtered_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return self.get_paginated_response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-
-        if fields:
-            fields = fields.split(',')
-            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
-            return Response(filtered_data, status=status.HTTP_200_OK)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def _get_field_data(self, obj, field):
-        """Método auxiliar para obter dados de campos aninhados."""
-        if '.' in field:
-            keys = field.split('.')
-            value = obj
-            for key in keys:
-                if isinstance(value, list):
-                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
-                elif isinstance(value, dict):
-                    value = value.get(key, None)
-                else:
-                    return None
-            return value
-        return obj.get(field, None)
-    
-    
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -187,6 +188,76 @@ class UserViewSet(BaseModelViewSet):
         return queryset
     
     
+class SquadViewSet(BaseModelViewSet):
+    queryset = Squad.objects.all()
+    serializer_class = SquadSerializer
+    
+    
+class DepartmentViewSet(BaseModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+    
+
+class BranchViewSet(BaseModelViewSet):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    # filterset_fields = ['id','name']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+    
+
+class AddressViewSet(BaseModelViewSet):
+    queryset = Address.objects.all()
+    serializer_class = AddressSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get('q')
+
+        if search:
+            queryset = queryset.filter(
+                Q(zip_code__icontains=search) |
+                Q(country__icontains=search) |
+                Q(state__icontains=search) |
+                Q(city__icontains=search) |
+                Q(neighborhood__icontains=search) |
+                Q(street__icontains=search) |
+                Q(number__icontains=search) |
+                Q(complement__icontains=search)
+            )
+
+        return queryset
+
+
+class RoleViewSet(BaseModelViewSet):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+
+
+class PermissionViewSet(BaseModelViewSet):
+    queryset = Permission.objects.all()
+    serializer_class = PermissionSerializer
+
+
+class GroupViewSet(BaseModelViewSet):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
+
+# CRM views
+
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
@@ -232,58 +303,11 @@ class LeadViewSet(BaseModelViewSet):
         return queryset
     
 
-class TaskViewSet(BaseModelViewSet):
+class LeadTaskViewSet(BaseModelViewSet):
     queryset = LeadTask.objects.all()
     serializer_class = LeadTaskSerializer
 
     
-class AttachmentViewSet(BaseModelViewSet):
-    queryset = Attachment.objects.all()
-    serializer_class = AttachmentSerializer
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        object_id = self.request.query_params.get('object_id')
-        content_type = self.request.query_params.get('content_type_id')
-
-        if object_id:
-            queryset = queryset.filter(object_id=object_id)
-        if content_type:
-            queryset = queryset.filter(content_type=content_type)
-
-        return queryset
-
-
-class SquadViewSet(BaseModelViewSet):
-    queryset = Squad.objects.all()
-    serializer_class = SquadSerializer
-    
-    
-class DepartmentViewSet(BaseModelViewSet):
-    queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
-    
-
-class BranchViewSet(BaseModelViewSet):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
-    # filterset_fields = ['id','name']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
-    
-
 class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
@@ -296,43 +320,36 @@ class MarketingCampaignViewSet(BaseModelViewSet):
         return queryset
 
 
-class AddressViewSet(BaseModelViewSet):
-    queryset = Address.objects.all()
-    serializer_class = AddressSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.query_params.get('q')
-
-        if search:
-            queryset = queryset.filter(
-                Q(zip_code__icontains=search) |
-                Q(country__icontains=search) |
-                Q(state__icontains=search) |
-                Q(city__icontains=search) |
-                Q(neighborhood__icontains=search) |
-                Q(street__icontains=search) |
-                Q(number__icontains=search) |
-                Q(complement__icontains=search)
-            )
-
-        return queryset
+class ProjectViewSet(BaseModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
 
 
-class RoleViewSet(BaseModelViewSet):
-    queryset = Role.objects.all()
-    serializer_class = RoleSerializer
+# Contracts views
 
+class InformacaoFaturaAPIView(APIView):
+    parser_classes = [MultiPartParser]
+    http_method_names = ['post']
 
-class PermissionViewSet(BaseModelViewSet):
-    queryset = Permission.objects.all()
-    serializer_class = PermissionSerializer
+    def post(self, request):
+        if 'bill_file' not in request.FILES:
+            return Response({
+                'message': 'Arquivo da fatura é obrigatório.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
+        bill_file = request.FILES['bill_file']
 
-class GroupViewSet(BaseModelViewSet):
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
+        try:
+            data = extract_data_from_pdf(bill_file)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'message': 'Erro ao processar a fatura.',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
+# Logistics views
 
 class MaterialTypesViewSet(BaseModelViewSet):
     queryset = MaterialTypes.objects.all()
@@ -349,10 +366,14 @@ class SolarEnergyKitViewSet(BaseModelViewSet):
     serializer_class = SolarEnergyKitSerializer
     
 
+# Inspections views
+
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
 
+
+# Engineering views
 
 class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()
@@ -368,26 +389,6 @@ class CircuitBreakerViewSet(BaseModelViewSet):
     queryset = CircuitBreaker.objects.all()
     serializer_class = CircuitBreakerSerializer
     
-
-class BoardViewSet(BaseModelViewSet):
-    queryset = Board.objects.all()
-    serializer_class = BoardSerializer
-    
-    
-class LeadTaskViewSet(BaseModelViewSet):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-
- 
-class ColumnViewSet(BaseModelViewSet):
-    queryset = Column.objects.all()
-    serializer_class = ColumnSerializer
-    
-
-class TaskTemplatesViewSet(BaseModelViewSet):
-    queryset = TaskTemplates.objects.all()
-    serializer_class = TaskTemplatesSerializer
-
 
 class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
@@ -451,57 +452,52 @@ class UnitsViewSet(BaseModelViewSet):
             raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
 
 
-class ProjectViewSet(BaseModelViewSet):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
+# Core views
 
-
-class SaleViewSet(BaseModelViewSet):
-    queryset = Sale.objects.all()
-    serializer_class = SaleSerializer
-
+class AttachmentViewSet(BaseModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+    
     def get_queryset(self):
         queryset = super().get_queryset()
-        search = self.request.query_params.get('q')
+        object_id = self.request.query_params.get('object_id')
+        content_type = self.request.query_params.get('content_type_id')
 
-        if search:
-            queryset = queryset.filter(
-                Q(customer__first_document__icontains=search) |
-                Q(customer__second_document__icontains=search) |
-                Q(customer__complete_name__icontains=search) |
-                Q(contract_number__icontains=search)
-            )
+        if object_id:
+            queryset = queryset.filter(object_id=object_id)
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
 
         return queryset
-    
 
-class InformacaoFaturaAPIView(APIView):
-    parser_classes = [MultiPartParser]
-    http_method_names = ['post']
-
-    def post(self, request):
-        if 'bill_file' not in request.FILES:
-            return Response({
-                'message': 'Arquivo da fatura é obrigatório.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        bill_file = request.FILES['bill_file']
-
-        try:
-            data = extract_data_from_pdf(bill_file)
-            return Response(data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                'message': 'Erro ao processar a fatura.',
-                'error': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
 
 class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
     http_method_names = ['get']
 
+
+class BoardViewSet(BaseModelViewSet):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+    
+    
+class ColumnViewSet(BaseModelViewSet):
+    queryset = Column.objects.all()
+    serializer_class = ColumnSerializer
+    
+
+class TaskTemplatesViewSet(BaseModelViewSet):
+    queryset = TaskTemplates.objects.all()
+    serializer_class = TaskTemplatesSerializer
+
+
+class TaskViewSet(BaseModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+ 
+# Financial views
 
 class FinancierViewSet(BaseModelViewSet):
     queryset = Financier.objects.all()
