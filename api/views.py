@@ -513,6 +513,24 @@ class PaymentViewSet(BaseModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        create_installments = self.request.data.get('create_installments', False)
+        if create_installments:
+            self.create_installments(instance)
+
+    def create_installments(self, payment):
+        num_installments = self.request.data.get('num_installments', 1)
+        installment_amount = payment.amount / num_installments
+
+        for i in range(num_installments):
+            PaymentInstallment.objects.create(
+            payment=payment,
+            installment_value=installment_amount,
+            due_date=payment.due_date + timezone.timedelta(days=30 * i),
+            installment_number=i + 1
+            )
+
 
 class PaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PaymentInstallment.objects.all()
