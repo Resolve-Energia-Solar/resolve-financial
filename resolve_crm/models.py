@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse_lazy
@@ -289,6 +290,26 @@ class ContractSubmission(models.Model):
     class Meta:
         verbose_name = "Envio de Contrato"
         verbose_name_plural = "Envios de Contrato"
+
+
+class ComercialProposal(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead")
+    due_date = models.DateField("Prazo para aceitação", auto_now=False, auto_now_add=False)
+    value = models.DecimalField("Valor da proposta", max_digits=20, decimal_places=2)
+    token = models.UUIDField("Token", editable=False, default=uuid4)
+    status = models.CharField("Status da proposta", max_length=1, choices=[("P", "Pendente"), ("A", "Aceita"), ("R", "Recusada")])
+    observation = models.TextField("Descrição da proposta", blank=True, null=True)
+    kits = models.ManyToManyField("logistics.SolarEnergyKit", verbose_name="Kits")
+
+    created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Criado por", related_name="created_proposals")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    
+    def __str__(self):
+        return f'{self.value} - {self.lead}'
+    
+    class Meta:
+        verbose_name = "Proposta Comercial"
+        verbose_name_plural = "Propostas Comerciais"
 
 
 class Sale(models.Model):
