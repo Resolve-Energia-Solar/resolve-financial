@@ -78,7 +78,7 @@ class PaymentInstallment(models.Model):
     
     def clean(self):
         super().clean()
-        total_installments_value = sum(installment.installment_value for installment in self.payment.paymentinstallment_set.all())
+        total_installments_value = sum(installment.installment_value for installment in self.payment.installments.exclude(id=self.id))
         if total_installments_value + self.installment_value > self.payment.value:
             raise ValidationError("A soma do valor das parcelas, incluindo esta nova parcela, não pode ser maior que o valor do pagamento.")
     
