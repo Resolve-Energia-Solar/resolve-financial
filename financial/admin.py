@@ -30,3 +30,11 @@ class PaymentInstallmentAdmin(admin.ModelAdmin):
     search_fields = ('payment__sale__customer__name', 'installment_number')
     list_filter = ('is_paid', 'due_date', 'created_at')
     ordering = ('-created_at',)
+    actions = ['mark_as_paid']
+
+    def mark_as_paid(self, request, queryset):
+        for installment in queryset:
+            installment.is_paid = True
+            installment.save()
+        self.message_user(request, "Parcelas selecionadas foram marcadas como pagas.")
+    mark_as_paid.short_description = "Marcar parcelas selecionadas como pagas"

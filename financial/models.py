@@ -52,7 +52,7 @@ class Payment(models.Model):
         return super().clean()
     
     def update_payment_status(self):
-        if self.paymentinstallment_set.filter(is_paid=False).exists():
+        if self.installments.filter(is_paid=False).exists():
             self.is_paid = False
         else:
             self.is_paid = True
@@ -64,7 +64,7 @@ class Payment(models.Model):
 
 
 class PaymentInstallment(models.Model):
-    payment = models.ForeignKey("financial.Payment", on_delete=models.CASCADE, verbose_name="Pagamento")
+    payment = models.ForeignKey("financial.Payment", on_delete=models.CASCADE, verbose_name="Pagamento", related_name="installments")
     installment_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     installment_number = models.PositiveSmallIntegerField("Número da Parcela")
     due_date = models.DateField("Data de Vencimento")
