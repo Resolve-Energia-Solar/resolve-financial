@@ -113,7 +113,7 @@ class ProjectSerializer(BaseSerializer):
         fields = '__all__'
 
     def get_materials(self, obj):
-        return MaterialsSerializer(obj.materials.all(), many=True).
+        return MaterialsSerializer(obj.materials.all(), many=True).data
 
 
 class ComercialProposalSerializer(BaseSerializer):
