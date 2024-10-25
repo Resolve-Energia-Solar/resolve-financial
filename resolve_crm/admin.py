@@ -1,21 +1,22 @@
 from django.contrib import admin
-from .models import Lead, Task, Attachment, Project, Sale
-
-
-"""
-@admin.register(Card)
-class CardAdmin(admin.ModelAdmin):
-    list_display = ("lead", "task", "order")
-"""
-
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = ("lead", "total_value", "contract_number")
+from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale
 
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
+
+
+@admin.register(ComercialProposal)
+class ComercialProposalAdmin(admin.ModelAdmin):
+    list_display = ("lead", "due_date", "value", "status", "created_by", "created_at")
+    search_fields = ("lead__name", "status", "created_by__username")
+    list_filter = ("status", "due_date", "created_at")
+
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ("lead", "total_value", "contract_number")
 
 
 @admin.register(Task)
