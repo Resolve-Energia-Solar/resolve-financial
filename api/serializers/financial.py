@@ -5,6 +5,7 @@ from financial.models import Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from resolve_crm.models import Sale
+from django.db import transaction
 
 
 class FinancierSerializer(BaseSerializer):
@@ -39,6 +40,23 @@ class PaymentSerializer(BaseSerializer):
         model = Payment
         fields = '__all__'
 
+    @transaction.atomic
+    def create(self, validated_data):
+        raw_data = self.initial_data
+
+        installments_data = raw_data.pop('installments', None)
+        
+        # Cria a instância de Payment
+        instance = super().create(raw_data)
+
+        if installments_data is not None:
+            for installment_data in installments_data:
+                installment_data.pop('payment', None)
+                PaymentInstallment.objects.create(payment=instance, **installment_data)
+
+        return instance
+
+    @transaction.atomic
     def update(self, instance, validated_data):
         raw_data = self.initial_data
 
