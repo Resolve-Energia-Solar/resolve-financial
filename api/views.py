@@ -301,7 +301,7 @@ class LeadViewSet(BaseModelViewSet):
             queryset = queryset.filter(column__id=column)
 
         return queryset
-    
+
 
 class LeadTaskViewSet(BaseModelViewSet):
     queryset = LeadTask.objects.all()
@@ -540,3 +540,32 @@ class PaymentViewSet(BaseModelViewSet):
 class PaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PaymentInstallment.objects.all()
     serializer_class = PaymentInstallmentSerializer
+
+
+# History views
+
+class HistoryView(APIView):
+    http_method_names = ['get']
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        content_type_id = request.data.get('content_type')
+        object_id = request.data.get('object_id')
+
+        if not content_type_id or not object_id:
+            return Response({
+                'message': 'content_type e object_id são obrigatórios.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+        except ContentType.DoesNotExist:
+            return Response({
+                'message': 'ContentType não encontrado.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        history = content_type.model_class().history.filter(id=object_id)
+
+        return Response({
+            'history': list(history.values())
+        }, status=status.HTTP_200_OK)
