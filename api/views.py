@@ -546,7 +546,6 @@ class PaymentInstallmentViewSet(BaseModelViewSet):
 
 class HistoryView(APIView):
     http_method_names = ['get']
-    permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
         content_type_id = request.data.get('content_type')
