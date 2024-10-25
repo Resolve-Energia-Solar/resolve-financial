@@ -113,4 +113,19 @@ class ProjectSerializer(BaseSerializer):
         fields = '__all__'
 
     def get_materials(self, obj):
-        return MaterialsSerializer(obj.materials.all(), many=True).data
+        return MaterialsSerializer(obj.materials.all(), many=True).
+
+
+class ComercialProposalSerializer(BaseSerializer):
+
+    # Para leitura: usar serializadores completos
+    lead = LeadSerializer(read_only=True)
+    created_by = RelatedUserSerializer(read_only=True)
+
+    # Para escrita: usar apenas IDs
+    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
+    
+    class Meta:
+        model = ComercialProposal
+        fields = '__all__'

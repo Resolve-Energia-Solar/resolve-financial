@@ -320,6 +320,11 @@ class MarketingCampaignViewSet(BaseModelViewSet):
         return queryset
 
 
+class ComercialProposalViewSet(BaseModelViewSet):
+    queryset = ComercialProposal.objects.all()
+    serializer_class = ComercialProposalSerializer
+
+
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
