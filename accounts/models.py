@@ -74,6 +74,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
+        ordering = ['complete_name']
 
 
 class PhoneNumber(models.Model):
@@ -139,6 +140,7 @@ class Branch(models.Model):
     class Meta:
         verbose_name = "Unidade"
         verbose_name_plural = "Unidades"
+        ordering = ['name']
 
     def __str__(self):
         return self.name

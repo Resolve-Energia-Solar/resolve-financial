@@ -168,6 +168,7 @@ class Lead(models.Model):
     class Meta:
         verbose_name = "Lead"
         verbose_name_plural = "Leads"
+        ordering = ['-created_at']
 
 
 class Task(models.Model):
@@ -234,6 +235,7 @@ class Attachment(models.Model):
     class Meta:
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
+        ordering = ['-created_at']
 
 
 class Contact(models.Model):

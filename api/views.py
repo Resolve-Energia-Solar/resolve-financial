@@ -542,7 +542,7 @@ class PaymentViewSet(BaseModelViewSet):
         financier = self.request.query_params.get('financier')
         due_date = self.request.query_params.get('due_date')
         value = self.request.query_params.get('value')
-        installments_paid = self.request.query_params.get('installments_paid')
+        is_paid = self.request.query_params.get('is_paid')
 
         if sale:
             queryset = queryset.filter(sale=sale)
@@ -554,8 +554,9 @@ class PaymentViewSet(BaseModelViewSet):
             queryset = queryset.filter(due_date=due_date)
         if value:
             queryset = queryset.filter(value=value)
-        if installments_paid:
-            queryset = queryset.filter(installments_paid=installments_paid)
+        if is_paid:
+            is_paid = is_paid.lower() == 'true'
+            queryset = queryset.filter(is_paid=is_paid)
 
         return queryset
 
