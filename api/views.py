@@ -37,7 +37,6 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
 
-
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
         
@@ -535,6 +534,30 @@ class PaymentViewSet(BaseModelViewSet):
                 due_date=payment.due_date + timezone.timedelta(days=30 * i),
                 installment_number=i + 1
             )
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sale = self.request.query_params.get('sale')
+        payment_type = self.request.query_params.get('payment_type')
+        financier = self.request.query_params.get('financier')
+        due_date = self.request.query_params.get('due_date')
+        value = self.request.query_params.get('value')
+        installments_paid = self.request.query_params.get('installments_paid')
+
+        if sale:
+            queryset = queryset.filter(sale=sale)
+        if payment_type:
+            queryset = queryset.filter(payment_type=payment_type)
+        if financier:
+            queryset = queryset.filter(financier__name__icontains=financier)
+        if due_date:
+            queryset = queryset.filter(due_date=due_date)
+        if value:
+            queryset = queryset.filter(value=value)
+        if installments_paid:
+            queryset = queryset.filter(installments_paid=installments_paid)
+
+        return queryset
 
 
 class PaymentInstallmentViewSet(BaseModelViewSet):
