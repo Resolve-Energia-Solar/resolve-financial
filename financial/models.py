@@ -33,15 +33,14 @@ class Payment(models.Model):
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="payments")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     payment_type = models.CharField("Tipo de Pagamento", choices=TYPE_CHOICES, max_length=2)
-    installments_number = models.PositiveSmallIntegerField("Número de Parcelas", default=1)
     financier = models.ForeignKey("financial.Financier", on_delete=models.CASCADE, verbose_name="Financiadora", blank=True, null=True)
     due_date = models.DateField("Data de Vencimento")
-    is_paid = models.BooleanField("Pago", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
-    def valor_parcela(self):
-        return self.value / self.installments_number
+    @property
+    def is_paid(self):
+        return all(installment.is_paid for installment in self.installments.all())
     
     def __str__(self):
         return f"{self.sale.customer} - {self.payment_type} - {self.value}"
@@ -61,6 +60,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "Pagamento"
         verbose_name_plural = "Pagamentos"
+        ordering = ["-created_at"]
 
 
 class PaymentInstallment(models.Model):
@@ -89,3 +89,4 @@ class PaymentInstallment(models.Model):
     class Meta:
         verbose_name = "Parcela"
         verbose_name_plural = "Parcelas"
+        ordering = ["-payment__created_at", "installment_number"]
