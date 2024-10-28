@@ -13,9 +13,9 @@ class RoofTypeSerializer(BaseSerializer):
 
 class CategorySerializer(BaseSerializer): 
     # Para leitura: usar serializador completo
-    users = UserSerializer(read_only=True, many=True)
+    members = UserSerializer(read_only=True, many=True)
     # Para escrita: usar apenas ID
-    users_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='users', many=True)
+    members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='users', many=True)
 
     class Meta:
         model = Category
