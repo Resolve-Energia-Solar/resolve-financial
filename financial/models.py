@@ -41,6 +41,14 @@ class Payment(models.Model):
     @property
     def is_paid(self):
         return all(installment.is_paid for installment in self.installments.all())
+
+    @property
+    def total_paid(self):
+        return sum(installment.installment_value for installment in self.installments.filter(is_paid=True))
+
+    @property
+    def percentual_paid(self):
+        return sum(installment.installment_value for installment in self.installments.filter(is_paid=True)) / self.value
     
     def __str__(self):
         return f"{self.sale.customer} - {self.payment_type} - {self.value}"
@@ -49,13 +57,6 @@ class Payment(models.Model):
         if self.payment_type == "F" and not self.financier:
             raise ValidationError("Pagamentos do tipo financiamento devem ter uma financiadora.")
         return super().clean()
-    
-    def update_payment_status(self):
-        if self.installments.filter(is_paid=False).exists():
-            self.is_paid = False
-        else:
-            self.is_paid = True
-        self.save()
 
     class Meta:
         verbose_name = "Pagamento"
@@ -81,10 +82,6 @@ class PaymentInstallment(models.Model):
         total_installments_value = sum(installment.installment_value for installment in self.payment.installments.exclude(id=self.id))
         if total_installments_value + self.installment_value > self.payment.value:
             raise ValidationError("A soma do valor das parcelas, incluindo esta nova parcela, não pode ser maior que o valor do pagamento.")
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.payment.update_payment_status()
 
     class Meta:
         verbose_name = "Parcela"
