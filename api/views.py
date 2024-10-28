@@ -524,7 +524,7 @@ class PaymentViewSet(BaseModelViewSet):
             self.create_installments(instance)
 
     def create_installments(self, payment):
-        num_installments = payment.installments_number
+        num_installments = self.request.data.get('installments_number', False)
         installment_amount = payment.value / num_installments
 
         for i in range(num_installments):
