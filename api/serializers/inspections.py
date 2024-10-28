@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
-from accounts.models import Squad, User
+from accounts.models import Address, Squad, User
 from inspections.models import *
-from api.serializers.accounts import BaseSerializer, SquadSerializer, UserSerializer
+from api.serializers.accounts import AddressSerializer, BaseSerializer, SquadSerializer, UserSerializer
 from resolve_crm.models import Project
 
 
@@ -13,9 +13,9 @@ class RoofTypeSerializer(BaseSerializer):
 
 class CategorySerializer(BaseSerializer): 
     # Para leitura: usar serializador completo
-    squads = SquadSerializer(read_only=True, many=True)
+    users = UserSerializer(read_only=True, many=True)
     # Para escrita: usar apenas ID
-    squads_id = PrimaryKeyRelatedField(queryset=Squad.objects.all(), write_only=True, source='squads', many=True)
+    users_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='users', many=True)
 
     class Meta:
         model = Category
@@ -62,10 +62,12 @@ class ScheduleSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
     schedule_agent = UserSerializer(read_only=True)
+    address = AddressSerializer(read_only=True)
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
+    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
