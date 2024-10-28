@@ -15,7 +15,7 @@ class CategorySerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     members = UserSerializer(read_only=True, many=True)
     # Para escrita: usar apenas ID
-    members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='users', many=True)
+    members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='members', many=True)
 
     class Meta:
         model = Category
