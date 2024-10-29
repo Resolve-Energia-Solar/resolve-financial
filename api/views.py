@@ -81,6 +81,17 @@ class BaseModelViewSet(ModelViewSet):
                     return None
             return value
         return obj.get(field, None)
+
+    @property
+    def filterset_fields(self):
+        model = self.get_queryset().model
+        exclude_field_types = ['ImageField', 'FileField']
+
+        # Gera a lista de campos excluindo os tipos especificados
+        return [
+            field.name for field in model._meta.fields
+            if field.get_internal_type() not in exclude_field_types
+        ]
     
 
 # Accounts views

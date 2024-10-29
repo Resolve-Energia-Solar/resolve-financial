@@ -18,6 +18,7 @@ class MaterialTypes(models.Model):
     class Meta:
         verbose_name = "Tipo de Material"
         verbose_name_plural = "Tipos de Materiais"
+        ordering = ["-created_at"]
 
 
 class Materials(models.Model):
@@ -43,6 +44,7 @@ class Materials(models.Model):
     class Meta:
         verbose_name = "Material"
         verbose_name_plural = "Materiais"
+        ordering = ["-created_at"]
 
 
 class SolarEnergyKit(models.Model):
@@ -66,6 +68,7 @@ class SolarEnergyKit(models.Model):
     class Meta:
         verbose_name = "Kit de Materiais de Energia Solar"
         verbose_name_plural = "Kits de Materiais de Energia Solar"
+        ordering = ["-created_at"]
 
 
 class SalesMaterials(models.Model):
@@ -82,6 +85,7 @@ class SalesMaterials(models.Model):
     class Meta:
         verbose_name = "Material da Venda"
         verbose_name_plural = "Materiais das Vendas"
+        ordering = ["-created_at"]
 
 
 class ProjectMaterials(models.Model):
@@ -98,4 +102,4 @@ class ProjectMaterials(models.Model):
     class Meta:
         verbose_name = "Material do Projeto"
         verbose_name_plural = "Materiais dos Projetos"
-        
+        ordering = ["-created_at"]
