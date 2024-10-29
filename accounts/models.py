@@ -15,6 +15,7 @@ class UserType(models.Model):
     class Meta:
         verbose_name = "Tipo de Usuário"
         verbose_name_plural = "Tipos de Usuário"
+        ordering = ['name']
 
 
 class User(AbstractUser):
@@ -128,6 +129,7 @@ class Address(models.Model):
     class Meta:
         verbose_name = "Endereço"
         verbose_name_plural = "Endereços"
+        ordering = ['city', 'state', 'street', 'number']
 
 
 class Branch(models.Model):
@@ -155,6 +157,7 @@ class Department(models.Model):
     class Meta:
         verbose_name = "Departamento"
         verbose_name_plural = "Departamentos"
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -169,6 +172,7 @@ class Role(models.Model):
     class Meta:
         verbose_name = "Cargo"
         verbose_name_plural = "Cargos"
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -188,6 +192,7 @@ class Squad(models.Model):
     class Meta:
         verbose_name = "Squad"
         verbose_name_plural = "Squads"
+        ordering = ['name']
     
     def get_absolute_url(self):
         return reverse_lazy('accounts:squad_detail', kwargs={'pk': self.pk})
