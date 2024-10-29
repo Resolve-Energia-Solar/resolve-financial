@@ -7,7 +7,7 @@ from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  
 from api.serializers.accounts import BaseSerializer
 from api.serializers.logistics import MaterialsSerializer
 from logistics.models import Materials, ProjectMaterials
-from rest_framework.serializers import PrimaryKeyRelatedField
+from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 
  
 class LeadSerializer(BaseSerializer):
@@ -79,6 +79,7 @@ class SaleSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     lead = LeadSerializer(read_only=True)
+    missing_documents = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -92,6 +93,9 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+
+    def get_missing_documents(self, obj):
+        return obj.missing_documents()
 
 
 class ProjectSerializer(BaseSerializer):

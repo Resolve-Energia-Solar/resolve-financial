@@ -2,6 +2,7 @@ from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse_lazy
+from contracts.models import DocumentType, DocumentSubType
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
@@ -327,12 +328,13 @@ class Sale(models.Model):
 
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
-    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False) #
+    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
-    is_sale = models.BooleanField("Pré-venda", default=True)
+    is_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
+    inspection = models.ForeignKey()
 
     # Document Information
     is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
@@ -342,6 +344,23 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+
+    def attachments(self):
+        return Attachment.objects.filter(
+            object_id=self.id, 
+            content_type=ContentType.objects.get_for_model(self)
+        )
+
+    def missing_documents(self):
+        required_documents = DocumentType.objects.filter(required=True)
+        missing_documents = []
+        for document in required_documents:
+            if not self.attachments().filter(document_type=document):
+                missing_documents.append({
+                    'id': document.id,
+                    'name': document.name
+                })
+        return missing_documents
     
     def save(self, current_user=None, *args, **kwargs):
         if not self.contract_number:
