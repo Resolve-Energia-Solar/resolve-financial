@@ -26,6 +26,7 @@ class Board(models.Model):
     class Meta:
         verbose_name = 'Quadro'
         verbose_name_plural = 'Quadros'
+        ordering = ['title']
 
 
 class Column(models.Model):
@@ -42,6 +43,11 @@ class Column(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = 'Coluna'
+        verbose_name_plural = 'Colunas'
+        ordering = ['position']
 
 
 class Task(models.Model):
@@ -80,6 +86,7 @@ class Task(models.Model):
     class Meta:
         verbose_name = 'Tarefa'
         verbose_name_plural = 'Tarefas'
+        ordering = ['-due_date']
 
 
 class TaskTemplates(models.Model):
@@ -97,6 +104,7 @@ class TaskTemplates(models.Model):
     class Meta:
         verbose_name = 'Modelo de Tarefa'
         verbose_name_plural = 'Modelos de Tarefas'
+        ordering = ['title']
     
 
 class Webhook(models.Model):
@@ -123,3 +131,4 @@ class Webhook(models.Model):
     class Meta:
         verbose_name = 'Webhook'
         verbose_name_plural = 'Webhooks'
+        ordering = ['-created_at']
