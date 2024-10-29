@@ -56,6 +56,7 @@ class SolarEnergyKit(models.Model):
     branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial")
     roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado")
     price = models.DecimalField("Preço", max_digits=20, decimal_places=6, default=0)
+    is_default = models.BooleanField("Padrão", default=False)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
 
