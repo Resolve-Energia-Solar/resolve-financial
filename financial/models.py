@@ -49,7 +49,7 @@ class Payment(models.Model):
         "Status da Nota Fiscal", 
         max_length=1, 
         choices=INVOICE_STATUS_CHOICES, 
-        default="pendente"
+        default="P"
     )
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
