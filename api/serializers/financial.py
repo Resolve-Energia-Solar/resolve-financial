@@ -3,6 +3,7 @@ from api.serializers.accounts import AddressSerializer, BaseSerializer
 from api.serializers.resolve_crm import SaleSerializer
 from financial.models import Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.serializers import SerializerMethodField
 
 from resolve_crm.models import Sale
 from django.db import transaction
@@ -36,9 +37,22 @@ class PaymentSerializer(BaseSerializer):
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
+    is_paid = SerializerMethodField()
+    total_paid = SerializerMethodField()
+    percentual_paid = SerializerMethodField()
+
     class Meta:
         model = Payment
         fields = '__all__'
+
+    def get_is_paid(self, obj):
+        return obj.is_paid
+
+    def get_total_paid(self, obj):
+        return obj.total_paid
+
+    def get_percentual_paid(self, obj):
+        return obj.percentual_paid
 
     @transaction.atomic
     def create(self, validated_data):

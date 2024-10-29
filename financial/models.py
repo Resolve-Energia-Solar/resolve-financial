@@ -1,3 +1,4 @@
+import decimal
 from django.db import models
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
@@ -48,7 +49,9 @@ class Payment(models.Model):
 
     @property
     def percentual_paid(self):
-        return sum(installment.installment_value for installment in self.installments.filter(is_paid=True)) / self.value
+        if self.value == 0:
+            return 0
+        return round(self.total_paid / decimal.Decimal(self.value), 4)
     
     def __str__(self):
         return f"{self.sale.customer} - {self.payment_type} - {self.value}"
