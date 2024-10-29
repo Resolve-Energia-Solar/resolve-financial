@@ -24,6 +24,7 @@ class Financier(models.Model):
 
 
 class Payment(models.Model):
+
     TYPE_CHOICES = [
         ("C", "Crédito"),
         ("D", "Débito"),
@@ -32,11 +33,24 @@ class Payment(models.Model):
         ("PI", "Parcelamento interno")
     ]
 
+    INVOICE_STATUS_CHOICES = [
+        ("E", "Emitida"),
+        ("L", "Liberada"),
+        ("P", "Pendente"),
+        ("C", "Cancelada"),
+    ]
+
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="payments")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     payment_type = models.CharField("Tipo de Pagamento", choices=TYPE_CHOICES, max_length=2)
     financier = models.ForeignKey("financial.Financier", on_delete=models.CASCADE, verbose_name="Financiadora", blank=True, null=True)
     due_date = models.DateField("Data de Vencimento")
+    invoice_status = models.CharField(
+        "Status da Nota Fiscal", 
+        max_length=1, 
+        choices=INVOICE_STATUS_CHOICES, 
+        default="pendente"
+    )
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
