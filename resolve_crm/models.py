@@ -208,7 +208,7 @@ class Attachment(models.Model):
     file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
     status = models.CharField("Status", max_length=50, null=True, blank=True)
     document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
-    document_subtype = models.ForeignKey("contracts.DocumentSubType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
+    document_subtype = models.ForeignKey("contracts.DocumentSubType", on_delete=models.CASCADE, verbose_name="Subtipo de Documento", null=True, blank=True)
     description = models.TextField("Descrição")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
