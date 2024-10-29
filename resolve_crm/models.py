@@ -11,10 +11,9 @@ from accounts.models import Branch
 class Lead(models.Model):
     
     FUNNEL_CHOICES = [
-        ("C", "Quente"),
-        ("P", "Moderado"),
+        ("Q", "Quente"),
+        ("M", "Moderado"),
         ("N", "Negociação"),
-
     ]
 
     name = models.CharField(
