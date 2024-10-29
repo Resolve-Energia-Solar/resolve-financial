@@ -333,7 +333,6 @@ class Sale(models.Model):
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
     is_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
-    inspection = models.ForeignKey()
 
     # Document Information
     is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
