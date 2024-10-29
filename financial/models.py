@@ -14,9 +14,10 @@ class Financier(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
-    class Meta:
+    class Financier:
         verbose_name = "Financiadora"
         verbose_name_plural = "Financiadoras"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name
