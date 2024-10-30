@@ -86,13 +86,22 @@ class BaseModelViewSet(ModelViewSet):
     def filterset_fields(self):
         model = self.get_queryset().model
         exclude_field_types = ['ImageField', 'FileField']
-        supported_lookups = ['CharField', 'TextField']
-
-        return {
-            field.name: ['icontains'] for field in model._meta.fields
-            if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types
-        }
+        supported_lookups = ['CharField', 'TextField', 'ForeignKey', 'DateField', 'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField', 'ManyToManyField']
     
+        filter_fields = {}
+        for field in model._meta.fields + model._meta.many_to_many:
+            if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
+                if field.get_internal_type() == 'ForeignKey':
+                    filter_fields[field.name] = ['exact']
+                elif field.get_internal_type() in ['CharField', 'TextField']:
+                    filter_fields[field.name] = ['icontains', 'in']
+                elif field.get_internal_type() in ['DateField', 'DateTimeField']:
+                    filter_fields[field.name] = ['range']
+                elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField']:
+                    filter_fields[field.name] = ['exact', 'gte', 'lte']
+                elif field.get_internal_type() == 'ManyToManyField':
+                    filter_fields[field.name] = ['exact', 'in']
+        return filter_fields
 
 # Accounts views
 
@@ -160,43 +169,6 @@ class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        user_type = self.request.query_params.get('type')
-        email = self.request.query_params.get('email')
-        phone = self.request.query_params.get('phone')
-        branch = self.request.query_params.get('branch')
-        department = self.request.query_params.get('department')
-        role = self.request.query_params.get('role')
-        person_type = self.request.query_params.get('person_type')
-        first_document = self.request.query_params.get('first_document')
-        second_document = self.request.query_params.get('second_document')
-
-        if name:
-            queryset = queryset.filter(complete_name__icontains=name)
-        if user_type:
-            queryset = queryset.filter(user_types__name=user_type)
-        if email:
-            queryset = queryset.filter(email__icontains=email)
-        if phone:
-            queryset = queryset.filter(phone__number__icontains=phone)
-        if branch:
-            queryset = queryset.filter(branch__name__icontains=branch)
-        if department:
-            queryset = queryset.filter(department__name__icontains=department)
-        if role:
-            queryset = queryset.filter(role__name__icontains=role)
-        if person_type:
-            queryset = queryset.filter(person_type=person_type)
-        if first_document:
-            queryset = queryset.filter(first_document__icontains=first_document)
-        if second_document:
-            queryset = queryset.filter(second_document__icontains=second_document)
-
-        return queryset
-    
     
 class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
@@ -206,27 +178,12 @@ class SquadViewSet(BaseModelViewSet):
 class DepartmentViewSet(BaseModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
     
 
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    # filterset_fields = ['id','name']
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
-    
 
 class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
@@ -278,45 +235,6 @@ class LeadViewSet(BaseModelViewSet):
     serializer_class = LeadSerializer
     filter_fields = '__all__'
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        type = self.request.query_params.get('type')
-        first_document = self.request.query_params.get('first_document')
-        second_document = self.request.query_params.get('second_document')
-        contact_email = self.request.query_params.get('contact_email')
-        phone = self.request.query_params.get('phone')
-        origin = self.request.query_params.get('origin')
-        seller = self.request.query_params.get('seller')
-        sdr = self.request.query_params.get('sdr')
-        funnel = self.request.query_params.get('funnel')
-        column = self.request.query_params.get('column')
-
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        if type:
-            queryset = queryset.filter(type=type)
-        if first_document:
-            queryset = queryset.filter(first_document__icontains=first_document)
-        if second_document:
-            queryset = queryset.filter(second_document__icontains=second_document)
-        if contact_email:
-            queryset = queryset.filter(contact_email__icontains=contact_email)
-        if phone:
-            queryset = queryset.filter(phone__icontains=phone)
-        if origin:
-            queryset = queryset.filter(origin__icontains=origin)
-        if seller:
-            queryset = queryset.filter(seller__name__icontains=seller)
-        if sdr:
-            queryset = queryset.filter(sdr__name__icontains=sdr)
-        if funnel:
-            queryset = queryset.filter(funnel=funnel)
-        if column:
-            queryset = queryset.filter(column__id=column)
-
-        return queryset
-
 
 class LeadTaskViewSet(BaseModelViewSet):
     queryset = LeadTask.objects.all()
@@ -326,13 +244,6 @@ class LeadTaskViewSet(BaseModelViewSet):
 class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
 
 
 class ComercialProposalViewSet(BaseModelViewSet):
@@ -482,18 +393,6 @@ class UnitsViewSet(BaseModelViewSet):
 class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        object_id = self.request.query_params.get('object_id')
-        content_type = self.request.query_params.get('content_type_id')
-
-        if object_id:
-            queryset = queryset.filter(object_id=object_id)
-        if content_type:
-            queryset = queryset.filter(content_type=content_type)
-
-        return queryset
 
 
 class ContentTypeViewSet(BaseModelViewSet):
@@ -550,31 +449,6 @@ class PaymentViewSet(BaseModelViewSet):
                 due_date=payment.due_date + timezone.timedelta(days=30 * i),
                 installment_number=i + 1
             )
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        sale = self.request.query_params.get('sale')
-        payment_type = self.request.query_params.get('payment_type')
-        financier = self.request.query_params.get('financier')
-        due_date = self.request.query_params.get('due_date')
-        value = self.request.query_params.get('value')
-        is_paid = self.request.query_params.get('is_paid')
-
-        if sale:
-            queryset = queryset.filter(sale=sale)
-        if payment_type:
-            queryset = queryset.filter(payment_type=payment_type)
-        if financier:
-            queryset = queryset.filter(financier__name__icontains=financier)
-        if due_date:
-            queryset = queryset.filter(due_date=due_date)
-        if value:
-            queryset = queryset.filter(value=value)
-        if is_paid:
-            is_paid = is_paid.lower() == 'true'
-            queryset = queryset.filter(is_paid=is_paid)
-
-        return queryset
 
 
 class PaymentInstallmentViewSet(BaseModelViewSet):
