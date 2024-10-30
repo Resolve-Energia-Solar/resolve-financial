@@ -86,12 +86,12 @@ class BaseModelViewSet(ModelViewSet):
     def filterset_fields(self):
         model = self.get_queryset().model
         exclude_field_types = ['ImageField', 'FileField']
+        supported_lookups = ['CharField', 'TextField']
 
-        # Gera a lista de campos excluindo os tipos especificados
-        return [
-            field.name for field in model._meta.fields
-            if field.get_internal_type() not in exclude_field_types
-        ]
+        return {
+            field.name: ['icontains'] for field in model._meta.fields
+            if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types
+        }
     
 
 # Accounts views
