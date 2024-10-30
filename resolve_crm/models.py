@@ -327,12 +327,14 @@ class Sale(models.Model):
 
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
+
     contract_number = models.CharField("Número do Contrato", max_length=20, editable=False)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
     is_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
+    transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
 
     # Document Information
     is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
