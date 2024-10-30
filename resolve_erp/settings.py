@@ -146,6 +146,20 @@ DATABASES = {
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
 
 
+# Google Cloud Storage
+GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
+GS_LOCATION = os.getenv('GS_LOCATION')
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {}
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 
 # User model
 AUTH_USER_MODEL = "accounts.User"
