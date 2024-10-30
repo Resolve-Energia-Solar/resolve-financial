@@ -8,6 +8,19 @@ from django.contrib.auth import get_user_model
 from accounts.models import Branch
 
 
+class Origin(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Origem"
+        verbose_name_plural = "Origens"
+        ordering = ['name']
+
+
 class Lead(models.Model):
     
     FUNNEL_CHOICES = [
@@ -91,8 +104,9 @@ class Lead(models.Model):
     )
     
     # CRM Information
-    origin = models.CharField(
-        max_length=200, 
+    origin = models.ForeignKey(
+        "resolve_crm.Origin", 
+        on_delete=models.CASCADE, 
         verbose_name="Origem", 
         blank=True, 
         null=True
