@@ -268,6 +268,11 @@ class GroupViewSet(BaseModelViewSet):
 
 # CRM views
 
+class OriginViewSet(BaseModelViewSet):
+    queryset = Origin.objects.all()
+    serializer_class = OriginSerializer
+
+
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer

@@ -9,6 +9,12 @@ from api.serializers.logistics import MaterialsSerializer
 from logistics.models import Materials, ProjectMaterials
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 
+
+class OriginSerializer(BaseSerializer):
+    class Meta:
+        model = Origin
+        fields = '__all__'
+
  
 class LeadSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
@@ -17,12 +23,14 @@ class LeadSerializer(BaseSerializer):
     sdr = RelatedUserSerializer(read_only=True, allow_null=True)
     addresses = AddressSerializer(many=True, read_only=True)
     column = ColumnSerializer(read_only=True)
+    origin = OriginSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True)
     sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
+    origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
 
     class Meta:
         model = Lead

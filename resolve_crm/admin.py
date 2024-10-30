@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale
+from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale, Origin
+
+
+@admin.register(Origin)
+class OriginAdmin(admin.ModelAdmin):
+    list_display = ("name",)
 
 
 @admin.register(Lead)

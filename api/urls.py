@@ -12,6 +12,7 @@ router.get_api_root_view().cls.__name__ = "E.R.P. Resolve API"
 router.get_api_root_view().cls.__doc__ = "API do ERP da Resolve Energia Solar"
 
 router.register('users', UserViewSet, basename='user')
+router.register('origins', OriginViewSet, basename='origin')
 router.register('leads', LeadViewSet, basename='lead')
 router.register('lead-tasks', TaskViewSet, basename='lead-task')
 router.register('attachments', AttachmentViewSet, basename='attachment')
