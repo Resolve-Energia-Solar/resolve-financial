@@ -53,6 +53,7 @@ class SolarEnergyKit(models.Model):
     inversor_amount = models.PositiveSmallIntegerField("Quantidade de Inversores", default=0)
     modules_model = models.ForeignKey("logistics.Materials", on_delete=models.CASCADE, verbose_name="Modelo dos Módulos", related_name="modules_kit_set")
     modules_amount = models.PositiveSmallIntegerField("Quantidade de Módulos", default=0)
+    kwp = models.DecimalField("kWp", max_digits=10, decimal_places=2, null=True, blank=True)
     branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial")
     roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado")
     price = models.DecimalField("Preço", max_digits=20, decimal_places=6, default=0)

@@ -45,4 +45,3 @@ class SolarEnergyKitSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = SolarEnergyKit
         fields = '__all__'
-
