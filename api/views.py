@@ -257,8 +257,7 @@ class UserViewSet(BaseModelViewSet):
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     distance = geodesic((lat1, lon1), (lat2, lon2)).kilometers
-    formatted_distance = '{:.2f}'.format(distance)
-    return formatted_distance
+    return distance
     
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
