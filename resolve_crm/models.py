@@ -411,6 +411,7 @@ class Project(models.Model):
     instaled_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado", null=True, blank=True)
     project_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto", null=True, blank=True)
     # input_pattern_value = models.DecimalField("Valor do Padrão de Entrada", max_digits=10, decimal_places=2)
+    solar_energy_kit = models.ForeignKey('logistics.SolarEnergyKit', on_delete=models.CASCADE, verbose_name="Kit de Energia Solar")
 
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
