@@ -29,7 +29,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .filters import GenericFilter
 from geopy.distance import geodesic
-from django.db.models import Case, When
+from django.db.models import Case, When, Value, FloatField, IntegerField
 
 
 logger = logging.getLogger(__name__)
@@ -198,24 +198,21 @@ class UserViewSet(BaseModelViewSet):
         if second_document:
             queryset = queryset.filter(second_document__icontains=second_Jdocument)
         if category:
-            members = Category.objects.get(id=category).members.all()
-            queryset = queryset.filter(id__in=members)
-            
+            queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
+
             if date and start_time and end_time:
-                # Verificar sobreposições de horários
-                schedules = Schedule.objects.filter(
+                overlapping_schedules = Schedule.objects.filter(
                     schedule_date=date,
                     schedule_start_time__lt=parse_time(end_time),
-                    schedule_end_time__gt=(parse_time(start_time))
-                )
-                if schedules.exists():
-                    users = schedules.values_list('schedule_agent_id', flat=True)
-                    queryset = queryset.exclude(id__in=users)
-                
+                    schedule_end_time__gt=parse_time(start_time)
+                ).values_list('schedule_agent_id', flat=True)
+
+                queryset = queryset.exclude(id__in=overlapping_schedules)
+
                 if latitude and longitude:
                     latitude = float(latitude)
                     longitude = float(longitude)
- 
+
                     users_distance = []
                     for user in queryset:
                         last_schedule = Schedule.objects.filter(
@@ -223,20 +220,34 @@ class UserViewSet(BaseModelViewSet):
                             schedule_date=date
                         ).order_by('-schedule_end_time').first()
 
-                        if last_schedule:
-                            user.distance = calculate_distance(
-                                latitude, longitude,
-                                last_schedule.latitude, last_schedule.longitude
-                            )
-                            users_distance.append((user, user.distance))
-                        else:
-                            user.distance = None
-                            users_distance.append((user, float('inf'))) 
+                        user.distance = (
+                            calculate_distance(latitude, longitude, last_schedule.latitude, last_schedule.longitude)
+                            if last_schedule else None
+                        )
 
-                    ordered_users = sorted(users_distance, key=lambda x: (x[1] == float('inf'), x[1]))
+                        users_distance.append((user, user.distance))
+
+                        daily_schedules_count = Schedule.objects.filter(
+                            schedule_agent=user,
+                            schedule_date=date
+                        ).count()
+                        user.daily_schedules_count = daily_schedules_count
+
+                    ordered_users = sorted(users_distance, key=lambda x: (x[1] is None, x[1]))
                     ordered_ids = [user[0].id for user in ordered_users]
-                    print(ordered_users)
-                    queryset = queryset.filter(id__in=ordered_ids).order_by(
+
+                    queryset = queryset.filter(id__in=ordered_ids).annotate(
+                        distance=Case(
+                            *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
+                            default=Value(None),  
+                            output_field=FloatField()  
+                        ),
+                        daily_schedules_count=Case(
+                            *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
+                            default=Value(0),
+                            output_field=IntegerField()  
+                        )
+                    ).order_by(
                         Case(
                             *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
                         )
@@ -245,7 +256,9 @@ class UserViewSet(BaseModelViewSet):
     
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    return geodesic((lat1, lon1), (lat2, lon2)).kilometers
+    distance = geodesic((lat1, lon1), (lat2, lon2)).kilometers
+    formatted_distance = '{:.2f}'.format(distance)
+    return formatted_distance
     
 class LeadViewSet(BaseModelViewSet):
     queryset = Lead.objects.all()
