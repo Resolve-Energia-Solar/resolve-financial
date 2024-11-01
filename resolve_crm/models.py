@@ -406,11 +406,11 @@ class Project(models.Model):
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="project_addresses")
     supply_type = models.CharField("Tipo de Fornecimento", choices=[("M", "Monofásico"), ("B", "Bifásico"), ("T", "Trifásico")], max_length=50, null=True, blank=True)
-    kwp = models.DecimalField("kWp", max_digits=10, decimal_places=2, null=True, blank=True)
     registered_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     instaled_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado", null=True, blank=True)
     project_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto", null=True, blank=True)
     # input_pattern_value = models.DecimalField("Valor do Padrão de Entrada", max_digits=10, decimal_places=2)
+    solar_energy_kit = models.ForeignKey('logistics.SolarEnergyKit', on_delete=models.CASCADE, verbose_name="Kit de Energia Solar")
 
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
@@ -418,6 +418,7 @@ class Project(models.Model):
     class Meta:
         verbose_name = "Projeto"
         verbose_name_plural = "Projetos"
+        ordering = ['-created_at']
     
     def __str__(self):
         return self.project_number

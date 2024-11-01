@@ -5,8 +5,8 @@ from financial.models import Financier
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
-from api.serializers.logistics import MaterialsSerializer
-from logistics.models import Materials, ProjectMaterials
+from api.serializers.logistics import MaterialsSerializer, SolarEnergyKitSerializer
+from logistics.models import Materials, ProjectMaterials, SolarEnergyKit
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 
 
@@ -113,12 +113,14 @@ class ProjectSerializer(BaseSerializer):
     designer = RelatedUserSerializer(read_only=True)
     homologator = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
+    solar_energy_kit = SolarEnergyKitSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer')
     homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator')
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
+    solar_energy_kit_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), write_only=True, source='solar_energy_kit')
 
     class Meta:
         model = Project
@@ -133,11 +135,13 @@ class ComercialProposalSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     lead = LeadSerializer(read_only=True)
     created_by = RelatedUserSerializer(read_only=True)
+    kits = SolarEnergyKitSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    
+    kits_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), many=True, write_only=True, source='kits')
+
     class Meta:
         model = ComercialProposal
         fields = '__all__'
