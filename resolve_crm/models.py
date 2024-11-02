@@ -425,7 +425,8 @@ class Project(models.Model):
         if not self.project_number:
             last_sale = Project.objects.all().order_by('id').last()
             if last_sale:
-                last_number = int(last_sale.project_number.replace('PROJ', ''))
+                last_number_str = last_sale.project_number.replace('PROJ', '')
+                last_number = int(last_number_str) if last_number_str.isdigit() else 0
                 self.project_number = f'PROJ{last_number + 1:02}'
             else:
                 self.project_number = 'PROJ01'
