@@ -342,17 +342,16 @@ class Sale(models.Model):
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
 
-    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False)
+    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
-    is_sale = models.BooleanField("Pré-venda", default=True) 
+    is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
 
     # Document Information
-    is_completed_document = models.BooleanField("Documento Completo", null=True, blank=True)
-    # document_situation = models.CharField("Situação do Documento", max_length=256, null=True, blank=True)
+    is_completed_document = models.BooleanField("Documento Completo", default=False)
     document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
 
     # Logs
@@ -397,7 +396,6 @@ class Sale(models.Model):
 
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
@@ -422,3 +420,13 @@ class Project(models.Model):
     
     def __str__(self):
         return self.project_number
+
+    def save(self, current_user=None, *args, **kwargs):
+        if not self.project_number:
+            last_sale = Project.objects.all().order_by('id').last()
+            if last_sale:
+                last_number = int(last_sale.project_number.replace('PROJ', ''))
+                self.project_number = f'PROJ{last_number + 1:02}'
+            else:
+                self.project_number = 'PROJ01'
+        super().save(*args, **kwargs)

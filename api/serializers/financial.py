@@ -24,9 +24,12 @@ class FinancierSerializer(BaseSerializer):
 
 
 class PaymentInstallmentSerializer(BaseSerializer):
+    payment = PrimaryKeyRelatedField(queryset=Payment.objects.all(), required=False, write_only=True)
+
     class Meta:
         model = PaymentInstallment
         fields = '__all__'
+
 
 
 class PaymentSerializer(BaseSerializer):
@@ -55,12 +58,11 @@ class PaymentSerializer(BaseSerializer):
         return obj.percentual_paid
 
     @transaction.atomic
-    def create(self, validated_data):
+    def create(self, raw_data):
         raw_data = self.initial_data
 
         installments_data = raw_data.pop('installments', None)
         
-        # Cria a instância de Payment
         instance = super().create(raw_data)
 
         if installments_data is not None:
@@ -71,7 +73,7 @@ class PaymentSerializer(BaseSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance, raw_data):
         raw_data = self.initial_data
 
         installments_data = raw_data.pop('installments', None)

@@ -1,6 +1,7 @@
 import logging
 import requests
 from django.db.models import Q
+from django.db import transaction
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils import timezone
@@ -259,6 +260,82 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+
+
+class GeneratePreSaleView(APIView):
+    http_method_names = ['post']
+
+    @transaction.atomic
+    def post(self, request):
+        lead_id = request.data.get('lead_id')
+        kits = request.data.get('kits')
+        payment_data = request.data.get('payment')
+
+        if not lead_id:
+            return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lead = Lead.objects.get(id=lead_id)
+        except Lead.DoesNotExist:
+            return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Criação do cliente
+        customer, created = User.objects.get_or_create(
+            first_document=lead.first_document,
+            defaults={'name': lead.name, 'email': lead.contact_email, 'addresses': lead.addresses, 'user_types': UserType.objects.get(id=2)}
+        )
+
+        lead.customer = customer
+
+        # Processamento dos kits e cálculo do valor total
+        solar_energy_kits = []
+        total_value = 0
+        for kit in kits:
+            if 'id' not in kit:
+                new_kit = SolarEnergyKit.objects.create(**kit)
+                solar_energy_kits.append(new_kit)
+                total_value += new_kit.price
+            else:
+                existing_kit = SolarEnergyKit.objects.get(id=kit['id'])
+                solar_energy_kits.append(existing_kit)
+                total_value += existing_kit.price
+
+        # Criação da pré-venda
+        pre_sale = Sale.objects.create(
+            customer=customer,
+            lead=lead,
+            is_pre_sale=True,
+            status='P',
+            branch=lead.seller.branch,
+            seller=lead.seller,
+            sales_supervisor=lead.seller.user_manager,
+            sales_manager=lead.seller.user_manager.user_manager,
+            total_value=total_value
+        )
+        
+        # Vinculação dos kits ao projeto
+        for kit in solar_energy_kits:
+            project = Project.objects.create(
+                sale=pre_sale,
+                status='P',
+                solar_energy_kit=kit,
+            )
+            project.addresses.set(lead.addresses.all())
+
+        # Criação do pagamento
+        payment_data['value'] = total_value
+        payment_data['sale_id'] = pre_sale.id
+        payment_serializer = PaymentSerializer(data=payment_data)
+        if payment_serializer.is_valid():
+            payment_serializer.save()
+        else:
+            # Se o pagamento não for válido, interrompe a transação e retorna o erro
+            return Response(payment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'message': 'Cliente, kits, pré-venda, projetos e pagamentos gerados com sucesso.',
+            'pre_sale_id': pre_sale.id
+        }, status=status.HTTP_200_OK)
 
 
 # Contracts views
