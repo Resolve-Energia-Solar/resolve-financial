@@ -127,10 +127,20 @@ class UserSerializer(ModelSerializer):
         return obj.get_all_permissions()
     
     def get_distance(self, obj):
-        return obj.distance
+        request = self.context.get('request')
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+
+        if latitude and longitude:
+            return obj.distance
     
     def get_daily_schedules_count(self, obj):
-        return obj.daily_schedules_count
+        request = self.context.get('request')
+        latitude = request.query_params.get('latitude')
+        longitude = request.query_params.get('longitude')
+
+        if latitude and longitude:
+            return obj.daily_schedules_count
 
 
 class TaskTemplatesSerializer(BaseSerializer):
