@@ -123,24 +123,22 @@ class UserSerializer(ModelSerializer):
         model = User
         exclude = ['password']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get('request')
+        if request and not request.query_params.get('latitude') and not request.query_params.get('longitude'):
+            self.fields.pop('distance', None)
+            self.fields.pop('daily_schedules_count', None)
+
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
     
     def get_distance(self, obj):
-        request = self.context.get('request')
-        latitude = request.query_params.get('latitude')
-        longitude = request.query_params.get('longitude')
-
-        if latitude and longitude:
-            return obj.distance
+        return obj.distance
     
     def get_daily_schedules_count(self, obj):
-        request = self.context.get('request')
-        latitude = request.query_params.get('latitude')
-        longitude = request.query_params.get('longitude')
-
-        if latitude and longitude:
-            return obj.daily_schedules_count
+        return obj.daily_schedules_count
 
 
 class TaskTemplatesSerializer(BaseSerializer):
