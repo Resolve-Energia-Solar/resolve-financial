@@ -382,7 +382,8 @@ class GeneratePreSaleView(APIView):
                     logger.error(f"Erro ao criar projeto para o kit {kit.id}: {e}", exc_info=True)
                     return Response({'message': 'Erro ao criar projeto.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Criação do pagamento
+            # Criação do pagamento (comentado)
+            """
             payment_data['value'] = total_value
             payment_data['sale_id'] = pre_sale.id
             payment_serializer = PaymentSerializer(data=payment_data)
@@ -391,9 +392,10 @@ class GeneratePreSaleView(APIView):
             else:
                 logger.error(f"Falha na validação dos dados de pagamento: {payment_serializer.errors}")
                 return Response({'message': 'Erro ao validar os dados de pagamento.', 'errors': payment_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            """
 
             return Response({
-                'message': 'Cliente, kits, pré-venda, projetos e pagamentos gerados com sucesso.',
+                'message': 'Cliente, kits, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
                 'pre_sale_id': pre_sale.id
             }, status=status.HTTP_201_CREATED)
         except Exception as e:

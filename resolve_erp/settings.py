@@ -87,7 +87,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS
+
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS') == 'True'
+
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
+
+CORS_ALLOW_CREDENTIALS = os.environ.get('CORS_ALLOW_CREDENTIALS') == 'True'
 
 CORS_ALLOW_METHODS = [
     'GET',
@@ -103,7 +109,15 @@ CORS_ALLOW_HEADERS = [
     'authorization',
 ]
 
+
+# URLs
+
 ROOT_URLCONF = 'resolve_erp.urls'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+
+
+# Templates
 
 TEMPLATES = [
     {
@@ -217,10 +231,6 @@ USE_I18N = True
 USE_TZ = True
 
 USE_THOUSAND_SEPARATOR = True
-
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
