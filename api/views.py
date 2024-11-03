@@ -267,75 +267,138 @@ class GeneratePreSaleView(APIView):
 
     @transaction.atomic
     def post(self, request):
-        lead_id = request.data.get('lead_id')
-        kits = request.data.get('kits')
-        payment_data = request.data.get('payment')
-
-        if not lead_id:
-            return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            lead = Lead.objects.get(id=lead_id)
-        except Lead.DoesNotExist:
-            return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Criação do cliente
-        customer, created = User.objects.get_or_create(
-            first_document=lead.first_document,
-            defaults={'name': lead.name, 'email': lead.contact_email, 'addresses': lead.addresses, 'user_types': UserType.objects.get(id=2)}
-        )
+            lead_id = request.data.get('lead_id')
+            kits = request.data.get('kits')
+            payment_data = request.data.get('payment')
 
-        lead.customer = customer
+            # Verificação do lead_id
+            if not lead_id:
+                return Response({'message': 'O campo lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Processamento dos kits e cálculo do valor total
-        solar_energy_kits = []
-        total_value = 0
-        for kit in kits:
-            if 'id' not in kit:
-                new_kit = SolarEnergyKit.objects.create(**kit)
-                solar_energy_kits.append(new_kit)
-                total_value += new_kit.price
-            else:
-                existing_kit = SolarEnergyKit.objects.get(id=kit['id'])
-                solar_energy_kits.append(existing_kit)
-                total_value += existing_kit.price
+            # Verificação dos kits
+            if not kits or not isinstance(kits, list):
+                return Response({'message': 'A lista de kits é obrigatória e deve ser um array.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Criação da pré-venda
-        pre_sale = Sale.objects.create(
-            customer=customer,
-            lead=lead,
-            is_pre_sale=True,
-            status='P',
-            branch=lead.seller.branch,
-            seller=lead.seller,
-            sales_supervisor=lead.seller.user_manager,
-            sales_manager=lead.seller.user_manager.user_manager,
-            total_value=total_value
-        )
-        
-        # Vinculação dos kits ao projeto
-        for kit in solar_energy_kits:
-            project = Project.objects.create(
-                sale=pre_sale,
-                status='P',
-                solar_energy_kit=kit,
+            # Verificação dos dados de pagamento
+            if not payment_data:
+                return Response({'message': 'Os dados de pagamento são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Busca do lead
+            try:
+                lead = Lead.objects.get(id=lead_id)
+            except Lead.DoesNotExist:
+                logger.error(f"Lead com id {lead_id} não encontrado.")
+                return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Busca do tipo de usuário padrão
+            try:
+                user_type = UserType.objects.get(id=2)
+            except UserType.DoesNotExist:
+                logger.error("UserType com id=2 não encontrado.")
+                return Response({'message': 'Tipo de usuário padrão não encontrado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Criação ou obtenção do cliente
+            customer, created = User.objects.get_or_create(
+                first_document=lead.first_document,
+                defaults={
+                    'name': lead.name,
+                    'email': lead.contact_email,
+                    'addresses': lead.addresses,
+                    'user_types': user_type
+                }
             )
-            project.addresses.set(lead.addresses.all())
 
-        # Criação do pagamento
-        payment_data['value'] = total_value
-        payment_data['sale_id'] = pre_sale.id
-        payment_serializer = PaymentSerializer(data=payment_data)
-        if payment_serializer.is_valid():
-            payment_serializer.save()
-        else:
-            # Se o pagamento não for válido, interrompe a transação e retorna o erro
-            return Response(payment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            lead.customer = customer
 
-        return Response({
-            'message': 'Cliente, kits, pré-venda, projetos e pagamentos gerados com sucesso.',
-            'pre_sale_id': pre_sale.id
-        }, status=status.HTTP_200_OK)
+            # Processamento dos kits e cálculo do valor total
+            solar_energy_kits = []
+            total_value = 0
+            for kit in kits:
+                if 'id' not in kit:
+                    try:
+                        new_kit = SolarEnergyKit.objects.create(**kit)
+                        solar_energy_kits.append(new_kit)
+                        total_value += new_kit.price
+                    except Exception as e:
+                        logger.error(f"Erro ao criar SolarEnergyKit: {e}")
+                        return Response({'message': 'Erro ao criar kit solar.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    try:
+                        existing_kit = SolarEnergyKit.objects.get(id=kit['id'])
+                        solar_energy_kits.append(existing_kit)
+                        total_value += existing_kit.price
+                    except SolarEnergyKit.DoesNotExist:
+                        logger.error(f"SolarEnergyKit com id {kit['id']} não encontrado.")
+                        return Response({'message': f"Kit solar com id {kit['id']} não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Verificações adicionais no lead e vendedor
+            if not lead.seller:
+                logger.error(f"Lead com id {lead_id} não possui vendedor associado.")
+                return Response({'message': 'O lead não possui vendedor associado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not lead.seller.branch:
+                logger.error(f"Vendedor com id {lead.seller.id} não possui filial associada.")
+                return Response({'message': 'O vendedor não possui filial associada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not lead.seller.user_manager:
+                logger.error(f"Vendedor com id {lead.seller.id} não possui supervisor de vendas associado.")
+                return Response({'message': 'O vendedor não possui supervisor de vendas associado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not lead.seller.user_manager.user_manager:
+                logger.error(f"Supervisor de vendas com id {lead.seller.user_manager.id} não possui gerente de vendas associado.")
+                return Response({'message': 'O supervisor de vendas não possui gerente de vendas associado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Criação da pré-venda
+            try:
+                pre_sale = Sale.objects.create(
+                    customer=customer,
+                    lead=lead,
+                    is_pre_sale=True,
+                    status='P',
+                    branch=lead.seller.branch,
+                    seller=lead.seller,
+                    sales_supervisor=lead.seller.user_manager,
+                    sales_manager=lead.seller.user_manager.user_manager,
+                    total_value=total_value
+                )
+            except Exception as e:
+                logger.error(f"Erro ao criar pré-venda: {e}", exc_info=True)
+                return Response({'message': 'Erro ao criar pré-venda.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Vinculação dos kits ao projeto
+            for kit in solar_energy_kits:
+                try:
+                    project = Project.objects.create(
+                        sale=pre_sale,
+                        status='P',
+                        solar_energy_kit=kit,
+                    )
+                    if lead.addresses.exists():
+                        project.addresses.set(lead.addresses.all())
+                    else:
+                        logger.warning(f"Lead com id {lead_id} não possui endereços associados.")
+                except Exception as e:
+                    logger.error(f"Erro ao criar projeto para o kit {kit.id}: {e}", exc_info=True)
+                    return Response({'message': 'Erro ao criar projeto.', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Criação do pagamento
+            payment_data['value'] = total_value
+            payment_data['sale_id'] = pre_sale.id
+            payment_serializer = PaymentSerializer(data=payment_data)
+            if payment_serializer.is_valid():
+                payment_serializer.save()
+            else:
+                logger.error(f"Falha na validação dos dados de pagamento: {payment_serializer.errors}")
+                return Response({'message': 'Erro ao validar os dados de pagamento.', 'errors': payment_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({
+                'message': 'Cliente, kits, pré-venda, projetos e pagamentos gerados com sucesso.',
+                'pre_sale_id': pre_sale.id
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Erro inesperado: {e}", exc_info=True)
+            return Response({'message': 'Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Contracts views
