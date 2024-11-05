@@ -116,13 +116,13 @@ class UserSerializer(ModelSerializer):
     groups = GroupSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
-    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
-    role_id = PrimaryKeyRelatedField(queryset=Role.objects.all(), write_only=True, source='role')
-    user_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user_manager')
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
-    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types')
-    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups')
+    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch', allow_null=True, required=False)
+    department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department', allow_null=True, required=False)
+    role_id = PrimaryKeyRelatedField(queryset=Role.objects.all(), write_only=True, source='role', allow_null=True, required=False)
+    user_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user_manager', allow_null=True, required=False)
+    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
+    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
+    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
 
     user_permissions = SerializerMethodField()
 

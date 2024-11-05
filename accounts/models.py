@@ -33,7 +33,7 @@ class User(AbstractUser):
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
 
     # Employee Info
-    contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")), default="C")
+    contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")),blank=True, null=True)
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE, blank=True, null=True)
     department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE, blank=True, null=True)
     role = models.ForeignKey("accounts.Role", verbose_name="Cargo", on_delete=models.CASCADE, blank=True, null=True)
@@ -75,7 +75,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
-        ordering = ['complete_name']
+        ordering = ['complete_name', 'first_name', 'email']
 
 
 class PhoneNumber(models.Model):

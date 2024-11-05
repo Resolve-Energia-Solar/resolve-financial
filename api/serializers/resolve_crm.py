@@ -135,11 +135,13 @@ class ComercialProposalSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     lead = LeadSerializer(read_only=True)
     created_by = RelatedUserSerializer(read_only=True)
+    kits = SolarEnergyKitSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    
+    kits_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), many=True, write_only=True, source='kits')
+
     class Meta:
         model = ComercialProposal
         fields = '__all__'
