@@ -1,4 +1,5 @@
 from asyncio import Task
+import sys
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
@@ -63,9 +64,17 @@ def get_model_data(instance):
 
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
-    content_type = ContentType.objects.get_for_model(sender)
+    # Ignora o sinal durante as migrações
+    if 'migrate' in sys.argv:
+        return
+
+    try:
+        content_type = ContentType.objects.get_for_model(sender)
+    except ContentType.DoesNotExist:
+        # Retorna caso o ContentType ainda não exista
+        return
+
     event_type = 'C' if created else 'U'
-    
     webhooks = Webhook.objects.filter(
         content_type=content_type,
         event=event_type,
