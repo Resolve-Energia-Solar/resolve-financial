@@ -61,13 +61,18 @@ class CircuitBreaker(models.Model):
 class Units(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True)
     name = models.CharField("Nome", max_length=200, null=True, blank=True)
+    # porcent = models.DecimalField("Porcentagem de Rateio", max_digits=10, decimal_places=2, null=True, blank=True)
+    # aumento_carga = models.DecimalField("Aumento de Carga", max_digits=10, decimal_places=2, null=True, blank=True)
+    # geradora = models.BooleanField("Geradora", default=False)
+    # aumento_ramal = models.DecimalField("Aumento de Ramal", max_digits=10, decimal_places=2, null=True, blank=True)
+    #relacionar com address
     address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", null=True, blank=True)
     type = models.CharField("Tipo", max_length=100, null=True, blank=True)
+    unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
     #Trocar nome para meter_number
     account_number = models.CharField("Número do medidor", max_length=100, null=True, blank=True)
     bill_file = models.FileField("Arquivo da Fatura", upload_to="units-biils/", null=True, blank=True)
     change_owner = models.BooleanField("Troca de Titularidade", default=False)
-    unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
