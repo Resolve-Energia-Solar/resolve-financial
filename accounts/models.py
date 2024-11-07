@@ -23,7 +23,7 @@ class User(AbstractUser):
     complete_name = models.CharField("Nome Completo", max_length=255, blank=True, null=True)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
     gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")), default="M")
-    first_document = models.CharField("CPF/CNPJ", max_length=20, unique=True, blank=True, null=True)
+    first_document = models.CharField("CPF/CNPJ", max_length=20, unique=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
 
     # Contact
