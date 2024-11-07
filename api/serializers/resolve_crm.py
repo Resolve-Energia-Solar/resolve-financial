@@ -95,7 +95,7 @@ class SaleSerializer(BaseSerializer):
     sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign')
+    marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
 
     class Meta:
@@ -117,8 +117,7 @@ class ProjectSerializer(BaseSerializer):
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer')
-    homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator')
+    homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
     solar_energy_kit_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), write_only=True, source='solar_energy_kit')
 
