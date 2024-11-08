@@ -281,14 +281,25 @@ class GeneratePreSaleView(APIView):
         
         if not lead.first_document:
             return Response({'message': 'Lead não possui documento cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Criação ou recuperação do cliente usando Serializer
         customer = User.objects.filter(first_document=lead.first_document).first()
         if not customer:
+            base_username = lead.name.split(' ')[0] + '.' + lead.name.split(' ')[-1]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+
             user_data = {
-                'name': lead.name,
+                'complete_name': lead.name,
+                'username': username,
+                'first_name': lead.name.split(' ')[0],
+                'last_name': lead.name.split(' ')[-1],
                 'email': lead.contact_email,
                 'addresses_ids': [address.id for address in lead.addresses.all()],
-                'user_types_ids': UserType.objects.get(id=2).id,
+                'user_types_ids': [UserType.objects.get(id=2).id],
                 'first_document': lead.first_document,
             }
             user_serializer = UserSerializer(data=user_data)
@@ -299,7 +310,7 @@ class GeneratePreSaleView(APIView):
         else:
             # Atualiza o cliente existente com os dados do lead, se necessário
             user_serializer = UserSerializer(customer, data={
-                'name': lead.name,
+                'complete_name': lead.name,
                 'email': lead.contact_email,
                 'addresses': [address.id for address in lead.addresses.all()],
                 'user_types': UserType.objects.get(id=2).id,

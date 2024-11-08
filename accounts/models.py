@@ -20,7 +20,7 @@ class UserType(models.Model):
 
 class User(AbstractUser):
     # Personal Info
-    complete_name = models.CharField("Nome Completo", max_length=255, blank=True, null=True)
+    complete_name = models.CharField("Nome Completo", max_length=255)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
     gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")), default="M")
     first_document = models.CharField("CPF/CNPJ", max_length=20, unique=True)
