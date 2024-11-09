@@ -21,7 +21,7 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("lead", "total_value", "contract_number")
+    list_display = ("total_value", "contract_number")
 
 
 @admin.register(Task)

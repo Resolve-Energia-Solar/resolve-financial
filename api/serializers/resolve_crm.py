@@ -8,6 +8,7 @@ from api.serializers.accounts import BaseSerializer
 from api.serializers.logistics import MaterialsSerializer, SolarEnergyKitSerializer
 from logistics.models import Materials, ProjectMaterials, SolarEnergyKit
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
+from .logistics import SaleSolarKitSerializer
 
 
 class OriginSerializer(BaseSerializer):
@@ -97,6 +98,9 @@ class SaleSerializer(BaseSerializer):
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    
+    #kits
+    solar_kits = SaleSolarKitSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sale
@@ -114,6 +118,9 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
     solar_energy_kit = SolarEnergyKitSerializer(read_only=True)
+    
+    #kit
+    solar_energy_kit = SaleSolarKitSerializer(read_only=True, source='sale.solar_kits.first')
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')

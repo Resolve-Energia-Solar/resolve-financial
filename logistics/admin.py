@@ -1,33 +1,30 @@
 from django.contrib import admin
-from .models import MaterialTypes, Materials, ProjectMaterials, SalesMaterials, SolarEnergyKit
+from .models import *
 
 
-@admin.register(MaterialTypes)
-class MaterialTypesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'is_deleted', 'created_at')
-    search_fields = ('name', 'description')
-    list_filter = ('is_deleted', 'created_at')
+class MaterialAttributesInline(admin.TabularInline):
+    model = MaterialAttributes
+    extra = 0
 
 
 @admin.register(Materials)
 class MaterialsAdmin(admin.ModelAdmin):
-    list_display = ('bar_code', 'description', 'type', 'measure_unit', 'is_serialized', 'is_deleted', 'created_at')
-    search_fields = ('bar_code', 'description', 'type__name')
-    list_filter = ('is_serialized', 'is_deleted', 'created_at')
+    list_display = ('name', 'is_deleted', 'created_at')
+    list_filter = ('is_deleted', 'created_at')
+    inlines = [MaterialAttributesInline]
+    
+
+class SolarKitMaterialsInline(admin.TabularInline):
+    model = SolarKitMaterials
+    extra = 0
 
 
 @admin.register(SolarEnergyKit)
 class SolarEnergyKitAdmin(admin.ModelAdmin):
-    list_display = ('inversors_model', 'inversor_amount', 'modules_model', 'modules_amount', 'branch', 'roof_type', 'price', 'is_default', 'is_deleted', 'created_at')
+    list_display = ('name', 'branch', 'roof_type', 'price', 'is_default', 'is_deleted', 'created_at')
     search_fields = ('inversors_model__description', 'modules_model__description', 'branch__name', 'roof_type__name')
     list_filter = ('is_default', 'is_deleted', 'created_at')
-
-
-@admin.register(SalesMaterials)
-class SalesMaterialsAdmin(admin.ModelAdmin):
-    list_display = ('material', 'amount', 'material_class', 'is_deleted', 'created_at')
-    search_fields = ('material__description', 'material_class')
-    list_filter = ('is_deleted', 'created_at')
+    inlines = [SolarKitMaterialsInline]
 
 
 @admin.register(ProjectMaterials)
@@ -35,3 +32,18 @@ class ProjectMaterialsAdmin(admin.ModelAdmin):
     list_display = ('project', 'material', 'amount', 'is_deleted', 'created_at')
     search_fields = ('project__name', 'material__description')
     list_filter = ('is_deleted', 'created_at')
+    
+
+@admin.register(SaleSolarKits)
+class SaleSolarKitsAdmin(admin.ModelAdmin):
+    list_display = ('solar_kit', 'amount', 'is_deleted', 'created_at')
+    search_fields = ('project__name', 'solar_kit__name')
+    list_filter = ('is_deleted', 'created_at')
+    
+
+@admin.register(SolarKitMaterials)
+class SolarKitMaterialsAdmin(admin.ModelAdmin):
+    list_display = ('solar_kit', 'material', 'amount', 'is_deleted', 'created_at')
+    search_fields = ('solar_kit__name', 'material__description')
+    list_filter = ('is_deleted', 'created_at')
+    

@@ -405,12 +405,6 @@ class InformacaoFaturaAPIView(APIView):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
-# Logistics views
-
-class MaterialTypesViewSet(BaseModelViewSet):
-    queryset = MaterialTypes.objects.all()
-    serializer_class = MaterialTypesSerializer
     
 
 class MaterialsViewSet(BaseModelViewSet):
@@ -440,11 +434,6 @@ class EnergyCompanyViewSet(BaseModelViewSet):
 class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
-
-
-class CircuitBreakerViewSet(BaseModelViewSet):
-    queryset = CircuitBreaker.objects.all()
-    serializer_class = CircuitBreakerSerializer
     
 
 class UnitsViewSet(BaseModelViewSet):

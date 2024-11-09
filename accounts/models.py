@@ -18,12 +18,34 @@ class UserType(models.Model):
         ordering = ['name']
 
 
+class Employee(models.Model):
+    user = models.OneToOneField("accounts.User", verbose_name="Usuário", on_delete=models.CASCADE)
+    contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")),blank=True, null=True)
+    branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE, blank=True, null=True)
+    department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE, blank=True, null=True)
+    role = models.ForeignKey("accounts.Role", verbose_name="Cargo", on_delete=models.CASCADE, blank=True, null=True)
+    #trocar para relacionar com o próprio funcionario
+    user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
+    hire_date = models.DateField("Data de Admissão", blank=True, null=True)
+    resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.user.get_full_name()
+
+    class Meta:
+        verbose_name = "Funcionário"
+        verbose_name_plural = "Funcionários"
+        ordering = ['user__complete_name', 'user__first_name', 'user__email']
+
+
 class User(AbstractUser):
     # Personal Info
     complete_name = models.CharField("Nome Completo", max_length=255, blank=True, null=True)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
     gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")), default="M")
-    first_document = models.CharField("CPF/CNPJ", max_length=20, unique=True)
+    first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
+    second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
 
     # Contact
@@ -31,15 +53,6 @@ class User(AbstractUser):
 
     # Address
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
-
-    # Employee Info
-    contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")),blank=True, null=True)
-    branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE, blank=True, null=True)
-    department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE, blank=True, null=True)
-    role = models.ForeignKey("accounts.Role", verbose_name="Cargo", on_delete=models.CASCADE, blank=True, null=True)
-    user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
-    hire_date = models.DateField("Data de Admissão", blank=True, null=True)
-    resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
 
     # User Type Info
     user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
@@ -49,14 +62,11 @@ class User(AbstractUser):
         ('PJ', 'Pessoa Jurídica'),
     ]
     person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
-    second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
 
     # Logs
     history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
-        if self.resignation_date is not None:
-            self.is_active = False
         if not self.first_name and not self.last_name and self.complete_name:
             name_parts = self.complete_name.split(" ")
             self.first_name = name_parts[0]
@@ -136,6 +146,9 @@ class Branch(models.Model):
     name = models.CharField("Nome", max_length=255)
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     owners = models.ManyToManyField("accounts.User", verbose_name="Proprietários", related_name='branch_owners', blank=True)
+    picture = models.ImageField("Foto", upload_to="branches", blank=True, null=True)
+    transfer_percentage = models.DecimalField("Porcentagem de Repasse", max_digits=10, decimal_places=2, blank=True, null=True)
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=10, decimal_places=2, blank=True, null=True)
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 
@@ -151,6 +164,7 @@ class Branch(models.Model):
 class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
     email = models.EmailField("E-mail", unique=True)
+    owner = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='department_owner')
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 

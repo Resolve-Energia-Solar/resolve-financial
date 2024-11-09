@@ -20,15 +20,15 @@ class UserAdmin(UserAdmin):
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined") 
 
-    fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
-        ("Contact", {"fields": ("email",)}),
-        ("Address", {"fields": ("addresses",)}),
-        ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
-        ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
-    )
+    # fieldsets = (
+    #     (None, {"fields": ("username", "password")}),
+    #     ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
+    #     ("Contact", {"fields": ("email",)}),
+    #     ("Address", {"fields": ("addresses",)}),
+    #     ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
+    #     ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
+    #     ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+    # )
 
     inlines = [PhoneNumberInline]
 
