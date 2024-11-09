@@ -12,38 +12,41 @@ class MaterialsAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_deleted', 'created_at')
     list_filter = ('is_deleted', 'created_at')
     inlines = [MaterialAttributesInline]
-    
 
-class SolarKitMaterialsInline(admin.TabularInline):
-    model = SolarKitMaterials
+
+class ProductMaterialsInline(admin.TabularInline):
+    model = ProductMaterials
     extra = 0
 
 
-@admin.register(SolarEnergyKit)
-class SolarEnergyKitAdmin(admin.ModelAdmin):
-    list_display = ('name', 'branch', 'roof_type', 'price', 'is_default', 'is_deleted', 'created_at')
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'branch', 'roof_type', 'is_default', 'is_deleted', 'created_at')
     search_fields = ('inversors_model__description', 'modules_model__description', 'branch__name', 'roof_type__name')
     list_filter = ('is_default', 'is_deleted', 'created_at')
-    inlines = [SolarKitMaterialsInline]
+    inlines = [ProductMaterialsInline]
 
 
-@admin.register(ProjectMaterials)
-class ProjectMaterialsAdmin(admin.ModelAdmin):
-    list_display = ('project', 'material', 'amount', 'is_deleted', 'created_at')
-    search_fields = ('project__name', 'material__description')
-    list_filter = ('is_deleted', 'created_at')
+class ProjectMaterialsInline(admin.TabularInline):
+    model = ProjectMaterials
+    extra = 1
+    
+    
+class SaleProductInline(admin.TabularInline):
+    model = SaleProduct
+    extra = 1
+    
+    
+# @admin.register(ProjectMaterials)
+# class ProjectMaterialsAdmin(admin.ModelAdmin):
+#     list_display = ('project', 'material', 'amount', 'is_deleted', 'created_at')
+#     search_fields = ('project__name', 'material__description')
+#     list_filter = ('is_deleted', 'created_at')
     
 
-@admin.register(SaleSolarKits)
-class SaleSolarKitsAdmin(admin.ModelAdmin):
-    list_display = ('solar_kit', 'amount', 'is_deleted', 'created_at')
-    search_fields = ('project__name', 'solar_kit__name')
-    list_filter = ('is_deleted', 'created_at')
-    
-
-@admin.register(SolarKitMaterials)
-class SolarKitMaterialsAdmin(admin.ModelAdmin):
-    list_display = ('solar_kit', 'material', 'amount', 'is_deleted', 'created_at')
-    search_fields = ('solar_kit__name', 'material__description')
-    list_filter = ('is_deleted', 'created_at')
+# @admin.register(ProductMaterials)
+# class ProductMaterialsAdmin(admin.ModelAdmin):
+#     list_display = ('product', 'material', 'amount', 'is_deleted', 'created_at')
+#     search_fields = ('product__name', 'material__description')
+#     list_filter = ('is_deleted', 'created_at')
     

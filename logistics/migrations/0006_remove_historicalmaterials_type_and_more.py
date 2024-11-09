@@ -312,7 +312,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='SaleSolarKits',
+            name='SaleProduct',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('amount', models.DecimalField(blank=True, decimal_places=6, default=0, max_digits=20, null=True, verbose_name='Quantidade')),
@@ -321,9 +321,9 @@ class Migration(migrations.Migration):
                 ('cost_value', models.DecimalField(blank=True, decimal_places=6, default=0, max_digits=20, null=True, verbose_name='Valor de Custo')),
                 ('is_deleted', models.BooleanField(blank=True, default=False, null=True, verbose_name='Deletado')),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True, verbose_name='Criado em')),
-                ('commercial_proposal', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='solar_kits', to='resolve_crm.comercialproposal', verbose_name='Proposta Comercial')),
-                ('sale', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='solar_kits', to='resolve_crm.sale', verbose_name='Venda')),
-                ('solar_kit', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sales', to='logistics.solarenergykit', verbose_name='Kit de Energia Solar')),
+                ('commercial_proposal', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='products', to='resolve_crm.comercialproposal', verbose_name='Proposta Comercial')),
+                ('sale', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='products', to='resolve_crm.sale', verbose_name='Venda')),
+                ('product', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sales', to='logistics.solarenergykit', verbose_name='Kit de Energia Solar')),
             ],
             options={
                 'verbose_name': 'Venda de Kit de Energia Solar',
@@ -332,14 +332,14 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='SolarKitMaterials',
+            name='ProductMaterials',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('amount', models.DecimalField(blank=True, decimal_places=6, default=0, max_digits=20, null=True, verbose_name='Quantidade')),
                 ('is_deleted', models.BooleanField(blank=True, default=False, null=True, verbose_name='Deletado')),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True, verbose_name='Criado em')),
-                ('material', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='solar_kits', to='logistics.materials', verbose_name='Material')),
-                ('solar_kit', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='materials', to='logistics.solarenergykit', verbose_name='Kit de Energia Solar')),
+                ('material', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='products', to='logistics.materials', verbose_name='Material')),
+                ('product', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='materials', to='logistics.solarenergykit', verbose_name='Kit de Energia Solar')),
             ],
             options={
                 'verbose_name': 'Material do Kit de Energia Solar',

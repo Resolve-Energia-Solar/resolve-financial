@@ -10,7 +10,8 @@ admin.site.index_title = "Administração"
 class PhoneNumberInline(admin.TabularInline):
     model = PhoneNumber
     extra = 1
-
+    verbose_name = "Número de Telefone"
+    verbose_name_plural = "Números de Telefone"
     fields = ("country_code", "phone_number", "is_main")
 
 
@@ -19,18 +20,17 @@ class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined") 
+    inlines = [PhoneNumberInline]
 
     # fieldsets = (
     #     (None, {"fields": ("username", "password")}),
     #     ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
     #     ("Contact", {"fields": ("email",)}),
     #     ("Address", {"fields": ("addresses",)}),
-    #     ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
     #     ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
     #     ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
     # )
 
-    inlines = [PhoneNumberInline]
 
 
 @admin.register(Address)
@@ -76,4 +76,9 @@ class PhoneNumber(admin.ModelAdmin):
 
 @admin.register(Squad)
 class SquadAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
     pass

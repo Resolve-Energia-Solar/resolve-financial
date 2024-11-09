@@ -31,7 +31,7 @@ class Employee(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.user.get_full_name()
+        return self.user.first_name if self.user.first_name else self.user.email
 
     class Meta:
         verbose_name = "Funcionário"
@@ -40,6 +40,11 @@ class Employee(models.Model):
 
 
 class User(AbstractUser):
+    PERSON_TYPE_CHOICES = [
+        ('PF', 'Pessoa Física'),
+        ('PJ', 'Pessoa Jurídica'),
+    ]
+    
     # Personal Info
     complete_name = models.CharField("Nome Completo", max_length=255, blank=True, null=True)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
@@ -57,10 +62,6 @@ class User(AbstractUser):
     # User Type Info
     user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
 
-    PERSON_TYPE_CHOICES = [
-        ('PF', 'Pessoa Física'),
-        ('PJ', 'Pessoa Jurídica'),
-    ]
     person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
 
     # Logs
@@ -74,7 +75,7 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.get_full_name()
+        return self.first_name if self.first_name else self.email
 
     def get_absolute_url(self):
         return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})

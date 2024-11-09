@@ -322,7 +322,6 @@ class ComercialProposal(models.Model):
     token = models.UUIDField("Token", editable=False, default=uuid4)
     status = models.CharField("Status da proposta", max_length=1, choices=[("P", "Pendente"), ("A", "Aceita"), ("R", "Recusada")])
     observation = models.TextField("Descrição da proposta", blank=True, null=True)
-    kits = models.ManyToManyField("logistics.SolarEnergyKit", verbose_name="Kits")
 
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Criado por", related_name="created_proposals")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -402,7 +401,7 @@ class Sale(models.Model):
 
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-    solar_energy_kit = models.ForeignKey('logistics.SaleSolarKits', on_delete=models.CASCADE, verbose_name="Kit de Energia Solar")
+    product = models.ForeignKey('logistics.SaleProduct', on_delete=models.CASCADE, verbose_name="product de Energia Solar")
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     #ajustar quando a data de início e término for definida
@@ -412,10 +411,7 @@ class Project(models.Model):
     status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto", null=True, blank=True)
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
-    registered_circuit_breaker2 = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
-    solar_energy_kit = models.ForeignKey('logistics.SolarEnergyKit', on_delete=models.CASCADE, verbose_name="Kit de Energia Solar")
-    # registered_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
-
+    registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     

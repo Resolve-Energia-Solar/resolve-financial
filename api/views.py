@@ -268,7 +268,7 @@ class GeneratePreSaleView(APIView):
     @transaction.atomic
     def post(self, request):
         lead_id = request.data.get('lead_id')
-        kits = request.data.get('kits')
+        products = request.data.get('products')
         # payment_data = request.data.get('payment')
 
         if not lead_id:
@@ -312,25 +312,25 @@ class GeneratePreSaleView(APIView):
         lead.customer = customer
         lead.save()
 
-        # Processamento dos kits e cálculo do valor total
-        solar_energy_kits = []
+        # Processamento dos products e cálculo do valor total
+        products = []
         total_value = 0
-        for kit in kits:
-            if 'id' not in kit:
-                kit_serializer = SolarEnergyKitSerializer(data=kit)
-                if kit_serializer.is_valid():
-                    new_kit = kit_serializer.save()
-                    solar_energy_kits.append(new_kit)
-                    total_value += new_kit.price
+        for product in products:
+            if 'id' not in product:
+                product_serializer = ProductSerializer(data=product)
+                if product_serializer.is_valid():
+                    new_product = product_serializer.save()
+                    products.append(new_product)
+                    total_value += new_product.price
                 else:
-                    return Response(kit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
                 try:
-                    existing_kit = SolarEnergyKit.objects.get(id=kit['id'])
-                    solar_energy_kits.append(existing_kit)
-                    total_value += existing_kit.price
-                except SolarEnergyKit.DoesNotExist:
-                    return Response({'message': f'Kit com id {kit["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                    existing_product = Product.objects.get(id=product['id'])
+                    products.append(existing_product)
+                    total_value += existing_product.price
+                except Product.DoesNotExist:
+                    return Response({'message': f'product com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Criação da pré-venda usando Serializer
         sale_data = {
@@ -351,12 +351,12 @@ class GeneratePreSaleView(APIView):
         else:
             return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        # Vinculação dos kits ao projeto usando Serializer
-        for kit in solar_energy_kits:
+        # Vinculação dos products ao projeto usando Serializer
+        for product in products:
             project_data = {
                 'sale_id': pre_sale.id,
                 'status': 'P',
-                'solar_energy_kit_id': kit.id,
+                'product_id': product.id,
                 'addresses_ids': [address.id for address in lead.addresses.all()]
             }
             project_serializer = ProjectSerializer(data=project_data)
@@ -377,7 +377,7 @@ class GeneratePreSaleView(APIView):
         """
 
         return Response({
-            'message': 'Cliente, kits, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
+            'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
             'pre_sale_id': pre_sale.id
         }, status=status.HTTP_200_OK)
 
@@ -412,9 +412,9 @@ class MaterialsViewSet(BaseModelViewSet):
     serializer_class = MaterialsSerializer
 
 
-class SolarEnergyKitViewSet(BaseModelViewSet):
-    queryset = SolarEnergyKit.objects.all()
-    serializer_class = SolarEnergyKitSerializer
+class ProductViewSet(BaseModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
     
 
 # Inspections views
