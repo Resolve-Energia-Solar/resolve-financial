@@ -106,6 +106,12 @@ class Units(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
+    def save(self, *args, **kwargs):
+        if self.main_unit:
+            # Desmarcar outras unidades geradoras no mesmo projeto
+            Units.objects.filter(project=self.project, main_unit=True).exclude(id=self.id).update(main_unit=False)
+        super().save(*args, **kwargs)
+    
     class Meta:
         verbose_name = "Unidade"
         verbose_name_plural = "Unidades"

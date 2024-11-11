@@ -2,7 +2,7 @@ import logging
 import requests
 from django.db.models import Q
 from django.db import transaction
-from django.forms import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -387,6 +387,7 @@ class GeneratePreSaleView(APIView):
 class InformacaoFaturaAPIView(APIView):
     parser_classes = [MultiPartParser]
     http_method_names = ['post']
+    permission_classes = [AllowAny]
 
     def post(self, request):
         if 'bill_file' not in request.FILES:
@@ -439,7 +440,7 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
 class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
     serializer_class = UnitsSerializer
-
+    
     def perform_create(self, serializer):
         instance = serializer.save()
         if 'bill_file' in self.request.FILES:
@@ -474,6 +475,7 @@ class UnitsViewSet(BaseModelViewSet):
                 # Pega os dados retornados pela API
                 external_data = response.json()
 
+            #nao deixar colocar repetido
             # Atualiza os dados da unidade com base nos dados da API
             unit.name = external_data.get('name', unit.name)
             unit.account_number = external_data.get('uc', unit.unit_number)
