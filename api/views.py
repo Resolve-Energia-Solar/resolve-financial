@@ -30,6 +30,7 @@ from rest_framework.filters import OrderingFilter
 from .filters import GenericFilter
 from geopy.distance import geodesic
 from django.db.models import Case, When, Value, FloatField, IntegerField
+from rest_framework.decorators import action
 
 
 logger = logging.getLogger(__name__)
@@ -487,6 +488,48 @@ class ScheduleViewSet(BaseModelViewSet):
             queryset = queryset.filter(schedule_agent__id=schedule_agent)
 
         return queryset
+
+    # listar agendamentos por pessoa para timeline
+    @action(detail=False, methods=['get'])
+    def get_schedule_person(self, request):
+        today = timezone.now().date()
+        hours = [
+            ('09:00', '10:30'),
+            ('10:30', '12:00'),
+            ('13:00', '14:30'),
+            ('14:30', '16:00'),
+            ('16:00', '17:30'),
+            ('17:30', '19:00'), 
+        ]
+
+        schedules = Schedule.objects.filter(schedule_date=today).order_by('schedule_agent', 'schedule_start_time')
+        agents = schedules.values_list('schedule_agent', flat=True).distinct()
+        data = []
+
+        for agent in agents:
+            agent_schedules = schedules.filter(schedule_agent=agent)
+            agent_data = {
+                'agent': agent,
+                'schedules': []
+            }
+            for start, end in hours:
+                if agent_schedules.filter(schedule_start_time__lt=end, schedule_end_time__gt=start).exists():
+                    agent_data['schedules'].append({
+                        'start_time': start,
+                        'end_time': end,
+                        'status': 'Ocupado'
+                    })
+                else:
+                    agent_data['schedules'].append({
+                        'start_time': start,
+                        'end_time': end,
+                        'status': 'Livre'
+                    })
+            data.append(agent_data)
+            
+        return Response(data, status=status.HTTP_200_OK)
+        
+
 
 class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()
