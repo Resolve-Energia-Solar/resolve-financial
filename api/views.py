@@ -2,7 +2,7 @@ import logging
 import requests
 from django.db.models import Q
 from django.db import transaction
-from django.forms import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -268,7 +268,7 @@ class GeneratePreSaleView(APIView):
     @transaction.atomic
     def post(self, request):
         lead_id = request.data.get('lead_id')
-        kits = request.data.get('kits')
+        products = request.data.get('products')
         # payment_data = request.data.get('payment')
 
         if not lead_id:
@@ -323,25 +323,25 @@ class GeneratePreSaleView(APIView):
         lead.customer = customer
         lead.save()
 
-        # Processamento dos kits e cálculo do valor total
-        solar_energy_kits = []
+        # Processamento dos products e cálculo do valor total
+        products = []
         total_value = 0
-        for kit in kits:
-            if 'id' not in kit:
-                kit_serializer = SolarEnergyKitSerializer(data=kit)
-                if kit_serializer.is_valid():
-                    new_kit = kit_serializer.save()
-                    solar_energy_kits.append(new_kit)
-                    total_value += new_kit.price
+        for product in products:
+            if 'id' not in product:
+                product_serializer = ProductSerializer(data=product)
+                if product_serializer.is_valid():
+                    new_product = product_serializer.save()
+                    products.append(new_product)
+                    total_value += new_product.price
                 else:
-                    return Response(kit_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
                 try:
-                    existing_kit = SolarEnergyKit.objects.get(id=kit['id'])
-                    solar_energy_kits.append(existing_kit)
-                    total_value += existing_kit.price
-                except SolarEnergyKit.DoesNotExist:
-                    return Response({'message': f'Kit com id {kit["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                    existing_product = Product.objects.get(id=product['id'])
+                    products.append(existing_product)
+                    total_value += existing_product.price
+                except Product.DoesNotExist:
+                    return Response({'message': f'product com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Criação da pré-venda usando Serializer
         sale_data = {
@@ -362,12 +362,12 @@ class GeneratePreSaleView(APIView):
         else:
             return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        # Vinculação dos kits ao projeto usando Serializer
-        for kit in solar_energy_kits:
+        # Vinculação dos products ao projeto usando Serializer
+        for product in products:
             project_data = {
                 'sale_id': pre_sale.id,
                 'status': 'P',
-                'solar_energy_kit_id': kit.id,
+                'product_id': product.id,
                 'addresses_ids': [address.id for address in lead.addresses.all()]
             }
             project_serializer = ProjectSerializer(data=project_data)
@@ -388,7 +388,7 @@ class GeneratePreSaleView(APIView):
         """
 
         return Response({
-            'message': 'Cliente, kits, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
+            'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
             'pre_sale_id': pre_sale.id
         }, status=status.HTTP_200_OK)
 
@@ -398,6 +398,7 @@ class GeneratePreSaleView(APIView):
 class InformacaoFaturaAPIView(APIView):
     parser_classes = [MultiPartParser]
     http_method_names = ['post']
+    permission_classes = [AllowAny]
 
     def post(self, request):
         if 'bill_file' not in request.FILES:
@@ -416,12 +417,6 @@ class InformacaoFaturaAPIView(APIView):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
-# Logistics views
-
-class MaterialTypesViewSet(BaseModelViewSet):
-    queryset = MaterialTypes.objects.all()
-    serializer_class = MaterialTypesSerializer
     
 
 class MaterialsViewSet(BaseModelViewSet):
@@ -429,9 +424,9 @@ class MaterialsViewSet(BaseModelViewSet):
     serializer_class = MaterialsSerializer
 
 
-class SolarEnergyKitViewSet(BaseModelViewSet):
-    queryset = SolarEnergyKit.objects.all()
-    serializer_class = SolarEnergyKitSerializer
+class ProductViewSet(BaseModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
     
 
 # Inspections views
@@ -451,17 +446,12 @@ class EnergyCompanyViewSet(BaseModelViewSet):
 class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
-
-
-class CircuitBreakerViewSet(BaseModelViewSet):
-    queryset = CircuitBreaker.objects.all()
-    serializer_class = CircuitBreakerSerializer
     
 
 class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
     serializer_class = UnitsSerializer
-
+    
     def perform_create(self, serializer):
         instance = serializer.save()
         if 'bill_file' in self.request.FILES:
@@ -496,6 +486,7 @@ class UnitsViewSet(BaseModelViewSet):
                 # Pega os dados retornados pela API
                 external_data = response.json()
 
+            #nao deixar colocar repetido
             # Atualiza os dados da unidade com base nos dados da API
             unit.name = external_data.get('name', unit.name)
             unit.account_number = external_data.get('uc', unit.unit_number)

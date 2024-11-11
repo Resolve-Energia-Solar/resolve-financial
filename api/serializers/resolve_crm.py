@@ -5,9 +5,10 @@ from financial.models import Financier
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
-from api.serializers.logistics import MaterialsSerializer, SolarEnergyKitSerializer
-from logistics.models import Materials, ProjectMaterials, SolarEnergyKit
+from api.serializers.logistics import MaterialsSerializer, ProductSerializer
+from logistics.models import Materials, ProjectMaterials, Product
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
+from .logistics import SaleProductSerializer
 
 
 class OriginSerializer(BaseSerializer):
@@ -97,6 +98,9 @@ class SaleSerializer(BaseSerializer):
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    
+    #products
+    products = SaleProductSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sale
@@ -113,13 +117,16 @@ class ProjectSerializer(BaseSerializer):
     designer = RelatedUserSerializer(read_only=True)
     homologator = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
-    solar_energy_kit = SolarEnergyKitSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
+    
+    #product
+    product = SaleProductSerializer(read_only=True, source='sale.products.first')
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
-    solar_energy_kit_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), write_only=True, source='solar_energy_kit')
+    product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
 
     class Meta:
         model = Project
@@ -134,12 +141,12 @@ class ComercialProposalSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     lead = LeadSerializer(read_only=True)
     created_by = RelatedUserSerializer(read_only=True)
-    kits = SolarEnergyKitSerializer(many=True, read_only=True)
+    products = ProductSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    kits_id = PrimaryKeyRelatedField(queryset=SolarEnergyKit.objects.all(), many=True, write_only=True, source='kits')
+    products_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='products')
 
     class Meta:
         model = ComercialProposal

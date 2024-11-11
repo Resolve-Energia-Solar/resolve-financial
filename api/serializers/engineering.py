@@ -1,5 +1,5 @@
 from accounts.models import Address
-from engineering.models import EnergyCompany, RequestsEnergyCompany, CircuitBreaker, Units
+from engineering.models import EnergyCompany, RequestsEnergyCompany, Units
 from .accounts import BaseSerializer, AddressSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 # from .resolve_crm import ProjectSerializer
@@ -31,18 +31,6 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
         model = RequestsEnergyCompany
         exclude = ['is_deleted']
 
-
-class CircuitBreakerSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializador completo
-    # material = MaterialsSerializer(read_only=True)
-    
-    # Para escrita: usar apenas ID
-    # material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
-
-    class Meta:
-        model = CircuitBreaker
-        exclude = ['is_deleted']
 
 class UnitsSerializer(BaseSerializer):
     

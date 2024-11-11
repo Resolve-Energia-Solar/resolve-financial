@@ -34,7 +34,9 @@ class Column(models.Model):
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição",blank=False, null=False)
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
+    color = models.CharField("Cor", max_length=7, blank=True, null=True)
     
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
@@ -57,8 +59,6 @@ class Task(models.Model):
     column = models.ForeignKey('core.Column', related_name='task', on_delete=models.CASCADE)
     description = models.TextField()
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável')
-    board = models.ForeignKey('core.Board', related_name='board_tasks', on_delete=models.CASCADE)
-    is_completed = models.BooleanField(default=False, verbose_name='Concluído')
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
@@ -94,6 +94,8 @@ class TaskTemplates(models.Model):
     board = models.ForeignKey('core.Board', related_name='board_task_templates', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
+    deadline = models.PositiveIntegerField()
+    automatico = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField()
     

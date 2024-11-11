@@ -6,42 +6,48 @@ from .accounts import BranchSerializer
 from .inspections import RoofTypeSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 
-
-class MaterialTypesSerializer(BaseSerializer):
-      
-      class Meta(BaseSerializer.Meta):
-          model = MaterialTypes
-          fields = '__all__'
+class MaterialAttributesSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = MaterialAttributes
+        fields = ['key', 'value']
 
 
 class MaterialsSerializer(BaseSerializer):
-  
-    # Para leitura: usar serializador completo
-    type = MaterialTypesSerializer(read_only=True)
-    
-    # Para escrita: usar apenas ID
-    type_id = PrimaryKeyRelatedField(queryset=MaterialTypes.objects.all(), write_only=True, source='type')
+    attributes = MaterialAttributesSerializer(many=True, read_only=True)
 
-      
     class Meta(BaseSerializer.Meta):
         model = Materials
-        fields = '__all__'
+        fields = ['id', 'name', 'price', 'attributes']
+        
+        
+class ProductMaterialsSerializer(BaseSerializer):
+    material = MaterialsSerializer(read_only=True)
+    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
+
+    class Meta(BaseSerializer.Meta):
+        model = ProductMaterials
+        fields = ['material', 'material_id', 'amount']
 
 
-class SolarEnergyKitSerializer(BaseSerializer):
-  
+class ProductSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
-    inversors_model = MaterialsSerializer(read_only=True)
-    modules_model = MaterialsSerializer(read_only=True)
+    materials = ProductMaterialsSerializer(many=True, read_only=True)
+
     branch = BranchSerializer(read_only=True)
     roof_type = RoofTypeSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
-    inversors_model_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='inversors_model')
-    modules_model_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='modules_model')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     roof_type_id = PrimaryKeyRelatedField(queryset=RoofType.objects.all(), write_only=True, source='roof_type')
-      
+
     class Meta(BaseSerializer.Meta):
-        model = SolarEnergyKit
+        model = Product
+        fields = ['id', 'name', 'description', 'product_value', 'reference_value', 
+                  'cost_value', 'branch', 'branch_id', 'roof_type', 'roof_type_id', 'materials']
+
+
+class SaleProductSerializer(BaseSerializer):
+    product = ProductSerializer(read_only=True)
+    class Meta(BaseSerializer.Meta):
+        model = SaleProduct
         fields = '__all__'

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale, Origin
+from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
 @admin.register(Origin)
@@ -21,7 +22,8 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("lead", "total_value", "contract_number")
+    list_display = ("total_value", "contract_number")
+    inlines = [SaleProductInline]
 
 
 @admin.register(Task)
@@ -36,4 +38,5 @@ class AttachmentAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("sale", "product", "created_at")
+    inlines = [ProjectMaterialsInline]

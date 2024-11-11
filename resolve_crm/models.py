@@ -9,7 +9,12 @@ from accounts.models import Branch
 
 
 class Origin(models.Model):
+    TYPE_CHOICES = [
+        ("IB", "Inbound"),
+        ("OB", "Outbound"),
+    ]
     name = models.CharField("Nome", max_length=200)
+    type = models.CharField("Tipo", max_length=20, choices=TYPE_CHOICES, default="IB")
     is_deleted = models.BooleanField("Deletado", default=False)
     
     def __str__(self):
@@ -77,7 +82,6 @@ class Lead(models.Model):
         blank=True, 
         null=True
     )
-
     # Lead
     contact_email = models.EmailField(
         verbose_name="E-mail", 
@@ -98,7 +102,7 @@ class Lead(models.Model):
         get_user_model(), 
         on_delete=models.CASCADE, 
         verbose_name="Cliente", 
-        related_name="customer_leads", 
+        related_name="customer_leads",
         blank=True, 
         null=True
     )
@@ -212,8 +216,8 @@ class Task(models.Model):
         return reverse_lazy('resolve_crm:task-detail', kwargs={'pk': self.pk})
 
     class Meta:
-        verbose_name = "Tarefa"
-        verbose_name_plural = "Tarefas"
+        verbose_name = "Tarefa do Lead"
+        verbose_name_plural = "Tarefas do Lead"
 
 
 class Attachment(models.Model):
@@ -295,11 +299,13 @@ class MarketingCampaign(models.Model):
 
 
 class ContractSubmission(models.Model):
-    
+    sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda")
     submit_datetime = models.DateTimeField("Data e hora do envio")
     status = models.CharField("Status do envio", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
     due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
+    key_number = models.CharField("Número da Chave", max_length=20)
     link = models.URLField("Link para assinatura")
+    finished_at = models.DateTimeField("Finalizado em", null=True, blank=True)
     
     def __str__(self):
         self.submit_datetime
@@ -316,7 +322,6 @@ class ComercialProposal(models.Model):
     token = models.UUIDField("Token", editable=False, default=uuid4)
     status = models.CharField("Status da proposta", max_length=1, choices=[("P", "Pendente"), ("A", "Aceita"), ("R", "Recusada")])
     observation = models.TextField("Descrição da proposta", blank=True, null=True)
-    kits = models.ManyToManyField("logistics.SolarEnergyKit", verbose_name="Kits")
 
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Criado por", related_name="created_proposals")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -331,16 +336,14 @@ class ComercialProposal(models.Model):
 
 
 class Sale(models.Model):
-
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="lead_sales") 
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
     sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
 
     # Sale Information
-    total_value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
+    total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
 
     contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
@@ -351,8 +354,10 @@ class Sale(models.Model):
     transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
 
     # Document Information
-    is_completed_document = models.BooleanField("Documento Completo", default=False)
+    # is_completed_document = models.BooleanField("Documento Completo", default=False)
     document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
+    # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
+    financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -396,20 +401,17 @@ class Sale(models.Model):
 
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+    product = models.ForeignKey('logistics.SaleProduct', on_delete=models.CASCADE, verbose_name="product de Energia Solar")
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
+    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
+    #ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
     is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
-    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    designer_coclusion_date = models.DateField("Data de Conclusão do Projeto", null=True, blank=True)
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
-    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="project_addresses")
-    supply_type = models.CharField("Tipo de Fornecimento", choices=[("M", "Monofásico"), ("B", "Bifásico"), ("T", "Trifásico")], max_length=50, null=True, blank=True)
-    registered_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
-    instaled_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="instaled_circuit_breaker", verbose_name="Disjuntor Instalado", null=True, blank=True)
-    project_circuit_breaker = models.ForeignKey('engineering.CircuitBreaker', on_delete=models.CASCADE, related_name="project_circuit_breaker", verbose_name="Disjuntor do Projeto", null=True, blank=True)
-    # input_pattern_value = models.DecimalField("Valor do Padrão de Entrada", max_digits=10, decimal_places=2)
-    solar_energy_kit = models.ForeignKey('logistics.SolarEnergyKit', on_delete=models.CASCADE, verbose_name="Kit de Energia Solar")
-
+    registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
