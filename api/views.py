@@ -170,9 +170,17 @@ class UserTokenRefreshView(TokenRefreshView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class UserViewSet(BaseModelViewSet):
+class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+    
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
     def get_queryset(self):
@@ -271,6 +279,18 @@ class UserViewSet(BaseModelViewSet):
                     )
         return queryset
     
+    
+class EmployeeViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        employee = serializer.save()
+        return Response(EmployeeSerializer(employee).data, status=status.HTTP_201_CREATED)
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     distance = geodesic((lat1, lon1), (lat2, lon2)).kilometers

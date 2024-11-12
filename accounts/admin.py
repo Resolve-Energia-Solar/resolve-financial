@@ -32,6 +32,14 @@ class UserAdmin(UserAdmin):
     # )
 
 
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ("user", "role", "department", "branch")
+    search_fields = ("user", "role", "department", "branch")
+    list_filter = ("role", "department", "branch")
+    list_per_page = 10
+    list_max_show_all = 100
+
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
@@ -79,10 +87,6 @@ class SquadAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
-    pass
-
 @admin.register(UserType)
 class UserTypeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("id", "name")
