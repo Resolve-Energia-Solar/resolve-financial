@@ -888,3 +888,4 @@ class HistoryView(APIView):
         return Response({
             'history': list(history.values())
         }, status=status.HTTP_200_OK)
+ 

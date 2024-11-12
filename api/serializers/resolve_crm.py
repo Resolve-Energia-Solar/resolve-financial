@@ -6,7 +6,8 @@ from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
 from api.serializers.logistics import MaterialsSerializer, ProductSerializer
-from logistics.models import Materials, ProjectMaterials, Product
+from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
+from django.db.models import OuterRef, Subquery
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from .logistics import SaleProductSerializer
 
@@ -87,7 +88,6 @@ class SaleSerializer(BaseSerializer):
     sales_manager = RelatedUserSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
-    lead = LeadSerializer(read_only=True)
     missing_documents = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
@@ -97,7 +97,6 @@ class SaleSerializer(BaseSerializer):
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     
     #products
     products = SaleProductSerializer(many=True, read_only=True)
@@ -121,6 +120,7 @@ class ProjectSerializer(BaseSerializer):
     
     #product
     product = SaleProductSerializer(read_only=True, source='sale.products.first')
+    product_id = PrimaryKeyRelatedField(queryset=SaleProduct.objects.all(), write_only=True, source='product')
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')

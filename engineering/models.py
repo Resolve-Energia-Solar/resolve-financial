@@ -3,22 +3,6 @@ from simple_history.models import HistoricalRecords
 from resolve_crm.models import Project
 
 
-class CircuitBreaker(models.Model):
-    name = models.CharField("Nome", max_length=200)
-    current = models.DecimalField("Corrente", max_digits=10, decimal_places=2, blank=True, null=True)
-    tension = models.DecimalField("Tensão", max_digits=10, decimal_places=2, blank=True, null=True)
-    is_deleted = models.BooleanField("Deletado", default=False, blank=True, null=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, blank=True, null=True)
-    history = HistoricalRecords()
-    
-    class Meta:
-        verbose_name = "Disjuntor"
-        verbose_name_plural = "Disjuntores"
-    
-    def __str__(self):
-        return self.name
-
-
 class EnergyCompany(models.Model):
     name = models.CharField("Nome", max_length=200)
     cnpj = models.CharField("CNPJ", max_length=20, null=False, blank=False)
@@ -69,8 +53,8 @@ class RequestsEnergyCompany(models.Model):
     history = HistoricalRecords()
     
     class Meta:
-        verbose_name = "Solicitação de Distribuidora de Energia"
-        verbose_name_plural = "Solicitações de Distribuidoras de Energia"
+        verbose_name = "Solicitação da Concessionária de Energia"
+        verbose_name_plural = "Solicitações da Concessionárias de Energia"
     
     def __str__(self):
         return self.company.name
