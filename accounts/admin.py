@@ -82,3 +82,7 @@ class SquadAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(UserType)
+class UserTypeAdmin(admin.ModelAdmin):
+    pass

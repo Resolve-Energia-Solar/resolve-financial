@@ -1,10 +1,31 @@
 from django.contrib import admin
-from .models import RoofType
-# Register your models here.
 
+from inspections.models import *
 
 @admin.register(RoofType)
 class RoofTypeAdmin(admin.ModelAdmin):
-    list_display = ("name", "is_deleted", "created_at")
-    list_filter = ("is_deleted",)
-    search_fields = ("name", "is_deleted", "created_at")
+    list_display = ("name",)
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ("name", "category")
+
+@admin.register(Forms)
+class FormsAdmin(admin.ModelAdmin):
+    list_display = ("name", "service")
+
+@admin.register(Answer)
+class AnswerAdmin(admin.ModelAdmin):
+    list_display = ("form", "created_at")
+
+@admin.register(Deadline)
+class DeadlineAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+
+@admin.register(Schedule)
+class ScheduleAdmin(admin.ModelAdmin):
+    list_display = ("schedule_date", "project", "service")

@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
-
+from rest_framework import serializers
 from core.models import TaskTemplates
 from accounts.models import *
 
@@ -125,6 +125,8 @@ class UserSerializer(ModelSerializer):
     groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
 
     user_permissions = SerializerMethodField()
+    distance = SerializerMethodField()
+    daily_schedules_count = SerializerMethodField()
 
     class Meta:
         model = User
@@ -132,6 +134,12 @@ class UserSerializer(ModelSerializer):
 
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
+    
+    def get_distance(self, obj):
+        return getattr(obj, 'distance', None)
+    
+    def get_daily_schedules_count(self, obj):
+        return getattr(obj, 'daily_schedules_count', None)
 
 
 class TaskTemplatesSerializer(BaseSerializer):

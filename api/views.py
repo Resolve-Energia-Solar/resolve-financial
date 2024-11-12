@@ -13,8 +13,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from django.utils.dateparse import parse_datetime, parse_time
 from accounts.models import User
+from inspections.models import Category, Service
 from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
 from financial.models import Payment, PaymentInstallment
 from resolve_crm.models import *
@@ -23,12 +24,15 @@ from .serializers.accounts import UserSerializer
 from .serializers.accounts import *
 from .serializers.core import *
 from .serializers.engineering import *
-from .serializers.inspections import *
 from .serializers.logistics import *
 from .serializers.resolve_crm import *
+from .serializers.inspections import *
 from .utils import extract_data_from_pdf
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+from geopy.distance import geodesic
+from django.db.models import Case, When, Value, FloatField, IntegerField
+from rest_framework.decorators import action
 
 
 logger = logging.getLogger(__name__)
@@ -170,10 +174,195 @@ class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        user_type = self.request.query_params.get('type')
+        email = self.request.query_params.get('email')
+        phone = self.request.query_params.get('phone')
+        branch = self.request.query_params.get('branch')
+        department = self.request.query_params.get('department')
+        role = self.request.query_params.get('role')
+        person_type = self.request.query_params.get('person_type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+        category = self.request.query_params.get('category')
+        date = self.request.query_params.get('date')
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+        latitude = self.request.query_params.get('latitude')
+        longitude = self.request.query_params.get('longitude')
+
+        if name:
+            queryset = queryset.filter(complete_name__icontains=name)
+        if user_type:
+            queryset = queryset.filter(user_types__name=user_type)
+        if email:
+            queryset = queryset.filter(email__icontains=email)
+        if phone:
+            queryset = queryset.filter(phone__number__icontains=phone)
+        if branch:
+            queryset = queryset.filter(branch__name__icontains=branch)
+        if department:
+            queryset = queryset.filter(department__name__icontains=department)
+        if role:
+            queryset = queryset.filter(role__name__icontains=role)
+        if person_type:
+            queryset = queryset.filter(person_type=person_type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_Jdocument)
+        if category:
+            queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
+
+            if date and start_time and end_time:
+                overlapping_schedules = Schedule.objects.filter(
+                    schedule_date=date,
+                    schedule_start_time__lt=parse_time(end_time),
+                    schedule_end_time__gt=parse_time(start_time)
+                ).values_list('schedule_agent_id', flat=True)
+
+                queryset = queryset.exclude(id__in=overlapping_schedules)
+
+                if latitude and longitude:
+                    latitude = float(latitude)
+                    longitude = float(longitude)
+
+                    users_distance = []
+                    for user in queryset:
+                        last_schedule = Schedule.objects.filter(
+                            schedule_agent=user,
+                            schedule_date=date
+                        ).order_by('-schedule_end_time').first()
+
+                        user.distance = (
+                            calculate_distance(latitude, longitude, last_schedule.latitude, last_schedule.longitude)
+                            if last_schedule else None
+                        )
+
+                        users_distance.append((user, user.distance))
+
+                        daily_schedules_count = Schedule.objects.filter(
+                            schedule_agent=user,
+                            schedule_date=date
+                        ).count()
+                        user.daily_schedules_count = daily_schedules_count
+
+                    ordered_users = sorted(users_distance, key=lambda x: (x[1] is None, x[1]))
+                    ordered_ids = [user[0].id for user in ordered_users]
+
+                    queryset = queryset.filter(id__in=ordered_ids).annotate(
+                        distance=Case(
+                            *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
+                            default=Value(None),  
+                            output_field=FloatField()  
+                        ),
+                        daily_schedules_count=Case(
+                            *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
+                            default=Value(0),
+                            output_field=IntegerField()  
+                        )
+                    ).order_by(
+                        Case(
+                            *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
+                        )
+                    )
+        return queryset
+    
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    distance = geodesic((lat1, lon1), (lat2, lon2)).kilometers
+    return distance
+    
+class LeadViewSet(BaseModelViewSet):
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        type = self.request.query_params.get('type')
+        first_document = self.request.query_params.get('first_document')
+        second_document = self.request.query_params.get('second_document')
+        contact_email = self.request.query_params.get('contact_email')
+        phone = self.request.query_params.get('phone')
+        origin = self.request.query_params.get('origin')
+        seller = self.request.query_params.get('seller')
+        sdr = self.request.query_params.get('sdr')
+        funnel = self.request.query_params.get('funnel')
+        column = self.request.query_params.get('column')
+
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        if type:
+            queryset = queryset.filter(type=type)
+        if first_document:
+            queryset = queryset.filter(first_document__icontains=first_document)
+        if second_document:
+            queryset = queryset.filter(second_document__icontains=second_document)
+        if contact_email:
+            queryset = queryset.filter(contact_email__icontains=contact_email)
+        if phone:
+            queryset = queryset.filter(phone__icontains=phone)
+        if origin:
+            queryset = queryset.filter(origin__icontains=origin)
+        if seller:
+            queryset = queryset.filter(seller__name__icontains=seller)
+        if sdr:
+            queryset = queryset.filter(sdr__name__icontains=sdr)
+        if funnel:
+            queryset = queryset.filter(funnel=funnel)
+        if column:
+            queryset = queryset.filter(column__id=column)
+
+        return queryset
+    
+
+class TaskViewSet(BaseModelViewSet):
+    queryset = LeadTask.objects.all()
+    serializer_class = LeadTaskSerializer
+
+    
+class AttachmentViewSet(BaseModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        object_id = self.request.query_params.get('object_id')
+        content_type = self.request.query_params.get('content_type_id')
+
+        if object_id:
+            queryset = queryset.filter(object_id=object_id)
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+
+        return queryset
+
     
 class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
     serializer_class = SquadSerializer
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+    
+    
+class DepartmentViewSet(BaseModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
     
     
 class DepartmentViewSet(BaseModelViewSet):
@@ -434,6 +623,100 @@ class ProductViewSet(BaseModelViewSet):
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
+
+class CategoryViewSet(BaseModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+    
+class DeadlineViewSet(BaseModelViewSet):
+    queryset = Deadline.objects.all()
+    serializer_class = DeadlineSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+        return queryset
+
+class ServiceViewSet(BaseModelViewSet):
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+
+class FormsViewSet(BaseModelViewSet):
+    queryset = Forms.objects.all()
+    serializer_class = FormsSerializer
+
+class AnswerViewSet(BaseModelViewSet):
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
+
+class ScheduleViewSet(BaseModelViewSet):
+    queryset = Schedule.objects.all()
+    serializer_class = ScheduleSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project = self.request.query_params.get('project')
+        service = self.request.query_params.get('service')
+        schedule_agent = self.request.query_params.get('schedule_agent')
+
+        if project:
+            queryset = queryset.filter(project__id=project)
+        if service:
+            queryset = queryset.filter(service__id=service)
+        if schedule_agent:
+            queryset = queryset.filter(schedule_agent__id=schedule_agent)
+
+        return queryset
+
+    # listar agendamentos por pessoa para timeline
+    @action(detail=False, methods=['get'])
+    def get_schedule_person(self, request):
+        today = timezone.now().date()
+        hours = [
+            ('09:00', '10:30'),
+            ('10:30', '12:00'),
+            ('13:00', '14:30'),
+            ('14:30', '16:00'),
+            ('16:00', '17:30'),
+            ('17:30', '19:00'), 
+        ]
+
+        schedules = Schedule.objects.filter(schedule_date=today).order_by('schedule_agent', 'schedule_start_time')
+        agents = schedules.values_list('schedule_agent', flat=True).distinct()
+        data = []
+
+        for agent in agents:
+            agent_schedules = schedules.filter(schedule_agent=agent)
+            agent_data = {
+                'agent': agent,
+                'schedules': []
+            }
+            for start, end in hours:
+                if agent_schedules.filter(schedule_start_time__lt=end, schedule_end_time__gt=start).exists():
+                    agent_data['schedules'].append({
+                        'start_time': start,
+                        'end_time': end,
+                        'status': 'Ocupado'
+                    })
+                else:
+                    agent_data['schedules'].append({
+                        'start_time': start,
+                        'end_time': end,
+                        'status': 'Livre'
+                    })
+            data.append(agent_data)
+            
+        return Response(data, status=status.HTTP_200_OK)
+        
 
 
 # Engineering views
