@@ -197,7 +197,7 @@ class UserViewSet(BaseModelViewSet):
         if first_document:
             queryset = queryset.filter(first_document__icontains=first_document)
         if second_document:
-            queryset = queryset.filter(second_document__icontains=second_Jdocument)
+            queryset = queryset.filter(second_document__icontains=second_document)
         if category:
             queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
 
