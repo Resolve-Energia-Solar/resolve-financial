@@ -491,7 +491,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
     # listar agendamentos por pessoa para timeline
     @action(detail=False, methods=['get'])
-    def get_schedule_person(self, request):
+    def get_timeline(self, request):
         today = timezone.now().date()
         hours = [
             ('09:00', '10:30'),
@@ -508,19 +508,22 @@ class ScheduleViewSet(BaseModelViewSet):
 
         for agent in agents:
             agent_schedules = schedules.filter(schedule_agent=agent)
+            agent_serializer = UserSerializer(User.objects.get(id=agent))
             agent_data = {
-                'agent': agent,
+                'agent': agent_serializer.data,
                 'schedules': []
             }
             for start, end in hours:
                 if agent_schedules.filter(schedule_start_time__lt=end, schedule_end_time__gt=start).exists():
                     agent_data['schedules'].append({
+                        'agent': agent_serializer.data,
                         'start_time': start,
                         'end_time': end,
                         'status': 'Ocupado'
                     })
                 else:
                     agent_data['schedules'].append({
+                        'agent': agent_serializer.data,
                         'start_time': start,
                         'end_time': end,
                         'status': 'Livre'
