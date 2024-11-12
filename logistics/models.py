@@ -19,8 +19,8 @@ class MaterialAttributes(models.Model):
 
 #ITEM
 class Materials(models.Model):
-    name = models.CharField("Nome", max_length=50, null=True, blank=True)
-    price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=True, blank=True)
+    name = models.CharField("Nome", max_length=50, null=False, blank=False)
+    price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=False, blank=False)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
     
@@ -54,9 +54,9 @@ class ProductMaterials(models.Model):
 
 #PRODUTO
 class Product(models.Model):
-    name = models.CharField("Nome", max_length=50, null=True, blank=True)
+    name = models.CharField("Nome", max_length=50, null=False, blank=False)
     description = models.CharField("Descrição", max_length=80, null=True, blank=True)
-    product_value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    product_value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=False, blank=False)
     reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial", null=True, blank=True)

@@ -100,6 +100,7 @@ class SaleSerializer(BaseSerializer):
     
     #products
     products = SaleProductSerializer(many=True, read_only=True)
+    products_ids = PrimaryKeyRelatedField(queryset=SaleProduct.objects.all(), many=True, write_only=True, source='products')
 
     class Meta:
         model = Sale
@@ -109,6 +110,8 @@ class SaleSerializer(BaseSerializer):
         return obj.missing_documents()
 
 
+from logistics.models import SaleProduct
+
 class ProjectSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     sale = SaleSerializer(read_only=True)
@@ -117,16 +120,12 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
     product = ProductSerializer(read_only=True)
-    
-    #product
-    product = SaleProductSerializer(read_only=True, source='sale.products.first')
-    product_id = PrimaryKeyRelatedField(queryset=SaleProduct.objects.all(), write_only=True, source='product')
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
+    product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product')
 
     class Meta:
         model = Project

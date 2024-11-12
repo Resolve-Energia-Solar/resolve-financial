@@ -612,11 +612,16 @@ class MaterialsViewSet(BaseModelViewSet):
     queryset = Materials.objects.all()
     serializer_class = MaterialsSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        material = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
 
 class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    
 
 # Inspections views
 
