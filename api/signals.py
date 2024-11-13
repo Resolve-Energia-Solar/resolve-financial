@@ -10,17 +10,17 @@ def check_unit_status(sender, instance, created, **kwargs):
 
     # Verifica se o estado de change_owner precisa ser atualizado
     if instance.project is not None:
-      bill_name = instance.name.lower()
-      project_homologator = instance.project.homologator.complete_name.lower()
-      
-      if bill_name == project_homologator:
-          change_owner = False
-      else:
-          change_owner = True
-          
-      # Atualiza apenas se houver mudança
-      if instance.change_owner != change_owner:
-          instance.change_owner = change_owner
-          instance._skip_post_save = True
-          instance.save(update_fields=['change_owner'])
+        if instance.project.homologator and instance.name:
+            bill_name = instance.name.lower()
+            project_homologator = instance.project.homologator.complete_name.lower()
+            if bill_name == project_homologator:
+                change_owner = False
+            else:
+                change_owner = True
+                
+            # Atualiza apenas se houver mudança
+            if instance.change_owner != change_owner:
+                instance.change_owner = change_owner
+                instance._skip_post_save = True
+                instance.save(update_fields=['change_owner'])
 

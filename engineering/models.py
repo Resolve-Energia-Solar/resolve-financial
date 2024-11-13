@@ -75,7 +75,7 @@ class SituationEnergyCompany(models.Model):
 
 
 class Units(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True, related_name="units")
     name = models.CharField("Nome", max_length=200, null=True, blank=True)
     supply_adquance = models.ManyToManyField("SupplyAdequance", verbose_name="Adequação de Fornecimento", blank=True)
     main_unit = models.BooleanField("Geradora", default=False)

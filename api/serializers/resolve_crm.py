@@ -10,6 +10,7 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from django.db.models import OuterRef, Subquery
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from .logistics import SaleProductSerializer
+from .engineering import UnitsSerializer
 
 
 class OriginSerializer(BaseSerializer):
@@ -110,8 +111,6 @@ class SaleSerializer(BaseSerializer):
         return obj.missing_documents()
 
 
-from logistics.models import SaleProduct
-
 class ProjectSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     sale = SaleSerializer(read_only=True)
@@ -120,6 +119,7 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
     product = ProductSerializer(read_only=True)
+    units = UnitsSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
