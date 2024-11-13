@@ -139,6 +139,21 @@ class Lead(models.Model):
         null=True,
         choices=FUNNEL_CHOICES
     )
+    
+    qualification = models.PositiveIntegerField(
+        verbose_name="Qualificação", 
+        blank=True, 
+        null=True
+    )
+    
+    kwp = models.DecimalField(
+        max_digits=20, 
+        decimal_places=3, 
+        verbose_name="Potência (kWp)", 
+        blank=True, 
+        null=True
+    )
+    
 
     # Kanban
     column = models.ForeignKey(

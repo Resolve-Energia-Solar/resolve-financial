@@ -22,7 +22,7 @@ class ReadLeadSerializer(BaseSerializer):
 
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'created_at']
+        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller','origin', 'sdr', 'kwp','qualification', 'funnel', 'created_at']
 
 
 class ReadTaskSerializer(BaseSerializer):
