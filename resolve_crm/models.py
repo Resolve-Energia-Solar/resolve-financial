@@ -372,7 +372,6 @@ class Sale(models.Model):
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
     sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
-
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
 
@@ -384,9 +383,6 @@ class Sale(models.Model):
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
 
-    # Document Information
-    # is_completed_document = models.BooleanField("Documento Completo", default=False)
-    document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
@@ -435,6 +431,7 @@ class Project(models.Model):
     product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto")
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
+    # Schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
     #ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
@@ -443,6 +440,7 @@ class Project(models.Model):
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto", null=True, blank=True)
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
+    document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
     registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
