@@ -99,10 +99,6 @@ class SaleSerializer(BaseSerializer):
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     
-    #products
-    products = SaleProductSerializer(many=True, read_only=True)
-    products_ids = PrimaryKeyRelatedField(queryset=SaleProduct.objects.all(), many=True, write_only=True, source='products')
-
     class Meta:
         model = Sale
         fields = '__all__'

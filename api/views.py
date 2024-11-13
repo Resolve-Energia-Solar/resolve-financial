@@ -532,44 +532,56 @@ class GeneratePreSaleView(APIView):
         lead.customer = customer
         lead.save()
 
-        # Processamento dos products e cálculo do valor total
         products = []
         total_value = 0
+
         for product in products:
+            # Verificar se é um novo produto ou um existente
             if 'id' not in product:
+                # Criar novo produto
                 product_serializer = ProductSerializer(data=product)
                 if product_serializer.is_valid():
                     new_product = product_serializer.save()
                     products.append(new_product)
-                    total_value += new_product.price
+
+                    # Calcular o valor do produto com base nos materiais associados
+                    product_value = self.calculate_product_value(new_product)
+                    total_value += product_value
                 else:
                     return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Capturar produto existente
                 try:
                     existing_product = Product.objects.get(id=product['id'])
                     products.append(existing_product)
-                    total_value += existing_product.price
+
+                    # Calcular o valor do produto com base nos materiais associados
+                    product_value = self.calculate_product_value(existing_product)
+                    total_value += product_value
                 except Product.DoesNotExist:
-                    return Response({'message': f'product com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Criação da pré-venda usando Serializer
-        sale_data = {
-            'customer_id': customer.id,
-            'lead_id': lead.id,
-            'is_pre_sale': True,
-            'status': 'P',
-            'branch_id': lead.seller.branch.id,
-            'seller_id': lead.seller.id,
-            'sales_supervisor_id': lead.seller.user_manager.id if lead.seller.user_manager else None,
-            'sales_manager_id': lead.seller.user_manager.user_manager.id if lead.seller.user_manager and lead.seller.user_manager.user_manager else None,
-            'total_value': total_value,
-        }
-
-        sale_serializer = SaleSerializer(data=sale_data)
-        if sale_serializer.is_valid():
-            pre_sale = sale_serializer.save()
-        else:
-            return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Criação da pré-venda usando Serializer
+            sale_data = {
+                'customer_id': customer.id,
+                'lead_id': lead.id,
+                'is_pre_sale': True,
+                'status': 'P',
+                'branch_id': lead.seller.employee.branch.id,
+                'seller_id': lead.seller.id,
+                'sales_supervisor_id': lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None,
+                'sales_manager_id': lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None,
+                'total_value': total_value,
+            }
+            sale_serializer = SaleSerializer(data=sale_data)
+            if sale_serializer.is_valid():
+                pre_sale = sale_serializer.save()
+            else:
+                return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f'Erro ao criar pré-venda: {str(e)}')
+            return Response({'message': 'Erro ao criar pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Vinculação dos products ao projeto usando Serializer
         for product in products:
@@ -600,6 +612,21 @@ class GeneratePreSaleView(APIView):
             'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
             'pre_sale_id': pre_sale.id
         }, status=status.HTTP_200_OK)
+    
+        def calculate_product_value(product):
+            """
+            Função para calcular o valor total do produto com base no valor do próprio produto
+            e dos materiais associados.
+            """
+            product_value = product.product_value
+
+            # Somar o custo dos materiais associados ao produto
+            associated_materials = ProductMaterials.objects.filter(product=product, is_deleted=False)
+            for item in associated_materials:
+                material_cost = item.material.price * item.amount
+                product_value += material_cost
+
+            return product_value
 
 
 # Contracts views
