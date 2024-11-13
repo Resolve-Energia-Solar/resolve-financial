@@ -29,9 +29,11 @@ class Origin(models.Model):
 class Lead(models.Model):
     
     FUNNEL_CHOICES = [
-        ("Q", "Quente"),
-        ("M", "Moderado"),
-        ("N", "Negociação"),
+        ("N", "Não Interessado"),
+        ("P", "Pouco Interessado"),
+        ("I", "Interessado"),
+        ("M", "Muito Interessado"),
+        ("PC", "Pronto para Comprar"),
     ]
 
     name = models.CharField(
