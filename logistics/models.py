@@ -78,16 +78,16 @@ class Product(models.Model):
 
 
 class ProjectMaterials(models.Model):
-    project = models.ForeignKey("resolve_crm.Project", on_delete=models.CASCADE, verbose_name="Projeto", related_name="materials_set", null=True, blank=True)
-    material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="projects_set", null=True, blank=True)
-    amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    is_exit = models.BooleanField("Saída", default=False, null=True, blank=True)
+    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
+    material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material")
+    amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0)
+    is_exit = models.BooleanField("Saída", default=False)
     serial_number = models.CharField("Número de Série", max_length=50, null=True, blank=True)
-    is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
-    created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True, null=True, blank=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
 
     def __str__(self):
-        return f"Project: {self.project}, Material: {self.material}"
+        return f"Projeto: {self.project}, Material: {self.material}, Quantidade: {self.amount}"
 
     class Meta:
         verbose_name = "Material do Projeto"

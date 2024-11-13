@@ -10,7 +10,7 @@ class MaterialAttributesInline(admin.TabularInline):
 
 @admin.register(Materials)
 class MaterialsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_deleted', 'created_at')
+    list_display = ('id','name', 'is_deleted', 'created_at')
     list_filter = ('is_deleted', 'created_at')
     inlines = [MaterialAttributesInline]
 
@@ -22,7 +22,7 @@ class ProductMaterialsInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'branch', 'roof_type', 'is_default', 'is_deleted', 'created_at')
+    list_display = ('id','name', 'branch', 'roof_type', 'is_default', 'is_deleted', 'created_at')
     search_fields = ('inversors_model__description', 'modules_model__description', 'branch__name', 'roof_type__name')
     list_filter = ('is_default', 'is_deleted', 'created_at')
     inlines = [ProductMaterialsInline]

@@ -108,3 +108,11 @@ class SaleProductSerializer(BaseSerializer):
         model = SaleProduct
         fields = '__all__'
         
+
+class ProjectMaterialsSerializer(BaseSerializer):
+    material = MaterialsSerializer(read_only=True)
+    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), source='material', write_only=True)
+    
+    class Meta:
+        model = ProjectMaterials
+        fields = ['material', 'material_id', 'amount', 'is_exit', 'serial_number']

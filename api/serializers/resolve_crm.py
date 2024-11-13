@@ -8,8 +8,8 @@ from api.serializers.accounts import BaseSerializer
 from api.serializers.logistics import MaterialsSerializer, ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from django.db.models import OuterRef, Subquery
-from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
-from .logistics import SaleProductSerializer
+from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
+from .logistics import ProjectMaterialsSerializer
 from .engineering import UnitsSerializer
 
 
@@ -108,28 +108,63 @@ class SaleSerializer(BaseSerializer):
 
 
 class ProjectSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
+    # Para leitura
     sale = SaleSerializer(read_only=True)
-    materials = MaterialsSerializer(many=True, read_only=True)
     designer = RelatedUserSerializer(read_only=True)
     homologator = RelatedUserSerializer(read_only=True)
-    addresses = AddressSerializer(many=True, read_only=True)
     product = ProductSerializer(read_only=True)
-    units = UnitsSerializer(many=True, read_only=True)
+    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
 
-    # Para escrita: usar apenas IDs
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    # Para escrita
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=False)
     homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product')
+    product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
+    
+    # Lista de materiais com detalhes
+    materials_data = ListField(
+        child= DictField(),
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Project
         fields = '__all__'
 
-    def get_materials(self, obj):
-        return MaterialsSerializer(obj.materials.all(), many=True).data
+    def update(self, instance, validated_data):
+        # Extrair dados de materiais e endereços
+        materials_data = validated_data.pop('materials_data', [])
+        
+        # Atualiza os campos do projeto
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
 
+        # Atualiza materiais se fornecidos
+        if materials_data:
+            self._save_materials(instance, materials_data)
+
+        return instance
+
+
+    def _save_materials(self, project, materials_data):
+        """Função auxiliar para criar ou atualizar materiais do projeto com detalhes extras"""
+        project.materials.clear()  # Limpar materiais antigos
+        for material_data in materials_data:
+            material_id = material_data.get('material_id')
+            amount = material_data.get('amount', 1)
+            is_exit = material_data.get('is_exit', False)
+            serial_number = material_data.get('serial_number', None)
+
+            material = Materials.objects.get(id=material_id)
+            ProjectMaterials.objects.create(
+                project=project,
+                material=material,
+                amount=amount,
+                is_exit=is_exit,
+                serial_number=serial_number
+            )
+            
 
 class ComercialProposalSerializer(BaseSerializer):
 
