@@ -48,6 +48,7 @@ router.register('financiers', FinancierViewSet, basename='financier')
 router.register('payments', PaymentViewSet, basename='payment')
 router.register('payment-installments', PaymentInstallmentViewSet, basename='payment-installment')
 router.register('employees', EmployeeViewSet, basename='employee')
+router.register('supply-adequances', SupplyAdequanceViewSet, basename='supply-adequance')
 
 
 schema_view = get_schema_view(

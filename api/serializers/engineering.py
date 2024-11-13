@@ -1,5 +1,5 @@
 from accounts.models import Address
-from engineering.models import EnergyCompany, RequestsEnergyCompany, Units
+from engineering.models import EnergyCompany, RequestsEnergyCompany, SupplyAdequance, Units
 from .accounts import BaseSerializer, AddressSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 # from .resolve_crm import ProjectSerializer
@@ -32,11 +32,20 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
         exclude = ['is_deleted']
 
 
+class SupplyAdequanceSerializer(BaseSerializer):
+    class Meta:
+        model = SupplyAdequance
+        fields = '__all__'
+
+
 class UnitsSerializer(BaseSerializer):
-    
+    supply_adquance = SupplyAdequanceSerializer(read_only=True, many=True)
     address = AddressSerializer(read_only=True)
+    
+    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
+    supply_adquance_ids = PrimaryKeyRelatedField(queryset=SupplyAdequance.objects.all(), many=True, write_only=True, source='supply_adquance')
+    
     
     class Meta:
         model = Units
         fields = '__all__'
-

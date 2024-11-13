@@ -914,3 +914,8 @@ class HistoryView(APIView):
             'history': list(history.values())
         }, status=status.HTTP_200_OK)
  
+
+
+class SupplyAdequanceViewSet(BaseModelViewSet):
+    queryset = SupplyAdequance.objects.all()
+    serializer_class = SupplyAdequanceSerializer
