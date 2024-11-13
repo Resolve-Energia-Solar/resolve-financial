@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
 
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
@@ -787,63 +788,63 @@ class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
     serializer_class = UnitsSerializer
     
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        if 'bill_file' in self.request.FILES:
-            self.process_bill_file(instance)
+    # def perform_create(self, serializer):
+    #     instance = serializer.save()
+    #     if 'bill_file' in self.request.FILES:
+    #         self.process_bill_file(instance)
 
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if 'bill_file' in self.request.FILES:
-            self.process_bill_file(instance)
+    # def perform_update(self, serializer):
+    #     instance = serializer.save()
+    #     if 'bill_file' in self.request.FILES:
+    #         self.process_bill_file(instance)
 
-    def process_bill_file(self, unit):
-        # Resolve a URL para o endpoint API
-        # Garante que a URL é absoluta (pode ser ajustado para usar seu domínio se necessário)
-        url = self.request.build_absolute_uri(reverse('api:invoice_information'))
+    # def process_bill_file(self, unit):
+    #     # Resolve a URL para o endpoint API
+    #     # Garante que a URL é absoluta (pode ser ajustado para usar seu domínio se necessário)
+    #     url = self.request.build_absolute_uri(reverse('api:invoice_information'))
 
-        headers = {
-            'accept': 'application/json'
-        }
+    #     headers = {
+    #         'accept': 'application/json'
+    #     }
 
-        try:
-            # Abre o arquivo da unidade
-            with unit.bill_file.open('rb') as f:
-                files = {
-                    'bill_file': (unit.bill_file.name, f, 'application/pdf')
-                }
-                logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
+    #     try:
+    #         # Abre o arquivo da unidade
+    #         with unit.bill_file.open('rb') as f:
+    #             files = {
+    #                 'bill_file': (unit.bill_file.name, f, 'application/pdf')
+    #             }
+    #             logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
                 
-                # Faz a requisição POST para a API
-                response = requests.post(url, headers=headers, files=files, timeout=5)
-                response.raise_for_status()  # Lança exceção em caso de status de erro HTTP
+    #             # Faz a requisição POST para a API
+    #             response = requests.post(url, headers=headers, files=files, timeout=5)
+    #             response.raise_for_status()  # Lança exceção em caso de status de erro HTTP
 
-                # Pega os dados retornados pela API
-                external_data = response.json()
+    #             # Pega os dados retornados pela API
+    #             external_data = response.json()
 
-            #nao deixar colocar repetido
-            # Atualiza os dados da unidade com base nos dados da API
-            unit.name = external_data.get('name', unit.name)
-            unit.account_number = external_data.get('uc', unit.unit_number)
-            unit.unit_number = external_data.get('account', unit.account_number)
-            unit.type = external_data.get('type', unit.type)
-            # unit.address = external_data.get('address', unit.address)  # Se você precisar adicionar o campo de endereço
-            unit.save()
+    #         #nao deixar colocar repetido
+    #         # Atualiza os dados da unidade com base nos dados da API
+    #         unit.name = external_data.get('name', unit.name)
+    #         unit.account_number = external_data.get('uc', unit.unit_number)
+    #         unit.unit_number = external_data.get('account', unit.account_number)
+    #         unit.type = external_data.get('type', unit.type)
+    #         # unit.address = external_data.get('address', unit.address)  # Se você precisar adicionar o campo de endereço
+    #         unit.save()
 
-            logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
+    #         logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
 
-        except requests.exceptions.Timeout:
-            logger.error(f'Timeout ao enviar fatura para a API externa para a unidade ID {unit.id}')
-            raise ValidationError({'error': 'Timeout ao processar o arquivo da fatura.'})
-        except requests.exceptions.HTTPError as http_err:
-            logger.error(f'Erro HTTP ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(http_err)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
-        except requests.exceptions.RequestException as req_err:
-            logger.error(f'Erro na requisição ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(req_err)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
-        except Exception as e:
-            logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+    #     except requests.exceptions.Timeout:
+    #         logger.error(f'Timeout ao enviar fatura para a API externa para a unidade ID {unit.id}')
+    #         raise ValidationError({'error': 'Timeout ao processar o arquivo da fatura.'})
+    #     except requests.exceptions.HTTPError as http_err:
+    #         logger.error(f'Erro HTTP ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(http_err)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+    #     except requests.exceptions.RequestException as req_err:
+    #         logger.error(f'Erro na requisição ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(req_err)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+    #     except Exception as e:
+    #         logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
 
 
 # Core views
