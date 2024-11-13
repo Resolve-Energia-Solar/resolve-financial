@@ -3,7 +3,7 @@ from accounts.models import Branch, User
 from api.serializers.accounts import BaseSerializer
 from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
-from resolve_crm.models import Lead
+from resolve_crm.models import Lead, Origin
 
 
 class ColumnNameSerializer(BaseSerializer):
@@ -16,13 +16,19 @@ class ColumnNameSerializer(BaseSerializer):
 class ReadLeadSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     column = ColumnNameSerializer(read_only=True)
+    origin = SerializerMethodField()
 
     # Para escrita: usar apenas ID
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
+    origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
 
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller','origin', 'sdr', 'kwp','qualification', 'funnel', 'created_at']
+        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'origin', 'origin_id', 'sdr', 'kwp', 'qualification', 'funnel', 'created_at']
+
+    def get_origin(self, obj):
+        from api.serializers.resolve_crm import OriginSerializer
+        return OriginSerializer(obj.origin).data
 
 
 class ReadTaskSerializer(BaseSerializer):
