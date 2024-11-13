@@ -49,6 +49,8 @@ router.register('payments', PaymentViewSet, basename='payment')
 router.register('payment-installments', PaymentInstallmentViewSet, basename='payment-installment')
 router.register('employees', EmployeeViewSet, basename='employee')
 router.register('supply-adequances', SupplyAdequanceViewSet, basename='supply-adequance')
+router.register('situation-energy-companies', SituationEnergyCompanyViewSet, basename='situation-energy-company')
+router.register('resquest-types', ResquestTypeViewSet, basename='resquest-type')
 
 
 schema_view = get_schema_view(

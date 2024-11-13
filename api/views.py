@@ -947,3 +947,15 @@ class HistoryView(APIView):
 class SupplyAdequanceViewSet(BaseModelViewSet):
     queryset = SupplyAdequance.objects.all()
     serializer_class = SupplyAdequanceSerializer
+
+
+class ResquestTypeViewSet(BaseModelViewSet):
+    queryset = ResquestType.objects.all()
+    serializer_class = ResquestTypeSerializer
+    
+    
+class SituationEnergyCompanyViewSet(BaseModelViewSet):
+    queryset = SituationEnergyCompany.objects.all()
+    serializer_class = SituationEnergyCompanySerializer
+    
+    

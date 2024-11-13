@@ -18,7 +18,7 @@ class SituationEnergyCompanyAdmin(admin.ModelAdmin):
 
 @admin.register(RequestsEnergyCompany)
 class RequestsEnergyCompanyAdmin(admin.ModelAdmin):
-    list_display = ("company", "project", "unit", "request_date", "type", "status", "situation", "conclusion_date", "request", "interim_protocol", "final_protocol", "requested_by")
+    list_display = ("company", "project", "unit", "request_date", "type", "status", "conclusion_date", "request", "interim_protocol", "final_protocol", "requested_by")
     
 
 @admin.register(ResquestType)

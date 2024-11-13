@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse_lazy
 from contracts.models import DocumentType, DocumentSubType
+from django.utils.timezone import now
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
@@ -166,6 +167,12 @@ class Lead(models.Model):
         null=True, 
         related_name="leads"
     )
+    
+    moved_at = models.DateTimeField(
+        "Movido em", 
+        blank=True, 
+        null=True
+    )
 
     # Logs
     is_deleted = models.BooleanField(
@@ -188,11 +195,18 @@ class Lead(models.Model):
         return self.name
 
     def save(self, current_user=None, *args, **kwargs):
-        if not self.id and current_user is not None:
-            self.created_by = self.updated_by = current_user
-        elif current_user is not None:
+        if self.pk:
+            old_lead = Lead.objects.get(pk=self.pk)
+            if old_lead.column != self.column:
+                self.moved_at = now()
+        else:
+            self.moved_at = now()
+
+        if current_user is not None:
+            if not self.id:
+                self.created_by = current_user
             self.updated_by = current_user
-        super().save(*args, **kwargs)
+
         
     def get_absolute_url(self):
         return reverse_lazy('resolve_crm:lead_detail', kwargs={'pk': self.pk})

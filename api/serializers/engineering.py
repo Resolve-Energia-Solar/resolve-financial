@@ -1,31 +1,53 @@
 from accounts.models import Address
-from engineering.models import EnergyCompany, RequestsEnergyCompany, SupplyAdequance, Units
+from engineering.models import *
 from .accounts import BaseSerializer, AddressSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 # from .resolve_crm import ProjectSerializer
 # from .logistics import MaterialsSerializer
 
 
+class SituationEnergyCompanySerializer(BaseSerializer):
+    class Meta:
+        model = SituationEnergyCompany
+        fields = '__all__'
+        
+
+class ResquestTypeSerializer(BaseSerializer):
+    class Meta:
+        model = ResquestType
+        fields = '__all__'
+    
+
 class EnergyCompanySerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     address = AddressSerializer(read_only=True)
 
     # Para escrita: usar apenas ID
-    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
+    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address', required=False)
 
     class Meta:
         model = EnergyCompany
         exclude = ['is_deleted']
+        
+
+class ProjectReadSerializer(BaseSerializer):
+    class Meta:
+        model = Project
+        fields = '__all__'
 
 
 class RequestsEnergyCompanySerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     company = EnergyCompanySerializer(read_only=True)
-    # project = ProjectSerializer()
+    project = ProjectReadSerializer(read_only=True)
+    type = ResquestTypeSerializer(read_only=True)
+    situation = SituationEnergyCompanySerializer(read_only=True, many=True)
     
     # Para escrita: usar apenas ID
     company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
-    # project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
+    type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
+    situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
 
     class Meta:
         model = RequestsEnergyCompany
@@ -44,6 +66,7 @@ class UnitsSerializer(BaseSerializer):
     
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     supply_adquance_ids = PrimaryKeyRelatedField(queryset=SupplyAdequance.objects.all(), many=True, write_only=True, source='supply_adquance')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     
     
     class Meta:
