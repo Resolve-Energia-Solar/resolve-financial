@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from accounts.models import Address, User
 from api.serializers.core import ColumnSerializer
 from core.models import Column
@@ -91,6 +92,7 @@ class SaleSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     missing_documents = SerializerMethodField()
+    products = ProductSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -99,6 +101,7 @@ class SaleSerializer(BaseSerializer):
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
+    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='products')
     
     class Meta:
         model = Sale
@@ -115,7 +118,6 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
-    units = UnitsSerializer(many=True, read_only=True)
 
     # Para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=False)
@@ -159,14 +161,19 @@ class ProjectSerializer(BaseSerializer):
             is_exit = material_data.get('is_exit', False)
             serial_number = material_data.get('serial_number', None)
 
-            material = Materials.objects.get(id=material_id)
+            # Verificar se o material existe
+            try:
+                material = Materials.objects.get(id=material_id)
+            except Materials.DoesNotExist:
+                raise ValidationError({'detail': f'Material com id {material_id} não encontrado.'}, code=404)
+
             ProjectMaterials.objects.create(
                 project=project,
                 material=material,
                 amount=amount,
                 is_exit=is_exit,
                 serial_number=serial_number
-            )
+        )
             
 
 class ComercialProposalSerializer(BaseSerializer):

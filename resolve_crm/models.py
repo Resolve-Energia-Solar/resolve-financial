@@ -195,17 +195,25 @@ class Lead(models.Model):
         return self.name
 
     def save(self, current_user=None, *args, **kwargs):
+    # Se for uma atualização (o objeto já tem um ID)
         if self.pk:
             old_lead = Lead.objects.get(pk=self.pk)
             if old_lead.column != self.column:
                 self.moved_at = now()
         else:
+            # Se for uma criação (não tem um ID), definir moved_at
             self.moved_at = now()
 
+        # Salvar o objeto antes de associar o current_user ou outros campos
+        super().save(*args, **kwargs)
+
+        # Atualizar os campos relacionados ao usuário
         if current_user is not None:
             if not self.id:
                 self.created_by = current_user
             self.updated_by = current_user
+            super().save(*args, **kwargs)  # Salvar novamente para atualizar os campos de auditoria
+
 
         
     def get_absolute_url(self):
@@ -353,6 +361,7 @@ class ComercialProposal(models.Model):
     token = models.UUIDField("Token", editable=False, default=uuid4)
     status = models.CharField("Status da proposta", max_length=1, choices=[("P", "Pendente"), ("A", "Aceita"), ("R", "Recusada")])
     observation = models.TextField("Descrição da proposta", blank=True, null=True)
+    products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Criado por", related_name="created_proposals")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -382,6 +391,7 @@ class Sale(models.Model):
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
+    products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)

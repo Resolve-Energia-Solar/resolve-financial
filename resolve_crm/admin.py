@@ -11,6 +11,10 @@ class OriginAdmin(admin.ModelAdmin):
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
+    
+    def save_model(self, request, obj, form, change):
+        obj.save(current_user=request.user)
+        form.save_m2m()  
 
 
 @admin.register(ComercialProposal)

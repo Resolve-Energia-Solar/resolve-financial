@@ -19,7 +19,7 @@ class UserType(models.Model):
 
 
 class Employee(models.Model):
-    user = models.OneToOneField("accounts.User", verbose_name="Usuário", on_delete=models.CASCADE)
+    user = models.OneToOneField("accounts.User", verbose_name="Usuário", on_delete=models.CASCADE, related_name="employee")
     contract_type = models.CharField("Tipo de Contrato", max_length=1, choices=(("C", "CLT"), ("P", "PJ")),blank=True, null=True)
     branch = models.ForeignKey("accounts.Branch", verbose_name="Unidade", on_delete=models.CASCADE, blank=True, null=True)
     department = models.ForeignKey("accounts.Department", verbose_name="Departamento", on_delete=models.CASCADE, blank=True, null=True)

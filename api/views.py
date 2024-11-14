@@ -447,7 +447,7 @@ class LeadViewSet(BaseModelViewSet):
     filter_fields = '__all__'
 
 
-class LeadTaskViewSet(BaseModelViewSet):
+class LeadTaskViewSet(BaseModelViewSet): 
     queryset = LeadTask.objects.all()
     serializer_class = LeadTaskSerializer
 
@@ -483,11 +483,16 @@ class GeneratePreSaleView(APIView):
 
         if not lead_id:
             return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not products:
+            return Response({'message': 'products é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             lead = Lead.objects.get(id=lead_id)
         except Lead.DoesNotExist:
             return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        print("Infos do lead", lead.seller.employee)
         
         if not lead.first_document:
             return Response({'message': 'Lead não possui documento cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -533,7 +538,7 @@ class GeneratePreSaleView(APIView):
         lead.customer = customer
         lead.save()
 
-        products = []
+        products_ = []
         total_value = 0
 
         for product in products:
@@ -543,8 +548,8 @@ class GeneratePreSaleView(APIView):
                 product_serializer = ProductSerializer(data=product)
                 if product_serializer.is_valid():
                     new_product = product_serializer.save()
-                    products.append(new_product)
-
+                    products_.append(new_product)
+ 
                     # Calcular o valor do produto com base nos materiais associados
                     product_value = self.calculate_product_value(new_product)
                     total_value += product_value
@@ -554,7 +559,7 @@ class GeneratePreSaleView(APIView):
                 # Capturar produto existente
                 try:
                     existing_product = Product.objects.get(id=product['id'])
-                    products.append(existing_product)
+                    products_.append(existing_product)
 
                     # Calcular o valor do produto com base nos materiais associados
                     product_value = self.calculate_product_value(existing_product)
@@ -573,7 +578,8 @@ class GeneratePreSaleView(APIView):
                 'seller_id': lead.seller.id,
                 'sales_supervisor_id': lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None,
                 'sales_manager_id': lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None,
-                'total_value': total_value,
+                'total_value': round(total_value, 3),
+                'products_ids': [product.id for product in products_]
             }
             sale_serializer = SaleSerializer(data=sale_data)
             if sale_serializer.is_valid():
@@ -585,7 +591,7 @@ class GeneratePreSaleView(APIView):
             return Response({'message': 'Erro ao criar pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Vinculação dos products ao projeto usando Serializer
-        for product in products:
+        for product in products_:
             project_data = {
                 'sale_id': pre_sale.id,
                 'status': 'P',
@@ -614,20 +620,20 @@ class GeneratePreSaleView(APIView):
             'pre_sale_id': pre_sale.id
         }, status=status.HTTP_200_OK)
     
-        def calculate_product_value(product):
-            """
-            Função para calcular o valor total do produto com base no valor do próprio produto
-            e dos materiais associados.
-            """
-            product_value = product.product_value
+    def calculate_product_value(self, product):
+        """
+        Função para calcular o valor total do produto com base no valor do próprio produto
+        e dos materiais associados.
+        """
+        product_value = product.product_value
 
-            # Somar o custo dos materiais associados ao produto
-            associated_materials = ProductMaterials.objects.filter(product=product, is_deleted=False)
-            for item in associated_materials:
-                material_cost = item.material.price * item.amount
-                product_value += material_cost
+        # Somar o custo dos materiais associados ao produto
+        associated_materials = ProductMaterials.objects.filter(product=product, is_deleted=False)
+        for item in associated_materials:
+            material_cost = item.material.price * item.amount
+            product_value += material_cost
 
-            return product_value
+        return product_value
 
 
 # Contracts views
