@@ -75,13 +75,19 @@ class SituationEnergyCompany(models.Model):
 
 
 class Units(models.Model):
+    TYPE_CHOICES = [
+        ("M", "Monofásico"),
+        ("B", "Bifásico"),
+        ("T", "Trifásico"),
+    ]
+    
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True, related_name="units")
     name = models.CharField("Nome", max_length=200, null=True, blank=True)
     supply_adquance = models.ManyToManyField("SupplyAdequance", verbose_name="Adequação de Fornecimento", blank=True)
     main_unit = models.BooleanField("Geradora", default=False)
     unit_percentage = models.DecimalField("Porcentagem de Rateio", max_digits=10, decimal_places=2, null=True, blank=True)
     address = models.ForeignKey("accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", null=True, blank=True)
-    type = models.CharField("Tipo de Fornecimento", max_length=100, null=True, blank=True)
+    type = models.CharField("Tipo de Fornecimento", max_length=100, null=True, blank=True, choices=TYPE_CHOICES)
     unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
     #Trocar nome para meter_number
     account_number = models.CharField("Número do medidor", max_length=100, null=True, blank=True)
