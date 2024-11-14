@@ -26,7 +26,7 @@ class LeadSerializer(BaseSerializer):
     seller = RelatedUserSerializer(read_only=True, allow_null=True)
     sdr = RelatedUserSerializer(read_only=True, allow_null=True)
     addresses = AddressSerializer(many=True, read_only=True)
-    column = ColumnSerializer(read_only=True)
+    # column = ColumnSerializer(read_only=True)
     origin = OriginSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
