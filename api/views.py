@@ -461,10 +461,154 @@ class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
 
+    def create(self, request, *args, **kwargs):
+        # Prioridade: products_data > products_ids
+        products_data = request.data.get('products_data')
+        products_ids = request.data.get('products_ids') if not products_data else []
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        proposal = serializer.save()
+
+        # Caso `products_data` seja fornecido, ele terá prioridade
+        if products_data:
+            for product_data in products_data:
+                try:
+                    product = Product.objects.get(id=product_data['id'])
+                    SaleProduct.objects.create(
+                        commercial_proposal=proposal,
+                        product=product,
+                        amount=product_data.get('amount', 1),
+                        value=product_data.get('value', product.product_value),
+                        reference_value=product.reference_value,
+                        cost_value=product.cost_value
+                    )
+                except Product.DoesNotExist:
+                    return Response({'message': f'Produto com ID {product_data["id"]} não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Se `products_data` não for fornecido, usar `products_ids`
+        elif products_ids:
+            for product_id in products_ids:
+                try:
+                    product = Product.objects.get(id=product_id)
+                    SaleProduct.objects.create(
+                        commercial_proposal=proposal,
+                        product=product,
+                        amount=1,
+                        value=product.product_value,
+                        reference_value=product.reference_value,
+                        cost_value=product.cost_value
+                    )
+                except Product.DoesNotExist:
+                    return Response({'message': f'Produto com ID {product_id} não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        # Extraindo os dados do request
+        data = request.data
+        print("Request data:", data)
+        commercial_proposal_id = data.get('commercial_proposal_id', None)
+        print("Commercial proposal ID:", commercial_proposal_id)
+
+        # Inicializando o serializer com os dados recebidos
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        print("Serializer valid data:", serializer.validated_data)
+
+        # Salvando a instância da venda
+        sale = serializer.save()
+        print("Sale instance created:", sale)
+        products_list = []
+
+        # Se há uma proposta comercial associada, reutilizar os produtos dela
+        if commercial_proposal_id:
+            try:
+                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+                print("Commercial proposal found:", commercial_proposal)
+                sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
+                print("Sale products found:", sale_products)
+                
+                if not sale_products.exists():
+                    print("No products associated with the commercial proposal.")
+                    return Response(
+                        {"detail": "Proposta comercial não possui produtos associados."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Verificando se algum produto já está vinculado a uma venda
+                if sale_products.filter(sale__isnull=False).exists():
+                    print("Commercial proposal already linked to a sale.")
+                    return Response(
+                        {"detail": "Proposta comercial já vinculada a uma venda."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Associando os produtos da proposta à venda
+                for sale_product in sale_products:
+                    products_list.append(sale_product)
+                    
+                    sale_product.sale = sale
+                    sale_product.save()
+                    print("Sale product linked to sale:", sale_product)
+            
+            except ComercialProposal.DoesNotExist:
+                print("Commercial proposal not found.")
+                return Response(
+                    {"detail": "Proposta comercial não encontrada."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        else:
+            # Caso contrário, associar os produtos enviados diretamente
+            products_ids = data.get('products_ids', [])
+            print("Products IDs:", products_ids)
+            for product_id in products_ids:
+                try:    
+                    product = Product.objects.get(id=product_id)
+                    sale_product = SaleProduct.objects.create(
+                        sale=sale,
+                        product=product,
+                        amount=1,  # Ajuste de acordo com sua necessidade
+                        value=product.product_value,
+                        reference_value=product.reference_value,
+                        cost_value=product.cost_value
+                    )
+                    products_list.append(sale_product)
+                    print("Product linked to sale:", product)
+                except Product.DoesNotExist:
+                    print(f"Product with ID {product_id} not found.")
+                    return Response(
+                        {"detail": f"Produto com ID {product_id} não encontrado."}, 
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+        if sale.total_value is None or sale.total_value == 0:
+            try: 
+                total_value = self.calculate_total_value(products_list)
+                sale.total_value = total_value
+                sale.save()
+            except Exception as e:
+                print(f"Error calculating total value: {str(e)}")
+                return Response(
+                    {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        # Retornando a resposta com os dados da nova venda criada
+        headers = self.get_success_headers(serializer.data)
+        print("Response headers:", headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def calculate_total_value(self, sales_products):
+        total_value = 0
+        for sales_product in sales_products:
+            total_value += sales_product.value * sales_product.amount
+        return total_value
 
 
 class ProjectViewSet(BaseModelViewSet):
@@ -479,20 +623,29 @@ class GeneratePreSaleView(APIView):
     def post(self, request):
         lead_id = request.data.get('lead_id')
         products = request.data.get('products')
+        commercial_proposal_id = request.data.get('commercial_proposal_id')
         # payment_data = request.data.get('payment')
 
         if not lead_id:
             return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if not products:
-            return Response({'message': 'products é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not products and not commercial_proposal_id:
+            return Response({'message': 'É obrigatório possuir um produto ou uma Proposta Comercial.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        if commercial_proposal_id and products:
+            return Response({'message': 'commercial_proposal_id e products são mutuamente exclusivos.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if commercial_proposal_id:
+            try:
+                comercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+            except ComercialProposal.DoesNotExist:
+                return Response({'message': 'Proposta Comercial não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             lead = Lead.objects.get(id=lead_id)
         except Lead.DoesNotExist:
             return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        print("Infos do lead", lead.seller.employee)
         
         if not lead.first_document:
             return Response({'message': 'Lead não possui documento cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -539,33 +692,33 @@ class GeneratePreSaleView(APIView):
         lead.save()
 
         products_ = []
-        total_value = 0
-
-        for product in products:
-            # Verificar se é um novo produto ou um existente
-            if 'id' not in product:
-                # Criar novo produto
-                product_serializer = ProductSerializer(data=product)
-                if product_serializer.is_valid():
-                    new_product = product_serializer.save()
-                    products_.append(new_product)
- 
-                    # Calcular o valor do produto com base nos materiais associados
-                    product_value = self.calculate_product_value(new_product)
-                    total_value += product_value
+        total_value = comercial_proposal.value if commercial_proposal_id else 0
+        if products:
+            for product in products:
+                # Verificar se é um novo produto ou um existente
+                if 'id' not in product:
+                    # Criar novo produto
+                    product_serializer = ProductSerializer(data=product)
+                    if product_serializer.is_valid():
+                        new_product = product_serializer.save()
+                        products_.append(new_product)
+    
+                        # Calcular o valor do produto com base nos materiais associados
+                        product_value = self.calculate_product_value(new_product)
+                        total_value += product_value
+                    else:
+                        return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Capturar produto existente
-                try:
-                    existing_product = Product.objects.get(id=product['id'])
-                    products_.append(existing_product)
+                    # Capturar produto existente
+                    try:
+                        existing_product = Product.objects.get(id=product['id'])
+                        products_.append(existing_product)
 
-                    # Calcular o valor do produto com base nos materiais associados
-                    product_value = self.calculate_product_value(existing_product)
-                    total_value += product_value
-                except Product.DoesNotExist:
-                    return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                        # Calcular o valor do produto com base nos materiais associados
+                        product_value = self.calculate_product_value(existing_product)
+                        total_value += product_value
+                    except Product.DoesNotExist:
+                        return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Criação da pré-venda usando Serializer
@@ -579,30 +732,61 @@ class GeneratePreSaleView(APIView):
                 'sales_supervisor_id': lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None,
                 'sales_manager_id': lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None,
                 'total_value': round(total_value, 3),
-                'products_ids': [product.id for product in products_]
+                # **({'commercial_proposal_id': commercial_proposal_id} if commercial_proposal_id else {}),
+                **({'products_ids': [product.id for product in products_]} if products else {})
             }
             sale_serializer = SaleSerializer(data=sale_data)
             if sale_serializer.is_valid():
                 pre_sale = sale_serializer.save()
+                
+                if commercial_proposal_id:
+                    try:
+                        salesproduct = SaleProduct.objects.filter(commercial_proposal_id=commercial_proposal_id)
+                        print(salesproduct)
+                        
+                        for saleproduct in salesproduct:
+                            if saleproduct.sale_id:
+                                return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'}, status=status.HTTP_400_BAD_REQUEST)
+                            
+                            saleproduct.sale_id = pre_sale.id
+                            saleproduct.save()
+                            
+                            project_data = {
+                                'sale_id': pre_sale.id,
+                                'status': 'P',
+                                'product_id': saleproduct.product.id,
+                                'addresses_ids': [address.id for address in lead.addresses.all()]
+                            }
+                            project_serializer = ProjectSerializer(data=project_data)
+                            if project_serializer.is_valid():
+                                project = project_serializer.save()
+                            else:
+                                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                            
+                    except Exception as e:
+                        logger.error(f'Erro ao vincular produtos da proposta comercial à pré-venda: {str(e)}')
+                        return Response({'message': 'Erro ao vincular produtos da proposta comercial à pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
             else:
                 return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(f'Erro ao criar pré-venda: {str(e)}')
             return Response({'message': 'Erro ao criar pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        # Vinculação dos products ao projeto usando Serializer
-        for product in products_:
-            project_data = {
-                'sale_id': pre_sale.id,
-                'status': 'P',
-                'product_id': product.id,
-                'addresses_ids': [address.id for address in lead.addresses.all()]
-            }
-            project_serializer = ProjectSerializer(data=project_data)
-            if project_serializer.is_valid():
-                project = project_serializer.save()
-            else:
-                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if products:
+            # Vinculação dos products ao projeto usando Serializer
+            for product in products_:
+                project_data = {
+                    'sale_id': pre_sale.id,
+                    'status': 'P',
+                    'product_id': product.id,
+                    'addresses_ids': [address.id for address in lead.addresses.all()]
+                }
+                project_serializer = ProjectSerializer(data=project_data)
+                if project_serializer.is_valid():
+                    project = project_serializer.save()
+                else:
+                    return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Criação do pagamento usando Serializer
         """
@@ -619,6 +803,7 @@ class GeneratePreSaleView(APIView):
             'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
             'pre_sale_id': pre_sale.id
         }, status=status.HTTP_200_OK)
+    
     
     def calculate_product_value(self, product):
         """

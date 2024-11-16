@@ -19,9 +19,10 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(ComercialProposal)
 class ComercialProposalAdmin(admin.ModelAdmin):
-    list_display = ("lead", "due_date", "value", "status", "created_by", "created_at")
+    list_display = ("id", "lead", "due_date", "value", "status", "created_by", "created_at")
     search_fields = ("lead__name", "status", "created_by__username")
     list_filter = ("status", "due_date", "created_at")
+    inlines = [SaleProductInline]
 
 
 @admin.register(Sale)

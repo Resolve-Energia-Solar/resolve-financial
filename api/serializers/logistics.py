@@ -104,6 +104,9 @@ class ProductSerializer(BaseSerializer):
 
 class SaleProductSerializer(BaseSerializer):
     product = ProductSerializer(read_only=True)
+    
+    product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
+    
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
         fields = '__all__'
