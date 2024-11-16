@@ -16,6 +16,7 @@ class EnergyCompany(models.Model):
     class Meta:
         verbose_name = "Distribuidora de Energia"
         verbose_name_plural = "Distribuidoras de Energia"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name
@@ -30,6 +31,7 @@ class ResquestType(models.Model):
     class Meta:
         verbose_name = "Tipo de Solicitação"
         verbose_name_plural = "Tipos de Solicitação"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name
@@ -55,6 +57,7 @@ class RequestsEnergyCompany(models.Model):
     class Meta:
         verbose_name = "Solicitação da Concessionária de Energia"
         verbose_name_plural = "Solicitações da Concessionárias de Energia"
+        ordering = ["-request_date"]
     
     def __str__(self):
         return self.company.name
@@ -69,6 +72,7 @@ class SituationEnergyCompany(models.Model):
     class Meta:
         verbose_name = "Situação da Concessionária de Energia"
         verbose_name_plural = "Situações da Concessionária de Energia"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name
@@ -120,6 +124,7 @@ class SupplyAdequance(models.Model):
     class Meta:
         verbose_name = "Adequação de Fornecimento"
         verbose_name_plural = "Adequações de Fornecimento"
+        ordering = ["name"]
         
     def __str__(self):
         return self.name

@@ -257,6 +257,7 @@ class Task(models.Model):
     class Meta:
         verbose_name = "Tarefa do Lead"
         verbose_name_plural = "Tarefas do Lead"
+        ordering = ['-created_at']
 
 
 class Attachment(models.Model):
@@ -315,6 +316,7 @@ class Contact(models.Model):
     class Meta:
         verbose_name = "Contato"
         verbose_name_plural = "Contatos"
+        ordering = ['-sent_at']
 
 
 class MarketingCampaign(models.Model):
@@ -352,6 +354,7 @@ class ContractSubmission(models.Model):
     class Meta:
         verbose_name = "Envio de Contrato"
         verbose_name_plural = "Envios de Contrato"
+        ordering = ['-submit_datetime']
 
 
 class ComercialProposal(models.Model):
