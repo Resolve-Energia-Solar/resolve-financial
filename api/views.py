@@ -22,6 +22,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.models import User
+from api.serializers.contracts import DocumentSubTypeSerializer
+from inspections.models import Category, Service
 from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
 from financial.models import Payment, PaymentInstallment
 from inspections.models import Category, Service
@@ -34,6 +36,7 @@ from .serializers.engineering import *
 from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .serializers.inspections import *
+from .serializers.contracts import *
 from .utils import extract_data_from_pdf
 
 
@@ -1161,4 +1164,15 @@ class ResquestTypeViewSet(BaseModelViewSet):
 class SituationEnergyCompanyViewSet(BaseModelViewSet):
     queryset = SituationEnergyCompany.objects.all()
     serializer_class = SituationEnergyCompanySerializer
+    
+
+class DocumentTypeViewSet(BaseModelViewSet):
+    queryset = DocumentType.objects.all()
+    serializer_class = DocumentTypeSerializer
+    
+
+class DocumentSubTypeViewSet(BaseModelViewSet):
+    queryset = DocumentSubType.objects.all()
+    serializer_class = DocumentSubTypeSerializer
+    
     

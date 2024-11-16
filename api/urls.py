@@ -51,6 +51,8 @@ router.register('employees', EmployeeViewSet, basename='employee')
 router.register('supply-adequances', SupplyAdequanceViewSet, basename='supply-adequance')
 router.register('situation-energy-companies', SituationEnergyCompanyViewSet, basename='situation-energy-company')
 router.register('resquest-types', ResquestTypeViewSet, basename='resquest-type')
+router.register('document-types', DocumentTypeViewSet, basename='document-type')
+router.register('document-subtypes', DocumentSubTypeViewSet, basename='document-subtype')
 
 
 schema_view = get_schema_view(

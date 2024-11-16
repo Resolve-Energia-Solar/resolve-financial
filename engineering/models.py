@@ -105,6 +105,7 @@ class Units(models.Model):
     class Meta:
         verbose_name = "Unidade"
         verbose_name_plural = "Unidades"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name or "Unidade sem nome"
