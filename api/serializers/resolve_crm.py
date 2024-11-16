@@ -58,10 +58,23 @@ class LeadTaskSerializer(BaseSerializer):
         fields = '__all__'
 
 
+class DocumentSubType(BaseSerializer):
+    class Meta:
+        model = DocumentSubType
+        fields = '__all__'
+
+class DocumentTypeSerializer(BaseSerializer):
+    subtypes = DocumentSubType(many=True, read_only=True)
+    class Meta:
+        model = DocumentType
+        fields = '__all__'
+
+
 class AttachmentSerializer(BaseSerializer):
     
     # Para leitura: usar serializadores completos
     content_type = ContentTypeSerializer(read_only=True)
+    document_type = DocumentTypeSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
