@@ -32,17 +32,20 @@ class PaymentInstallmentSerializer(BaseSerializer):
 
 
 
+from datetime import datetime
+from rest_framework import serializers
+
 class PaymentSerializer(BaseSerializer):
     sale = SaleSerializer(read_only=True)
     financier = FinancierSerializer(read_only=True)
     installments = PaymentInstallmentSerializer(many=True, required=False)
 
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
+    sale_id = serializers.PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    financier_id = serializers.PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
-    is_paid = SerializerMethodField()
-    total_paid = SerializerMethodField()
-    percentual_paid = SerializerMethodField()
+    is_paid = serializers.SerializerMethodField()
+    total_paid = serializers.SerializerMethodField()
+    percentual_paid = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -58,14 +61,15 @@ class PaymentSerializer(BaseSerializer):
         return obj.percentual_paid
 
     @transaction.atomic
-    def create(self, raw_data):
-        raw_data = self.initial_data
+    def create(self, validated_data):
+        # Extrair e remover os dados das parcelas antes de salvar o pagamento
+        installments_data = validated_data.pop('installments', None)
 
-        installments_data = raw_data.pop('installments', None)
-        
-        instance = super().create(raw_data)
+        # Criar a instância de Payment usando os dados validados
+        instance = super().create(validated_data)
 
-        if installments_data is not None:
+        # Se houver dados de parcelas, criar as parcelas associadas
+        if installments_data:
             for installment_data in installments_data:
                 installment_data.pop('payment', None)
                 PaymentInstallment.objects.create(payment=instance, **installment_data)
@@ -73,19 +77,17 @@ class PaymentSerializer(BaseSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance, raw_data):
-        raw_data = self.initial_data
+    def update(self, instance, validated_data):
+        installments_data = validated_data.pop('installments', None)
 
-        installments_data = raw_data.pop('installments', None)
-        
-        # Atualiza a instância de Payment
-        instance = super().update(instance, raw_data)
+        # Atualizar a instância de Payment
+        instance = super().update(instance, validated_data)
 
         if installments_data is not None:
             existing_installment_ids = [inst.id for inst in instance.installments.all()]
             new_installment_ids = [inst.get('id') for inst in installments_data if inst.get('id')]
 
-            # Delete installments that are not in the new installments data
+            # Deletar parcelas que não estão mais presentes nos novos dados
             for installment_id in existing_installment_ids:
                 if installment_id not in new_installment_ids:
                     PaymentInstallment.objects.filter(id=installment_id).delete()
@@ -93,18 +95,15 @@ class PaymentSerializer(BaseSerializer):
             for installment_data in installments_data:
                 installment_id = installment_data.get('id', None)
                 
-                # Remover 'payment' do installment_data para evitar duplicidade
                 installment_data.pop('payment', None)
-                
+
                 if installment_id:
-                    # Atualiza a parcela existente ou cria uma nova, se não existir
                     PaymentInstallment.objects.update_or_create(
                         id=installment_id,
                         payment=instance,
                         defaults=installment_data
                     )
                 else:
-                    # Criar nova parcela se o ID não for fornecido
                     PaymentInstallment.objects.create(payment=instance, **installment_data)
 
         return instance

@@ -1,11 +1,18 @@
 import logging
+from datetime import datetime
+
 import requests
-from django.db.models import Q
 from django.db import transaction
-from rest_framework.exceptions import ValidationError
+from django.db.models import Case, Q, Value, When, FloatField, IntegerField
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime, parse_time
+from django_filters.rest_framework import DjangoFilterBackend
+from geopy.distance import geodesic
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,11 +20,11 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-from django.utils.dateparse import parse_datetime, parse_time
+
 from accounts.models import User
-from inspections.models import Category, Service
 from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
 from financial.models import Payment, PaymentInstallment
+from inspections.models import Category, Service
 from resolve_crm.models import *
 from resolve_crm.models import Task as LeadTask
 from .serializers.accounts import UserSerializer
@@ -28,11 +35,6 @@ from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .serializers.inspections import *
 from .utils import extract_data_from_pdf
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
-from geopy.distance import geodesic
-from django.db.models import Case, When, Value, FloatField, IntegerField
-from rest_framework.decorators import action
 
 
 logger = logging.getLogger(__name__)
@@ -222,7 +224,7 @@ class UserViewSet(ModelViewSet):
         if first_document:
             queryset = queryset.filter(first_document__icontains=first_document)
         if second_document:
-            queryset = queryset.filter(second_document__icontains=second_Jdocument)
+            queryset = queryset.filter(second_document__icontains=second_document)
         if category:
             queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
 
@@ -1083,13 +1085,24 @@ class PaymentViewSet(BaseModelViewSet):
     serializer_class = PaymentSerializer
 
     def perform_create(self, serializer):
-        instance = serializer.save()
-        create_installments = self.request.data.get('create_installments', False)
-        if create_installments:
-            self.create_installments(instance)
+        # Remover os campos que não pertencem ao modelo antes de salvar
+        create_installments = self.request.data.pop('create_installments', False)
+        
+        # Converter 'installments_number' para um inteiro
+        num_installments = int(self.request.data.pop('installments_number', 0) or 0)
 
-    def create_installments(self, payment):
-        num_installments = self.request.data.get('installments_number', False)
+        # Salvar o objeto Payment
+        instance = serializer.save()
+
+        # Criar parcelas se solicitado
+        if create_installments and num_installments > 0:
+            self.create_installments(instance, num_installments)
+
+    def create_installments(self, payment, num_installments):
+        # Garantir que due_date seja um objeto datetime
+        if isinstance(payment.due_date, str):
+            payment.due_date = datetime.strptime(payment.due_date, '%Y-%m-%d')
+
         installment_amount = payment.value / num_installments
 
         for i in range(num_installments):
@@ -1148,5 +1161,4 @@ class ResquestTypeViewSet(BaseModelViewSet):
 class SituationEnergyCompanyViewSet(BaseModelViewSet):
     queryset = SituationEnergyCompany.objects.all()
     serializer_class = SituationEnergyCompanySerializer
-    
     
