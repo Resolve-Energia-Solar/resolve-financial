@@ -25,7 +25,7 @@ from accounts.models import User
 from api.serializers.contracts import DocumentSubTypeSerializer
 from inspections.models import Category, Service
 from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
-from financial.models import Payment, PaymentInstallment
+from financial.models import Financier, Payment, PaymentInstallment
 from inspections.models import Category, Service
 from resolve_crm.models import *
 from resolve_crm.models import Task as LeadTask

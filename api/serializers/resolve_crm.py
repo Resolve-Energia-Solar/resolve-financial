@@ -1,19 +1,15 @@
 from django.forms import ValidationError
 from accounts.models import Address, User
-from api.serializers.core import ColumnSerializer
 from core.models import Column
 from engineering.models import Units
-from financial.models import Financier
 from resolve_crm.models import *
 from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers.accounts import BaseSerializer
-from api.serializers.logistics import MaterialsSerializer, ProductSerializer
+from api.serializers.logistics import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
-from django.db.models import OuterRef, Subquery
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
 from .logistics import ProjectMaterialsSerializer, SaleProductSerializer
-from .engineering import UnitsSerializer
-
+from .contracts import *
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -58,26 +54,17 @@ class LeadTaskSerializer(BaseSerializer):
         fields = '__all__'
 
 
-class DocumentSubType(BaseSerializer):
-    class Meta:
-        model = DocumentSubType
-        fields = '__all__'
-
-class DocumentTypeSerializer(BaseSerializer):
-    subtypes = DocumentSubType(many=True, read_only=True)
-    class Meta:
-        model = DocumentType
-        fields = '__all__'
-
-
 class AttachmentSerializer(BaseSerializer):
     
     # Para leitura: usar serializadores completos
     content_type = ContentTypeSerializer(read_only=True)
     document_type = DocumentTypeSerializer(read_only=True)
+    document_subtype = DocumentSubTypeSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
+    document_subtype_id = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), write_only=True, source='document_subtype', required=False)
     
     class Meta:
         model = Attachment
