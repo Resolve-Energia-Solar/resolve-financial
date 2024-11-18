@@ -867,6 +867,19 @@ class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+    def perform_create(self, serializer):
+        is_default = self.request.data.get('is_default', None)
+
+        # Verifica se `is_default` é `false`
+        if is_default is not None and not bool(is_default):
+            sale_id = self.request.data.get('sale_id', None)
+            if not sale_id:
+                raise serializers.ValidationError({"sale_id": "Este campo é obrigatório quando is_default é false."})
+        
+        # Salva o objeto usando o serializer
+        serializer.save()
+
+
 # Inspections views
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -1149,7 +1162,6 @@ class HistoryView(APIView):
             'history': list(history.values())
         }, status=status.HTTP_200_OK)
  
-
 
 class SupplyAdequanceViewSet(BaseModelViewSet):
     queryset = SupplyAdequance.objects.all()

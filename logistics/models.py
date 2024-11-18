@@ -98,10 +98,10 @@ class ProjectMaterials(models.Model):
 class SaleProduct(models.Model):
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", null=True, blank=True)
     commercial_proposal = models.ForeignKey("resolve_crm.ComercialProposal", on_delete=models.CASCADE, verbose_name="Proposta Comercial", null=True, blank=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="product de Energia Solar", related_name="sales", null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto", related_name="sales", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=1, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)

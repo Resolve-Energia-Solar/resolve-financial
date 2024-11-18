@@ -2,11 +2,12 @@ from accounts.models import Branch
 from inspections.models import RoofType
 from logistics.models import *
 from api.serializers.accounts import BaseSerializer
+from resolve_crm.models import Project, Sale
 from .accounts import BranchSerializer
 from .inspections import RoofTypeSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework import serializers
-
+from django.db import transaction
 
 
 class MaterialAttributesSerializer(BaseSerializer):
@@ -60,19 +61,23 @@ class ProductSerializer(BaseSerializer):
         child=serializers.IntegerField(),
         write_only=True
     )
+    sale_id = serializers.IntegerField(write_only=True, required=True)
 
     class Meta(BaseSerializer.Meta):
         model = Product
-        fields = [
-            'id', 'name', 'description', 'product_value', 'reference_value', 
-            'cost_value', 'branch', 'branch_id', 'roof_type', 'roof_type_id', 
-            'materials', 'materials_ids'
-        ]
+        fields = '__all__'
 
+    @transaction.atomic
     def create(self, validated_data):
-        # Extraímos os IDs dos materiais antes de criar o produto
+        # Extraímos os IDs dos materiais e o sale_id antes de criar o produto
         materials_ids = validated_data.pop('materials_ids', [])
-        
+        sale_id = validated_data.pop('sale_id', None)
+
+        # Validação do sale_id
+        sale = Sale.objects.filter(id=sale_id).first()
+        if not sale:
+            raise serializers.ValidationError("Venda não encontrada.")
+
         # Criação do produto
         product = Product.objects.create(**validated_data)
 
@@ -82,12 +87,21 @@ class ProductSerializer(BaseSerializer):
             for material_id in materials_ids
         ])
 
+        # Criação do relacionamento com SaleProduct
+        self.create_sale_product(sale, product)
+
         return product
 
-
+    @transaction.atomic
     def update(self, instance, validated_data):
-        # Extraímos os IDs dos materiais antes de atualizar o produto
+        # Extraímos os IDs dos materiais e o sale_id antes de atualizar o produto
         materials_ids = validated_data.pop('materials_ids', [])
+        sale_id = validated_data.pop('sale_id', None)
+
+        # Validação do sale_id
+        sale = Sale.objects.filter(id=sale_id).first()
+        if not sale:
+            raise serializers.ValidationError("Venda não encontrada.")
 
         # Atualização do produto
         instance = super().update(instance, validated_data)
@@ -99,13 +113,41 @@ class ProductSerializer(BaseSerializer):
             for material_id in materials_ids
         ])
 
+        # Atualização do relacionamento com SaleProduct
+        self.create_sale_product(sale, instance)
+
         return instance
+
+    def create_sale_product(self, sale, product):
+        """Cria uma instância de SaleProduct associada à Sale e Product"""
+        # Usando o SaleProductSerializer corretamente
+        sale_product_serializer = SaleProductSerializer(
+            data={
+                'sale': sale.id,
+                'product': product.id,
+                'value': product.product_value,
+                'reference_value': product.reference_value,
+                'cost_value': product.cost_value,
+                'amount': 1
+            }
+        )
+
+        # Verificar se os dados são válidos antes de salvar
+        if sale_product_serializer.is_valid():
+            sale_product_serializer.save()
+        else:
+            raise serializers.ValidationError(sale_product_serializer.errors)
 
 
 class SaleProductSerializer(BaseSerializer):
+
+    # from .resolve_crm import SaleSerializer
+
     product = ProductSerializer(read_only=True)
+    # sale = SaleSerializer(read_only=True)
     
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
