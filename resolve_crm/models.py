@@ -7,6 +7,7 @@ from django.utils.timezone import now
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
+from financial.models import PaymentInstallment
 
 
 class Origin(models.Model):
@@ -402,6 +403,39 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    
+    @property
+    def can_generate_contract(self):
+        customer_data = True if self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document else False
+        value = 0
+        all_payments_have_borrower = True
+        
+        for payment in self.payments.all():
+            value += payment.value
+            if not payment.borrower:
+                all_payments_have_borrower = False
+                
+        payment_data = True if value == self.total_value and all_payments_have_borrower else False
+        
+        have_units = all(project.units.exists() for project in self.projects.all())
+        
+        print("customer_data", customer_data)
+        print("payment_data", payment_data)
+        print("have_units", have_units)
+        print("all_payments_have_borrower", all_payments_have_borrower)
+        
+        return bool(customer_data and payment_data and have_units and all_payments_have_borrower)
+    
+    @property
+    def total_paid(self):
+        total_paid = 0
+        installments = PaymentInstallment.objects.filter(payment__sale=self, is_paid=True)
+        for installment in installments:
+            total_paid += installment.value
+        return total_paid
+        
+            
 
     def attachments(self):
         return Attachment.objects.filter(
@@ -440,7 +474,7 @@ class Sale(models.Model):
 
 
 class Project(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
