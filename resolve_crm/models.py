@@ -359,7 +359,7 @@ class ContractSubmission(models.Model):
 
 
 class ComercialProposal(models.Model):
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="proposals")
     due_date = models.DateField("Prazo para aceitação", auto_now=False, auto_now_add=False)
     value = models.DecimalField("Valor da proposta", max_digits=20, decimal_places=2)
     token = models.UUIDField("Token", editable=False, default=uuid4)

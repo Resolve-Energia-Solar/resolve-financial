@@ -57,11 +57,14 @@ class ColumnSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     leads = ReadLeadSerializer(many=True, read_only=True)
     task = ReadTaskSerializer(many=True, read_only=True)
+    proposals_value = SerializerMethodField()
 
     class Meta:
         model = Column
         fields = '__all__'
 
+    def get_proposals_value(self, obj):
+        return obj.proposals_value
 
 class BoardSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos

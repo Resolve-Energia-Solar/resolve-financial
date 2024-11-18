@@ -13,7 +13,7 @@ class BoardAdmin(admin.ModelAdmin):
 
 @admin.register(Column)
 class ColumnAdmin(admin.ModelAdmin):
-    list_display = ("name", "position", "board")
+    list_display = ("name", "position", "board", "proposals_value")
 
 
 @admin.register(Task)

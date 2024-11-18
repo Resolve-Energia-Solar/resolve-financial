@@ -42,7 +42,11 @@ class Column(models.Model):
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-
+    
+    @property
+    def proposals_value(self):
+        return sum([proposal.value for lead in self.leads.all() for proposal in lead.proposals.all()])
+    
     def __str__(self):
         return self.name
 
