@@ -432,10 +432,8 @@ class Sale(models.Model):
         total_paid = 0
         installments = PaymentInstallment.objects.filter(payment__sale=self, is_paid=True)
         for installment in installments:
-            total_paid += installment.value
+            total_paid += installment.installment_value
         return total_paid
-        
-            
 
     def attachments(self):
         return Attachment.objects.filter(

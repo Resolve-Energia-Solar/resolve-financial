@@ -38,3 +38,8 @@ class PaymentInstallmentAdmin(admin.ModelAdmin):
             installment.save()
         self.message_user(request, "Parcelas selecionadas foram marcadas como pagas.")
     mark_as_paid.short_description = "Marcar parcelas selecionadas como pagas"
+
+
+class PaymentInline(admin.StackedInline):
+    model = Payment
+    extra = 1
