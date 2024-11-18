@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from financial.admin import PaymentInline
 from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
@@ -27,8 +29,8 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("total_value", "contract_number")
-    inlines = [SaleProductInline]
+    list_display = ("total_value", "contract_number", "can_generate_contract", "total_paid", "created_at")
+    inlines = [SaleProductInline, PaymentInline]
 
 
 @admin.register(Task)

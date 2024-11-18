@@ -93,6 +93,8 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     missing_documents = SerializerMethodField()
     sale_products = SaleProductSerializer(source='saleproduct_set', many=True, read_only=True)
+    can_generate_contract = SerializerMethodField()
+    total_paid = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -110,6 +112,12 @@ class SaleSerializer(BaseSerializer):
 
     def get_missing_documents(self, obj):
         return obj.missing_documents()
+    
+    def get_can_generate_contract(self, obj):
+        return obj.can_generate_contract()
+    
+    def get_total_paid(self, obj):
+        return obj.total_paid
 
     # def create(self, validated_data):
     #     products_ids = validated_data.pop('products_ids', [])
@@ -161,6 +169,7 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    
 
     # Para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=False)
