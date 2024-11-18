@@ -420,12 +420,7 @@ class Sale(models.Model):
         
         have_units = all(project.units.exists() for project in self.projects.all())
         
-        print("customer_data", customer_data)
-        print("payment_data", payment_data)
-        print("have_units", have_units)
-        print("all_payments_have_borrower", all_payments_have_borrower)
-        
-        return bool(customer_data and payment_data and have_units and all_payments_have_borrower)
+        return customer_data and payment_data and have_units and all_payments_have_borrower
     
     @property
     def total_paid(self):
