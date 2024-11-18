@@ -2,6 +2,7 @@ import decimal
 from django.db import models
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
+from django.contrib.auth import get_user_model
 
 
 class Financier(models.Model):
@@ -39,7 +40,7 @@ class Payment(models.Model):
         ("P", "Pendente"),
         ("C", "Cancelada"),
     ]
-
+    borrower = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador")
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="payments")
     value = models.DecimalField("Valor", max_digits=20, decimal_places=6, default=0.000000)
     payment_type = models.CharField("Tipo de Pagamento", choices=TYPE_CHOICES, max_length=2)
