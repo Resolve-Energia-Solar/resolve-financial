@@ -1,12 +1,11 @@
 import logging
 from datetime import datetime
 
-import requests
 from django.db import transaction
-from django.db.models import Case, Q, Value, When, FloatField, IntegerField
-from django.urls import reverse
+from django.db.models import Case, Q, Value, When, FloatField, IntegerField, ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime, parse_time
+from django.utils.dateparse import parse_time
 from django_filters.rest_framework import DjangoFilterBackend
 from geopy.distance import geodesic
 from rest_framework import status
@@ -1203,7 +1202,7 @@ class PaymentInstallmentViewSet(BaseModelViewSet):
 class HistoryView(APIView):
     http_method_names = ['get']
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         content_type_id = request.data.get('content_type')
         object_id = request.data.get('object_id')
 
@@ -1212,19 +1211,60 @@ class HistoryView(APIView):
                 'message': 'content_type e object_id são obrigatórios.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            content_type = ContentType.objects.get(id=content_type_id)
-        except ContentType.DoesNotExist:
+        # Busca o ContentType ou retorna 404 se não encontrado
+        content_type = get_object_or_404(ContentType, id=content_type_id)
+        model_class = content_type.model_class()
+        
+        # Verifica se o model possui histórico
+        if not hasattr(model_class, 'history'):
             return Response({
-                'message': 'ContentType não encontrado.'
+                'message': 'O modelo não possui histórico.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        history = content_type.model_class().history.filter(id=object_id)
+        try:
+            # Busca o histórico para o objeto específico
+            history = model_class.history.filter(id=object_id)
+            if not history.exists():
+                return Response({
+                    'message': 'Histórico não encontrado para o objeto fornecido.'
+                }, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({
-            'history': list(history.values())
-        }, status=status.HTTP_200_OK)
- 
+            # Calcula as diferenças entre todas as versões consecutivas
+            changes = []
+            history_objects = list(history)
+
+            for i in range(len(history_objects) - 1):
+                new_record = history_objects[i]
+                old_record = history_objects[i + 1]
+                delta = new_record.diff_against(old_record)
+
+                if delta.changes:
+                    author_data = RelatedUserSerializer(new_record.history_user).data if new_record.history_user else {'username': 'Desconhecido'}
+                    changes.append({
+                        'version_diff': f"{i + 1} -> {i + 2}",
+                        'author': author_data,
+                        'timestamp': new_record.history_date,
+                        'history_type': new_record.history_type,
+                        'changes': [
+                            {'field': change.field, 'old': change.old, 'new': change.new}
+                            for change in delta.changes
+                        ]
+                    })
+
+            # Retornar somente as mudanças
+            return Response({
+                'changes': changes
+            }, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            return Response({
+                'message': 'Objeto não encontrado.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'message': f'Erro interno: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class SupplyAdequanceViewSet(BaseModelViewSet):
     queryset = SupplyAdequance.objects.all()
