@@ -441,7 +441,7 @@ class Sale(models.Model):
 
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda")
-    product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto")
+    product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     # Schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
