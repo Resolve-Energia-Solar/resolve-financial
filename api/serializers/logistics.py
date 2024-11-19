@@ -65,7 +65,7 @@ class ProductSerializer(BaseSerializer):
         write_only=True,
         required=False
     )
-    sale_id = serializers.IntegerField(write_only=True, required=False)
+    sale_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta(BaseSerializer.Meta):
         model = Product
