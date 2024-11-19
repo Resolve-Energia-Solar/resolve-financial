@@ -54,14 +54,18 @@ class ProductSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
     roof_type = RoofTypeSerializer(read_only=True)
 
-    # Para escrita: usar apenas IDs
+    # Para escrita: usar apenas IDs com quantidade
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     roof_type_id = PrimaryKeyRelatedField(queryset=RoofType.objects.all(), write_only=True, source='roof_type', required=False)
     materials_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True
+        child=serializers.DictField(
+            child=serializers.DecimalField(max_digits=20, decimal_places=6),
+            help_text="Lista de materiais com `id` e `amount`."
+        ),
+        write_only=True,
+        required=False
     )
-    sale_id = serializers.IntegerField(write_only=True, required=True)
+    sale_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta(BaseSerializer.Meta):
         model = Product
@@ -69,62 +73,80 @@ class ProductSerializer(BaseSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        # Extraímos os IDs dos materiais e o sale_id antes de criar o produto
-        materials_ids = validated_data.pop('materials_ids', [])
+        # Extraímos os materiais com quantidade
+        materials_data = validated_data.pop('materials_ids', [])
         sale_id = validated_data.pop('sale_id', None)
-
-        # Validação do sale_id
-        sale = Sale.objects.filter(id=sale_id).first()
-        if not sale:
-            raise serializers.ValidationError("Venda não encontrada.")
+        if sale_id:
+            # Validação do sale_id
+            sale = Sale.objects.filter(id=sale_id).first()
+            if not sale:
+                raise serializers.ValidationError("Venda não encontrada.")
 
         # Criação do produto
         product = Product.objects.create(**validated_data)
 
         # Criação das relações com ProductMaterials
-        ProductMaterials.objects.bulk_create([
-            ProductMaterials(product=product, material_id=material_id)
-            for material_id in materials_ids
-        ])
+        self.create_or_update_materials(product, materials_data)
 
         # Criação do relacionamento com SaleProduct
-        self.create_sale_product(sale, product)
+        if sale_id:
+            self.create_sale_product(sale, product)
 
         return product
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        # Extraímos os IDs dos materiais e o sale_id antes de atualizar o produto
-        materials_ids = validated_data.pop('materials_ids', [])
+        # Extraímos os materiais com quantidade
+        materials_data = validated_data.pop('materials_ids', [])
         sale_id = validated_data.pop('sale_id', None)
-
-        # Validação do sale_id
-        sale = Sale.objects.filter(id=sale_id).first()
-        if not sale:
-            raise serializers.ValidationError("Venda não encontrada.")
+        
+        if sale_id:
+            # Validação do sale_id
+            sale = Sale.objects.filter(id=sale_id).first()
+            if not sale:
+                raise serializers.ValidationError("Venda não encontrada.")
 
         # Atualização do produto
         instance = super().update(instance, validated_data)
 
         # Atualização das relações com ProductMaterials
-        instance.materials.clear()
-        ProductMaterials.objects.bulk_create([
-            ProductMaterials(product=instance, material_id=material_id)
-            for material_id in materials_ids
-        ])
+        self.create_or_update_materials(instance, materials_data)
 
         # Atualização do relacionamento com SaleProduct
-        self.create_sale_product(sale, instance)
+        if sale_id:
+            self.create_sale_product(sale, instance)
 
         return instance
 
+    def create_or_update_materials(self, product, materials_data):
+        """
+        Cria ou atualiza as relações na tabela intermediária ProductMaterials
+        com base nos materiais e suas quantidades fornecidas.
+        """
+        for material_data in materials_data:
+            material_id = material_data.get('id')
+            amount = material_data.get('amount')
+
+            if not material_id or amount is None:
+                raise serializers.ValidationError("Cada material deve ter `id` e `amount`.")
+
+            material = Materials.objects.filter(id=material_id).first()
+            if not material:
+                raise serializers.ValidationError(f"Material com ID {material_id} não encontrado.")
+
+            # Atualizar ou criar o relacionamento na tabela intermediária
+            ProductMaterials.objects.update_or_create(
+                product=product,
+                material=material,
+                defaults={'amount': amount}
+            )
+
     def create_sale_product(self, sale, product):
         """Cria uma instância de SaleProduct associada à Sale e Product"""
-        # Usando o SaleProductSerializer corretamente
         sale_product_serializer = SaleProductSerializer(
             data={
-                'sale': sale.id,
-                'product': product.id,
+                'sale_id': sale.id,
+                'product_id': product.id,
                 'value': product.product_value,
                 'reference_value': product.reference_value,
                 'cost_value': product.cost_value,
@@ -137,7 +159,6 @@ class ProductSerializer(BaseSerializer):
             sale_product_serializer.save()
         else:
             raise serializers.ValidationError(sale_product_serializer.errors)
-
 
 class SaleProductSerializer(BaseSerializer):
 
