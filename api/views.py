@@ -96,12 +96,12 @@ class BaseModelViewSet(ModelViewSet):
     def filterset_fields(self):
         model = self.get_queryset().model
         exclude_field_types = ['ImageField', 'FileField']
-        supported_lookups = ['CharField', 'TextField', 'ForeignKey', 'DateField', 'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField', 'DecimalField', 'ManyToManyField']
+        supported_lookups = ['CharField', 'TextField', 'ForeignKey', 'DateField', 'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField', 'DecimalField', 'ManyToManyField', 'BooleanField']
     
         filter_fields = {}
         for field in model._meta.fields + model._meta.many_to_many:
             if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
-                if field.get_internal_type() == 'ForeignKey':
+                if field.get_internal_type() in ['ForeignKey', 'BooleanField']:
                     filter_fields[field.name] = ['exact']
                 elif field.get_internal_type() in ['CharField', 'TextField']:
                     filter_fields[field.name] = ['icontains', 'in']
