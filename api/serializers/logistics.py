@@ -45,7 +45,7 @@ class ProductMaterialsSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = ProductMaterials
-        fields = ['material', 'material_id', 'amount']
+        fields = ['material', 'material_id', 'amount', 'id']
 
 
 class ProductSerializer(BaseSerializer):
@@ -120,26 +120,54 @@ class ProductSerializer(BaseSerializer):
 
     def create_or_update_materials(self, product, materials_data):
         """
-        Cria ou atualiza as relações na tabela intermediária ProductMaterials
-        com base nos materiais e suas quantidades fornecidas.
+        Atualiza ou cria os materiais associados ao produto e remove os que não estão no payload.
         """
+        # Obter IDs de materiais existentes para o produto
+        existing_material_ids = set(ProductMaterials.objects.filter(product=product).values_list('id', flat=True))
+
+        # Obter IDs de materiais enviados no payload
+        payload_material_ids = set(material.get('id') for material in materials_data if material.get('id'))
+
+        # Identificar IDs que precisam ser removidos (existentes, mas não enviados no payload)
+        materials_to_remove = existing_material_ids - payload_material_ids
+
+        # Excluir materiais que não estão no payload
+        if materials_to_remove:
+            ProductMaterials.objects.filter(id__in=materials_to_remove).delete()
+
+        # Processar materiais enviados no payload
         for material_data in materials_data:
-            material_id = material_data.get('id')
-            amount = material_data.get('amount')
+            line_id = material_data.get('id')  # ID da linha intermediária
+            material_id = material_data.get('material_id')  # ID do material
+            amount = material_data.get('amount')  # Quantidade
 
             if not material_id or amount is None:
-                raise serializers.ValidationError("Cada material deve ter `id` e `amount`.")
+                raise serializers.ValidationError("Cada material deve ter `material_id` e `amount`.")
 
+            # Obter o material
             material = Materials.objects.filter(id=material_id).first()
             if not material:
                 raise serializers.ValidationError(f"Material com ID {material_id} não encontrado.")
 
-            # Atualizar ou criar o relacionamento na tabela intermediária
-            ProductMaterials.objects.update_or_create(
-                product=product,
-                material=material,
-                defaults={'amount': amount}
-            )
+            if line_id:
+                # Atualizar a linha intermediária existente
+                product_material = ProductMaterials.objects.filter(id=line_id, product=product).first()
+                if not product_material:
+                    raise serializers.ValidationError(f"Linha intermediária com ID {line_id} não encontrada para este produto.")
+
+                # Atualizar os valores da linha existente
+                product_material.material = material
+                product_material.amount = amount
+                product_material.save()
+            else:
+                # Criar uma nova linha intermediária
+                ProductMaterials.objects.create(
+                    product=product,
+                    material=material,
+                    amount=amount
+                )
+
+
 
     def create_sale_product(self, sale, product):
         """Cria uma instância de SaleProduct associada à Sale e Product"""
@@ -159,6 +187,7 @@ class ProductSerializer(BaseSerializer):
             sale_product_serializer.save()
         else:
             raise serializers.ValidationError(sale_product_serializer.errors)
+
 
 class SaleProductSerializer(BaseSerializer):
 
