@@ -50,7 +50,7 @@ class ProductMaterialsSerializer(BaseSerializer):
 
 class ProductSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
-    materials = ProductMaterialsSerializer(many=True, read_only=True)
+    # materials = ProductMaterialsSerializer(many=True, read_only=True)
     branch = BranchSerializer(read_only=True)
     roof_type = RoofTypeSerializer(read_only=True)
 
