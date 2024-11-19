@@ -1,5 +1,5 @@
 from accounts.models import Address
-from api.serializers.accounts import AddressSerializer, BaseSerializer
+from api.serializers.accounts import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from api.serializers.resolve_crm import SaleSerializer
 from financial.models import Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
@@ -39,13 +39,14 @@ class PaymentSerializer(BaseSerializer):
     sale = SaleSerializer(read_only=True)
     financier = FinancierSerializer(read_only=True)
     installments = PaymentInstallmentSerializer(many=True, required=False)
-
+    borrower = RelatedUserSerializer(read_only=True)
     sale_id = serializers.PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     financier_id = serializers.PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
     is_paid = serializers.SerializerMethodField()
     total_paid = serializers.SerializerMethodField()
     percentual_paid = serializers.SerializerMethodField()
+    borrower_id = serializers.PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='borrower')
 
     class Meta:
         model = Payment
