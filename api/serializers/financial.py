@@ -1,10 +1,9 @@
-from accounts.models import Address
+from accounts.models import Address, User
 from api.serializers.accounts import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from api.serializers.resolve_crm import SaleSerializer
 from financial.models import Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField
-
 from resolve_crm.models import Sale
 from django.db import transaction
 
@@ -30,23 +29,18 @@ class PaymentInstallmentSerializer(BaseSerializer):
         model = PaymentInstallment
         fields = '__all__'
 
-
-
-from datetime import datetime
-from rest_framework import serializers
-
 class PaymentSerializer(BaseSerializer):
     sale = SaleSerializer(read_only=True)
     financier = FinancierSerializer(read_only=True)
     installments = PaymentInstallmentSerializer(many=True, required=False)
     borrower = RelatedUserSerializer(read_only=True)
-    sale_id = serializers.PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = serializers.PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
-    is_paid = serializers.SerializerMethodField()
-    total_paid = serializers.SerializerMethodField()
-    percentual_paid = serializers.SerializerMethodField()
-    borrower_id = serializers.PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='borrower')
+    is_paid = SerializerMethodField()
+    total_paid = SerializerMethodField()
+    percentual_paid = SerializerMethodField()
+    borrower_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='borrower')
 
     class Meta:
         model = Payment
