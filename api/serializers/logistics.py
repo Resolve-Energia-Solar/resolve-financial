@@ -2,7 +2,7 @@ from accounts.models import Branch
 from inspections.models import RoofType
 from logistics.models import *
 from api.serializers.accounts import BaseSerializer
-from resolve_crm.models import Project, Sale
+from resolve_crm.models import ComercialProposal, Project, Sale
 from .accounts import BranchSerializer
 from .inspections import RoofTypeSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
@@ -66,6 +66,7 @@ class ProductSerializer(BaseSerializer):
         required=False
     )
     sale_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    commercial_proposal_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta(BaseSerializer.Meta):
         model = Product
@@ -76,11 +77,19 @@ class ProductSerializer(BaseSerializer):
         # Extraímos os materiais com quantidade
         materials_data = validated_data.pop('materials_ids', [])
         sale_id = validated_data.pop('sale_id', None)
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
         if sale_id:
             # Validação do sale_id
             sale = Sale.objects.filter(id=sale_id).first()
             if not sale:
                 raise serializers.ValidationError("Venda não encontrada.")
+        if commercial_proposal_id:
+            # Validação do commercial_proposal_id
+            try:
+                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+            except ComercialProposal.DoesNotExist:
+                raise serializers.ValidationError("Proposta comercial não encontrada.")
+            
 
         # Criação do produto
         product = Product.objects.create(**validated_data)
@@ -91,6 +100,9 @@ class ProductSerializer(BaseSerializer):
         # Criação do relacionamento com SaleProduct
         if sale_id:
             self.create_sale_product(sale, product)
+            
+        if commercial_proposal_id:
+            self.create_comercial_product(commercial_proposal, product)
 
         return product
 
@@ -99,6 +111,14 @@ class ProductSerializer(BaseSerializer):
         # Extraímos os materiais com quantidade
         materials_data = validated_data.pop('materials_ids', [])
         sale_id = validated_data.pop('sale_id', None)
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+        
+        if commercial_proposal_id:
+            # Validação do commercial_proposal_id
+            try:
+                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+            except ComercialProposal.DoesNotExist:
+                raise serializers.ValidationError("Proposta comercial não encontrada.")
         
         if sale_id:
             # Validação do sale_id
@@ -115,6 +135,9 @@ class ProductSerializer(BaseSerializer):
         # Atualização do relacionamento com SaleProduct
         if sale_id:
             self.create_sale_product(sale, instance)
+            
+        if commercial_proposal_id:
+            self.create_comercial_product(commercial_proposal, instance)
 
         return instance
 
@@ -167,6 +190,25 @@ class ProductSerializer(BaseSerializer):
                     amount=amount
                 )
 
+    
+    def create_comercial_product(self, proposal, product):
+        """Cria uma instância de ComercialProduct associada à ComercialProposal e Product"""
+        comercial_product_serializer = SaleProductSerializer(
+            data={
+                'commercial_proposal_id': proposal.id,
+                'product_id': product.id,
+                'value': product.product_value,
+                'reference_value': product.reference_value,
+                'cost_value': product.cost_value,
+                'amount': 1
+            }
+        )
+
+        # Verificar se os dados são válidos antes de salvar
+        if comercial_product_serializer.is_valid():
+            comercial_product_serializer.save()
+        else:
+            raise serializers.ValidationError(comercial_product_serializer.errors)
 
 
     def create_sale_product(self, sale, product):
@@ -194,14 +236,21 @@ class SaleProductSerializer(BaseSerializer):
     # from .resolve_crm import SaleSerializer
 
     product = ProductSerializer(read_only=True)
+    commercial_proposal = serializers.SerializerMethodField()
+    
     # sale = SaleSerializer(read_only=True)
     
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='commercial_proposal', required=False)
     
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
         fields = '__all__'
+        
+    def get_commercial_proposal(self, obj):
+        from api.serializers.resolve_crm import ComercialProposalSerializer
+        return ComercialProposalSerializer(obj.commercial_proposal).data
         
 
 class ProjectMaterialsSerializer(BaseSerializer):

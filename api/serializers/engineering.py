@@ -36,24 +36,6 @@ class ProjectReadSerializer(BaseSerializer):
         fields = '__all__'
 
 
-class RequestsEnergyCompanySerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    company = EnergyCompanySerializer(read_only=True)
-    project = ProjectReadSerializer(read_only=True)
-    type = ResquestTypeSerializer(read_only=True)
-    situation = SituationEnergyCompanySerializer(read_only=True, many=True)
-    
-    # Para escrita: usar apenas ID
-    company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
-    type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
-    situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
-
-    class Meta:
-        model = RequestsEnergyCompany
-        exclude = ['is_deleted']
-
-
 class SupplyAdequanceSerializer(BaseSerializer):
     class Meta:
         model = SupplyAdequance
@@ -72,3 +54,22 @@ class UnitsSerializer(BaseSerializer):
     class Meta:
         model = Units
         fields = '__all__'
+
+
+class RequestsEnergyCompanySerializer(BaseSerializer):
+    # Para leitura: usar serializador completo
+    company = EnergyCompanySerializer(read_only=True)
+    project = ProjectReadSerializer(read_only=True)
+    type = ResquestTypeSerializer(read_only=True)
+    situation = SituationEnergyCompanySerializer(read_only=True, many=True)
+    unit = UnitsSerializer(read_only=True)
+    
+    # Para escrita: usar apenas ID
+    company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
+    type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
+    situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
+
+    class Meta:
+        model = RequestsEnergyCompany
+        exclude = ['is_deleted']

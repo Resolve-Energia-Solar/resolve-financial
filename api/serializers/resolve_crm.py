@@ -15,6 +15,26 @@ class OriginSerializer(BaseSerializer):
     class Meta:
         model = Origin
         fields = '__all__'
+      
+        
+class ReadSalesSerializer(BaseSerializer):
+    missing_documents = SerializerMethodField()
+    can_generate_contract = SerializerMethodField()
+    total_paid = SerializerMethodField()
+
+    class Meta:
+        model = Sale
+        fields = ['id', 'total_value', 'status', 'total_paid', 'missing_documents', 'can_generate_contract']
+
+    def get_missing_documents(self, obj):
+        return obj.missing_documents()
+    
+    def get_can_generate_contract(self, obj):
+        return "true" if obj.can_generate_contract else "false"
+
+    
+    def get_total_paid(self, obj):
+        return obj.total_paid
 
  
 class LeadSerializer(BaseSerializer):
@@ -25,6 +45,9 @@ class LeadSerializer(BaseSerializer):
     addresses = AddressSerializer(many=True, read_only=True)
     # column = ColumnSerializer(read_only=True)
     origin = OriginSerializer(read_only=True)
+    
+    sales = SerializerMethodField()
+    
 
     # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
@@ -33,10 +56,18 @@ class LeadSerializer(BaseSerializer):
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
     origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
 
+
     class Meta:
         model = Lead
         depth = 1
         fields = '__all__'
+        
+    def get_sales(self, obj):
+        # Aqui, obtenha as vendas vinculadas ao usuário do lead (exemplo para seller)
+        if obj.customer:
+            sales = Sale.objects.filter(customer=obj.customer)
+            return ReadSalesSerializer(sales, many=True).data
+        return []
 
 
 class LeadTaskSerializer(BaseSerializer):
