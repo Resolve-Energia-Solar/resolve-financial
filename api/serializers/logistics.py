@@ -40,7 +40,7 @@ class MaterialsSerializer(BaseSerializer):
         
         
 class ProductMaterialsSerializer(BaseSerializer):
-    # material = MaterialsSerializer(read_only=True)
+    material = MaterialsSerializer(read_only=True)
     material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
 
     class Meta(BaseSerializer.Meta):
