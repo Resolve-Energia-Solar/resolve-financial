@@ -1,4 +1,5 @@
 from accounts.models import Address
+from api.serializers.resolve_crm import SaleSerializer
 from engineering.models import *
 from .accounts import BaseSerializer, AddressSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
@@ -31,6 +32,7 @@ class EnergyCompanySerializer(BaseSerializer):
         
 
 class ProjectReadSerializer(BaseSerializer):
+    sale =  SaleSerializer(read_only=True)
     class Meta:
         model = Project
         fields = '__all__'
