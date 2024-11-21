@@ -264,8 +264,7 @@ class ComercialProposalSerializer(BaseSerializer):
     created_by = RelatedUserSerializer(read_only=True)
     proposal_products = SaleProductSerializer(source='saleproduct_set', many=True, read_only=True)
 
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead') 
-    PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
+    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
 
     class Meta:
