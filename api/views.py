@@ -1033,6 +1033,7 @@ class AnswerViewSet(BaseModelViewSet):
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
 
+
 class ScheduleViewSet(BaseModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
@@ -1054,7 +1055,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
     # listar agendamentos por pessoa para timeline
     @action(detail=False, methods=['get'])
-    def get_schedule_person(self, request):
+    def get_schedule_person(self, request, *args, **kwargs):
         today = timezone.now().date()
         hours = [
             ('09:00', '10:30'),
@@ -1091,7 +1092,6 @@ class ScheduleViewSet(BaseModelViewSet):
             data.append(agent_data)
             
         return Response(data, status=status.HTTP_200_OK)
-        
 
 
 # Engineering views
