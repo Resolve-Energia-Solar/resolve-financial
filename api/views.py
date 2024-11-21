@@ -1255,8 +1255,8 @@ class HistoryView(APIView):
     http_method_names = ['get']
 
     def get(self, request):
-        content_type_id = request.data.get('content_type')
-        object_id = request.data.get('object_id')
+        content_type_id = request.query_params.get('content_type')
+        object_id = request.query_params.get('object_id')
 
         if not content_type_id or not object_id:
             return Response({
