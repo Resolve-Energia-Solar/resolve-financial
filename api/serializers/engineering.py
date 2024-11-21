@@ -1,7 +1,7 @@
-from accounts.models import Address
+from accounts.models import Address, User
 from api.serializers.resolve_crm import SaleSerializer
 from engineering.models import *
-from .accounts import BaseSerializer, AddressSerializer
+from .accounts import BaseSerializer, AddressSerializer, UserSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 # from .resolve_crm import ProjectSerializer
 # from .logistics import MaterialsSerializer
@@ -65,12 +65,14 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
     type = ResquestTypeSerializer(read_only=True)
     situation = SituationEnergyCompanySerializer(read_only=True, many=True)
     unit = UnitsSerializer(read_only=True)
+    requested_by = UserSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
     situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
+    requested_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requested_by')
 
     class Meta:
         model = RequestsEnergyCompany
