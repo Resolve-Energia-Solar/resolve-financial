@@ -45,8 +45,8 @@ class LeadSerializer(BaseSerializer):
     addresses = AddressSerializer(many=True, read_only=True)
     # column = ColumnSerializer(read_only=True)
     origin = OriginSerializer(read_only=True)
-    
     sales = SerializerMethodField()
+    proposals = SerializerMethodField()
     
 
     # Para escrita: usar apenas IDs
@@ -68,6 +68,10 @@ class LeadSerializer(BaseSerializer):
             sales = Sale.objects.filter(customer=obj.customer)
             return ReadSalesSerializer(sales, many=True).data
         return []
+    
+    def get_proposals(self, obj):
+        proposals = ComercialProposal.objects.filter(lead=obj)
+        return [proposal.id for proposal in proposals]
 
 
 class LeadTaskSerializer(BaseSerializer):
