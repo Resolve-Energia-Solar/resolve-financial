@@ -274,3 +274,15 @@ class ComercialProposalSerializer(BaseSerializer):
     class Meta:
         model = ComercialProposal
         fields = '__all__'
+
+
+class ContractSubmissionSerializer(BaseSerializer):
+    # Para leitura: usar serializadores completos
+    sale = SaleSerializer(read_only=True)
+
+    # Para escrita: usar apenas IDs
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+
+    class Meta:
+        model = ContractSubmission
+        fields = '__all__'
