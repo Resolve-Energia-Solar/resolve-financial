@@ -232,13 +232,6 @@ class ProductSerializer(BaseSerializer):
 
 
 class SaleProductSerializer(BaseSerializer):
-
-    # from .resolve_crm import SaleSerializer
-
-    product = ProductSerializer(read_only=True)
-    commercial_proposal = serializers.SerializerMethodField()
-    
-    # sale = SaleSerializer(read_only=True)
     
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
@@ -247,10 +240,6 @@ class SaleProductSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
         fields = '__all__'
-        
-    def get_commercial_proposal(self, obj):
-        from api.serializers.resolve_crm import ComercialProposalSerializer
-        return ComercialProposalSerializer(obj.commercial_proposal).data
         
 
 class ProjectMaterialsSerializer(BaseSerializer):
