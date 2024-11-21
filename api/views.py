@@ -465,37 +465,28 @@ class MarketingCampaignViewSet(BaseModelViewSet):
     queryset = MarketingCampaign.objects.all()
     serializer_class = MarketingCampaignSerializer
     
-    
-import time
 
 class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
 
     def create(self, request, *args, **kwargs):
-        start_time = time.time()
-        print("Início do método create.")
         
-        producs_ids = request.data.get('products_ids')
-        print("IDs dos produtos recebidos:", producs_ids)
-        
-        if producs_ids:
-            products = Product.objects.filter(id__in=producs_ids)
-            if not products.exists():
-                print("Nenhum produto encontrado.")
-                return Response({'message': 'Nenhum produto encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-            print("Produtos encontrados:", products)
+        products_ids = request.data.get('products_ids', [])
+        if not products_ids:
+            return Response({'message': 'IDs dos produtos são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        products = Product.objects.filter(id__in=products_ids)
+        if not products.exists():
+            return Response({'message': 'Nenhum produto encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
-        print("Validação do serializer iniciada.")
         serializer.is_valid(raise_exception=True)
-        print("Serializer validado com sucesso.")
         
         proposal = serializer.save()
-        print(f"Proposta criada com ID: {proposal.id}")
         
-        for product in products:
-            SaleProduct.objects.create(
+        sale_products = [
+            SaleProduct(
                 commercial_proposal=proposal,
                 product=product,
                 amount=1,
@@ -503,79 +494,11 @@ class ComercialProposalViewSet(BaseModelViewSet):
                 reference_value=product.reference_value,
                 cost_value=product.cost_value
             )
-            print(f"SaleProduct criado para o produto ID: {product.id}")
+            for product in products
+        ]
+        SaleProduct.objects.bulk_create(sale_products)
             
-        end_time = time.time()
-        print(f"Tempo total: {end_time - start_time:.2f}s")
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        
-    # def create(self, request, *args, **kwargs):
-    #     print("Início do método create.")
-    #     start_time = time.time()
-
-    #     # Prioridade: products_data > products_ids
-    #     products_data = request.data.get('products_data')
-    #     products_ids = request.data.get('products_ids') if not products_data else []
-
-    #     print("Request data recebido:", request.data)
-    #     print("Products_data:", products_data)
-    #     print("Products_ids:", products_ids)
-
-    #     serializer = self.get_serializer(data=request.data)
-    #     print("Validação do serializer iniciada.")
-    #     serializer.is_valid(raise_exception=True)
-    #     print("Serializer validado com sucesso.")
-
-    #     proposal = serializer.save()
-    #     print(f"Proposta criada com ID: {proposal.id}")
-
-    #     # Caso `products_data` seja fornecido, ele terá prioridade
-    #     if products_data:
-    #         print("Processando products_data.")
-    #         for product_data in products_data:
-    #             try:
-    #                 print(f"Buscando produto com ID: {product_data['id']}")
-    #                 product = Product.objects.get(id=product_data['id'])
-    #                 print(f"Produto encontrado: {product}")
-    #                 SaleProduct.objects.create(
-    #                     commercial_proposal=proposal,
-    #                     product=product,
-    #                     amount=product_data.get('amount', 1),
-    #                     value=product_data.get('value', product.product_value),
-    #                     reference_value=product.reference_value,
-    #                     cost_value=product.cost_value
-    #                 )
-    #                 print(f"SaleProduct criado para o produto ID: {product_data['id']}")
-    #             except Product.DoesNotExist:
-    #                 print(f"Erro: Produto com ID {product_data['id']} não encontrado.")
-    #                 return Response({'message': f'Produto com ID {product_data["id"]} não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
-
-    #     # Se `products_data` não for fornecido, usar `products_ids`
-    #     elif products_ids:
-    #         print("Processando products_ids.")
-    #         for product_id in products_ids:
-    #             try:
-    #                 print(f"Buscando produto com ID: {product_id}")
-    #                 product = Product.objects.get(id=product_id)
-    #                 print(f"Produto encontrado: {product}")
-    #                 SaleProduct.objects.create(
-    #                     commercial_proposal=proposal,
-    #                     product=product,
-    #                     amount=1,
-    #                     value=product.product_value,
-    #                     reference_value=product.reference_value,
-    #                     cost_value=product.cost_value
-    #                 )
-    #                 print(f"SaleProduct criado para o produto ID: {product_id}")
-    #             except Product.DoesNotExist:
-    #                 print(f"Erro: Produto com ID {product_id} não encontrado.")
-    #                 return Response({'message': f'Produto com ID {product_id} não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
-
-    #     end_time = time.time()
-    #     print(f"Processo concluído com sucesso. Tempo total: {end_time - start_time:.2f}s")
-
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SaleViewSet(BaseModelViewSet):
