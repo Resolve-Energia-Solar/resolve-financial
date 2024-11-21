@@ -19,17 +19,26 @@ class PhoneNumberInline(admin.TabularInline):
 class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
-    readonly_fields = ("last_login", "date_joined") 
+    readonly_fields = ("last_login", "date_joined")
     inlines = [PhoneNumberInline]
 
-    # fieldsets = (
-    #     (None, {"fields": ("username", "password")}),
-    #     ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
-    #     ("Contact", {"fields": ("email",)}),
-    #     ("Address", {"fields": ("addresses",)}),
-    #     ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
-    #     ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
-    # )
+    fieldsets = (
+        ('Usuário', {
+            'fields': ('username', 'password', 'user_types')
+        }),
+        ('Informações Pessoais', {
+            'fields': ('complete_name', 'birth_date', 'person_type', 'gender', 'first_document', 'second_document', 'profile_picture')
+        }),
+        ('Permissões', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+        }),
+        ('Datas Importantes', {
+            'fields': ('last_login', 'date_joined')
+        }),
+        ('Contato', {
+            'fields': ('email', 'addresses',)
+        }),
+    )
 
 
 @admin.register(Employee)
