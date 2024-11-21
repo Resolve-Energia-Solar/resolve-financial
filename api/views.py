@@ -604,6 +604,7 @@ class SaleViewSet(BaseModelViewSet):
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        
         data = request.data
 
         # Atualizando os dados da venda
@@ -627,6 +628,23 @@ class SaleViewSet(BaseModelViewSet):
                     {"detail": f"Produto com ID {product_id} não encontrado."},
                     status=status.HTTP_404_NOT_FOUND
                 )
+
+        # Verificando se a venda já possui projetos vinculados aos produtos enviados
+        linked_products = []
+        for product in products:
+            if Project.objects.filter(sale=sale, product=product).exists():  # Ajuste conforme seu modelo
+                linked_products.append(product)
+
+        if linked_products:
+            return Response(
+                {
+                    "detail": "A venda já possui projetos vinculados a alguns produtos.",
+                    "linked_products": [
+                        {"id": product.id, "name": product.name} for product in linked_products
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Removendo produtos que não estão mais na lista
         existing_sale_products = SaleProduct.objects.filter(sale=sale)
@@ -662,12 +680,12 @@ class SaleViewSet(BaseModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
-   
-    def calculate_total_value(self, sales_products):
-        total_value = 0
-        for sales_product in sales_products:
-            total_value += sales_product.value * sales_product.amount
-        return total_value
+    
+        def calculate_total_value(self, sales_products):
+            total_value = 0
+            for sales_product in sales_products:
+                total_value += sales_product.value * sales_product.amount
+            return total_value
 
 
 class ProjectViewSet(BaseModelViewSet):
