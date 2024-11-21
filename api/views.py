@@ -492,7 +492,7 @@ class ScheduleViewSet(BaseModelViewSet):
     # listar agendamentos por pessoa para timeline
     @action(detail=False, methods=['get'])
     def get_timeline(self, request):
-        today = timezone.now().date()
+        date = timezone.now().date()
         hours = [
             ('09:00', '10:30'),
             ('10:30', '12:00'),
@@ -502,8 +502,21 @@ class ScheduleViewSet(BaseModelViewSet):
             ('17:30', '19:00'), 
         ]
 
-        schedules = Schedule.objects.filter(schedule_date=today).order_by('schedule_agent', 'schedule_start_time')
-        agents = schedules.values_list('schedule_agent', flat=True).distinct()
+        agents = []
+
+        date_param = request.query_params.get('date')
+        agent_param = request.query_params.get('agent')
+
+        if date_param:
+            date = parse_datetime(request.query_params['date']).date()
+
+        if agent_param:
+            agents = User.objects.filter(complete_name__icontains=agent_param, user_types__name='agent').values_list('id', flat=True)
+        else:
+            agents = User.objects.filter(user_types__name='agent').values_list('id', flat=True)
+
+        schedules = Schedule.objects.filter(schedule_date=date).order_by('schedule_agent', 'schedule_start_time')
+
         data = []
 
         for agent in agents:
@@ -516,14 +529,12 @@ class ScheduleViewSet(BaseModelViewSet):
             for start, end in hours:
                 if agent_schedules.filter(schedule_start_time__lt=end, schedule_end_time__gt=start).exists():
                     agent_data['schedules'].append({
-                        'agent': agent_serializer.data,
                         'start_time': start,
                         'end_time': end,
                         'status': 'Ocupado'
                     })
                 else:
                     agent_data['schedules'].append({
-                        'agent': agent_serializer.data,
                         'start_time': start,
                         'end_time': end,
                         'status': 'Livre'
