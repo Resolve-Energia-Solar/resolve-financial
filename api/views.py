@@ -23,6 +23,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from accounts.models import User
+from api.pagination import AttachmentPagination
 from api.serializers.contracts import DocumentSubTypeSerializer
 from inspections.models import Category, Service
 from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
@@ -1173,7 +1174,8 @@ class UnitsViewSet(BaseModelViewSet):
 class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
-
+    pagination_class = AttachmentPagination
+    
 
 class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
