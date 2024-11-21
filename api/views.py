@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Case, Q, Value, When, FloatField, IntegerField, ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_time
 from django_filters.rest_framework import DjangoFilterBackend
 from geopy.distance import geodesic
@@ -19,7 +20,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from accounts.models import User
 from api.serializers.contracts import DocumentSubTypeSerializer
 from inspections.models import Category, Service
@@ -681,6 +683,54 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    
+
+class GenerateSalesProjectsView(APIView):
+    http_method_names = ['post',]
+    
+    @transaction.atomic
+    def post(self, request):
+        sale_id = request.data.get('sale_id')
+
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # if sale.status != 'P':
+        #     return Response({'message': 'Apenas vendas com status "Pendente" podem ser processadas.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Recuperar os produtos da venda
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        
+        if not sale_products.exists():
+            return Response({'message': 'Venda não possui produtos associados.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        projects = Project.objects.filter(sale=sale)
+        
+        # Criar um projeto para cada produto da venda
+        for sale_product in sale_products:
+            if projects.exists():
+                for project in projects:
+                    if project.product.id == sale_product.product.id:
+                        return Response({'message': f'Produto {sale_product.product.name} já possui um projeto associado.'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+            project_data = {
+                'sale_id': sale.id,
+                'status': 'P',
+                'product_id': sale_product.product.id,
+            }
+            project_serializer = ProjectSerializer(data=project_data)
+            if project_serializer.is_valid():
+                project = project_serializer.save()
+            else:
+                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Atualizar o status da venda
+        # sale.status = 'A'
+        sale.save()
+        
+        return Response({'message': 'Projetos gerados com sucesso.'}, status=status.HTTP_200_OK)
 
 
 class GeneratePreSaleView(APIView): 
