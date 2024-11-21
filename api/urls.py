@@ -53,6 +53,7 @@ router.register('situation-energy-companies', SituationEnergyCompanyViewSet, bas
 router.register('resquest-types', ResquestTypeViewSet, basename='resquest-type')
 router.register('document-types', DocumentTypeViewSet, basename='document-type')
 router.register('document-subtypes', DocumentSubTypeViewSet, basename='document-subtype')
+router.register('contract-submissions', ContractSubmissionViewSet, basename='contract-submission')
 
 
 schema_view = get_schema_view(

@@ -673,8 +673,12 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    
-    
+
+
+class ContractSubmissionViewSet(BaseModelViewSet):
+    queryset = ContractSubmission.objects.all()
+    serializer_class = ContractSubmissionSerializer
+
 
 class GenerateSalesProjectsView(APIView):
     http_method_names = ['post', 'get']
