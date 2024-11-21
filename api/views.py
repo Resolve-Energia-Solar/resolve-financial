@@ -751,21 +751,20 @@ class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     
+    
 
 class GenerateSalesProjectsView(APIView):
-    http_method_names = ['post',]
-    
+    http_method_names = ['post', 'get']
+
     @transaction.atomic
     def post(self, request):
         sale_id = request.data.get('sale_id')
 
+        # Verificar se a venda existe
         try:
             sale = Sale.objects.get(id=sale_id)
         except Sale.DoesNotExist:
             return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # if sale.status != 'P':
-        #     return Response({'message': 'Apenas vendas com status "Pendente" podem ser processadas.'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Recuperar os produtos da venda
         sale_products = SaleProduct.objects.filter(sale=sale)
@@ -773,32 +772,95 @@ class GenerateSalesProjectsView(APIView):
         if not sale_products.exists():
             return Response({'message': 'Venda não possui produtos associados.'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Projetos já criados para esta venda
         projects = Project.objects.filter(sale=sale)
         
-        # Criar um projeto para cada produto da venda
+        # Listas para rastrear os resultados
+        created_projects = []
+        already_existing_projects = []
+        
+        # Criar um projeto para cada produto da venda, se ainda não existir
         for sale_product in sale_products:
-            if projects.exists():
-                for project in projects:
-                    if project.product.id == sale_product.product.id:
-                        return Response({'message': f'Produto {sale_product.product.name} já possui um projeto associado.'}, status=status.HTTP_400_BAD_REQUEST)
-                    
+            if projects.filter(product=sale_product.product).exists():
+                already_existing_projects.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
+                continue  # Pula para o próximo produto
+
+            # Dados do projeto
             project_data = {
                 'sale_id': sale.id,
                 'status': 'P',
                 'product_id': sale_product.product.id,
             }
+            # Serializar e salvar
             project_serializer = ProjectSerializer(data=project_data)
             if project_serializer.is_valid():
                 project = project_serializer.save()
+                created_projects.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
             else:
                 return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Atualizar o status da venda
-        # sale.status = 'A'
-        sale.save()
-        
-        return Response({'message': 'Projetos gerados com sucesso.'}, status=status.HTTP_200_OK)
 
+        # Verificar o resultado
+        if not created_projects:
+            return Response({'message': 'Todos os projetos já foram criados.', 'already_existing_projects': already_existing_projects}, status=status.HTTP_200_OK)
+        
+        return Response({
+            'message': 'Projetos gerados com sucesso.',
+            'created_projects': created_projects,
+            'already_existing_projects': already_existing_projects,
+        }, status=status.HTTP_200_OK)
+
+
+
+    def get(self, request):
+        sale_id = request.query_params.get('sale_id')
+        print("Sale ID:", sale_id)
+        
+        if not sale_id:
+            return Response({'message': 'É necessário informar o ID da venda.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Recuperar os produtos e os projetos associados à venda
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        projects = Project.objects.filter(sale=sale)
+        
+        already_generated = []
+        pending_generation = []
+        
+        # Verificar quais produtos já possuem projetos e quais estão pendentes
+        for sale_product in sale_products:
+            if projects.filter(product=sale_product.product).exists():
+                already_generated.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                    'amount': sale_product.amount,
+                    'value': sale_product.value,
+                    'reference_value': sale_product.reference_value,
+                    'cost_value': sale_product.cost_value,
+                })
+            else:
+                pending_generation.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
+        
+        response_data = {
+            'sale_id': sale.id,
+            'sale_status': sale.status,
+            'already_generated': already_generated,
+            'pending_generation': pending_generation,
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class GeneratePreSaleView(APIView): 
     http_method_names = ['post']
