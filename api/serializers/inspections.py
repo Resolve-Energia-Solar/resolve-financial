@@ -69,12 +69,7 @@ class ScheduleSerializer(BaseSerializer):
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
 
+    class Meta(BaseSerializer.Meta):
+        model = Schedule
+        fields = '__all__'
 
-class Meta(BaseSerializer.Meta):
-    model = Schedule
-    fields = '__all__'
-    
-    
-class Meta(BaseSerializer.Meta):
-    model = RoofType
-    fields = '__all__'
