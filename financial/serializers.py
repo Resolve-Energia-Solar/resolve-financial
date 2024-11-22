@@ -1,6 +1,6 @@
 from accounts.models import Address, User
-from api.serializers.accounts import AddressSerializer, BaseSerializer, RelatedUserSerializer
-from api.serializers.resolve_crm import SaleSerializer
+from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
+from resolve_crm.serializers import SaleSerializer
 from financial.models import Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField

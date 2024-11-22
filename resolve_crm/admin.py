@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from financial.admin import PaymentInline
-from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale, Origin
+from .models import ComercialProposal, Lead, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
@@ -36,11 +36,6 @@ class SaleAdmin(admin.ModelAdmin):
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = ("lead", "title", "delivery_date", "description", "status", "task_type")
-
-
-@admin.register(Attachment)
-class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("file", "description")
 
 
 @admin.register(Project)

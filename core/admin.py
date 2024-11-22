@@ -2,8 +2,29 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
 
-from .models import Board, Column
+from .models import Attachment, Board, Column, DocumentSubType, DocumentType
 from .models import Task, Webhook
+
+
+@admin.register(DocumentType)
+class DocumentTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'reusable', 'required')
+    search_fields = ('name',)
+    list_filter = ('reusable', 'required')
+    ordering = ('name',)
+
+
+@admin.register(DocumentSubType)
+class DocumentSubTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'document_type')
+    search_fields = ('name', 'document_type__name')
+    list_filter = ('document_type',)
+    ordering = ('name',)
+
+
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
+    list_display = ("file", "description")
 
 
 @admin.register(Board)

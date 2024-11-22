@@ -3,13 +3,13 @@ from accounts.models import Address, User
 from core.models import Column
 from engineering.models import Units
 from resolve_crm.models import *
-from api.serializers.accounts import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
-from api.serializers.accounts import BaseSerializer
-from api.serializers.logistics import ProductSerializer
+from accounts.serializers import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
+from accounts.serializers import BaseSerializer
+from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
-from .logistics import ProjectMaterialsSerializer, SaleProductSerializer
-from .contracts import *
+from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
+
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -87,28 +87,6 @@ class LeadTaskSerializer(BaseSerializer):
     class Meta:
         model = Task
         fields = '__all__'
-
-
-class AttachmentSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos
-    content_type = ContentTypeSerializer(read_only=True)
-    document_type = DocumentTypeSerializer(read_only=True)
-    document_subtype = DocumentSubTypeSerializer(read_only=True)
-    
-    # Para escrita: usar apenas ID
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
-    document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
-    document_subtype_id = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), write_only=True, source='document_subtype', required=False)
-    
-    class Meta:
-        model = Attachment
-        fields = '__all__'
-        
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['file'] = instance.file.url
-        return data
 
 
 class MarketingCampaignSerializer(BaseSerializer):

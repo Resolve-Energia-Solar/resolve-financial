@@ -194,19 +194,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return instance
 
 
-
-class TaskTemplatesSerializer(BaseSerializer):
-  
-    depends_on = SerializerMethodField()
-      
-    class Meta:
-        model = TaskTemplates
-        fields = '__all__'
-    
-    def get_depends_on(self, obj):
-        return TaskTemplatesSerializer(obj.depends_on, many=True).data
-
-
 class SquadSerializer(ModelSerializer):
     # Para leitura: usar serializadores completos
     branch = BranchSerializer(read_only=True)
@@ -225,5 +212,5 @@ class SquadSerializer(ModelSerializer):
         fields = '__all__'
 
     def get_boards(self, obj):
-        from api.serializers.core import BoardSerializer
+        from core.serializers import BoardSerializer
         return BoardSerializer(obj.boards, many=True).data

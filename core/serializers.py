@@ -1,9 +1,53 @@
 from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
 from accounts.models import Branch, User
-from api.serializers.accounts import BaseSerializer
+from accounts.serializers import BaseSerializer
 from core.models import *
-from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
+from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead, Origin
+
+
+class DocumentSubTypeSerializer(BaseSerializer):
+    
+    class Meta:
+        model = DocumentSubType
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class DocumentTypeSerializer(BaseSerializer):
+    subtypes = DocumentSubTypeSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = DocumentType
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['app_label'] = instance.get_app_label_display()
+        return data
+
+
+class AttachmentSerializer(BaseSerializer):
+    
+    # Para leitura: usar serializadores completos
+    content_type = ContentTypeSerializer(read_only=True)
+    document_type = DocumentTypeSerializer(read_only=True)
+    document_subtype = DocumentSubTypeSerializer(read_only=True)
+    
+    # Para escrita: usar apenas ID
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
+    document_subtype_id = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), write_only=True, source='document_subtype', required=False)
+    
+    class Meta:
+        model = Attachment
+        fields = '__all__'
+        
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['file'] = instance.file.url
+        return data
 
 
 class ColumnNameSerializer(BaseSerializer):
@@ -31,7 +75,7 @@ class ReadLeadSerializer(BaseSerializer):
         fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'origin', 'origin_id', 'sdr', 'kwp', 'qualification', 'funnel', 'created_at', 'sdr_id', 'seller_id']
 
     def get_origin(self, obj):
-        from api.serializers.resolve_crm import OriginSerializer
+        from resolve_crm.serializers import OriginSerializer
         return OriginSerializer(obj.origin).data
 
 
@@ -66,6 +110,7 @@ class ColumnSerializer(BaseSerializer):
     def get_proposals_value(self, obj):
         return obj.proposals_value
 
+
 class BoardSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     columns = ColumnSerializer(many=True, read_only=True)
@@ -78,7 +123,19 @@ class BoardSerializer(BaseSerializer):
     class Meta:
         model = Board
         fields = ['id', 'title', 'description', 'columns', 'branch', 'columns_ids', 'branch_id']
+
+
+class TaskTemplatesSerializer(BaseSerializer):
+  
+    depends_on = SerializerMethodField()
+      
+    class Meta:
+        model = TaskTemplates
+        fields = '__all__'
     
+    def get_depends_on(self, obj):
+        return TaskTemplatesSerializer(obj.depends_on, many=True).data
+
 
 class TaskSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
@@ -103,5 +160,5 @@ class TaskSerializer(BaseSerializer):
         return TaskSerializer(obj.depends_on, many=True).data
 
     def get_project(self, obj):
-        from .resolve_crm import ProjectSerializer
+        from resolve_crm.serializers import ProjectSerializer
         return ProjectSerializer(obj.project).data

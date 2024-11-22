@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from inspections.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField
-from api.serializers.accounts import AddressSerializer, BaseSerializer, SquadSerializer, UserSerializer
+from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
 from resolve_crm.models import Project
 
 

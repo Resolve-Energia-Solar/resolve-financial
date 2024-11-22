@@ -1,10 +1,8 @@
 from accounts.models import Address, User
-from api.serializers.resolve_crm import SaleSerializer
+from resolve_crm.serializers import SaleSerializer
 from engineering.models import *
-from .accounts import BaseSerializer, AddressSerializer, UserSerializer
+from accounts.serializers import BaseSerializer, AddressSerializer, UserSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
-# from .resolve_crm import ProjectSerializer
-# from .logistics import MaterialsSerializer
 
 
 class SituationEnergyCompanySerializer(BaseSerializer):

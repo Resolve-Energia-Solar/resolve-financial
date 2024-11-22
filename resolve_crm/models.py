@@ -2,7 +2,6 @@ from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse_lazy
-from contracts.models import DocumentType, DocumentSubType
 from django.utils.timezone import now
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
@@ -258,43 +257,6 @@ class Task(models.Model):
     class Meta:
         verbose_name = "Tarefa do Lead"
         verbose_name_plural = "Tarefas do Lead"
-        ordering = ['-created_at']
-
-
-class Attachment(models.Model):
-    object_id = models.PositiveSmallIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
-    status = models.CharField("Status", max_length=50, null=True, blank=True)
-    document_type = models.ForeignKey("contracts.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
-    document_subtype = models.ForeignKey("contracts.DocumentSubType", on_delete=models.CASCADE, verbose_name="Subtipo de Documento", null=True, blank=True)
-    description = models.TextField("Descrição")
-    # Logs
-    created_at = models.DateTimeField("Criado em", auto_now_add=True)
-    history = HistoricalRecords()
-    
-    def file_name(self):
-        return self.file.name.split('/')[-1]
-
-    def file_or_image(self):
-        if self.file.name.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp')):
-            return 'file-image'
-        else:
-            return 'file'
-
-    def size(self):
-        attachment_size = self.file.size
-        if attachment_size < 1024 * 1024:
-            return f"{attachment_size / 1024:.0f}KB"
-        else:
-            return f"{attachment_size / (1024 * 1024):.2f}MB"
-        
-    def __str__(self):
-        return self.file.name
-    
-    class Meta:
-        verbose_name = "Anexo"
-        verbose_name_plural = "Anexos"
         ordering = ['-created_at']
 
 

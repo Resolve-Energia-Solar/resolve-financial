@@ -4,6 +4,82 @@ from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 
 
+class DocumentType(models.Model):
+    
+    APP_LABEL_CHOICES = (
+        ('accounts', 'Contas'),
+        ('contracts', 'Contratos'),
+        ('inspections', 'Inspeções'),
+        ('logistics', 'Logística'),
+        ('resolve_crm', 'CRM'),
+        ('core', 'Core'),
+        ('engineering', 'Engenharia'),
+        ('financial', 'Financeiro'),
+    )
+    
+    name = models.CharField("Nome", max_length=100)
+    app_label = models.CharField("App Label", max_length=100, choices=APP_LABEL_CHOICES)
+    reusable = models.BooleanField("Reutilizável", default=False)
+    required = models.BooleanField("Obrigatório", default=False)
+    
+    class Meta:
+        verbose_name = "Tipo de Documento"
+        verbose_name_plural = "Tipos de Documentos"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class DocumentSubType(models.Model):
+    name = models.CharField("Nome", max_length=100)
+    document_type = models.ForeignKey(DocumentType, on_delete=models.CASCADE, verbose_name="Tipo de Documento", related_name="subtypes")
+    
+    class Meta:
+        verbose_name = "Subtipo de Documento"
+        verbose_name_plural = "Subtipos de Documentos"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
+class Attachment(models.Model):
+    object_id = models.PositiveSmallIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
+    status = models.CharField("Status", max_length=50, null=True, blank=True)
+    document_type = models.ForeignKey("core.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
+    document_subtype = models.ForeignKey("core.DocumentSubType", on_delete=models.CASCADE, verbose_name="Subtipo de Documento", null=True, blank=True)
+    description = models.TextField("Descrição")
+    # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def file_name(self):
+        return self.file.name.split('/')[-1]
+
+    def file_or_image(self):
+        if self.file.name.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.bmp')):
+            return 'file-image'
+        else:
+            return 'file'
+
+    def size(self):
+        attachment_size = self.file.size
+        if attachment_size < 1024 * 1024:
+            return f"{attachment_size / 1024:.0f}KB"
+        else:
+            return f"{attachment_size / (1024 * 1024):.2f}MB"
+        
+    def __str__(self):
+        return self.file.name
+    
+    class Meta:
+        verbose_name = "Anexo"
+        verbose_name_plural = "Anexos"
+        ordering = ['-created_at']
+
 
 class Board(models.Model):
     
