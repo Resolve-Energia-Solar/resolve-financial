@@ -233,6 +233,8 @@ class ProductSerializer(BaseSerializer):
 
 class SaleProductSerializer(BaseSerializer):
     
+    product = ProductSerializer(read_only=True)
+    
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='commercial_proposal', required=False)
