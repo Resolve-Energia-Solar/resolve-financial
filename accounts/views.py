@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 from django.db.models import Case, When, Value, FloatField, IntegerField, Q
 from django.utils.dateparse import parse_time
 
@@ -88,7 +88,6 @@ class UserViewSet(BaseModelViewSet):
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

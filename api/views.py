@@ -1,11 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
 
 class BaseModelViewSet(ModelViewSet):
+    permission_classes = [DjangoModelPermissions]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
@@ -41,7 +43,7 @@ class BaseModelViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def _get_field_data(self, obj, field):
-        """Método auxiliar para obter dados de campos aninhados."""
+        """Auxiliary method to get nested field data."""
         if '.' in field:
             keys = field.split('.')
             value = obj
