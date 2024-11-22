@@ -251,11 +251,11 @@ class SaleViewSet(BaseModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
     
-        def calculate_total_value(self, sales_products):
-            total_value = 0
-            for sales_product in sales_products:
-                total_value += sales_product.value * sales_product.amount
-            return total_value
+    def calculate_total_value(self, sales_products):
+        total_value = 0
+        for sales_product in sales_products:
+            total_value += sales_product.value * sales_product.amount
+        return total_value
 
 
 class ProjectViewSet(BaseModelViewSet):
