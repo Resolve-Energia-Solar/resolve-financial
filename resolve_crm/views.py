@@ -1,5 +1,5 @@
 import logging
-from requests import Response
+from rest_framework.response import Response
 from rest_framework import status
 from accounts.models import UserType
 from accounts.serializers import UserSerializer
