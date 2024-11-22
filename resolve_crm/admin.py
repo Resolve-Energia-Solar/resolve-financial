@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from financial.admin import PaymentInline
-from .models import ComercialProposal, Lead, Task, Project, Sale, Origin
+from .models import ComercialProposal, ContractSubmission, Lead, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
@@ -42,3 +42,10 @@ class TaskAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("sale", "product", "created_at")
     inlines = [ProjectMaterialsInline]
+    
+@admin.register(ContractSubmission)
+class ContractSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("sale", "status", "key_number", "finished_at")
+    search_fields = ("sale__contract_number",)
+    list_filter = ("finished_at",)
+    ordering = ("-finished_at",)
