@@ -1,8 +1,12 @@
 import decimal
 from django.db import models
+from decimal import Decimal
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Sum
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 
 class Financier(models.Model):
@@ -106,3 +110,85 @@ class PaymentInstallment(models.Model):
         verbose_name = "Parcela"
         verbose_name_plural = "Parcelas"
         ordering = ["-payment__created_at", "installment_number"]
+
+
+
+class FranchiseInstallment(models.Model):
+    sale = models.ForeignKey(
+        "resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="franchise_installments"
+    )
+    status = models.CharField(
+        "Status", max_length=2, choices=[("PE", "Pendente"), ("PG", "PAGO")], default="PE"
+    )
+    installment_value = models.DecimalField(
+        "Valor da Parcela", max_digits=20, decimal_places=6, default=0.000000
+    )
+    is_paid = models.BooleanField("Pago", default=False)
+    paid_at = models.DateTimeField("Pago em", null=True, blank=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    @property
+    def difference_value(self):
+        """
+        Calcula a diferença entre o valor total da venda e a soma dos valores de referência dos produtos.
+        """
+        return self.sale.total_value - sum(self.sale.products.all().values_list("reference_value", flat=True))
+
+    @property
+    def margin_7(self):
+        """
+        Calcula a margem de 7% sobre a diferença de valor.
+        """
+        if self.difference_value <= 0:
+            return Decimal("0.00")
+        return self.difference_value * Decimal("0.07")
+
+    @property
+    def percentage(self):
+        """
+        Calcula o percentual de repasse desta parcela em relação ao total da venda.
+        """
+        total_sale_value = Decimal(self.sale.total_value)
+        if total_sale_value == 0:
+            return Decimal("0.00")
+        return round((Decimal(self.installment_value) / total_sale_value) * 100, 2)
+
+    @staticmethod
+    def remaining_percentage(sale):
+        """
+        Calcula o percentual restante de repasse permitido pela branch da venda.
+        """
+        total_repass = sum(
+            Decimal(installment.percentage) for installment in sale.franchise_installments.all()
+        )
+        max_percentage = sale.branch.transfer_percentage
+        return max(0, max_percentage - total_repass)
+
+    def clean(self):
+        """
+        Valida que a soma dos valores das parcelas não ultrapasse a porcentagem da unidade da venda.
+        """
+        if not self.sale:
+            return
+        max_total = self.sale.unit_value * (self.sale.branch.transfer_percentage / 100)
+        total_installments = sum(
+            installment.installment_value
+            for installment in self.sale.franchise_installments.exclude(id=self.id)
+        )
+        if total_installments + self.installment_value > max_total:
+            raise ValidationError(
+                f"A soma dos valores das parcelas para esta venda excede o limite de {max_total} definido pela porcentagem da unidade. "
+                f"Valor restante: {max_total - total_installments}."
+            )
+
+    def save(self, *args, **kwargs):
+        """
+        Atualiza o status para 'PG' e registra a data de pagamento caso o valor seja pago.
+        """
+        if self.is_paid:
+            self.status = "PG"
+            self.paid_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.sale.customer} - {self.percentage}%"
