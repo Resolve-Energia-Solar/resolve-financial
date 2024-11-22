@@ -1,6 +1,6 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
-from accounts.models import Address, Squad, User
+from accounts.models import Address, User
 from inspections.models import *
+from rest_framework.serializers import PrimaryKeyRelatedField
 from api.serializers.accounts import AddressSerializer, BaseSerializer, SquadSerializer, UserSerializer
 from resolve_crm.models import Project
 
@@ -69,6 +69,12 @@ class ScheduleSerializer(BaseSerializer):
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
 
-    class Meta(BaseSerializer.Meta):
-        model = Schedule
-        fields = '__all__'
+
+class Meta(BaseSerializer.Meta):
+    model = Schedule
+    fields = '__all__'
+    
+    
+class Meta(BaseSerializer.Meta):
+    model = RoofType
+    fields = '__all__'

@@ -61,11 +61,13 @@ INSTALLED_APPS = [
     'logistics.apps.LogisticsConfig',
     'inspections.apps.InspectionsConfig',
     'engineering.apps.EngineeringConfig',
+    'financial.apps.FinancialConfig',
     'notifications',
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
     'drf_yasg',
+    'django_filters',
     'corsheaders'
 ]
 
@@ -85,7 +87,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS
+
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS') == 'True'
+
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
+
+CORS_ALLOW_CREDENTIALS = os.environ.get('CORS_ALLOW_CREDENTIALS') == 'True'
 
 CORS_ALLOW_METHODS = [
     'GET',
@@ -101,7 +109,15 @@ CORS_ALLOW_HEADERS = [
     'authorization',
 ]
 
+
+# URLs
+
 ROOT_URLCONF = 'resolve_erp.urls'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+
+
+# Templates
 
 TEMPLATES = [
     {
@@ -143,6 +159,20 @@ DATABASES = {
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
 
+
+# Google Cloud Storage
+GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
+GS_LOCATION = os.getenv('GS_LOCATION')
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {}
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 
 # User model
@@ -201,10 +231,6 @@ USE_I18N = True
 USE_TZ = True
 
 USE_THOUSAND_SEPARATOR = True
-
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

@@ -13,14 +13,13 @@ class BoardAdmin(admin.ModelAdmin):
 
 @admin.register(Column)
 class ColumnAdmin(admin.ModelAdmin):
-    list_display = ("name", "position", "board")
+    list_display = ("name", "position", "board", "proposals_value")
 
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
-    list_filter = ("is_completed",)
-    search_fields = ("title", "description", "owner", "board", "is_completed", "start_date", "due_date", "is_completed_date")
+    list_display = ("title", "description", "owner", "start_date", "due_date", "is_completed_date")
+    search_fields = ("title", "description", "owner", "board", "start_date", "due_date", "is_completed_date")
     
 
 @admin.register(Webhook)

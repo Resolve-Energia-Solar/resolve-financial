@@ -28,13 +28,22 @@ class RoleSerializer(BaseSerializer):
     class Meta:
         model = Role
         exclude = ['is_deleted']
+
+
+class PhoneNumberSerializer(BaseSerializer):
         
-        
+        class Meta:
+            model = PhoneNumber
+            fields = '__all__'
+
+
 class RelatedUserSerializer(BaseSerializer):
+
+    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
         
     class Meta:
         model = User
-        fields = ['id', 'complete_name', 'email', 'phone']
+        fields = ['id', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers', ]
 
 
 class AddressSerializer(BaseSerializer):
@@ -56,13 +65,6 @@ class BranchSerializer(ModelSerializer):
     class Meta:
         model = Branch
         exclude = ['is_deleted']
-
-
-class UserTypeSerializer(BaseSerializer):
-        
-        class Meta:
-            model = UserType
-            fields = '__all__'
 
 
 class ContentTypeSerializer(BaseSerializer):
@@ -94,26 +96,25 @@ class GroupSerializer(ModelSerializer):
     class Meta:
         model = Group
         fields = '__all__'
+        
+
+class UserTypeSerializer(BaseSerializer):
+        
+        class Meta:
+            model = UserType
+            fields = '__all__'
 
 
 class UserSerializer(ModelSerializer):
     # Para leitura: usar serializadores completos
-    branch = BranchSerializer(read_only=True)
-    department = DepartmentSerializer(read_only=True)
-    role = RoleSerializer(read_only=True)
-    user_manager = RelatedUserSerializer(read_only=True)
     addresses = AddressSerializer(many=True, read_only=True)
     user_types = UserTypeSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
-    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
-    role_id = PrimaryKeyRelatedField(queryset=Role.objects.all(), write_only=True, source='role')
-    user_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user_manager')
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses')
-    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types')
-    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups')
+    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
+    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
+    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
 
     user_permissions = SerializerMethodField()
     distance = SerializerMethodField()
@@ -122,6 +123,8 @@ class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         exclude = ['password']
+        
+    
 
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
@@ -131,6 +134,65 @@ class UserSerializer(ModelSerializer):
     
     def get_daily_schedules_count(self, obj):
         return getattr(obj, 'daily_schedules_count', None)
+    
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = Employee
+        fields = ['user', 'contract_type', 'branch', 'department', 'role', 'user_manager', 'hire_date']
+        
+    def create(self, validated_data):
+        # Extrair dados do usuário
+        user_data = validated_data.pop('user')
+        addresses = user_data.pop('addresses', [])
+        user_types = user_data.pop('user_types', [])
+        groups = user_data.pop('groups', [])
+        
+        # Criar o usuário primeiro
+        user = User.objects.create(**user_data)
+        
+        # Atribuir relações many-to-many após a criação do usuário
+        if addresses:
+            user.addresses.set(addresses)
+        if user_types:
+            user.user_types.set(user_types)
+        if groups:
+            user.groups.set(groups)
+        
+        # Criar o empregado associado
+        employee = Employee.objects.create(user=user, **validated_data)
+        return employee
+
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user')
+        user = instance.user
+
+        addresses_ids = user_data.pop('addresses_ids', [])
+        user_types_ids = user_data.pop('user_types_ids', [])
+        groups_ids = user_data.pop('groups_ids', [])
+
+        # Atualizar campos do usuário
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        # Atualizar relações many-to-many
+        if addresses_ids:
+            user.addresses.set(addresses_ids)
+        if user_types_ids:
+            user.user_types.set(user_types_ids)
+        if groups_ids:
+            user.groups.set(groups_ids)
+
+        # Atualizar campos do empregado
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
 
 
 class TaskTemplatesSerializer(BaseSerializer):

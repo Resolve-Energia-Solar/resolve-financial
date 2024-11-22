@@ -26,6 +26,7 @@ class Board(models.Model):
     class Meta:
         verbose_name = 'Quadro'
         verbose_name_plural = 'Quadros'
+        ordering = ['title']
 
 
 class Column(models.Model):
@@ -33,15 +34,26 @@ class Column(models.Model):
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição",blank=False, null=False)
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
+    color = models.CharField("Cor", max_length=7, blank=True, null=True)
     
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-
+    
+    @property
+    def proposals_value(self):
+        return sum([proposal.value for lead in self.leads.all() for proposal in lead.proposals.all()])
+    
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = 'Coluna'
+        verbose_name_plural = 'Colunas'
+        ordering = ['position']
 
 
 class Task(models.Model):
@@ -51,8 +63,6 @@ class Task(models.Model):
     column = models.ForeignKey('core.Column', related_name='task', on_delete=models.CASCADE)
     description = models.TextField()
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável')
-    board = models.ForeignKey('core.Board', related_name='board_tasks', on_delete=models.CASCADE)
-    is_completed = models.BooleanField(default=False, verbose_name='Concluído')
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
@@ -80,6 +90,7 @@ class Task(models.Model):
     class Meta:
         verbose_name = 'Tarefa'
         verbose_name_plural = 'Tarefas'
+        ordering = ['-due_date']
 
 
 class TaskTemplates(models.Model):
@@ -87,6 +98,8 @@ class TaskTemplates(models.Model):
     board = models.ForeignKey('core.Board', related_name='board_task_templates', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
+    deadline = models.PositiveIntegerField()
+    automatico = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField()
     
@@ -97,6 +110,7 @@ class TaskTemplates(models.Model):
     class Meta:
         verbose_name = 'Modelo de Tarefa'
         verbose_name_plural = 'Modelos de Tarefas'
+        ordering = ['title']
     
 
 class Webhook(models.Model):
@@ -123,3 +137,4 @@ class Webhook(models.Model):
     class Meta:
         verbose_name = 'Webhook'
         verbose_name_plural = 'Webhooks'
+        ordering = ['-created_at']

@@ -168,3 +168,6 @@ cython_debug/
 
 # Ignore redis binary file
 dump.rdb
+
+# Ignore GCS credentials file
+google_application_credentials.json

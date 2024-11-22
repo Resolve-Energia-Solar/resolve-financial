@@ -7,21 +7,47 @@ admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
 
 
+class PhoneNumberInline(admin.TabularInline):
+    model = PhoneNumber
+    extra = 1
+    verbose_name = "Número de Telefone"
+    verbose_name_plural = "Números de Telefone"
+    fields = ("country_code", "phone_number", "is_main")
+
+
 @admin.register(User)
 class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
-    readonly_fields = ("last_login", "date_joined") 
+    readonly_fields = ("last_login", "date_joined")
+    inlines = [PhoneNumberInline]
 
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        ("Personal info", {"fields": ("complete_name", "birth_date", "gender", "first_document", "profile_picture")}),
-        ("Contact", {"fields": ("phone", "email")}),
-        ("Address", {"fields": ("addresses",)}),
-        ("Employee Info", {"fields": ("contract_type", "branch", "department", "role", "user_manager", "hire_date", "resignation_date")}),
-        ("User Type Info", {"fields": ("user_types", "person_type", "second_document")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ('Usuário', {
+            'fields': ('username', 'password', 'user_types')
+        }),
+        ('Informações Pessoais', {
+            'fields': ('complete_name', 'birth_date', 'person_type', 'gender', 'first_document', 'second_document', 'profile_picture')
+        }),
+        ('Permissões', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+        }),
+        ('Datas Importantes', {
+            'fields': ('last_login', 'date_joined')
+        }),
+        ('Contato', {
+            'fields': ('email', 'addresses',)
+        }),
     )
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ("user", "role", "department", "branch")
+    search_fields = ("user", "role", "department", "branch")
+    list_filter = ("role", "department", "branch")
+    list_per_page = 10
+    list_max_show_all = 100
 
 
 @admin.register(Address)
@@ -69,6 +95,7 @@ class PhoneNumber(admin.ModelAdmin):
 class SquadAdmin(admin.ModelAdmin):
     pass
 
+
 @admin.register(UserType)
 class UserTypeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("id", "name")

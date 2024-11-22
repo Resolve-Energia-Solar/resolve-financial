@@ -1,21 +1,36 @@
 from django.contrib import admin
-from .models import Lead, Task, Attachment, Project, Sale
+
+from financial.admin import PaymentInline
+from .models import ComercialProposal, Lead, Task, Attachment, Project, Sale, Origin
+from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
-"""
-@admin.register(Card)
-class CardAdmin(admin.ModelAdmin):
-    list_display = ("lead", "task", "order")
-"""
-
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = ("lead", "total_value", "contract_number")
+@admin.register(Origin)
+class OriginAdmin(admin.ModelAdmin):
+    list_display = ("name",)
 
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
+    
+    def save_model(self, request, obj, form, change):
+        obj.save(current_user=request.user)
+        form.save_m2m()  
+
+
+@admin.register(ComercialProposal)
+class ComercialProposalAdmin(admin.ModelAdmin):
+    list_display = ("id", "lead", "due_date", "value", "status", "created_by", "created_at")
+    search_fields = ("lead__name", "status", "created_by__username")
+    list_filter = ("status", "due_date", "created_at")
+    inlines = [SaleProductInline]
+
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ("total_value", "contract_number", "can_generate_contract", "total_paid", "created_at")
+    inlines = [SaleProductInline, PaymentInline]
 
 
 @admin.register(Task)
@@ -30,4 +45,5 @@ class AttachmentAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("sale", "product", "created_at")
+    inlines = [ProjectMaterialsInline]

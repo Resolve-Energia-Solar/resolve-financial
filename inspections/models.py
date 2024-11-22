@@ -5,10 +5,15 @@ class RoofType(models.Model):
     name = models.CharField(max_length=50, verbose_name="Nome", blank=True, null=True)
     is_deleted = models.BooleanField(verbose_name="Deletado", default=False)
     created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = "Tipo de Telhado"
         verbose_name_plural = "Tipos de Telhados"
+        ordering = ["name"]
+
 
 class Category(models.Model):
     name = models.CharField("Nome da Categoria", max_length=50, unique=True)
@@ -24,6 +29,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
+        ordering = ["name"]
 
 class Deadline(models.Model):
     name = models.CharField("Nome do Prazo", max_length=50, unique=True)
@@ -39,6 +45,8 @@ class Deadline(models.Model):
     class Meta:
         verbose_name = "Prazo"
         verbose_name_plural = "Prazos"
+        ordering = ["name"]
+
     
 class Service(models.Model):
     name = models.CharField("Nome do Serviço", max_length=50, unique=True)
@@ -55,6 +63,8 @@ class Service(models.Model):
     class Meta:
         verbose_name = "Serviço"
         verbose_name_plural = "Serviços"
+        ordering = ["name"]
+
 
 class Forms(models.Model):
     name = models.CharField("Nome do Formulário", max_length=50, unique=True)
@@ -71,6 +81,8 @@ class Forms(models.Model):
     class Meta:
         verbose_name = "Formulário"
         verbose_name_plural = "Formulários"
+        ordering = ["name"]
+
 
 class Answer(models.Model):
     form = models.ForeignKey(Forms, verbose_name="Formulário", on_delete=models.CASCADE)
@@ -83,6 +95,8 @@ class Answer(models.Model):
     class Meta:
         verbose_name = "Resposta"
         verbose_name_plural = "Respostas"
+        ordering = ["-created_at"]
+
 
 class Schedule(models.Model):
     status_choices = [
@@ -112,3 +126,4 @@ class Schedule(models.Model):
     class Meta:
         verbose_name = "Agendamento"
         verbose_name_plural = "Agendamentos"
+        ordering = ["-created_at"]

@@ -3,7 +3,7 @@ from accounts.models import Branch, User
 from api.serializers.accounts import BaseSerializer
 from core.models import *
 from .accounts import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
-from resolve_crm.models import Lead
+from resolve_crm.models import Lead, Origin
 
 
 class ColumnNameSerializer(BaseSerializer):
@@ -16,13 +16,23 @@ class ColumnNameSerializer(BaseSerializer):
 class ReadLeadSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     column = ColumnNameSerializer(read_only=True)
+    origin = SerializerMethodField()
+    sdr = RelatedUserSerializer(read_only=True)
+    seller = RelatedUserSerializer(read_only=True)
 
     # Para escrita: usar apenas ID
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
+    origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
+    sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr')
+    seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
 
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'created_at']
+        fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'origin', 'origin_id', 'sdr', 'kwp', 'qualification', 'funnel', 'created_at', 'sdr_id', 'seller_id']
+
+    def get_origin(self, obj):
+        from api.serializers.resolve_crm import OriginSerializer
+        return OriginSerializer(obj.origin).data
 
 
 class ReadTaskSerializer(BaseSerializer):
@@ -47,11 +57,14 @@ class ColumnSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     leads = ReadLeadSerializer(many=True, read_only=True)
     task = ReadTaskSerializer(many=True, read_only=True)
+    proposals_value = SerializerMethodField()
 
     class Meta:
         model = Column
-        fields = ['id', 'name', 'board', 'position', 'task', 'leads']
+        fields = '__all__'
 
+    def get_proposals_value(self, obj):
+        return obj.proposals_value
 
 class BoardSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos

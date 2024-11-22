@@ -1,10 +1,20 @@
 import logging
-import requests
-from django.db.models import Q
-from django.forms import ValidationError
-from django.urls import reverse
+from datetime import datetime
+import time
+from django.db import transaction
+from django.db.models import Case, Q, Value, When, FloatField, IntegerField
+from django.core.exceptions import FieldDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_time
+from django.utils.text import capfirst
+from django_filters.rest_framework import DjangoFilterBackend
+from geopy.distance import geodesic
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.filters import OrderingFilter
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -12,8 +22,14 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-from django.utils.dateparse import parse_datetime, parse_time
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from accounts.models import User
+from api.pagination import AttachmentPagination
+from api.serializers.contracts import DocumentSubTypeSerializer
+from inspections.models import Category, Service
+from api.serializers.financial import FinancierSerializer, PaymentSerializer, PaymentInstallmentSerializer
+from financial.models import Financier, Payment, PaymentInstallment
 from inspections.models import Category, Service
 from resolve_crm.models import *
 from resolve_crm.models import Task as LeadTask
@@ -24,17 +40,85 @@ from .serializers.engineering import *
 from .serializers.logistics import *
 from .serializers.resolve_crm import *
 from .serializers.inspections import *
+from .serializers.contracts import *
 from .utils import extract_data_from_pdf
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import OrderingFilter
-from .filters import GenericFilter
-from geopy.distance import geodesic
-from django.db.models import Case, When, Value, FloatField, IntegerField
-from rest_framework.decorators import action
 
 
 logger = logging.getLogger(__name__)
 
+
+class BaseModelViewSet(ModelViewSet):
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = '__all__'
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+
+    def list(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset)
+
+        if fields:
+            fields = fields.split(',')
+            serializer = self.get_serializer(queryset, many=True)
+            filtered_data = [
+                {field: self._get_field_data(item, field) for field in fields}
+                for item in serializer.data
+            ]
+            return self.get_paginated_response(filtered_data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        fields = request.query_params.get('fields')
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        if fields:
+            fields = fields.split(',')
+            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
+            return Response(filtered_data, status=status.HTTP_200_OK)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def _get_field_data(self, obj, field):
+        """Método auxiliar para obter dados de campos aninhados."""
+        if '.' in field:
+            keys = field.split('.')
+            value = obj
+            for key in keys:
+                if isinstance(value, list):
+                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
+                elif isinstance(value, dict):
+                    value = value.get(key, None)
+                else:
+                    return None
+            return value
+        return obj.get(field, None)
+
+    @property
+    def filterset_fields(self):
+        model = self.get_queryset().model
+        exclude_field_types = ['ImageField', 'FileField']
+        supported_lookups = ['CharField', 'TextField', 'ForeignKey', 'DateField', 'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField', 'DecimalField', 'ManyToManyField', 'BooleanField']
+    
+        filter_fields = {}
+        for field in model._meta.fields + model._meta.many_to_many:
+            if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
+                if field.get_internal_type() in ['ForeignKey', 'BooleanField']:
+                    filter_fields[field.name] = ['exact']
+                elif field.get_internal_type() in ['CharField', 'TextField']:
+                    filter_fields[field.name] = ['icontains', 'in']
+                elif field.get_internal_type() in ['DateField', 'DateTimeField']:
+                    filter_fields[field.name] = ['range']
+                elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField']:
+                    filter_fields[field.name] = ['exact', 'gte', 'lte']
+                elif field.get_internal_type() == 'ManyToManyField':
+                    filter_fields[field.name] = ['exact', 'in']
+        return filter_fields
+
+# Accounts views
 
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
@@ -96,67 +180,17 @@ class UserTokenRefreshView(TokenRefreshView):
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
-class BaseModelViewSet(ModelViewSet):
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    ordering_fields = '__all__'
-
-    def get_filterset_class(self):
-        return GenericFilter
-
-    def get_filterset_kwargs(self):
-        kwargs = super().get_filterset_kwargs()
-        kwargs['model'] = self.get_queryset().model
-        return kwargs
-
-    def list(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        
-        queryset = self.filter_queryset(self.get_queryset())
-        queryset = self.paginate_queryset(queryset)
-
-        if fields:
-            fields = fields.split(',')
-            serializer = self.get_serializer(queryset, many=True)
-            filtered_data = [
-                {field: self._get_field_data(item, field) for field in fields}
-                for item in serializer.data
-            ]
-            return self.get_paginated_response(filtered_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return self.get_paginated_response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-
-        if fields:
-            fields = fields.split(',')
-            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
-            return Response(filtered_data, status=status.HTTP_200_OK)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def _get_field_data(self, obj, field):
-        """Método auxiliar para obter dados de campos aninhados."""
-        if '.' in field:
-            keys = field.split('.')
-            value = obj
-            for key in keys:
-                if isinstance(value, list):
-                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
-                elif isinstance(value, dict):
-                    value = value.get(key, None)
-                else:
-                    return None
-            return value
-        return obj.get(field, None)
-    
-    
-class UserViewSet(BaseModelViewSet):
+class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+    
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
     def get_queryset(self):
@@ -255,6 +289,18 @@ class UserViewSet(BaseModelViewSet):
                     )
         return queryset
     
+    
+class EmployeeViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        employee = serializer.save()
+        return Response(EmployeeSerializer(employee).data, status=status.HTTP_201_CREATED)
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     distance = geodesic((lat1, lon1), (lat2, lon2)).kilometers
@@ -325,11 +371,10 @@ class AttachmentViewSet(BaseModelViewSet):
 
         return queryset
 
-
+    
 class SquadViewSet(BaseModelViewSet):
     queryset = Squad.objects.all()
     serializer_class = SquadSerializer
-
     def get_queryset(self):
         queryset = super().get_queryset()
         name = self.request.query_params.get('name')
@@ -349,29 +394,15 @@ class DepartmentViewSet(BaseModelViewSet):
             queryset = queryset.filter(name__icontains=name)
         return queryset
     
+    
+class DepartmentViewSet(BaseModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    
 
 class BranchViewSet(BaseModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
-    
-
-class MarketingCampaignViewSet(BaseModelViewSet):
-    queryset = MarketingCampaign.objects.all()
-    serializer_class = MarketingCampaignSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__icontains=name)
-        return queryset
 
 
 class AddressViewSet(BaseModelViewSet):
@@ -412,25 +443,630 @@ class GroupViewSet(BaseModelViewSet):
     serializer_class = GroupSerializer
 
 
-class FinancierViewSet(BaseModelViewSet):
-    queryset = Financier.objects.all()
-    serializer_class = FinancierSerializer
+# CRM views
+
+class OriginViewSet(BaseModelViewSet):
+    queryset = Origin.objects.all()
+    serializer_class = OriginSerializer
 
 
-class MaterialTypesViewSet(BaseModelViewSet):
-    queryset = MaterialTypes.objects.all()
-    serializer_class = MaterialTypesSerializer
+class LeadViewSet(BaseModelViewSet):
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+    filter_fields = '__all__'
+
+
+class LeadTaskViewSet(BaseModelViewSet): 
+    queryset = LeadTask.objects.all()
+    serializer_class = LeadTaskSerializer
+
+    
+class MarketingCampaignViewSet(BaseModelViewSet):
+    queryset = MarketingCampaign.objects.all()
+    serializer_class = MarketingCampaignSerializer
+    
+
+class ComercialProposalViewSet(BaseModelViewSet):
+    queryset = ComercialProposal.objects.all()
+    serializer_class = ComercialProposalSerializer
+
+    def create(self, request, *args, **kwargs):
+        
+        products_ids = request.data.get('products_ids', [])
+        if not products_ids:
+            return Response({'message': 'IDs dos produtos são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        products = Product.objects.filter(id__in=products_ids)
+        if not products.exists():
+            return Response({'message': 'Nenhum produto encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        proposal = serializer.save()
+        
+        sale_products = [
+            SaleProduct(
+                commercial_proposal=proposal,
+                product=product,
+                amount=1,
+                value=product.product_value,
+                reference_value=product.reference_value,
+                cost_value=product.cost_value
+            )
+            for product in products
+        ]
+        SaleProduct.objects.bulk_create(sale_products)
+            
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class SaleViewSet(BaseModelViewSet):
+    queryset = Sale.objects.all()
+    serializer_class = SaleSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        # Extraindo os dados do request
+        data = request.data
+        print("Request data:", data)
+        commercial_proposal_id = data.get('commercial_proposal_id', None)
+        print("Commercial proposal ID:", commercial_proposal_id)
+
+        # Inicializando o serializer com os dados recebidos
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        print("Serializer valid data:", serializer.validated_data)
+
+        # Salvando a instância da venda
+        sale = serializer.save()
+        print("Sale instance created:", sale)
+        products_list = []
+
+        # Se há uma proposta comercial associada, reutilizar os produtos dela
+        if commercial_proposal_id:
+            try:
+                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+                print("Commercial proposal found:", commercial_proposal)
+                sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
+                print("Sale products found:", sale_products)
+                
+                if not sale_products.exists():
+                    print("No products associated with the commercial proposal.")
+                    return Response(
+                        {"detail": "Proposta comercial não possui produtos associados."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Verificando se algum produto já está vinculado a uma venda
+                if sale_products.filter(sale__isnull=False).exists():
+                    print("Commercial proposal already linked to a sale.")
+                    return Response(
+                        {"detail": "Proposta comercial já vinculada a uma venda."}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Associando os produtos da proposta à venda
+                for sale_product in sale_products:
+                    products_list.append(sale_product)
+                    
+                    sale_product.sale = sale
+                    sale_product.save()
+                    print("Sale product linked to sale:", sale_product)
+            
+            except ComercialProposal.DoesNotExist:
+                print("Commercial proposal not found.")
+                return Response(
+                    {"detail": "Proposta comercial não encontrada."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        else:
+            # Caso contrário, associar os produtos enviados diretamente
+            products_ids = data.get('products_ids', [])
+            print("Products IDs:", products_ids)
+            for product_id in products_ids:
+                try:    
+                    product = Product.objects.get(id=product_id)
+                    sale_product = SaleProduct.objects.create(
+                        sale=sale,
+                        product=product,
+                        amount=1,  # Ajuste de acordo com sua necessidade
+                        value=product.product_value,
+                        reference_value=product.reference_value,
+                        cost_value=product.cost_value
+                    )
+                    products_list.append(sale_product)
+                    print("Product linked to sale:", product)
+                except Product.DoesNotExist:
+                    print(f"Product with ID {product_id} not found.")
+                    return Response(
+                        {"detail": f"Produto com ID {product_id} não encontrado."}, 
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+        if sale.total_value is None or sale.total_value == 0:
+            try: 
+                total_value = self.calculate_total_value(products_list)
+                sale.total_value = total_value
+                sale.save()
+            except Exception as e:
+                print(f"Error calculating total value: {str(e)}")
+                return Response(
+                    {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        # Retornando a resposta com os dados da nova venda criada
+        headers = self.get_success_headers(serializer.data)
+        print("Response headers:", headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        data = request.data
+
+        # Atualizando os dados da venda
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Salvando a instância da venda
+        sale = serializer.save()
+
+        # Atualizando os produtos vinculados à venda
+        products_ids = data.get('products_ids', [])
+
+        # Validando os produtos enviados
+        products = []
+        for product_id in products_ids:
+            try:
+                product = Product.objects.get(id=product_id)
+                products.append(product)
+            except Product.DoesNotExist:
+                return Response(
+                    {"detail": f"Produto com ID {product_id} não encontrado."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        # Verificando se a venda já possui projetos vinculados aos produtos enviados
+        linked_products = []
+        for product in products:
+            if Project.objects.filter(sale=sale, product=product).exists():  # Ajuste conforme seu modelo
+                linked_products.append(product)
+
+        if linked_products:
+            return Response(
+                {
+                    "detail": "A venda já possui projetos vinculados a alguns produtos.",
+                    "linked_products": [
+                        {"id": product.id, "name": product.name} for product in linked_products
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Removendo produtos que não estão mais na lista
+        existing_sale_products = SaleProduct.objects.filter(sale=sale)
+        for sale_product in existing_sale_products:
+            if sale_product.product.id not in products_ids:
+                sale_product.delete()
+
+        # Adicionando ou mantendo os produtos enviados
+        for product in products:
+            sale_product, created = SaleProduct.objects.get_or_create(
+                sale=sale,
+                product=product,
+                defaults={
+                    "amount": 1,  # Ajuste de acordo com sua necessidade
+                    "value": product.product_value,
+                    "reference_value": product.reference_value,
+                    "cost_value": product.cost_value,
+                }
+            )
+
+        # Recalculando o valor total da venda, se necessário
+        try:
+            total_value = self.calculate_total_value(SaleProduct.objects.filter(sale=sale))
+            sale.total_value = total_value
+            sale.save()
+        except Exception as e:
+            return Response(
+                {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Retornando a resposta com os dados atualizados da venda
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+
+    
+        def calculate_total_value(self, sales_products):
+            total_value = 0
+            for sales_product in sales_products:
+                total_value += sales_product.value * sales_product.amount
+            return total_value
+
+
+class ProjectViewSet(BaseModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+
+
+class ContractSubmissionViewSet(BaseModelViewSet):
+    queryset = ContractSubmission.objects.all()
+    serializer_class = ContractSubmissionSerializer
+
+
+class GenerateSalesProjectsView(APIView):
+    http_method_names = ['post', 'get']
+
+    @transaction.atomic
+    def post(self, request):
+        sale_id = request.data.get('sale_id')
+
+        # Verificar se a venda existe
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Recuperar os produtos da venda
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        
+        if not sale_products.exists():
+            return Response({'message': 'Venda não possui produtos associados.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Projetos já criados para esta venda
+        projects = Project.objects.filter(sale=sale)
+        
+        # Listas para rastrear os resultados
+        created_projects = []
+        already_existing_projects = []
+        
+        # Criar um projeto para cada produto da venda, se ainda não existir
+        for sale_product in sale_products:
+            if projects.filter(product=sale_product.product).exists():
+                already_existing_projects.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
+                continue  # Pula para o próximo produto
+
+            # Dados do projeto
+            project_data = {
+                'sale_id': sale.id,
+                'status': 'P',
+                'product_id': sale_product.product.id,
+            }
+            # Serializar e salvar
+            project_serializer = ProjectSerializer(data=project_data)
+            if project_serializer.is_valid():
+                project = project_serializer.save()
+                created_projects.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
+            else:
+                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar o resultado
+        if not created_projects:
+            return Response({'message': 'Todos os projetos já foram criados.', 'already_existing_projects': already_existing_projects}, status=status.HTTP_200_OK)
+        
+        return Response({
+            'message': 'Projetos gerados com sucesso.',
+            'created_projects': created_projects,
+            'already_existing_projects': already_existing_projects,
+        }, status=status.HTTP_200_OK)
+
+
+
+    def get(self, request):
+        sale_id = request.query_params.get('sale_id')
+        print("Sale ID:", sale_id)
+        
+        if not sale_id:
+            return Response({'message': 'É necessário informar o ID da venda.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Recuperar os produtos e os projetos associados à venda
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        projects = Project.objects.filter(sale=sale)
+        
+        already_generated = []
+        pending_generation = []
+        
+        # Verificar quais produtos já possuem projetos e quais estão pendentes
+        for sale_product in sale_products:
+            if projects.filter(product=sale_product.product).exists():
+                already_generated.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                    'amount': sale_product.amount,
+                    'value': sale_product.value,
+                    'reference_value': sale_product.reference_value,
+                    'cost_value': sale_product.cost_value,
+                })
+            else:
+                pending_generation.append({
+                    'product_id': sale_product.product.id,
+                    'product_name': sale_product.product.name,
+                })
+        
+        response_data = {
+            'sale_id': sale.id,
+            'sale_status': sale.status,
+            'already_generated': already_generated,
+            'pending_generation': pending_generation,
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+
+class GeneratePreSaleView(APIView): 
+    http_method_names = ['post']
+
+    @transaction.atomic
+    def post(self, request):
+        lead_id = request.data.get('lead_id')
+        products = request.data.get('products')
+        commercial_proposal_id = request.data.get('commercial_proposal_id')
+        # payment_data = request.data.get('payment')
+
+        if not lead_id:
+            return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not products and not commercial_proposal_id:
+            return Response({'message': 'É obrigatório possuir um produto ou uma Proposta Comercial.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        if commercial_proposal_id and products:
+            return Response({'message': 'commercial_proposal_id e products são mutuamente exclusivos.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if commercial_proposal_id:
+            try:
+                comercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+            except ComercialProposal.DoesNotExist:
+                return Response({'message': 'Proposta Comercial não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lead = Lead.objects.get(id=lead_id)
+        except Lead.DoesNotExist:
+            return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not lead.first_document:
+            return Response({'message': 'Lead não possui documento cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Criação ou recuperação do cliente usando Serializer
+        customer = User.objects.filter(first_document=lead.first_document).first()
+        if not customer:
+            base_username = lead.name.split(' ')[0] + '.' + lead.name.split(' ')[-1]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+
+            user_data = {
+                'complete_name': lead.name,
+                'username': username,
+                'first_name': lead.name.split(' ')[0],
+                'last_name': lead.name.split(' ')[-1],
+                'email': lead.contact_email,
+                'addresses_ids': [address.id for address in lead.addresses.all()],
+                'user_types_ids': [UserType.objects.get(id=2).id],
+                'first_document': lead.first_document,
+            }
+            user_serializer = UserSerializer(data=user_data)
+            if user_serializer.is_valid():
+                customer = user_serializer.save()
+            else:
+                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Atualiza o cliente existente com os dados do lead, se necessário
+            user_serializer = UserSerializer(customer, data={
+                'complete_name': lead.name,
+                'email': lead.contact_email,
+                'addresses': [address.id for address in lead.addresses.all()],
+                'user_types': UserType.objects.get(id=2).id,
+            }, partial=True)
+            if user_serializer.is_valid():
+                customer = user_serializer.save()
+            else:
+                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        lead.customer = customer
+        lead.save()
+
+        products_ = []
+        total_value = comercial_proposal.value if commercial_proposal_id else 0
+        if products:
+            for product in products:
+                # Verificar se é um novo produto ou um existente
+                if 'id' not in product:
+                    # Criar novo produto
+                    product_serializer = ProductSerializer(data=product)
+                    if product_serializer.is_valid():
+                        new_product = product_serializer.save()
+                        products_.append(new_product)
+    
+                        # Calcular o valor do produto com base nos materiais associados
+                        product_value = self.calculate_product_value(new_product)
+                        total_value += product_value
+                    else:
+                        return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    # Capturar produto existente
+                    try:
+                        existing_product = Product.objects.get(id=product['id'])
+                        products_.append(existing_product)
+
+                        # Calcular o valor do produto com base nos materiais associados
+                        product_value = self.calculate_product_value(existing_product)
+                        total_value += product_value
+                    except Product.DoesNotExist:
+                        return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Criação da pré-venda usando Serializer
+            sale_data = {
+                'customer_id': customer.id,
+                'lead_id': lead.id,
+                'is_pre_sale': True,
+                'status': 'P',
+                'branch_id': lead.seller.employee.branch.id,
+                'seller_id': lead.seller.id,
+                'sales_supervisor_id': lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None,
+                'sales_manager_id': lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None,
+                'total_value': round(total_value, 3),
+                # **({'commercial_proposal_id': commercial_proposal_id} if commercial_proposal_id else {}),
+                **({'products_ids': [product.id for product in products_]} if products else {})
+            }
+            sale_serializer = SaleSerializer(data=sale_data)
+            if sale_serializer.is_valid():
+                pre_sale = sale_serializer.save()
+                
+                if commercial_proposal_id:
+                    try:
+                        salesproduct = SaleProduct.objects.filter(commercial_proposal_id=commercial_proposal_id)
+                        print(salesproduct)
+                        
+                        for saleproduct in salesproduct:
+                            if saleproduct.sale_id:
+                                return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'}, status=status.HTTP_400_BAD_REQUEST)
+                            
+                            saleproduct.sale_id = pre_sale.id
+                            saleproduct.save()
+                            
+                            project_data = {
+                                'sale_id': pre_sale.id,
+                                'status': 'P',
+                                'product_id': saleproduct.product.id,
+                                'addresses_ids': [address.id for address in lead.addresses.all()]
+                            }
+                            project_serializer = ProjectSerializer(data=project_data)
+                            if project_serializer.is_valid():
+                                project = project_serializer.save()
+                            else:
+                                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                            
+                    except Exception as e:
+                        logger.error(f'Erro ao vincular produtos da proposta comercial à pré-venda: {str(e)}')
+                        return Response({'message': 'Erro ao vincular produtos da proposta comercial à pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+            else:
+                return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f'Erro ao criar pré-venda: {str(e)}')
+            return Response({'message': 'Erro ao criar pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        if products:
+            # Vinculação dos products ao projeto usando Serializer
+            for product in products_:
+                project_data = {
+                    'sale_id': pre_sale.id,
+                    'status': 'P',
+                    'product_id': product.id,
+                    'addresses_ids': [address.id for address in lead.addresses.all()]
+                }
+                project_serializer = ProjectSerializer(data=project_data)
+                if project_serializer.is_valid():
+                    project = project_serializer.save()
+                else:
+                    return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Criação do pagamento usando Serializer
+        """
+        payment_data['value'] = total_value
+        payment_data['sale'] = pre_sale.id
+        payment_serializer = PaymentSerializer(data=payment_data)
+        if payment_serializer.is_valid():
+            payment_serializer.save()
+        else:
+            return Response(payment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        """
+
+        return Response({
+            'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
+            'pre_sale_id': pre_sale.id
+        }, status=status.HTTP_200_OK)
+    
+    
+    def calculate_product_value(self, product):
+        """
+        Função para calcular o valor total do produto com base no valor do próprio produto
+        e dos materiais associados.
+        """
+        product_value = product.product_value
+
+        # Somar o custo dos materiais associados ao produto
+        associated_materials = ProductMaterials.objects.filter(product=product, is_deleted=False)
+        for item in associated_materials:
+            material_cost = item.material.price * item.amount
+            product_value += material_cost
+
+        return product_value
+
+
+# Contracts views
+
+class InformacaoFaturaAPIView(APIView):
+    parser_classes = [MultiPartParser]
+    http_method_names = ['post']
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        if 'bill_file' not in request.FILES:
+            return Response({
+                'message': 'Arquivo da fatura é obrigatório.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        bill_file = request.FILES['bill_file']
+
+        try:
+            data = extract_data_from_pdf(bill_file)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'message': 'Erro ao processar a fatura.',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     
 
 class MaterialsViewSet(BaseModelViewSet):
     queryset = Materials.objects.all()
     serializer_class = MaterialsSerializer
 
-
-class SolarEnergyKitViewSet(BaseModelViewSet):
-    queryset = SolarEnergyKit.objects.all()
-    serializer_class = SolarEnergyKitSerializer
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        material = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
+
+class ProductViewSet(BaseModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    def perform_create(self, serializer):
+        is_default = self.request.data.get('is_default', None)
+
+        # Verifica se `is_default` é `false`
+        if is_default is not None and not bool(is_default):
+            sale_id = self.request.data.get('sale_id', None)
+            if not sale_id:
+                raise serializers.ValidationError({"sale_id": "Este campo é obrigatório quando is_default é false."})
+        
+        # Salva o objeto usando o serializer
+        serializer.save()
+
+
+# Inspections views
 
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
@@ -545,6 +1181,8 @@ class ScheduleViewSet(BaseModelViewSet):
         
 
 
+# Engineering views
+
 class EnergyCompanyViewSet(BaseModelViewSet):
     queryset = EnergyCompany.objects.all()
     serializer_class = EnergyCompanySerializer
@@ -553,23 +1191,90 @@ class EnergyCompanyViewSet(BaseModelViewSet):
 class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
-
-
-class CircuitBreakerViewSet(BaseModelViewSet):
-    queryset = CircuitBreaker.objects.all()
-    serializer_class = CircuitBreakerSerializer
     
+
+class UnitsViewSet(BaseModelViewSet):
+    queryset = Units.objects.all()
+    serializer_class = UnitsSerializer
+    
+    # def perform_create(self, serializer):
+    #     instance = serializer.save()
+    #     if 'bill_file' in self.request.FILES:
+    #         self.process_bill_file(instance)
+
+    # def perform_update(self, serializer):
+    #     instance = serializer.save()
+    #     if 'bill_file' in self.request.FILES:
+    #         self.process_bill_file(instance)
+
+    # def process_bill_file(self, unit):
+    #     # Resolve a URL para o endpoint API
+    #     # Garante que a URL é absoluta (pode ser ajustado para usar seu domínio se necessário)
+    #     url = self.request.build_absolute_uri(reverse('api:invoice_information'))
+
+    #     headers = {
+    #         'accept': 'application/json'
+    #     }
+
+    #     try:
+    #         # Abre o arquivo da unidade
+    #         with unit.bill_file.open('rb') as f:
+    #             files = {
+    #                 'bill_file': (unit.bill_file.name, f, 'application/pdf')
+    #             }
+    #             logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
+                
+    #             # Faz a requisição POST para a API
+    #             response = requests.post(url, headers=headers, files=files, timeout=5)
+    #             response.raise_for_status()  # Lança exceção em caso de status de erro HTTP
+
+    #             # Pega os dados retornados pela API
+    #             external_data = response.json()
+
+    #         #nao deixar colocar repetido
+    #         # Atualiza os dados da unidade com base nos dados da API
+    #         unit.name = external_data.get('name', unit.name)
+    #         unit.account_number = external_data.get('uc', unit.unit_number)
+    #         unit.unit_number = external_data.get('account', unit.account_number)
+    #         unit.type = external_data.get('type', unit.type)
+    #         # unit.address = external_data.get('address', unit.address)  # Se você precisar adicionar o campo de endereço
+    #         unit.save()
+
+    #         logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
+
+    #     except requests.exceptions.Timeout:
+    #         logger.error(f'Timeout ao enviar fatura para a API externa para a unidade ID {unit.id}')
+    #         raise ValidationError({'error': 'Timeout ao processar o arquivo da fatura.'})
+    #     except requests.exceptions.HTTPError as http_err:
+    #         logger.error(f'Erro HTTP ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(http_err)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+    #     except requests.exceptions.RequestException as req_err:
+    #         logger.error(f'Erro na requisição ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(req_err)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+    #     except Exception as e:
+    #         logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
+    #         raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
+
+
+# Core views
+
+class AttachmentViewSet(BaseModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+    pagination_class = AttachmentPagination
+    
+
+class ContentTypeViewSet(BaseModelViewSet):
+    queryset = ContentType.objects.all()
+    serializer_class = ContentTypeSerializer
+    http_method_names = ['get']
+
 
 class BoardViewSet(BaseModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     
     
-class LeadTaskViewSet(BaseModelViewSet):
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-
- 
 class ColumnViewSet(BaseModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
@@ -580,115 +1285,161 @@ class TaskTemplatesViewSet(BaseModelViewSet):
     serializer_class = TaskTemplatesSerializer
 
 
-class UnitsViewSet(BaseModelViewSet):
-    queryset = Units.objects.all()
-    serializer_class = UnitsSerializer
+class TaskViewSet(BaseModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+ 
+# Financial views
+
+class FinancierViewSet(BaseModelViewSet):
+    queryset = Financier.objects.all()
+    serializer_class = FinancierSerializer
+
+
+class PaymentViewSet(BaseModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
 
     def perform_create(self, serializer):
+        # Remover os campos que não pertencem ao modelo antes de salvar
+        create_installments = self.request.data.pop('create_installments', False)
+        
+        # Converter 'installments_number' para um inteiro
+        num_installments = int(self.request.data.pop('installments_number', 0) or 0)
+
+        # Salvar o objeto Payment
         instance = serializer.save()
-        if 'bill_file' in self.request.FILES:
-            self.process_bill_file(instance)
 
-    def perform_update(self, serializer):
-        instance = serializer.save()
-        if 'bill_file' in self.request.FILES:
-            self.process_bill_file(instance)
+        # Criar parcelas se solicitado
+        if create_installments and num_installments > 0:
+            self.create_installments(instance, num_installments)
 
-    def process_bill_file(self, unit):
-        # Resolve a URL para o endpoint API
-        # Garante que a URL é absoluta (pode ser ajustado para usar seu domínio se necessário)
-        url = self.request.build_absolute_uri(reverse('api:invoice_information'))
+    def create_installments(self, payment, num_installments):
+        # Garantir que due_date seja um objeto datetime
+        if isinstance(payment.due_date, str):
+            payment.due_date = datetime.strptime(payment.due_date, '%Y-%m-%d')
 
-        headers = {
-            'accept': 'application/json'
-        }
+        installment_amount = payment.value / num_installments
 
-        try:
-            # Abre o arquivo da unidade
-            with unit.bill_file.open('rb') as f:
-                files = {
-                    'bill_file': (unit.bill_file.name, f, 'application/pdf')
-                }
-                logger.info(f'Enviando fatura para a API externa para a unidade ID {unit.id}')
-                
-                # Faz a requisição POST para a API
-                response = requests.post(url, headers=headers, files=files, timeout=5)
-                response.raise_for_status()  # Lança exceção em caso de status de erro HTTP
-
-                # Pega os dados retornados pela API
-                external_data = response.json()
-
-            # Atualiza os dados da unidade com base nos dados da API
-            unit.name = external_data.get('name', unit.name)
-            unit.account_number = external_data.get('uc', unit.unit_number)
-            unit.unit_number = external_data.get('account', unit.account_number)
-            unit.type = external_data.get('type', unit.type)
-            # unit.address = external_data.get('address', unit.address)  # Se você precisar adicionar o campo de endereço
-            unit.save()
-
-            logger.info(f'Dados da API externa atualizados para a unidade ID {unit.id}')
-
-        except requests.exceptions.Timeout:
-            logger.error(f'Timeout ao enviar fatura para a API externa para a unidade ID {unit.id}')
-            raise ValidationError({'error': 'Timeout ao processar o arquivo da fatura.'})
-        except requests.exceptions.HTTPError as http_err:
-            logger.error(f'Erro HTTP ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(http_err)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
-        except requests.exceptions.RequestException as req_err:
-            logger.error(f'Erro na requisição ao enviar fatura para a API externa para a unidade ID {unit.id}: {str(req_err)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
-        except Exception as e:
-            logger.error(f'Erro inesperado ao processar fatura para a unidade ID {unit.id}: {str(e)}')
-            raise ValidationError({'error': 'Erro ao processar o arquivo da fatura.'})
-
-
-class ProjectViewSet(BaseModelViewSet):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-
-
-class SaleViewSet(BaseModelViewSet):
-    queryset = Sale.objects.all()
-    serializer_class = SaleSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.query_params.get('q')
-
-        if search:
-            queryset = queryset.filter(
-                Q(customer__first_document__icontains=search) |
-                Q(customer__second_document__icontains=search) |
-                Q(customer__complete_name__icontains=search) |
-                Q(contract_number__icontains=search)
+        for i in range(num_installments):
+            PaymentInstallment.objects.create(
+                payment=payment,
+                installment_value=installment_amount,
+                due_date=payment.due_date + timezone.timedelta(days=30 * i),
+                installment_number=i + 1
             )
 
-        return queryset
-    
 
-class InformacaoFaturaAPIView(APIView):
-    parser_classes = [MultiPartParser]
-    http_method_names = ['post']
+class PaymentInstallmentViewSet(BaseModelViewSet):
+    queryset = PaymentInstallment.objects.all()
+    serializer_class = PaymentInstallmentSerializer
 
-    def post(self, request):
-        if 'bill_file' not in request.FILES:
+
+# History views
+
+class HistoryView(APIView):
+    http_method_names = ['get']
+
+    def get(self, request):
+        content_type_id = request.query_params.get('content_type')
+        object_id = request.query_params.get('object_id')
+
+        if not content_type_id or not object_id:
             return Response({
-                'message': 'Arquivo da fatura é obrigatório.'
+                'message': 'content_type e object_id são obrigatórios.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        bill_file = request.FILES['bill_file']
+        # Busca o ContentType ou retorna 404 se não encontrado
+        content_type = get_object_or_404(ContentType, id=content_type_id)
+        model_class = content_type.model_class()
+        
+        # Verifica se o model possui histórico
+        if not hasattr(model_class, 'history'):
+            return Response({
+                'message': 'O modelo não possui histórico.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            data = extract_data_from_pdf(bill_file)
-            return Response(data, status=status.HTTP_200_OK)
+            # Busca o histórico para o objeto específico
+            history = model_class.history.filter(id=object_id)
+            if not history.exists():
+                return Response({
+                    'message': 'Histórico não encontrado para o objeto fornecido.'
+                }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({
-                'message': 'Erro ao processar a fatura.',
+                'message': 'Erro ao buscar o histórico.',
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+        except Exception as e:
+            return Response({
+                'message': 'Erro ao buscar o histórico.',
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class ContentTypeViewSet(BaseModelViewSet):
-    queryset = ContentType.objects.all()
-    serializer_class = ContentTypeSerializer
-    http_method_names = ['get']
+        # Calcula as diferenças entre todas as versões consecutivas
+        changes = []
+        history_objects = list(history)
+
+        for i in range(len(history_objects) - 1):
+            new_record = history_objects[i]
+            old_record = history_objects[i + 1]
+            delta = new_record.diff_against(old_record)
+
+            if delta.changes:
+                author_data = RelatedUserSerializer(new_record.history_user).data if new_record.history_user else {'username': 'Desconhecido'}
+                change_list = []
+                for change in delta.changes:
+                    field_name = change.field
+                    # Obter o label do campo
+                    try:
+                        field_verbose = new_record._meta.get_field(field_name).verbose_name
+                    except FieldDoesNotExist:
+                        field_verbose = field_name  # Usa o nome do campo se o verbose_name não estiver definido
+                    field_verbose = capfirst(field_verbose)
+                    change_list.append({
+                        'field': field_name,
+                        'field_label': field_verbose,
+                        'old': change.old,
+                        'new': change.new
+                    })
+                changes.append({
+                    'version_diff': f"{i + 1} -> {i + 2}",
+                    'author': author_data,
+                    'timestamp': new_record.history_date,
+                    'history_type': new_record.history_type,
+                    'changes': change_list
+                })
+
+        # Retornar somente as mudanças
+        return Response({
+            'changes': changes
+        }, status=status.HTTP_200_OK)
+
+
+class SupplyAdequanceViewSet(BaseModelViewSet):
+    queryset = SupplyAdequance.objects.all()
+    serializer_class = SupplyAdequanceSerializer
+
+
+class ResquestTypeViewSet(BaseModelViewSet):
+    queryset = ResquestType.objects.all()
+    serializer_class = ResquestTypeSerializer
+    
+    
+class SituationEnergyCompanyViewSet(BaseModelViewSet):
+    queryset = SituationEnergyCompany.objects.all()
+    serializer_class = SituationEnergyCompanySerializer
+    
+
+class DocumentTypeViewSet(BaseModelViewSet):
+    queryset = DocumentType.objects.all()
+    serializer_class = DocumentTypeSerializer
+    
+
+class DocumentSubTypeViewSet(BaseModelViewSet):
+    queryset = DocumentSubType.objects.all()
+    serializer_class = DocumentSubTypeSerializer
+    
+    

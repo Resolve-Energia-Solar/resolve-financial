@@ -1,16 +1,53 @@
 from django.contrib import admin
-from .models import MaterialTypes, Materials, SolarEnergyKit
-# Register your models here.
+from .models import Materials
+from .models import *
 
 
-@admin.register(MaterialTypes)
-class MaterialTypesAdmin(admin.ModelAdmin):
-    pass
+class MaterialAttributesInline(admin.TabularInline):
+    model = MaterialAttributes
+    extra = 0
+
 
 @admin.register(Materials)
 class MaterialsAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('id','name', 'is_deleted', 'created_at')
+    list_filter = ('is_deleted', 'created_at')
+    inlines = [MaterialAttributesInline]
 
-@admin.register(SolarEnergyKit)
-class SolarEnergyKitAdmin(admin.ModelAdmin):
-    pass
+
+class ProductMaterialsInline(admin.TabularInline):
+    model = ProductMaterials
+    extra = 0
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('id','name', 'branch', 'roof_type', 'default', 'is_deleted', 'created_at')
+    search_fields = ('inversors_model__description', 'modules_model__description', 'branch__name', 'roof_type__name')
+    list_filter = ('default', 'is_deleted', 'created_at')
+    inlines = [ProductMaterialsInline]
+
+
+class ProjectMaterialsInline(admin.TabularInline):
+    model = ProjectMaterials
+    extra = 1
+    
+    
+class SaleProductInline(admin.TabularInline):
+    model = SaleProduct
+    extra = 1
+    
+    
+# @admin.register(ProjectMaterials)
+# class ProjectMaterialsAdmin(admin.ModelAdmin):
+#     list_display = ('project', 'material', 'amount', 'is_deleted', 'created_at')
+#     search_fields = ('project__name', 'material__description')
+#     list_filter = ('is_deleted', 'created_at')
+    
+
+# @admin.register(ProductMaterials)
+# class ProductMaterialsAdmin(admin.ModelAdmin):
+#     list_display = ('product', 'material', 'amount', 'is_deleted', 'created_at')
+#     search_fields = ('product__name', 'material__description')
+#     list_filter = ('is_deleted', 'created_at')
+    
