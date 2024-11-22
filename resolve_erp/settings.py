@@ -62,13 +62,14 @@ INSTALLED_APPS = [
     'inspections.apps.InspectionsConfig',
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
+    'mobile_app.apps.MobileAppConfig',
     'notifications',
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
     'drf_yasg',
     'django_filters',
-    'corsheaders'
+    'corsheaders',
 ]
 
 
