@@ -4,7 +4,7 @@ from core.models import Column
 from engineering.models import Units
 from resolve_crm.models import *
 from accounts.serializers import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
-from accounts.serializers import BaseSerializer
+from api.serializers import BaseSerializer
 from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField

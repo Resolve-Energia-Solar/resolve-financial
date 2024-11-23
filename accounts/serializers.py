@@ -1,21 +1,8 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, PrimaryKeyRelatedField
+from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
 from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
-from rest_framework import serializers
-from core.models import TaskTemplates
+from api.serializers import BaseSerializer
 from accounts.models import *
-
-
-class BaseSerializer(ModelSerializer):
-    
-    class Meta:
-        model = None
-        exclude = []
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'is_deleted' in self.fields:
-            self.fields.pop('is_deleted')
 
 
 class DepartmentSerializer(BaseSerializer):
@@ -53,7 +40,7 @@ class AddressSerializer(BaseSerializer):
         exclude = ['is_deleted']
 
 
-class BranchSerializer(ModelSerializer):
+class BranchSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     owners = RelatedUserSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
@@ -74,7 +61,7 @@ class ContentTypeSerializer(BaseSerializer):
             fields = '__all__'
 
 
-class PermissionSerializer(ModelSerializer):
+class PermissionSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     content_type = ContentTypeSerializer(read_only=True)
 
@@ -86,7 +73,7 @@ class PermissionSerializer(ModelSerializer):
         fields = '__all__'
 
 
-class GroupSerializer(ModelSerializer):
+class GroupSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     permissions = PermissionSerializer(many=True, read_only=True)
 
@@ -105,7 +92,7 @@ class UserTypeSerializer(BaseSerializer):
             fields = '__all__'
 
 
-class UserSerializer(ModelSerializer):
+class UserSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     addresses = AddressSerializer(many=True, read_only=True)
     user_types = UserTypeSerializer(many=True, read_only=True)
@@ -136,7 +123,7 @@ class UserSerializer(ModelSerializer):
         return getattr(obj, 'daily_schedules_count', None)
     
 
-class EmployeeSerializer(serializers.ModelSerializer):
+class EmployeeSerializer(BaseSerializer):
     user = UserSerializer()
 
     class Meta:
@@ -194,7 +181,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return instance
 
 
-class SquadSerializer(ModelSerializer):
+class SquadSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     branch = BranchSerializer(read_only=True)
     manager = RelatedUserSerializer(read_only=True)

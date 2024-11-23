@@ -1,7 +1,7 @@
 from accounts.models import Branch
 from inspections.models import RoofType
 from logistics.models import *
-from accounts.serializers import BaseSerializer
+from api.serializers import BaseSerializer
 from resolve_crm.models import ComercialProposal, Sale
 from accounts.serializers import BranchSerializer
 from inspections.serializers import RoofTypeSerializer
