@@ -313,7 +313,9 @@ class ContractSubmission(models.Model):
     finished_at = models.DateTimeField("Finalizado em", null=True, blank=True)
     
     def __str__(self):
-        self.submit_datetime
+        sale_contract_number = self.sale.contract_number if self.sale and self.sale.contract_number else 'N/A'
+        submit_datetime = self.submit_datetime if self.submit_datetime else 'N/A'
+        return f'{sale_contract_number} - {submit_datetime}'
     
     class Meta:
         verbose_name = "Envio de Contrato"
