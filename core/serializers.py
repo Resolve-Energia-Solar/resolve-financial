@@ -1,6 +1,6 @@
 from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
 from accounts.models import Branch, User
-from accounts.serializers import BaseSerializer
+from api.serializers import BaseSerializer
 from core.models import *
 from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead, Origin

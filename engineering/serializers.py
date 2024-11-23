@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from resolve_crm.serializers import SaleSerializer
 from engineering.models import *
-from accounts.serializers import BaseSerializer, AddressSerializer, UserSerializer
+from api.serializers import BaseSerializer, AddressSerializer, UserSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 
 
