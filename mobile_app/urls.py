@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 
 from accounts.views import UserTokenRefreshView
-from mobile_app.views import CustomerLoginView
+from mobile_app.views import CustomerLoginView, CustomerViewset
 
 
 mobile_app_router = DefaultRouter()
@@ -31,11 +31,13 @@ mobile_app_schema_view = get_schema_view(
     patterns=[path('api/m/', include('mobile_app.urls'))],
 )
 
+mobile_app_router.register('customers', CustomerViewset, basename='customer')
+
 app_name = 'mobile_app'
 urlpatterns = [
-    path('', include(mobile_app_router.urls)),
     path('login/', CustomerLoginView.as_view(), name='customer_login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='customer_token_refresh'),
+    path('', include(mobile_app_router.urls)),
     re_path(r'^swagger/$', mobile_app_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui-mobile_app'),
     re_path(r'^redoc/$', mobile_app_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc-mobile_app')
 ]

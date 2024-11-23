@@ -6,10 +6,13 @@ from rest_framework import status
 from accounts.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
-from rest_framework_simplejwt.views import TokenRefreshView
+
+from api.views import BaseModelViewSet
+from mobile_app.serializers import CustomerSerializer
 
 
 class CustomerLoginView(APIView):
+
     permission_classes = [AllowAny]
     http_method_names = ['post']
 
@@ -57,3 +60,9 @@ class CustomerLoginView(APIView):
             'id': user.id,
             'last_login': last_login
         }, status=status.HTTP_200_OK)
+
+
+class CustomerViewset(BaseModelViewSet):
+    queryset = User.objects.filter(is_active=True, customer_sales__isnull=False).distinct()
+    serializer_class = CustomerSerializer
+    http_method_names = ['get']
