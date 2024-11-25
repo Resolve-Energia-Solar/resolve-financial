@@ -8,6 +8,7 @@ from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
 from financial.models import PaymentInstallment
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Origin(models.Model):
@@ -308,14 +309,13 @@ class ContractSubmission(models.Model):
     submit_datetime = models.DateTimeField("Data e hora do envio")
     status = models.CharField("Status do envio", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
     due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
-    key_number = models.CharField("Número da Chave", max_length=50)
+    key_number = models.CharField("Número da Chave", max_length=50, null=True, blank=True)
+    request_signature_key = models.CharField("Chave de solicitação de assinatura", max_length=50, null=True, blank=True)
     link = models.URLField("Link para assinatura")
     finished_at = models.DateTimeField("Finalizado em", null=True, blank=True)
     
     def __str__(self):
-        sale_contract_number = self.sale.contract_number if self.sale and self.sale.contract_number else 'N/A'
-        submit_datetime = self.submit_datetime if self.submit_datetime else 'N/A'
-        return f'{sale_contract_number} - {submit_datetime}'
+        self.submit_datetime
     
     class Meta:
         verbose_name = "Envio de Contrato"
@@ -359,7 +359,14 @@ class Sale(models.Model):
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
-    transfer_percentage = models.DecimalField("Percentual de Repasse", max_digits=5, decimal_places=4, null=True, blank=True)
+    transfer_percentage = models.DecimalField(
+        "Porcentagem de Repasse",
+        max_digits=7,  # Para permitir até 999.9999
+        decimal_places=4,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
@@ -422,6 +429,13 @@ class Sale(models.Model):
                 self.contract_number = f'RES{last_number + 1:02}'
             else:
                 self.contract_number = 'RES01'
+                
+        if not self.transfer_percentage:
+            self.transfer_percentage = self.branch.transfer_percentage
+
+        if self.transfer_percentage and not (0 <= self.transfer_percentage <= 100):
+            raise ValueError("Transfer percentage must be between 0 and 100.")
+            
         super().save(*args, **kwargs)
 
     class Meta:
