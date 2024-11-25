@@ -150,7 +150,7 @@ class Branch(models.Model):
     picture = models.ImageField("Foto", upload_to="branches", blank=True, null=True)
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
-        max_digits=7,  # Para permitir até 999.9999
+        max_digits=7,
         decimal_places=4,
         blank=True,
         null=True,

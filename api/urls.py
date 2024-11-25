@@ -1,11 +1,9 @@
-from django.urls import path, re_path, include, reverse
+from django.urls import path, re_path, include
 
 
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework.routers import DefaultRouter, APIRootView
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import permissions
 
 from accounts.views import UserLoginView, UserTokenRefreshView
