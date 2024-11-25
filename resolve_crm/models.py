@@ -461,10 +461,32 @@ class Project(models.Model):
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto", null=True, blank=True)
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
-    document_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
+    is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
+    documention_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
     registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+
+    @property
+    def attachments(self):
+        return Attachment.objects.filter(
+            object_id=self.id, 
+            content_type=ContentType.objects.get_for_model(self)
+        )
+
+    @property
+    def missing_documents(self):
+        required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
+        missing_documents = []
+        if required_documents:
+            for document in required_documents:
+                if not self.attachments.filter(document_type=document):
+                    missing_documents.append({
+                        'id': document.id,
+                        'name': document.name
+                    })
+            return missing_documents
+        return None
     
     class Meta:
         verbose_name = "Projeto"
