@@ -1,3 +1,6 @@
+from core.serializers import AttachmentSerializer
+from resolve_crm.models import Sale
+from resolve_crm.serializers import SaleSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -8,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
 from api.views import BaseModelViewSet
-from mobile_app.serializers import CustomerSerializer
+from mobile_app.serializers import CustomerSerializer, MobileSaleSerializer
 
 
 class CustomerLoginView(APIView):
@@ -66,3 +69,36 @@ class CustomerViewset(BaseModelViewSet):
     queryset = User.objects.filter(is_active=True, customer_sales__isnull=False).distinct()
     serializer_class = CustomerSerializer
     http_method_names = ['get']
+
+
+class SaleViewset(BaseModelViewSet):
+    queryset = Sale.objects.all()
+    serializer_class = MobileSaleSerializer
+    http_method_names = ['get']
+
+
+class ContractView(APIView):
+
+    http_method_names = ['get']
+
+    def get(self, request, sale_id):
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({
+                'message': 'Venda não encontrada.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        missing_documents = sale.missing_documents()  # Chame o método aqui
+
+        attached_documents = sale.attachments.all()
+        last_attached_date = attached_documents.order_by('-created_at').first().created_at if attached_documents else None
+
+        data = {
+            'all_documents_present': not missing_documents,
+            'missing_documents': missing_documents,
+            'last_attached_date': last_attached_date,
+            'attachments': AttachmentSerializer(attached_documents, many=True).data
+        }
+
+        return Response(data, status=status.HTTP_200_OK)

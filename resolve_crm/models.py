@@ -369,7 +369,6 @@ class Sale(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
-    
     @property
     def can_generate_contract(self):
         customer_data = True if self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document else False
@@ -395,6 +394,7 @@ class Sale(models.Model):
             total_paid += installment.installment_value
         return total_paid
 
+    @property
     def attachments(self):
         return Attachment.objects.filter(
             object_id=self.id, 
@@ -404,13 +404,15 @@ class Sale(models.Model):
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
         missing_documents = []
-        for document in required_documents:
-            if not self.attachments().filter(document_type=document):
-                missing_documents.append({
-                    'id': document.id,
-                    'name': document.name
-                })
-        return missing_documents
+        if required_documents:
+            for document in required_documents:
+                if not self.attachments.filter(document_type=document):
+                    missing_documents.append({
+                        'id': document.id,
+                        'name': document.name
+                    })
+            return missing_documents
+        return None
     
     def save(self, current_user=None, *args, **kwargs):
         if not self.contract_number:
