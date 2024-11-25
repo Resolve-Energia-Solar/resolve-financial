@@ -105,7 +105,7 @@ class SaleSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     missing_documents = SerializerMethodField()
-    sale_products = SaleProductSerializer(source='saleproduct_set', many=True, read_only=True)
+    sale_products = SaleProductSerializer(many=True, read_only=True)
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
 
@@ -116,8 +116,6 @@ class SaleSerializer(BaseSerializer):
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-    # products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='products', required=False)
-    # commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='comercial_proposal', required=False)
 
     class Meta:
         model = Sale
@@ -132,48 +130,6 @@ class SaleSerializer(BaseSerializer):
     
     def get_total_paid(self, obj):
         return obj.total_paid
-
-    # def create(self, validated_data):
-    #     products_ids = validated_data.pop('products_ids', [])
-    #     comercial_proposal = validated_data.pop('comercial_proposal', None)
-    #     print("comercial_proposal", comercial_proposal)
-    #     print("products_ids", products_ids)
-
-    #     # Criação da venda
-    #     sale = super().create(validated_data)
-        
-    #     if comercial_proposal:
-    #         # Vincular SaleProducts da proposta comercial à nova venda
-    #         sale_products = SaleProduct.objects.filter(commercial_proposal=comercial_proposal, sale__isnull=True)
-    #         for sale_product in sale_products:
-    #             sale_product.sale = sale
-    #             sale_product.save()
-    #     else:
-    #         # Criar novos SaleProduct para os produtos fornecidos
-    #         for product_id in products_ids:
-    #             product = Product.objects.get(id=product_id)
-    #             SaleProduct.objects.create(
-    #                 sale=sale,
-    #                 product=product,
-    #                 amount=1,
-    #                 value=product.product_value,
-    #                 reference_value=product.reference_value,
-    #                 cost_value=product.cost_value
-    #             )
-        
-    #     if sale.total_value == 0:
-    #         saleproducts = SaleProduct.objects.filter(sale=sale)
-    #         total_value = 0
-    #         for saleproduct in saleproducts:
-    #             value = saleproduct.value * saleproduct.amount
-    #             total_value += value
-                
-    #         sale.total_value = total_value
-    #         sale.save()
-                
-                
-    #     print("sale", sale)
-    #     return sale
 
 
 class ProjectSerializer(BaseSerializer):
@@ -244,7 +200,7 @@ class ProjectSerializer(BaseSerializer):
 class ComercialProposalSerializer(BaseSerializer):
     lead = LeadSerializer(read_only=True)
     created_by = RelatedUserSerializer(read_only=True)
-    proposal_products = SaleProductSerializer(source='saleproduct_set', many=True, read_only=True)
+    commercial_products = SaleProductSerializer(many=True, read_only=True)
 
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
