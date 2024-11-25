@@ -1,5 +1,5 @@
 from core.serializers import AttachmentSerializer
-from resolve_crm.models import Sale
+from resolve_crm.models import Project, Sale
 from resolve_crm.serializers import SaleSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
@@ -81,24 +81,33 @@ class ContractView(APIView):
 
     http_method_names = ['get']
 
-    def get(self, request, sale_id):
+    def get(self, request, project_id):
         try:
-            sale = Sale.objects.get(id=sale_id)
-        except Sale.DoesNotExist:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
             return Response({
-                'message': 'Venda não encontrada.'
+                'message': 'Projeto não encontrado.'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        missing_documents = sale.missing_documents()  # Chame o método aqui
+        missing_documents = project.missing_documents
+        attached_documents = project.attachments.all()
+        
+        attachments_data = AttachmentSerializer(attached_documents, many=True).data
 
-        attached_documents = sale.attachments.all()
-        last_attached_date = attached_documents.order_by('-created_at').first().created_at if attached_documents else None
+        # Remover os campos 'content_type' e 'object_id' de cada anexo e ajustar 'document_type'
+        for attachment in attachments_data:
+            attachment.pop('content_type', None)
+            attachment.pop('object_id', None)
+            # Em 'document_type' e 'document_subtype', substituir por seu 'name'
+            if 'document_type' in attachment and attachment['document_type'] and 'name' in attachment['document_type']:
+                attachment['document_type'] = attachment['document_type']['name']
+            if 'document_subtype' in attachment and attachment['document_subtype'] and 'name' in attachment['document_subtype']:
+                attachment['document_subtype'] = attachment['document_subtype']['name']
 
         data = {
-            'all_documents_present': not missing_documents,
             'missing_documents': missing_documents,
-            'last_attached_date': last_attached_date,
-            'attachments': AttachmentSerializer(attached_documents, many=True).data
+            'attachments': attachments_data,
+            'is_completed': project.is_documentation_completed
         }
 
         return Response(data, status=status.HTTP_200_OK)
