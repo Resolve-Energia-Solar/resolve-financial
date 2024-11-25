@@ -47,3 +47,20 @@ class PaymentViewSet(BaseModelViewSet):
 class PaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PaymentInstallment.objects.all()
     serializer_class = PaymentInstallmentSerializer
+
+
+class FranchiseInstallmentViewSet(BaseModelViewSet):
+    queryset = FranchiseInstallment.objects.all()
+    serializer_class = FranchiseInstallmentSerializer
+
+    # def perform_create(self, serializer):
+    #     sale = serializer.validated_data['sale']
+    #     # repass_percentage = serializer.validated_data['repass_percentage']
+    #     remaining_percentage = FranchiseInstallment.remaining_percentage(sale)
+
+    #     if repass_percentage > remaining_percentage:
+    #         raise ValidationError(
+    #             {"repass_percentage": f"Percentual restante para esta venda é {remaining_percentage}%. "
+    #                                   f"Não é possível adicionar {repass_percentage}%."}
+    #         )
+    #     serializer.save()

@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
-from financial.models import Payment, PaymentInstallment, Financier
+from financial.models import FranchiseInstallment, Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField
 from resolve_crm.models import Sale
@@ -102,3 +102,15 @@ class PaymentSerializer(BaseSerializer):
                     PaymentInstallment.objects.create(payment=instance, **installment_data)
 
         return instance
+
+
+class FranchiseInstallmentSerializer(BaseSerializer):
+    sale = SaleSerializer(read_only=True)
+    financier = FinancierSerializer(read_only=True)
+    
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='franchise')
+
+    class Meta:
+        model = FranchiseInstallment
+        fields = '__all__'
