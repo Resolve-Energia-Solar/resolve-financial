@@ -148,10 +148,15 @@ class Branch(models.Model):
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     owners = models.ManyToManyField("accounts.User", verbose_name="Proprietários", related_name='branch_owners', blank=True)
     picture = models.ImageField("Foto", upload_to="branches", blank=True, null=True)
-    transfer_percentage = models.DecimalField("Porcentagem de Repasse", max_digits=10, decimal_places=2, blank=True, null=True,
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    transfer_percentage = models.DecimalField(
+        "Porcentagem de Repasse",
+        max_digits=7,  # Para permitir até 999.9999
+        decimal_places=4,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
     )
-    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=10, decimal_places=2, blank=True, null=True)
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=4, blank=True, null=True)
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 

@@ -97,11 +97,13 @@ class UserSerializer(BaseSerializer):
     addresses = AddressSerializer(many=True, read_only=True)
     user_types = UserTypeSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
+    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
     user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
     groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
+    phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True)
 
     user_permissions = SerializerMethodField()
     distance = SerializerMethodField()

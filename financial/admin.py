@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Financier, Payment, PaymentInstallment
+from .models import Financier, FranchiseInstallment, Payment, PaymentInstallment
 
 
 @admin.register(Financier)
@@ -43,3 +43,41 @@ class PaymentInstallmentAdmin(admin.ModelAdmin):
 class PaymentInline(admin.StackedInline):
     model = Payment
     extra = 1
+
+    
+@admin.register(FranchiseInstallment)
+class FranchiseInstallmentAdmin(admin.ModelAdmin):
+    list_display = ('sale', 'status', 'is_paid', 'installment_value', 'created_at', 'difference_value', 'margin_7', 'percentage', 'total_value', 'transfer_percentage')
+    search_fields = ('sale__customer__name', 'status')
+    list_filter = ('status', 'created_at')
+    ordering = ('-created_at',)
+    actions = ['mark_as_paid']
+    
+    def total_value(self, obj):
+        return obj.total_value
+
+    def percentage(self, obj):
+        """
+        Exibe a propriedade `transfer_percentage` no Django Admin.
+        """
+        return obj.percentage
+    
+    def difference_value(self, obj):
+        return obj.difference_value
+    
+    def margin_7(self, obj):
+        return obj.margin_7
+    
+    def installment_value(self, obj):
+        return obj.installment_value
+    
+    def transfer_percentage(self, obj):
+        return obj.transfer_percentage
+
+    def mark_as_paid(self, request, queryset):
+        for installment in queryset:
+            installment.status = 'PA'
+            installment.save()
+        self.message_user(request, "Parcelas selecionadas foram marcadas como pagas.")
+    mark_as_paid.short_description = "Marcar parcelas selecionadas como pagas"
+    
