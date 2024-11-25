@@ -2,16 +2,26 @@ from accounts.models import User
 from api.serializers import BaseSerializer
 from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
 from resolve_crm.models import Sale
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import SerializerMethodField
+from rest_framework.reverse import reverse
 
 
 class CustomerSerializer(BaseSerializer):
 
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    sales_urls = SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'person_type', 'complete_name', 'email', 'birth_date', 'first_document', 'profile_picture', 'phone_numbers']
+        fields = ['id', 'person_type', 'complete_name', 'email', 'birth_date', 'first_document', 'profile_picture', 'phone_numbers', 'sales_urls']
+
+    
+    def get_sales_urls(self, obj):
+        request = self.context.get('request')
+        return [
+            reverse('mobile_app:mobile_sale-detail', args=[sale.id], request=request)
+            for sale in obj.customer_sales.all()
+        ]
 
 
 class MobileSaleSerializer(BaseSerializer):
