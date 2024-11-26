@@ -59,7 +59,7 @@ class Service(models.Model):
     history = HistoricalRecords()
     
     def __str__(self):
-        return '{} - {}'.format(self.name, self.deadline)
+        return self.name
     
     class Meta:
         verbose_name = "Serviço"

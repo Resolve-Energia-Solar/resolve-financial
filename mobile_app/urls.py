@@ -31,6 +31,7 @@ mobile_app_schema_view = get_schema_view(
 
 mobile_app_router.register('customers', CustomerViewset, basename='customer')
 mobile_app_router.register('mobile_sales', SaleViewset, basename='mobile_sale')
+mobile_app_router.register('field_services', FieldServiceViewset, basename='field_service')
 
 app_name = 'mobile_app'
 urlpatterns = [
@@ -39,7 +40,6 @@ urlpatterns = [
     path('contracts/<int:project_id>/', ContractView.as_view(), name='contract'),
     path('financial/<int:sale_id>/', FinancialView.as_view(), name='financial'),
     path('inspection/<int:project_id>/', InspectionView.as_view(), name='inspection'),
-    path('engineering/<int:project_id>/', EngineeringView.as_view(), name='engineering'),
     path('', include(mobile_app_router.urls)),
     re_path(r'^swagger/$', mobile_app_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui-mobile_app'),
     re_path(r'^redoc/$', mobile_app_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc-mobile_app')

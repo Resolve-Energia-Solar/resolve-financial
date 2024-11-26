@@ -1,4 +1,5 @@
 from core.serializers import AttachmentSerializer
+from inspections.models import Schedule
 from resolve_crm.models import Project, Sale
 from resolve_crm.serializers import SaleSerializer
 from rest_framework.views import APIView
@@ -11,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
 from api.views import BaseModelViewSet
-from mobile_app.serializers import CustomerSerializer, MobileSaleSerializer
+from mobile_app.serializers import CustomerSerializer, FieldServiceSerializer, MobileSaleSerializer
 
 
 class CustomerLoginView(APIView):
@@ -164,21 +165,7 @@ class InspectionView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-class EngineeringView(APIView):
-    
+class FieldServiceViewset(BaseModelViewSet):
+    queryset = Schedule.objects.all()
+    serializer_class = FieldServiceSerializer
     http_method_names = ['get']
-
-    def get(self, request, project_id):
-        try:
-            project = Project.objects.get(id=project_id)
-        except Project.DoesNotExist:
-            return Response({
-                'message': 'Projeto não encontrado.'
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        data = {
-            'designer_status', project.designer_status,
-            'designer_coclusion_date', project.designer_coclusion_date,
-        }
-
-        return Response(data, status=status.HTTP_200_OK)
