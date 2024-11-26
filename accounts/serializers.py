@@ -18,10 +18,16 @@ class RoleSerializer(BaseSerializer):
 
 
 class PhoneNumberSerializer(BaseSerializer):
-        
-        class Meta:
-            model = PhoneNumber
-            fields = '__all__'
+    
+    # Para leitura: usar serializadores completos
+    # user = RelatedUserSerializer(read_only=True)
+    
+    # Para escrita: usar apenas IDs
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
+            
+    class Meta:
+        model = PhoneNumber
+        fields = '__all__'
 
 
 class RelatedUserSerializer(BaseSerializer):
@@ -37,13 +43,6 @@ class AddressSerializer(BaseSerializer):
     
     class Meta:
         model = Address
-        exclude = ['is_deleted']
-
-
-class PhoneNumberSerializer(BaseSerializer):
-            
-    class Meta:
-        model = PhoneNumber
         fields = '__all__'
 
 
