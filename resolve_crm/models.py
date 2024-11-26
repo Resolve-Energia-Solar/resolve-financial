@@ -315,7 +315,7 @@ class ContractSubmission(models.Model):
     finished_at = models.DateTimeField("Finalizado em", null=True, blank=True)
     
     def __str__(self):
-        self.submit_datetime
+        return f'{self.sale.customer or "Unknown Customer"} - {self.submit_datetime or "Unknown Date"}'
     
     class Meta:
         verbose_name = "Envio de Contrato"
