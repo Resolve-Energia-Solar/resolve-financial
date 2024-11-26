@@ -10,6 +10,10 @@ from django.db import transaction
 from logistics.models import ProductMaterials
 from .serializers import *
 from .models import *
+from decimal import Decimal
+from logistics.models import Product, SaleProduct
+from financial.models import FranchiseInstallment
+
 
 
 logger = logging.getLogger(__name__)
@@ -92,6 +96,7 @@ class SaleViewSet(BaseModelViewSet):
         sale = serializer.save()
         print("Sale instance created:", sale)
         products_list = []
+        total_installment_value = 0
 
         # Se há uma proposta comercial associada, reutilizar os produtos dela
         if commercial_proposal_id:
@@ -100,34 +105,34 @@ class SaleViewSet(BaseModelViewSet):
                 print("Commercial proposal found:", commercial_proposal)
                 sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
                 print("Sale products found:", sale_products)
-                
+
                 if not sale_products.exists():
                     print("No products associated with the commercial proposal.")
                     return Response(
-                        {"detail": "Proposta comercial não possui produtos associados."}, 
+                        {"detail": "Proposta comercial não possui produtos associados."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 # Verificando se algum produto já está vinculado a uma venda
                 if sale_products.filter(sale__isnull=False).exists():
                     print("Commercial proposal already linked to a sale.")
                     return Response(
-                        {"detail": "Proposta comercial já vinculada a uma venda."}, 
+                        {"detail": "Proposta comercial já vinculada a uma venda."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 # Associando os produtos da proposta à venda
                 for sale_product in sale_products:
                     products_list.append(sale_product)
-                    
+
                     sale_product.sale = sale
                     sale_product.save()
                     print("Sale product linked to sale:", sale_product)
-            
+
             except ComercialProposal.DoesNotExist:
                 print("Commercial proposal not found.")
                 return Response(
-                    {"detail": "Proposta comercial não encontrada."}, 
+                    {"detail": "Proposta comercial não encontrada."},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -136,7 +141,7 @@ class SaleViewSet(BaseModelViewSet):
             products_ids = data.get('products_ids', [])
             print("Products IDs:", products_ids)
             for product_id in products_ids:
-                try:    
+                try:
                     product = Product.objects.get(id=product_id)
                     sale_product = SaleProduct.objects.create(
                         sale=sale,
@@ -151,26 +156,55 @@ class SaleViewSet(BaseModelViewSet):
                 except Product.DoesNotExist:
                     print(f"Product with ID {product_id} not found.")
                     return Response(
-                        {"detail": f"Produto com ID {product_id} não encontrado."}, 
+                        {"detail": f"Produto com ID {product_id} não encontrado."},
                         status=status.HTTP_404_NOT_FOUND
                     )
+
         if sale.total_value is None or sale.total_value == 0:
-            try: 
+            try:
                 total_value = self.calculate_total_value(products_list)
                 sale.total_value = total_value
                 sale.save()
             except Exception as e:
                 print(f"Error calculating total value: {str(e)}")
                 return Response(
-                    {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)}, 
+                    {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
+                
+        if sale.sale_products.exists():
+            print("Sale products linked to sale:", sale.sale_products.all())
+            try:
+                total_installment_value = self.calculate_total_installment_value(sale, sale.sale_products.all())
+                print("Total installment value:", total_installment_value)
+            except Exception as e:
+                print(f"Error calculating total installment value: {str(e)}")
+                return Response(
+                    {"detail": "Erro ao calcular o valor total da parcela.", "error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        try:
+            total_value = sale.total_value
+            if total_value:
+                franchise_installment = FranchiseInstallment.objects.create(
+                    sale=sale,
+                    installment_value=total_installment_value,
+                )
+                print("FranchiseInstallment created:", franchise_installment)
+        except Exception as e:
+            print(f"Error creating FranchiseInstallment: {str(e)}")
+            return Response(
+                {"detail": "Erro ao criar a parcela do franqueado.", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
         # Retornando a resposta com os dados da nova venda criada
         headers = self.get_success_headers(serializer.data)
         print("Response headers:", headers)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    
-    
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)      
+        
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -250,6 +284,28 @@ class SaleViewSet(BaseModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
+    
+    def calculate_total_installment_value(self, sale, products):
+        reference_value = sum(product.reference_value for product in products)
+        print(f"Reference Value: {reference_value}")
+
+        # Calcula a diferença de valor entre o total da venda e o valor de referência
+        difference_value = sale.total_value - reference_value
+        print(f"Difference Value: {difference_value}")
+
+        # Calcula a margem de 7%
+        if difference_value <= 0:
+            margin_7 = Decimal("0.00")
+            total_value = reference_value * (1 - sale.transfer_percentage / 100) - difference_value
+            print(f"Margin 7 (<=0): {margin_7}")
+        else:
+            margin_7 = difference_value * Decimal("0.07")
+            total_value = (reference_value * (1 - sale.transfer_percentage / 100)) + difference_value - margin_7
+            print(f"Margin 7 (>0): {margin_7}")
+
+        print(f"Total Value: {total_value}")
+        return total_value
+    
     
     def calculate_total_value(self, sales_products):
         total_value = 0
