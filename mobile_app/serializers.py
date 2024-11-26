@@ -1,7 +1,7 @@
 from accounts.models import User
 from api.serializers import BaseSerializer
 from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
-from resolve_crm.models import Sale
+from resolve_crm.models import Project, Sale
 from rest_framework.serializers import SerializerMethodField
 from rest_framework.reverse import reverse
 
@@ -30,7 +30,22 @@ class MobileSaleSerializer(BaseSerializer):
     seller = RelatedUserSerializer(read_only=True)
     sales_supervisor = RelatedUserSerializer(read_only=True)
     sales_manager = RelatedUserSerializer(read_only=True)
+    projects_urls = SerializerMethodField(read_only=True)
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale']
+        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls']
+
+    def get_projects_urls(self, obj):
+        request = self.context.get('request')
+        return [
+            reverse('api:project-detail', args=[project.id], request=request)
+            for project in obj.projects.all()
+        ]
+
+
+class MobileProjectSerializer(BaseSerializer):
+
+    class Meta:
+        model = Project
+        fields = ['id', 'product', 'project_number']
