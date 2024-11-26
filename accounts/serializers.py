@@ -40,6 +40,13 @@ class AddressSerializer(BaseSerializer):
         exclude = ['is_deleted']
 
 
+class PhoneNumberSerializer(BaseSerializer):
+            
+    class Meta:
+        model = PhoneNumber
+        fields = '__all__'
+
+
 class BranchSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     owners = RelatedUserSerializer(many=True, read_only=True)
