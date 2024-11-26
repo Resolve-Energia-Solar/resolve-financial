@@ -126,6 +126,7 @@ class FranchiseInstallment(models.Model):
     is_paid = models.BooleanField("Pago", default=False)
     paid_at = models.DateTimeField("Pago em", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
 
     @property
     def difference_value(self):
@@ -152,12 +153,9 @@ class FranchiseInstallment(models.Model):
     @property
     def total_value(self):
         reference_value = sum(self.sale.sale_products.all().values_list("reference_value", flat=True))
-        
         if self.difference_value <= 0:
-            result = reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7 - self.difference_value)
-            return result
-        result = (reference_value * (1 - self.sale.transfer_percentage / 100)) - self.margin_7 + self.difference_value
-        return result
+            return reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7 - self.difference_value)
+        return round((reference_value * (1 - self.sale.transfer_percentage / 100)) - self.margin_7 + self.difference_value, 3)
     
     @property
     def transfer_percentage(self):
