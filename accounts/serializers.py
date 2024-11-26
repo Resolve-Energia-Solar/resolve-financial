@@ -40,10 +40,24 @@ class RelatedUserSerializer(BaseSerializer):
 
 
 class AddressSerializer(BaseSerializer):
-    
+    user_id = PrimaryKeyRelatedField(
+        queryset=User.objects.all(), write_only=True, required=False,
+    )
+
     class Meta:
         model = Address
         fields = '__all__'
+
+    def create(self, validated_data):
+        if 'user_id' in validated_data:
+            # Obter o ID do usuário a partir dos dados validados
+            user = validated_data.pop('user_id')
+            # Criar o endereço
+            address = Address.objects.create(**validated_data)
+            # Adicionar o endereço ao campo 'addresses' do usuário
+            user.addresses.add(address)
+            return address
+        return Address.objects.create(**validated_data)
 
 
 class BranchSerializer(BaseSerializer):

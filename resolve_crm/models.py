@@ -408,6 +408,10 @@ class Sale(models.Model):
             content_type=ContentType.objects.get_for_model(self)
         )
 
+    @property
+    def franchise_installments_generated(self):
+        return self.franchise_installments.exists()
+    
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
         missing_documents = []
