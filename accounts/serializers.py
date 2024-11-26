@@ -18,22 +18,34 @@ class RoleSerializer(BaseSerializer):
 
 
 class PhoneNumberSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos
-    # user = RelatedUserSerializer(read_only=True)
-    
-    # Para escrita: usar apenas IDs
-    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
-            
+    user = SerializerMethodField(read_only=True)  # Apenas leitura
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')  # Apenas escrita
+
     class Meta:
         model = PhoneNumber
         fields = '__all__'
 
+    def create(self, validated_data):
+        # Extraia o usuário dos dados validados
+        user = validated_data.pop('user', None)
+        
+        # Crie o objeto de telefone
+        phone_number = PhoneNumber.objects.create(user=user, **validated_data)
+        return phone_number
+
+    def get_user(self, obj):
+        # Retorna informações básicas do usuário
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "complete_name": obj.user.complete_name,
+            }
+        return None
+
 
 class RelatedUserSerializer(BaseSerializer):
-
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
-        
+
     class Meta:
         model = User
         fields = ['id', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers']
