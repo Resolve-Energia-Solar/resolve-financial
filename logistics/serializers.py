@@ -141,6 +141,13 @@ class ProductSerializer(BaseSerializer):
 
         return instance
 
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        if self.project_set.exists():
+            raise serializers.ValidationError("Não é possível remover este produto porque ele está associado a projetos.")
+
+        super().delete(*args, **kwargs)
+    
     def create_or_update_materials(self, product, materials_data):
         """
         Atualiza ou cria os materiais associados ao produto e remove os que não estão no payload.
@@ -190,7 +197,6 @@ class ProductSerializer(BaseSerializer):
                     amount=amount
                 )
 
-    
     def create_comercial_product(self, proposal, product):
         """Cria uma instância de ComercialProduct associada à ComercialProposal e Product"""
         comercial_product_serializer = SaleProductSerializer(
@@ -209,7 +215,6 @@ class ProductSerializer(BaseSerializer):
             comercial_product_serializer.save()
         else:
             raise serializers.ValidationError(comercial_product_serializer.errors)
-
 
     def create_sale_product(self, sale, product):
         """Cria uma instância de SaleProduct associada à Sale e Product"""
