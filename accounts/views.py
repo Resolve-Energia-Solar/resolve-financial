@@ -246,6 +246,11 @@ class AddressViewSet(BaseModelViewSet):
             )
 
         return queryset
+    
+
+class PhoneNumberViewSet(BaseModelViewSet):
+    queryset = PhoneNumber.objects.all()
+    serializer_class = PhoneNumberSerializer
 
 
 class RoleViewSet(BaseModelViewSet):
