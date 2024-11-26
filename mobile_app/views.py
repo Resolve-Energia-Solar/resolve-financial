@@ -125,11 +125,12 @@ class FinancialView(APIView):
                 'message': 'Venda não encontrada.'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        percentual_paid = sale.total_paid / sale.total_value * 100 if sale.total_value > 0 else 0
+        percentual_paid = (sale.total_paid * 100 / sale.total_value) if sale.total_value != 0 else 0
 
         return Response({
             'total_paid': sale.total_paid,
             'percentual_paid': percentual_paid,
+            'payment_status': sale.payment_status,
             'is_paid': sale.total_paid == sale.total_value,
             'is_completed': sale.payment_status != 'PENDENTE'
         }, status=status.HTTP_200_OK)

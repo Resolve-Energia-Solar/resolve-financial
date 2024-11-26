@@ -403,7 +403,7 @@ class Sale(models.Model):
 
     @property
     def payment_status(self):
-        if self.total_paid == self.total_value:
+        if self.total_paid >= self.total_value:
             return "PAGO"
         elif self.total_paid >= 0.8 * float(self.total_value):
             return "PARCIAL"
