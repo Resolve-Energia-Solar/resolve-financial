@@ -146,8 +146,8 @@ class FranchiseInstallment(models.Model):
     @property
     def percentage(self):
         if self.total_value == 0:
-            return 0
-        return f"{round((self.installment_value / self.total_value) * 100, 2)}%"
+            return 0.0
+        return round((self.installment_value / self.total_value) * 100, 2)
     
     @property
     def total_value(self):
@@ -161,7 +161,7 @@ class FranchiseInstallment(models.Model):
     
     @property
     def transfer_percentage(self):
-        return f"{round(self.sale.transfer_percentage,2)}%"
+        return round(self.sale.transfer_percentage, 2)
 
     @staticmethod
     def remaining_percentage(sale):
@@ -203,7 +203,7 @@ class FranchiseInstallment(models.Model):
             self.status = "PG"
             self.paid_at = timezone.now()
             
-        if not self.installment_value:
+        if not self.installment_value and not self.pk:
             self.installment_value = self.total_value
             
         super().save(*args, **kwargs)
@@ -211,7 +211,8 @@ class FranchiseInstallment(models.Model):
     def __str__(self):
         return f"{self.sale.customer} - {self.percentage}%"
     
-    class meta:
+    class Meta:
         verbose_name = "Parcela do Franquiado"
         verbose_name_plural = "Parcelas do Franquiado"
-        ordering = ["-created_at"]
+        ordering = ['-created_at']
+

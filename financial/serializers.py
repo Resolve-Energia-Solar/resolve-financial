@@ -1,3 +1,4 @@
+from django.forms import CharField, DecimalField
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
@@ -103,14 +104,36 @@ class PaymentSerializer(BaseSerializer):
 
         return instance
 
-
 class FranchiseInstallmentSerializer(BaseSerializer):
-    sale = SaleSerializer(read_only=True)
+    # relacionados para leitura
+    # sale = SaleSerializer(read_only=True)
     financier = FinancierSerializer(read_only=True)
+    difference_value = SerializerMethodField()
+    total_value = SerializerMethodField()
+    transfer_percentage = SerializerMethodField()
+    percentage = SerializerMethodField()
+    margin_7 = SerializerMethodField()
     
+    
+    # Campos para escrita usando PrimaryKeyRelatedField
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='franchise')
+    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
     class Meta:
         model = FranchiseInstallment
         fields = '__all__'
+        
+    def get_difference_value(self, obj):
+        return float(obj.difference_value) if obj.difference_value is not None else 0.0
+
+    def get_total_value(self, obj):
+        return float(obj.total_value) if obj.total_value is not None else 0.0
+
+    def get_transfer_percentage(self, obj):
+        return f"{obj.transfer_percentage}" if obj.transfer_percentage else "0%"
+
+    def get_percentage(self, obj):
+        return f"{obj.percentage}" if obj.percentage else "0%"
+    
+    def get_margin_7(self, obj):
+        return obj.margin_7
