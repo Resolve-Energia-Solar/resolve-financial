@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter, APIRootView
 from rest_framework import permissions
 
 from accounts.views import UserTokenRefreshView
-from mobile_app.views import ContractView, CustomerLoginView, CustomerViewset, FinancialView, SaleViewset
+from mobile_app.views import *
 
 
 mobile_app_router = DefaultRouter()
@@ -38,6 +38,8 @@ urlpatterns = [
     path('token/refresh/', UserTokenRefreshView.as_view(), name='customer_token_refresh'),
     path('contracts/<int:project_id>/', ContractView.as_view(), name='contract'),
     path('financial/<int:sale_id>/', FinancialView.as_view(), name='financial'),
+    path('inspection/<int:project_id>/', InspectionView.as_view(), name='inspection'),
+    path('engineering/<int:project_id>/', EngineeringView.as_view(), name='engineering'),
     path('', include(mobile_app_router.urls)),
     re_path(r'^swagger/$', mobile_app_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui-mobile_app'),
     re_path(r'^redoc/$', mobile_app_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc-mobile_app')

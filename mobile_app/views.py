@@ -125,11 +125,60 @@ class FinancialView(APIView):
                 'message': 'Venda não encontrada.'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        percentual_paid = sale.total_paid / sale.total_value * 100 if sale.total_value > 0 else 0
+        percentual_paid = (sale.total_paid * 100 / sale.total_value) if sale.total_value != 0 else 0
 
         return Response({
             'total_paid': sale.total_paid,
             'percentual_paid': percentual_paid,
+            'payment_status': sale.payment_status,
             'is_paid': sale.total_paid == sale.total_value,
             'is_completed': sale.payment_status != 'PENDENTE'
         }, status=status.HTTP_200_OK)
+
+
+class InspectionView(APIView):
+    
+    http_method_names = ['get']
+
+    def get(self, request, project_id):
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({
+                'message': 'Projeto não encontrado.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        inspection = project.inspections.filter(service__id=2).order_by('-created_at').first()
+
+        if not inspection:
+            return Response({
+                'message': 'Vistoria não encontrada.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        data = {
+            'status': inspection.status,
+            'start_date': inspection.schedule_date,
+            'start_time': inspection.schedule_start_time
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class EngineeringView(APIView):
+    
+    http_method_names = ['get']
+
+    def get(self, request, project_id):
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({
+                'message': 'Projeto não encontrado.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = {
+            'designer_status', project.designer_status,
+            'designer_coclusion_date', project.designer_coclusion_date,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)

@@ -403,7 +403,7 @@ class Sale(models.Model):
 
     @property
     def payment_status(self):
-        if self.total_paid == self.total_value:
+        if self.total_paid >= self.total_value:
             return "PAGO"
         elif self.total_paid >= 0.8 * float(self.total_value):
             return "PARCIAL"
@@ -463,15 +463,18 @@ class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
+
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
-    # Schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
-    #ajustar quando a data de início e término for definida
+    designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
+    
+    # schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
+    # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
     is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
     status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
-    designer_coclusion_date = models.DateField("Data de Conclusão do Projeto", null=True, blank=True)
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
     documention_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
