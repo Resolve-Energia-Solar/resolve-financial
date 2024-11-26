@@ -402,6 +402,14 @@ class Sale(models.Model):
         return total_paid
 
     @property
+    def payment_status(self):
+        if self.total_paid == self.total_value:
+            return "PAGO"
+        elif self.total_paid >= 0.8 * float(self.total_value):
+            return "PARCIAL"
+        return "PENDENTE"
+
+    @property
     def attachments(self):
         return Attachment.objects.filter(
             object_id=self.id, 

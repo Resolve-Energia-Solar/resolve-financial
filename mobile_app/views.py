@@ -111,3 +111,25 @@ class ContractView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+class FinancialView(APIView):
+
+    http_method_names = ['get']
+
+    def get(self, request, sale_id):
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({
+                'message': 'Venda não encontrada.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        percentual_paid = sale.total_paid / sale.total_value * 100 if sale.total_value > 0 else 0
+
+        return Response({
+            'total_paid': sale.total_paid,
+            'percentual_paid': percentual_paid,
+            'is_paid': sale.total_paid == sale.total_value,
+            'is_completed': sale.payment_status != 'PENDENTE'
+        }, status=status.HTTP_200_OK)
