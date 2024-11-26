@@ -41,16 +41,25 @@ class MobileSaleSerializer(BaseSerializer):
     def get_projects_urls(self, obj):
         request = self.context.get('request')
         return [
-            reverse('api:project-detail', args=[project.id], request=request)
+            reverse('mobile_app:mobile_project-detail', args=[project.id], request=request)
             for project in obj.projects.all()
         ]
 
 
 class MobileProjectSerializer(BaseSerializer):
 
+    field_services_urls = SerializerMethodField(read_only=True)
+
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number']
+        fields = ['id', 'product', 'project_number', 'field_services_urls']
+
+    def get_field_services_urls(self, obj):
+        request = self.context.get('request')
+        return [
+            reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
+            for field_service in obj.field_services.all()
+        ]
 
 
 class FieldServiceSerializer(BaseSerializer):

@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
 from api.views import BaseModelViewSet
-from mobile_app.serializers import CustomerSerializer, FieldServiceSerializer, MobileSaleSerializer
+from mobile_app.serializers import *
 
 
 class CustomerLoginView(APIView):
@@ -75,6 +75,12 @@ class CustomerViewset(BaseModelViewSet):
 class SaleViewset(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = MobileSaleSerializer
+    http_method_names = ['get']
+
+
+class ProjectViewset(BaseModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = MobileProjectSerializer
     http_method_names = ['get']
 
 
@@ -149,7 +155,7 @@ class InspectionView(APIView):
                 'message': 'Projeto não encontrado.'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        inspection = project.inspections.filter(service__id=2).order_by('-created_at').first()
+        inspection = project.field_services.filter(service__id=2).order_by('-created_at').first()
 
         if not inspection:
             return Response({

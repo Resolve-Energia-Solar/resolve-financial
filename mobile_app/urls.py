@@ -31,6 +31,7 @@ mobile_app_schema_view = get_schema_view(
 
 mobile_app_router.register('customers', CustomerViewset, basename='customer')
 mobile_app_router.register('mobile_sales', SaleViewset, basename='mobile_sale')
+mobile_app_router.register('mobile_projects', ProjectViewset, basename='mobile_project')
 mobile_app_router.register('field_services', FieldServiceViewset, basename='field_service')
 
 app_name = 'mobile_app'
