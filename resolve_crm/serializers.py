@@ -32,7 +32,6 @@ class ReadSalesSerializer(BaseSerializer):
     def get_can_generate_contract(self, obj):
         return "true" if obj.can_generate_contract else "false"
 
-    
     def get_total_paid(self, obj):
         return obj.total_paid
 

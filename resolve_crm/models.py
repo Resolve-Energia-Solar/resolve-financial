@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import Branch
 from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import timedelta
 
 
 class Origin(models.Model):
@@ -459,6 +460,21 @@ class Sale(models.Model):
         return f'{self.contract_number} - {self.customer}'
 
 
+class Step(models.Model):
+    name = models.CharField("Nome da Etapa", max_length=100)
+    slug = models.SlugField("Slug", max_length=100)
+    default_duration_days = models.PositiveIntegerField("Prazo Padrão (em dias)", default=0)
+    description = models.TextField("Descrição da Etapa", null=True, blank=True)
+    order = models.PositiveIntegerField("Ordem", default=0)
+    
+    class Meta:
+        verbose_name = "Etapa"
+        verbose_name_plural = "Etapas"
+    
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
@@ -503,6 +519,11 @@ class Project(models.Model):
             return missing_documents
         return None
     
+    def create_deadlines(self):
+        steps = Step.objects.all()
+        for step in steps:
+            ProjectStep.objects.create(project=self, step=step)
+    
     class Meta:
         verbose_name = "Projeto"
         verbose_name_plural = "Projetos"
@@ -520,4 +541,25 @@ class Project(models.Model):
                 self.project_number = f'PROJ{last_number + 1:02}'
             else:
                 self.project_number = 'PROJ01'
+        super().save(*args, **kwargs)
+        if not self.project_steps.exists():
+            self.create_deadlines()
+
+
+class ProjectStep(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_steps")
+    step = models.ForeignKey(Step, on_delete=models.CASCADE, related_name="project_steps")
+    deadline = models.DateField("Prazo", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Etapa do Projeto"
+        verbose_name_plural = "Etapas dos Projetos"
+        unique_together = ('project', 'step')
+    
+    def __str__(self):
+        return f"{self.project.project_number} - {self.step.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.deadline:
+            self.deadline = self.project.start_date + timedelta(days=self.step.default_duration_days)
         super().save(*args, **kwargs)
