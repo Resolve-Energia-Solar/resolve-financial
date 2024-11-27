@@ -26,7 +26,7 @@ mobile_app_schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
-    patterns=[path('api/m/', include('mobile_app.urls'))],
+    patterns=[path('api/mobile/', include('mobile_app.urls'))],
 )
 
 mobile_app_router.register('customers', CustomerViewset, basename='customer')

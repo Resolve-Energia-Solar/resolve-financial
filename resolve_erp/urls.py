@@ -23,7 +23,7 @@ from notifications import urls as notifications_urls
 
 urlpatterns = [
     path('api/', include('api.urls'), name='api'),
-    path('api/m/', include('mobile_app.urls'), name='api_mobile'),
+    path('api/mobile/', include('mobile_app.urls'), name='api_mobile'),
     path('', admin.site.urls),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]
