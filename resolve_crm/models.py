@@ -379,21 +379,34 @@ class Sale(models.Model):
     
     @property
     def can_generate_contract(self):
-        customer_data = True if self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document else False
+        customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)
         value = 0
         all_payments_have_borrower = True
-        
+
         for payment in self.payments.all():
             value += payment.value
             if not payment.borrower:
                 all_payments_have_borrower = False
-                
-        payment_data = True if value == self.total_value and all_payments_have_borrower else False
-        
+
+        payment_data = value == self.total_value and all_payments_have_borrower
         have_units = all(project.units.exists() for project in self.projects.all())
+
+        result = customer_data and payment_data and have_units and all_payments_have_borrower
+
+        # Filtrar somente as dependências que estão False
+        dependencies = {
+            "customer_data": customer_data,
+            "payment_data": payment_data,
+            "have_units": have_units,
+            "all_payments_have_borrower": all_payments_have_borrower,
+        }
+        failed_dependencies = {key: value for key, value in dependencies.items() if not value}
+
+        return {
+            "is_valid": result,
+            "failed_dependencies": failed_dependencies
+        }
         
-        return customer_data and payment_data and have_units and all_payments_have_borrower
-    
     @property
     def total_paid(self):
         total_paid = 0

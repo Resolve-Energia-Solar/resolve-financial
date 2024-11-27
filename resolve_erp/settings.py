@@ -88,6 +88,20 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
+REST_FLEX_FIELDS = {
+    'SERIALIZER_EXTENSIONS': [
+        'accounts.serializers',
+        'core.serializers',
+        'resolve_crm.serializers',
+        'contracts.serializers',
+        'logistics.serializers',
+        'inspections.serializers',
+        'engineering.serializers',
+        'financial.serializers',
+        'mobile_app.serializers',
+        'api.serializers',
+    ],
+}
 # CORS
 
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS') == 'True'

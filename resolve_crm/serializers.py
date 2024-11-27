@@ -124,7 +124,7 @@ class SaleSerializer(BaseSerializer):
         return obj.missing_documents()
     
     def get_can_generate_contract(self, obj):
-        return "true" if obj.can_generate_contract else "false"
+        return obj.can_generate_contract
 
     
     def get_total_paid(self, obj):
@@ -203,10 +203,51 @@ class ComercialProposalSerializer(BaseSerializer):
 
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
+    commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
 
     class Meta:
         model = ComercialProposal
         fields = '__all__'
+
+    def create(self, validated_data):
+        # Extrair os dados relacionados aos produtos
+        products_data = validated_data.pop('commercial_products', [])
+        proposal = super().create(validated_data)
+        
+        print(products_data)
+        # Criar entradas na tabela intermediária
+        for product in products_data:
+            SaleProduct.objects.create(
+                commercial_proposal=proposal,
+                product=product,
+                amount=1,  # Pode ser customizado conforme necessário
+                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
+                reference_value=product.reference_value,  # Ajuste conforme necessário
+                value = product.product_value
+            )
+
+        return proposal
+
+    def update(self, instance, validated_data):
+        # Extrair os dados relacionados aos produtos
+        products_data = validated_data.pop('commercial_products', [])
+        proposal = super().update(instance, validated_data)
+
+        # Limpar produtos antigos relacionados
+        SaleProduct.objects.filter(commercial_proposal=instance).delete()
+
+        # Criar novas entradas na tabela intermediária
+        for product in products_data:
+            SaleProduct.objects.create(
+                commercial_proposal=proposal,
+                product=product,
+                amount=1,  # Pode ser customizado conforme necessário
+                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
+                reference_value=product.reference_value,  # Ajuste conforme necessário
+                value = product.product_value
+            )
+
+        return proposal
 
 
 class ContractSubmissionSerializer(BaseSerializer):

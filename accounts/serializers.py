@@ -145,8 +145,6 @@ class UserSerializer(BaseSerializer):
         model = User
         exclude = ['password']
         
-    
-
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
     
