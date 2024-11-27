@@ -59,7 +59,7 @@ class Service(models.Model):
     history = HistoricalRecords()
     
     def __str__(self):
-        return '{} - {}'.format(self.name, self.deadline)
+        return self.name
     
     class Meta:
         verbose_name = "Serviço"
@@ -111,7 +111,7 @@ class Schedule(models.Model):
     schedule_start_time = models.TimeField("Horário de Início")
     schedule_end_time = models.TimeField("Horário de Fim")
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
-    project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE, related_name='inspections')
+    project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE, related_name='field_services')
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
     longitude = models.CharField("Longitude", max_length=50, blank=True, null=True)

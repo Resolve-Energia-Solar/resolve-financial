@@ -1,8 +1,10 @@
 from accounts.models import User
 from api.serializers import BaseSerializer
 from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
+from inspections.models import Schedule, Service
+from inspections.serializers import ServiceSerializer
 from resolve_crm.models import Project, Sale
-from rest_framework.serializers import SerializerMethodField
+from rest_framework.serializers import SerializerMethodField, StringRelatedField
 from rest_framework.reverse import reverse
 
 
@@ -39,13 +41,33 @@ class MobileSaleSerializer(BaseSerializer):
     def get_projects_urls(self, obj):
         request = self.context.get('request')
         return [
-            reverse('api:project-detail', args=[project.id], request=request)
+            reverse('mobile_app:mobile_project-detail', args=[project.id], request=request)
             for project in obj.projects.all()
         ]
 
 
 class MobileProjectSerializer(BaseSerializer):
 
+    field_services_urls = SerializerMethodField(read_only=True)
+
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number']
+        fields = ['id', 'product', 'project_number', 'field_services_urls']
+
+    def get_field_services_urls(self, obj):
+        request = self.context.get('request')
+        return [
+            reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
+            for field_service in obj.field_services.all()
+        ]
+
+
+class FieldServiceSerializer(BaseSerializer):
+
+    service = StringRelatedField(read_only=True)
+    schedule_agent = RelatedUserSerializer(read_only=True)
+    
+    class Meta:
+        model = Schedule
+        fields = ['service', 'schedule_agent', 'schedule_date', 'schedule_start_time', 'schedule_end_time', 'going_to_location_at', 'execution_started_at', 'execution_finished_at', 'status']
+        ordering = ['schedule_date', 'schedule_start_time']
