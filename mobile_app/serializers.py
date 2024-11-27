@@ -1,12 +1,16 @@
+from collections import defaultdict
+
+from django.utils.text import slugify
+from rest_framework.reverse import reverse
+from rest_framework.serializers import SerializerMethodField, StringRelatedField
+
 from accounts.models import User
-from api.serializers import BaseSerializer
 from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
-from engineering.models import RequestsEnergyCompany, Units
+from api.serializers import BaseSerializer
+from engineering.models import RequestsEnergyCompany
 from engineering.serializers import UnitsSerializer
 from inspections.models import Schedule
 from resolve_crm.models import Project, Sale
-from rest_framework.serializers import SerializerMethodField, StringRelatedField, PrimaryKeyRelatedField
-from rest_framework.reverse import reverse
 
 
 class CustomerSerializer(BaseSerializer):
@@ -50,17 +54,35 @@ class MobileSaleSerializer(BaseSerializer):
 class MobileProjectSerializer(BaseSerializer):
 
     field_services_urls = SerializerMethodField(read_only=True)
+    requests_energy_company_urls = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number', 'field_services_urls']
+        fields = ['id', 'product', 'project_number', 'field_services_urls', 'requests_energy_company_urls']
 
     def get_field_services_urls(self, obj):
         request = self.context.get('request')
-        return [
-            reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
-            for field_service in obj.field_services.all()
-        ]
+        grouped_urls = defaultdict(list)
+
+        # Grouping and ordering field services
+        for field_service in obj.field_services.all().order_by('-created_at'):
+            service_slug = slugify(field_service.service)
+            url = reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
+            grouped_urls[service_slug].append(url)
+
+        return grouped_urls
+
+    def get_requests_energy_company_urls(self, obj):
+        request = self.context.get('request')
+        grouped_urls = defaultdict(list)
+
+        # Grouping and ordering requests energy company
+        for request_energy_company in obj.requests_energy_company.all().order_by('-created_at'):
+            type_slug = slugify(request_energy_company.type)
+            url = reverse('mobile_app:requests_energy_company-detail', args=[request_energy_company.id], request=request)
+            grouped_urls[type_slug].append(url)
+
+        return grouped_urls
 
 
 class FieldServiceSerializer(BaseSerializer):

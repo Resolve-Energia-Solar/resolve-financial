@@ -39,7 +39,7 @@ class ResquestType(models.Model):
 
 class RequestsEnergyCompany(models.Model):
     company = models.ForeignKey(EnergyCompany, on_delete=models.CASCADE, verbose_name="Distribuidora de Energia")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=False, blank=False)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", related_name="requests_energy_company")
     unit = models.ForeignKey("Units", on_delete=models.CASCADE, verbose_name="Unidade", null=True, blank=True)
     type = models.ForeignKey("ResquestType", on_delete=models.CASCADE, verbose_name="Tipo de Solicitação")
     situation = models.ManyToManyField("SituationEnergyCompany", verbose_name="Situação", blank=True)
