@@ -44,36 +44,6 @@ class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
 
-    def create(self, request, *args, **kwargs):
-        
-        products_ids = request.data.get('products_ids', [])
-        if not products_ids:
-            return Response({'message': 'IDs dos produtos são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        products = Product.objects.filter(id__in=products_ids)
-        if not products.exists():
-            return Response({'message': 'Nenhum produto encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        proposal = serializer.save()
-        
-        sale_products = [
-            SaleProduct(
-                commercial_proposal=proposal,
-                product=product,
-                amount=1,
-                value=product.product_value,
-                reference_value=product.reference_value,
-                cost_value=product.cost_value
-            )
-            for product in products
-        ]
-        SaleProduct.objects.bulk_create(sale_products)
-            
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
