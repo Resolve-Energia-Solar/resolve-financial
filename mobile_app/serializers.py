@@ -53,12 +53,22 @@ class MobileSaleSerializer(BaseSerializer):
 
 class MobileProjectSerializer(BaseSerializer):
 
+    deadlines = SerializerMethodField(read_only=True)
     field_services_urls = SerializerMethodField(read_only=True)
     requests_energy_company_urls = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number', 'field_services_urls', 'requests_energy_company_urls']
+        fields = ['id', 'product', 'project_number', 'deadlines', 'field_services_urls', 'requests_energy_company_urls']
+
+    def get_deadlines(self, obj):
+        return [
+            {
+                'step': step.step.name,
+                'deadline': step.deadline
+            }
+            for step in obj.project_steps.all().order_by('deadline')
+        ]
 
     def get_field_services_urls(self, obj):
         request = self.context.get('request')

@@ -2,7 +2,6 @@ from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
 from resolve_crm.models import Project, Sale
-from resolve_crm.serializers import SaleSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
