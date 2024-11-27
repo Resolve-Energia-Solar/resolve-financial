@@ -1,4 +1,5 @@
 from core.serializers import AttachmentSerializer
+from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
 from resolve_crm.models import Project, Sale
 from resolve_crm.serializers import SaleSerializer
@@ -143,35 +144,13 @@ class FinancialView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class InspectionView(APIView):
-    
-    http_method_names = ['get']
-
-    def get(self, request, project_id):
-        try:
-            project = Project.objects.get(id=project_id)
-        except Project.DoesNotExist:
-            return Response({
-                'message': 'Projeto não encontrado.'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        inspection = project.field_services.filter(service__id=2).order_by('-created_at').first()
-
-        if not inspection:
-            return Response({
-                'message': 'Vistoria não encontrada.'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        data = {
-            'status': inspection.status,
-            'start_date': inspection.schedule_date,
-            'start_time': inspection.schedule_start_time
-        }
-
-        return Response(data, status=status.HTTP_200_OK)
-
-
 class FieldServiceViewset(BaseModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = FieldServiceSerializer
+    http_method_names = ['get']
+
+
+class RequestsEnergyCompanyViewset(BaseModelViewSet):
+    queryset = RequestsEnergyCompany.objects.all()
+    serializer_class = RequestsEnergyCompanySerializer
     http_method_names = ['get']

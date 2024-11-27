@@ -71,6 +71,7 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
     situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
+    unit_id = PrimaryKeyRelatedField(queryset=Units.objects.all(), write_only=True, source='unit')
     requested_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requested_by')
 
     class Meta:

@@ -1,10 +1,11 @@
 from accounts.models import User
 from api.serializers import BaseSerializer
 from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
-from inspections.models import Schedule, Service
-from inspections.serializers import ServiceSerializer
+from engineering.models import RequestsEnergyCompany, Units
+from engineering.serializers import UnitsSerializer
+from inspections.models import Schedule
 from resolve_crm.models import Project, Sale
-from rest_framework.serializers import SerializerMethodField, StringRelatedField
+from rest_framework.serializers import SerializerMethodField, StringRelatedField, PrimaryKeyRelatedField
 from rest_framework.reverse import reverse
 
 
@@ -71,3 +72,18 @@ class FieldServiceSerializer(BaseSerializer):
         model = Schedule
         fields = ['service', 'schedule_agent', 'schedule_date', 'schedule_start_time', 'schedule_end_time', 'going_to_location_at', 'execution_started_at', 'execution_finished_at', 'status']
         ordering = ['schedule_date', 'schedule_start_time']
+
+
+class RequestsEnergyCompanySerializer(BaseSerializer):
+
+    # Para leitura: usar serializador completo
+    unit = UnitsSerializer(read_only=True)
+    type = StringRelatedField(read_only=True)
+
+    class Meta:
+        model = RequestsEnergyCompany
+        fields = [
+            'unit', 'type', 'situation', 'request', 'request_date',
+            'status', 'conclusion_date', 'interim_protocol',
+            'final_protocol', 'created_at'
+        ]
