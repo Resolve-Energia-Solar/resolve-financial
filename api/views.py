@@ -4,6 +4,9 @@ from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+from rest_framework.views import APIView
+
+from api.task import processar_contrato
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -77,3 +80,19 @@ class BaseModelViewSet(ModelViewSet):
                 elif field.get_internal_type() == 'ManyToManyField':
                     filter_fields[field.name] = ['exact', 'in']
         return filter_fields
+
+
+class ContratoView(APIView):
+    def post(self, request):
+        dados_contrato = request.data
+        
+        # Pegue o token do frontend (geralmente enviado no header ou no corpo da requisição)
+        token = request.headers.get("Authorization")  # Ou `request.data['token']` se enviado no body
+
+        # Prepare os headers com o token recebido
+        headers = {"Authorization": token}
+
+        # Envie os dados para o Celery, incluindo o token
+        processar_contrato.delay(dados_contrato, token)
+        
+        return Response({"message": "Contrato enviado para processamento"}, status=status.HTTP_202_ACCEPTED)

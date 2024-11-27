@@ -125,7 +125,7 @@ class SaleSerializer(BaseSerializer):
         return obj.missing_documents()
     
     def get_can_generate_contract(self, obj):
-        return "true" if obj.can_generate_contract else "false"
+        return obj.can_generate_contract
 
     
     def get_total_paid(self, obj):
