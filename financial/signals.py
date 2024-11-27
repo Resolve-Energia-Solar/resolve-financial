@@ -25,8 +25,8 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     """
     if not created and instance.old_total_value is not None:  # Garantir que não é criação e que temos um valor antigo
         if instance.old_total_value != instance.total_value:
-            print(f"Valor antigo: {instance.old_total_value}")
-            print(f"Valor atualizado: {instance.total_value}")
+            # print(f"Valor antigo: {instance.old_total_value}")
+            # print(f"Valor atualizado: {instance.total_value}")
 
             # Recalcula o valor total esperado para cada parcela
             franchise_installments = instance.franchise_installments.all()
@@ -42,7 +42,7 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
                     3
                 )
 
-                print(f"Novo Total Value Calculado: {total_value}")
+                # print(f"Novo Total Value Calculado: {total_value}")
 
                 # Ajustar parcelas proporcionalmente
                 num_installments = franchise_installments.count()

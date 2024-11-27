@@ -205,85 +205,85 @@ class SaleViewSet(BaseModelViewSet):
         print("Response headers:", headers)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)      
         
-    @transaction.atomic
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+    # @transaction.atomic
+    # def update(self, request, *args, **kwargs):
+    #     instance = self.get_object()
         
-        data = request.data
+    #     data = request.data
 
-        # Atualizando os dados da venda
-        serializer = self.get_serializer(instance, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
+    #     # Atualizando os dados da venda
+    #     serializer = self.get_serializer(instance, data=data, partial=True)
+    #     serializer.is_valid(raise_exception=True)
 
-        # Salvando a instância da venda
-        sale = serializer.save()
+    #     # Salvando a instância da venda
+    #     sale = serializer.save()
 
-        # Atualizando os produtos vinculados à venda
-        products_ids = data.get('products_ids', [])
+    #     # Atualizando os produtos vinculados à venda
+    #     products_ids = data.get('products_ids', [])
+    #     if products_ids:
+    #         # Validando os produtos enviados
+    #         products = []
+    #         for product_id in products_ids:
+    #             try:
+    #                 product = Product.objects.get(id=product_id)
+    #                 products.append(product)
+    #             except Product.DoesNotExist:
+    #                 return Response(
+    #                     {"detail": f"Produto com ID {product_id} não encontrado."},
+    #                     status=status.HTTP_404_NOT_FOUND
+    #                 )
 
-        # Validando os produtos enviados
-        products = []
-        for product_id in products_ids:
-            try:
-                product = Product.objects.get(id=product_id)
-                products.append(product)
-            except Product.DoesNotExist:
-                return Response(
-                    {"detail": f"Produto com ID {product_id} não encontrado."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+    #         # Verificando se a venda já possui projetos vinculados aos produtos enviados
+    #         linked_products = []
+    #         for product in products:
+    #             if Project.objects.filter(sale=sale, product=product).exists():  # Ajuste conforme seu modelo
+    #                 linked_products.append(product)
 
-        # Verificando se a venda já possui projetos vinculados aos produtos enviados
-        linked_products = []
-        for product in products:
-            if Project.objects.filter(sale=sale, product=product).exists():  # Ajuste conforme seu modelo
-                linked_products.append(product)
+    #         if linked_products:
+    #             return Response(
+    #                 {
+    #                     "detail": "A venda já possui projetos vinculados a alguns produtos.",
+    #                     "linked_products": [
+    #                         {"id": product.id, "name": product.name} for product in linked_products
+    #                     ]
+    #                 },
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
 
-        if linked_products:
-            return Response(
-                {
-                    "detail": "A venda já possui projetos vinculados a alguns produtos.",
-                    "linked_products": [
-                        {"id": product.id, "name": product.name} for product in linked_products
-                    ]
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    #         # Removendo produtos que não estão mais na lista
+    #         existing_sale_products = SaleProduct.objects.filter(sale=sale)
+    #         for sale_product in existing_sale_products:
+    #             if sale_product.product.id not in products_ids:
+    #                 sale_product.delete()
 
-        # Removendo produtos que não estão mais na lista
-        existing_sale_products = SaleProduct.objects.filter(sale=sale)
-        for sale_product in existing_sale_products:
-            if sale_product.product.id not in products_ids:
-                sale_product.delete()
+    #         # Adicionando ou mantendo os produtos enviados
+    #         for product in products:
+    #             sale_product, created = SaleProduct.objects.get_or_create(
+    #                 sale=sale,
+    #                 product=product,
+    #                 defaults={
+    #                     "amount": 1,  # Ajuste de acordo com sua necessidade
+    #                     "value": product.product_value,
+    #                     "reference_value": product.reference_value,
+    #                     "cost_value": product.cost_value,
+    #                 }
+    #             )
 
-        # Adicionando ou mantendo os produtos enviados
-        for product in products:
-            sale_product, created = SaleProduct.objects.get_or_create(
-                sale=sale,
-                product=product,
-                defaults={
-                    "amount": 1,  # Ajuste de acordo com sua necessidade
-                    "value": product.product_value,
-                    "reference_value": product.reference_value,
-                    "cost_value": product.cost_value,
-                }
-            )
+    #         # Recalculando o valor total da venda, se necessário
+    #         try:
+    #             total_value = self.calculate_total_value(SaleProduct.objects.filter(sale=sale))
+    #             sale.total_value = total_value
+    #             sale.save()
+    #         except Exception as e:
+    #             return Response(
+    #                 {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)},
+    #                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #             )
 
-        # Recalculando o valor total da venda, se necessário
-        try:
-            total_value = self.calculate_total_value(SaleProduct.objects.filter(sale=sale))
-            sale.total_value = total_value
-            sale.save()
-        except Exception as e:
-            return Response(
-                {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        # Retornando a resposta com os dados atualizados da venda
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
-
+    #     # Retornando a resposta com os dados atualizados da venda
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+    
     
     def calculate_total_installment_value(self, sale, products):
         reference_value = sum(product.reference_value for product in products)
