@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from django.utils.text import slugify
+from resolve_crm.serializers import ContractSubmissionSerializer
 from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
 
@@ -38,10 +39,11 @@ class MobileSaleSerializer(BaseSerializer):
     sales_supervisor = RelatedUserSerializer(read_only=True)
     sales_manager = RelatedUserSerializer(read_only=True)
     projects_urls = SerializerMethodField(read_only=True)
+    contract_submission = SerializerMethodField(read_only=True)
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls']
+        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls', 'contract_submission']
 
     def get_projects_urls(self, obj):
         request = self.context.get('request')
@@ -49,6 +51,14 @@ class MobileSaleSerializer(BaseSerializer):
             reverse('mobile_app:mobile_project-detail', args=[project.id], request=request)
             for project in obj.projects.all()
         ]
+    
+    def get_contract_submission(self, obj):
+        contract_submission = obj.contract_submissions.all().order_by('-submit_datetime').first()
+        if contract_submission:
+            data = ContractSubmissionSerializer(contract_submission).data
+            data.pop('sale', None)
+            return data
+        return None
 
 
 class MobileProjectSerializer(BaseSerializer):

@@ -306,7 +306,7 @@ class MarketingCampaign(models.Model):
 
 
 class ContractSubmission(models.Model):
-    sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda")
+    sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", related_name="contract_submissions")
     submit_datetime = models.DateTimeField("Data e hora do envio")
     status = models.CharField("Status do envio", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
     due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
@@ -362,7 +362,7 @@ class Sale(models.Model):
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
-        max_digits=7,  # Para permitir até 999.9999
+        max_digits=7,
         decimal_places=4,
         blank=True,
         null=True,
