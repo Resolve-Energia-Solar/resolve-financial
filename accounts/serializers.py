@@ -55,7 +55,6 @@ class AddressSerializer(BaseSerializer):
     user_id = PrimaryKeyRelatedField(
         queryset=User.objects.all(), write_only=True, required=False,
     )
-
     class Meta:
         model = Address
         fields = '__all__'

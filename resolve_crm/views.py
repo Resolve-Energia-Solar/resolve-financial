@@ -435,7 +435,7 @@ class GeneratePreSaleView(APIView):
             return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
         
         if not lead.first_document:
-            return Response({'message': 'Lead não possui documento cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Criação ou recuperação do cliente usando Serializer
         customer = User.objects.filter(first_document=lead.first_document).first()
