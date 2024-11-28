@@ -572,7 +572,11 @@ class ProjectStep(models.Model):
     def __str__(self):
         return f"{self.project.project_number} - {self.step.name}"
 
+
     def save(self, *args, **kwargs):
-        if not self.deadline:
+
+        if not self.deadline and self.project.start_date:
+
             self.deadline = self.project.start_date + timedelta(days=self.step.default_duration_days)
+
         super().save(*args, **kwargs)
