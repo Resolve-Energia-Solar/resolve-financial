@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from django.utils.text import slugify
+from resolve_crm.serializers import ContractSubmissionSerializer
 from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
 
@@ -38,10 +39,11 @@ class MobileSaleSerializer(BaseSerializer):
     sales_supervisor = RelatedUserSerializer(read_only=True)
     sales_manager = RelatedUserSerializer(read_only=True)
     projects_urls = SerializerMethodField(read_only=True)
+    contract_submission = SerializerMethodField(read_only=True)
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls']
+        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls', 'contract_submission']
 
     def get_projects_urls(self, obj):
         request = self.context.get('request')
@@ -49,6 +51,14 @@ class MobileSaleSerializer(BaseSerializer):
             reverse('mobile_app:mobile_project-detail', args=[project.id], request=request)
             for project in obj.projects.all()
         ]
+    
+    def get_contract_submission(self, obj):
+        contract_submission = obj.contract_submissions.all().order_by('-submit_datetime').first()
+        if contract_submission:
+            data = ContractSubmissionSerializer(contract_submission).data
+            data.pop('sale', None)
+            return data
+        return None
 
 
 class MobileProjectSerializer(BaseSerializer):
@@ -62,19 +72,36 @@ class MobileProjectSerializer(BaseSerializer):
         fields = ['id', 'product', 'project_number', 'deadlines', 'field_services_urls', 'requests_energy_company_urls']
 
     def get_deadlines(self, obj):
+        # Slugs a serem removidos
+        excluded_slugs = {"documentacao", "financeiro", "project"}
+
+        # Obter slugs de field services e requests energy company
+        field_service_slugs = {
+            slugify(field_service.service) 
+            for field_service in obj.field_services.all()
+        }
+        request_energy_slugs = {
+            slugify(request_energy_company.type) 
+            for request_energy_company in obj.requests_energy_company.all()
+        }
+
+        # Filtrar prazos
         return [
             {
                 'step': step.step.name,
-                'deadline': step.deadline
+                'deadline': step.deadline,
+                'slug': step.step.slug
             }
             for step in obj.project_steps.all().order_by('deadline')
+            if slugify(step.step.slug) not in excluded_slugs and
+               slugify(step.step.name) not in field_service_slugs | request_energy_slugs
         ]
 
     def get_field_services_urls(self, obj):
         request = self.context.get('request')
         grouped_urls = defaultdict(list)
 
-        # Grouping and ordering field services
+        # Agrupando e ordenando os serviços de campo
         for field_service in obj.field_services.all().order_by('-created_at'):
             service_slug = slugify(field_service.service)
             url = reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
@@ -86,7 +113,7 @@ class MobileProjectSerializer(BaseSerializer):
         request = self.context.get('request')
         grouped_urls = defaultdict(list)
 
-        # Grouping and ordering requests energy company
+        # Agrupando e ordenando solicitações de concessionárias
         for request_energy_company in obj.requests_energy_company.all().order_by('-created_at'):
             type_slug = slugify(request_energy_company.type)
             url = reverse('mobile_app:requests_energy_company-detail', args=[request_energy_company.id], request=request)
@@ -102,7 +129,7 @@ class FieldServiceSerializer(BaseSerializer):
     
     class Meta:
         model = Schedule
-        fields = ['service', 'schedule_agent', 'schedule_date', 'schedule_start_time', 'schedule_end_time', 'going_to_location_at', 'execution_started_at', 'execution_finished_at', 'status']
+        fields = ['service', 'schedule_agent', 'schedule_date', 'schedule_start_time', 'schedule_end_time', 'going_to_location_at', 'execution_started_at', 'execution_finished_at', 'status', 'created_at']
         ordering = ['schedule_date', 'schedule_start_time']
 
 
