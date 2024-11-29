@@ -40,10 +40,11 @@ class MobileSaleSerializer(BaseSerializer):
     sales_manager = RelatedUserSerializer(read_only=True)
     projects_urls = SerializerMethodField(read_only=True)
     contract_submission = SerializerMethodField(read_only=True)
+    financial_url = SerializerMethodField(read_only=True)
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'projects_urls', 'contract_submission']
+        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'financial_url', 'projects_urls', 'contract_submission']
 
     def get_projects_urls(self, obj):
         request = self.context.get('request')
@@ -60,16 +61,21 @@ class MobileSaleSerializer(BaseSerializer):
             return data
         return None
 
+    def get_financial_url(self, obj):
+        request = self.context.get('request')
+        return reverse('mobile_app:financial', args=[obj.id], request=request)
+
 
 class MobileProjectSerializer(BaseSerializer):
 
     deadlines = SerializerMethodField(read_only=True)
     field_services_urls = SerializerMethodField(read_only=True)
     requests_energy_company_urls = SerializerMethodField(read_only=True)
+    contract_url = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number', 'deadlines', 'field_services_urls', 'requests_energy_company_urls']
+        fields = ['id', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls']
 
     def get_deadlines(self, obj):
         # Slugs a serem removidos
@@ -96,6 +102,10 @@ class MobileProjectSerializer(BaseSerializer):
             if slugify(step.step.slug) not in excluded_slugs and
                slugify(step.step.name) not in field_service_slugs | request_energy_slugs
         ]
+
+    def get_contract_url(self, obj):
+        request = self.context.get('request')
+        return reverse('mobile_app:contract', args=[obj.id], request=request)
 
     def get_field_services_urls(self, obj):
         request = self.context.get('request')
