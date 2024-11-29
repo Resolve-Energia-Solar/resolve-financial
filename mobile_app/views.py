@@ -1,7 +1,7 @@
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
-from resolve_crm.models import Project, Sale
+from resolve_crm.models import Project, Sale, Step
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -84,7 +84,7 @@ class ProjectViewset(BaseModelViewSet):
     http_method_names = ['get']
 
 
-class ContractView(APIView):
+class DocumentationView(APIView):
 
     http_method_names = ['get']
 
@@ -117,6 +117,10 @@ class ContractView(APIView):
             'is_completed': project.is_documentation_completed
         }
 
+        if not project.is_documentation_completed:
+            deadline = project.project_steps.get(step='documentacao').deadline
+            data['deadline'] = deadline if deadline else None
+
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -134,13 +138,24 @@ class FinancialView(APIView):
         
         percentual_paid = (sale.total_paid * 100 / sale.total_value) if sale.total_value != 0 else 0
 
-        return Response({
+        data = {
             'total_paid': sale.total_paid,
             'percentual_paid': percentual_paid,
             'payment_status': sale.payment_status,
             'is_paid': sale.total_paid == sale.total_value,
             'is_completed': sale.payment_status != 'PENDENTE'
-        }, status=status.HTTP_200_OK)
+        }
+
+        if sale.payment_status == 'PENDENTE':
+            # Obtenha o objeto Step correspondente ao nome 'financeiro'
+            try:
+                financeiro_step = Step.objects.get(name='financeiro')
+                deadline = sale.projects.first().project_steps.get(step=financeiro_step).deadline
+                data['deadline'] = deadline if deadline else None
+            except Step.DoesNotExist:
+                data['deadline'] = None
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class FieldServiceViewset(BaseModelViewSet):

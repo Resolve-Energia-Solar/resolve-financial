@@ -105,7 +105,7 @@ class MobileProjectSerializer(BaseSerializer):
 
     def get_contract_url(self, obj):
         request = self.context.get('request')
-        return reverse('mobile_app:contract', args=[obj.id], request=request)
+        return reverse('mobile_app:documentation', args=[obj.id], request=request)
 
     def get_field_services_urls(self, obj):
         request = self.context.get('request')
