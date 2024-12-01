@@ -508,6 +508,21 @@ class GeneratePreSaleView(APIView):
                         return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            if not lead.seller:
+                return Response({'message': 'Lead não possui vendedor associado.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not lead.seller.employee:
+                return Response({'message': 'Vendedor não possui funcionário associado.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not lead.seller.employee.branch:
+                return Response({'message': 'Vendedor não possui filial associada.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not lead.seller.employee.user_manager:
+                return Response({'message': 'Vendedor não possui supervisor associado.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not lead.seller.employee.user_manager.employee.user_manager:
+                return Response({'message': 'Supervisor não possui gerente associado.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             # Criação da pré-venda usando Serializer
             sale_data = {
                 'customer_id': customer.id,
