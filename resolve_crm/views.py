@@ -549,7 +549,7 @@ class GeneratePreSaleView(APIView):
             
             # Criação da pré-venda usando Serializer
             try:
-                seller_id = lead.seller
+                seller_id = lead.seller.id
                 sales_supervisor_id = lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None
                 sales_manager_id = lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None
             except Exception as e:
