@@ -284,10 +284,16 @@ class ContractDetailView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AttachmentViewSet(BaseModelViewSet):
-    queryset = Attachment.objects.all()
-    serializer_class = AttachmentSerializer
+class AttachDocumentView(APIView):
+    
+    http_method_names = ['post']
 
-    def perform_create(self, serializer):
+    def post(self, request):
         project_content_type = ContentType.objects.get_for_model(Project)
-        serializer.save(content_type=project_content_type)
+        data = request.data.copy()
+        data['content_type_id'] = project_content_type.id
+        serializer = AttachmentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
