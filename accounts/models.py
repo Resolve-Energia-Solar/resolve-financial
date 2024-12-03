@@ -100,9 +100,9 @@ class PhoneNumber(models.Model):
         return f'+{self.country_code} {self.phone_number}'
     
     def save(self, *args, **kwargs):
-        if self.is_main:
-            PhoneNumber.objects.filter(user=self.user).update(is_main=False)
         super(PhoneNumber, self).save(*args, **kwargs)
+        if self.is_main:
+            PhoneNumber.objects.filter(user=self.user).exclude(id=self.id).update(is_main=False)
     
     class Meta:
         verbose_name = "Número de Telefone"
