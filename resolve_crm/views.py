@@ -583,6 +583,8 @@ class GeneratePreSaleView(APIView):
                                 return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'}, status=status.HTTP_400_BAD_REQUEST)
                             
                             try:
+                                comercial_proposal.status = 'A'
+                                comercial_proposal.save()
                                 saleproduct.sale = pre_sale
                                 saleproduct.save()
                             except Exception as e:
