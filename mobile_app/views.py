@@ -4,6 +4,7 @@ import os
 import requests
 from django.utils import timezone
 from dotenv import load_dotenv
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -13,6 +14,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import User
 from api.views import BaseModelViewSet
+from core.models import Attachment
+from core.pagination import AttachmentPagination
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
@@ -205,7 +208,7 @@ class ContractsListView(APIView):
 
     def get(self, request, *args, **kwargs):
         # URL e parâmetros da API externa
-        url = "https://app.solarz.com.br/openApi/seller/plant/list/?cliente__email=haroldorodrigues@gmail.com"
+        url = "https://app.solarz.com.br/openApi/seller/plant/list/"
         params = {"page": 1, "pageSize": 20}
         auth = (SOLARZ_USERNAME, SOLARZ_PASSWORD)
 
@@ -247,9 +250,10 @@ class ContractDetailView(APIView):
     """
     Retorna os detalhes do contrato para economia, consumo e produção de energia.
     """
-    def get(self, request, plant_id, *args, **kwargs):
-        month = request.query_params.get("month", "2024-01")
-        year = request.query_params.get("year", "2024")
+    def get(self, request, plant_id):
+        current_date = timezone.now()
+        month = request.query_params.get("month", current_date.strftime("%m"))
+        year = request.query_params.get("year", current_date.strftime("%Y"))
 
         auth = (SOLARZ_USERNAME, SOLARZ_PASSWORD)
 
@@ -270,4 +274,20 @@ class ContractDetailView(APIView):
                 "production": production_data,
             }, status=status.HTTP_200_OK)
 
-        return Response({"error": "Erro ao buscar detalhes do contrato"}, status=status.HTTP_400_BAD_REQUEST)
+        # Capturar erros específicos da API externa
+        return Response({
+            "error": "Erro ao buscar detalhes do contrato",
+            "economy_status": economy_response.status_code,
+            "economy_response": economy_response.text,
+            "production_status": production_response.status_code,
+            "production_response": production_response.text,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttachmentViewSet(BaseModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+
+    def perform_create(self, serializer):
+        project_content_type = ContentType.objects.get_for_model(Project)
+        serializer.save(content_type=project_content_type)
