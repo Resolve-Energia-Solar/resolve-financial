@@ -1,7 +1,7 @@
 import logging
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.models import UserType
+from accounts.models import PhoneNumber, UserType
 from accounts.serializers import UserSerializer
 from api.views import BaseModelViewSet
 from rest_framework.views import APIView
@@ -13,6 +13,7 @@ from .models import *
 from decimal import Decimal
 from logistics.models import Product, SaleProduct
 from financial.models import FranchiseInstallment
+import re
 
 
 
@@ -458,7 +459,20 @@ class GeneratePreSaleView(APIView):
             while User.objects.filter(username=username).exists():
                 username = f"{base_username}{counter}"
                 counter += 1
-
+            
+            phone_number = lead.phone
+            match = re.match(r'(\d{2})(\d+)', phone_number)
+            if match:
+                area_code, number = match.groups()
+                phone = PhoneNumber.objects.get_or_create(
+                    phone_number=number,
+                    defaults={
+                        'country_code': 55,
+                        'area_code': area_code,
+                        'is_main': True,
+                    }
+                )
+                
             user_data = {
                 'complete_name': lead.name,
                 'username': username,
@@ -468,6 +482,7 @@ class GeneratePreSaleView(APIView):
                 'addresses_ids': [address.id for address in lead.addresses.all()],
                 'user_types_ids': [UserType.objects.get(id=2).id],
                 'first_document': lead.first_document,
+                'phones_ids': [phone.id],
             }
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid():
