@@ -94,7 +94,7 @@ class PhoneNumber(models.Model):
     area_code = models.PositiveSmallIntegerField("DDD", max_length=2, validators=[RegexValidator(r'^\d{2}$')])
     phone_number = models.CharField("Número de Telefone", max_length=20, validators=[RegexValidator(r'^\d+$')])
     is_main = models.BooleanField("Principal?", default=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário", related_name="phone_numbers")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário", related_name="phone_numbers", blank=True, null=True)
     
     def __str__(self):
         return f'+{self.country_code} {self.phone_number}'
@@ -108,7 +108,6 @@ class PhoneNumber(models.Model):
         verbose_name = "Número de Telefone"
         verbose_name_plural = "Números de Telefone"
         ordering = ['-is_main', 'user__complete_name']
-        unique_together = ['country_code', 'phone_number']
 
 
 class Address(models.Model):
