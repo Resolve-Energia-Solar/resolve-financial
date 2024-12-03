@@ -370,7 +370,6 @@ class GenerateSalesProjectsView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-
     def get(self, request):
         sale_id = request.query_params.get('sale_id')
         print("Sale ID:", sale_id)
@@ -424,6 +423,7 @@ class GeneratePreSaleView(APIView):
         lead_id = request.data.get('lead_id')
         products = request.data.get('products')
         commercial_proposal_id = request.data.get('commercial_proposal_id')
+        print("Commercial Proposal ID:", commercial_proposal_id)
         # payment_data = request.data.get('payment')
 
         if not lead_id:
@@ -575,15 +575,19 @@ class GeneratePreSaleView(APIView):
                 
                 if commercial_proposal_id:
                     try:
-                        salesproduct = SaleProduct.objects.filter(commercial_proposal_id=commercial_proposal_id)
+                        salesproduct = SaleProduct.objects.filter(commercial_proposal=comercial_proposal)
                         print(salesproduct)
                         
                         for saleproduct in salesproduct:
-                            if saleproduct.sale_id:
+                            if saleproduct.sale:
                                 return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'}, status=status.HTTP_400_BAD_REQUEST)
                             
-                            saleproduct.sale_id = pre_sale.id
-                            saleproduct.save()
+                            try:
+                                saleproduct.sale = pre_sale
+                                saleproduct.save()
+                            except Exception as e:
+                                logger.error(f'Erro ao vincular produtos da proposta comercial à pré-venda: {str(e)}')
+                                return Response({'message': 'Erro ao vincular produtos da proposta comercial à pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                             
                             project_data = {
                                 'sale_id': pre_sale.id,
@@ -593,7 +597,7 @@ class GeneratePreSaleView(APIView):
                             }
                             project_serializer = ProjectSerializer(data=project_data)
                             if project_serializer.is_valid():
-                                project = project_serializer.save()
+                                project_serializer.save()
                             else:
                                 return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                             
