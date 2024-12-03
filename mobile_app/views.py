@@ -1,7 +1,9 @@
+import logging
+
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
-from resolve_crm.models import Project, Sale, Step
+from resolve_crm.models import Project, Sale
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,6 +15,9 @@ from django.utils import timezone
 
 from api.views import BaseModelViewSet
 from mobile_app.serializers import *
+
+
+logger = logging.getLogger(__name__)
 
 
 class CustomerLoginView(APIView):
@@ -118,8 +123,15 @@ class DocumentationView(APIView):
         }
 
         if not project.is_documentation_completed:
-            deadline = project.project_steps.get(step='documentacao').deadline
+            deadline = project.project_steps.get(step__name='documentacao').deadline
             data['deadline'] = deadline if deadline else None
+        else:
+            data['completion_date'] = project.documention_completion_date
+            if project.start_date and project.documention_completion_date:
+                data['duration'] = (project.documention_completion_date.date() - project.start_date).days
+            else:
+                logger.error('Erro ao calcular a duração da documentação do projeto %s', project.id)
+                data['duration'] = None
 
         return Response(data, status=status.HTTP_200_OK)
 
@@ -147,13 +159,18 @@ class FinancialView(APIView):
         }
 
         if sale.payment_status == 'PENDENTE':
-            # Obtenha o objeto Step correspondente ao nome 'financeiro'
             try:
-                financeiro_step = Step.objects.get(name='financeiro')
-                deadline = sale.projects.first().project_steps.get(step=financeiro_step).deadline
+                deadline = sale.projects.first().project_steps.get(step__name='financeiro').deadline
                 data['deadline'] = deadline if deadline else None
-            except Step.DoesNotExist:
+            except:
                 data['deadline'] = None
+        else:
+            data['completion_date'] = sale.financial_completion_date
+            if sale.signature_date:
+                data['duration'] = (sale.financial_completion_date.date() - sale.signature_date).days
+            else:
+                logger.error('Erro ao calcular a duração do financeiro da venda %s', sale.id)
+                data['duration'] = None
 
         return Response(data, status=status.HTTP_200_OK)
 
