@@ -90,9 +90,8 @@ class User(AbstractUser):
 
 
 class PhoneNumber(models.Model):
-
     country_code = models.PositiveSmallIntegerField("Código do País", default=55)
-    area_code = models.PositiveSmallIntegerField("DDD", max)
+    area_code = models.PositiveSmallIntegerField("DDD", max_length=2, validators=[RegexValidator(r'^\d{2}$')])
     phone_number = models.CharField("Número de Telefone", max_length=20, validators=[RegexValidator(r'^\d+$')])
     is_main = models.BooleanField("Principal?", default=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuário", related_name="phone_numbers")
