@@ -1,20 +1,30 @@
 import logging
+import os
 
+import requests
+from django.utils import timezone
+from dotenv import load_dotenv
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from accounts.models import User
+from api.views import BaseModelViewSet
+from core.models import Attachment
+from core.pagination import AttachmentPagination
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
-from resolve_crm.models import Project, Sale
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
-
-from accounts.models import User
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils import timezone
-
-from api.views import BaseModelViewSet
 from mobile_app.serializers import *
+from resolve_crm.models import Project, Sale
+
+
+# Carrega o .env
+load_dotenv()
 
 
 logger = logging.getLogger(__name__)
@@ -185,3 +195,99 @@ class RequestsEnergyCompanyViewset(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
     http_method_names = ['get']
+
+
+SOLARZ_USERNAME = os.getenv('SOLARZ_USERNAME')
+SOLARZ_PASSWORD = os.getenv('SOLARZ_PASSWORD')
+
+
+class ContractsListView(APIView):
+    """
+    Lista todos os contratos.
+    """
+
+    def get(self, request, *args, **kwargs):
+        # URL e parâmetros da API externa
+        url = "https://app.solarz.com.br/openApi/seller/plant/list/"
+        params = {"page": 1, "pageSize": 20}
+        auth = (SOLARZ_USERNAME, SOLARZ_PASSWORD)
+
+        # Chamada para a API externa
+        response = requests.post(url, json=params, auth=auth)
+
+        if response.status_code == 200:
+            queryset = response.json()
+
+            # Garantir que queryset seja uma lista
+            if not isinstance(queryset, list):
+                return Response({"error": "Dados retornados não são uma lista"}, status=500)
+
+            # Separar contratos por status
+            alert_contracts = [
+                contract for contract in queryset
+                if isinstance(contract, dict) and contract.get('status', {}).get('status', '').upper() == 'ALERTA'
+            ]
+            unknown_contracts = [
+                contract for contract in queryset
+                if isinstance(contract, dict) and contract.get('status', {}).get('status', '').upper() == 'DESCONHECIDO'
+            ]
+            ok_contracts = [
+                contract for contract in queryset
+                if isinstance(contract, dict) and contract.get('status', {}).get('status', '').upper() == 'OK'
+            ]
+
+            return Response({
+                "alert_contracts": alert_contracts,
+                "unknown_contracts": unknown_contracts,
+                "ok_contracts": ok_contracts,
+            }, status=200)
+        else:
+            logger.error(f"Erro ao buscar contratos: {response.status_code} - {response.text}")
+            return Response({"error": "Erro ao buscar contratos"}, status=400)
+
+
+class ContractDetailView(APIView):
+    """
+    Retorna os detalhes do contrato para economia, consumo e produção de energia.
+    """
+    def get(self, request, plant_id):
+        current_date = timezone.now()
+        month = request.query_params.get("month", current_date.strftime("%m"))
+        year = request.query_params.get("year", current_date.strftime("%Y"))
+
+        auth = (SOLARZ_USERNAME, SOLARZ_PASSWORD)
+
+        # URL para economia por mês
+        economy_url = f"https://app.solarz.com.br/openApi/seller/plant/energy/plantId/{plant_id}/month/{year}-{month}"
+        economy_response = requests.post(economy_url, auth=auth)
+
+        # URL para produção de energia no período
+        production_url = f"https://app.solarz.com.br/openApi/seller/plant/energy/plantId/{plant_id}/year/{year}"
+        production_response = requests.post(production_url, auth=auth)
+
+        if economy_response.status_code == 200 and production_response.status_code == 200:
+            economy_data = economy_response.json()
+            production_data = production_response.json()
+
+            return Response({
+                "economy": economy_data,
+                "production": production_data,
+            }, status=status.HTTP_200_OK)
+
+        # Capturar erros específicos da API externa
+        return Response({
+            "error": "Erro ao buscar detalhes do contrato",
+            "economy_status": economy_response.status_code,
+            "economy_response": economy_response.text,
+            "production_status": production_response.status_code,
+            "production_response": production_response.text,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttachmentViewSet(BaseModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+
+    def perform_create(self, serializer):
+        project_content_type = ContentType.objects.get_for_model(Project)
+        serializer.save(content_type=project_content_type)
