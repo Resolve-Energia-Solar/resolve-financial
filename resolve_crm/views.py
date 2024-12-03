@@ -2,7 +2,7 @@ import logging
 from rest_framework.response import Response
 from rest_framework import status
 from accounts.models import PhoneNumber, UserType
-from accounts.serializers import UserSerializer
+from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from rest_framework.views import APIView
 from django.db import transaction
@@ -431,7 +431,6 @@ class GeneratePreSaleView(APIView):
         
         if not products and not commercial_proposal_id:
             return Response({'message': 'É obrigatório possuir um produto ou uma Proposta Comercial.'}, status=status.HTTP_400_BAD_REQUEST)
-
         
         if commercial_proposal_id and products:
             return Response({'message': 'commercial_proposal_id e products são mutuamente exclusivos.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -450,6 +449,22 @@ class GeneratePreSaleView(APIView):
         if not lead.first_document:
             return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
         
+        phone_number = lead.phone
+        match = re.match(r'(\d{2})(\d+)', phone_number)
+        if match:
+            area_code, number = match.groups()
+            phone_data = {
+                'country_code': 55,
+                'area_code': area_code,
+                'phone_number': number,
+                'is_main': True,
+            }
+            phone_serializer = PhoneNumberSerializer(data=phone_data)
+            if phone_serializer.is_valid():
+                phone = phone_serializer.save()
+            else:
+                return Response(phone_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         # Criação ou recuperação do cliente usando Serializer
         customer = User.objects.filter(first_document=lead.first_document).first()
         if not customer:
@@ -460,18 +475,6 @@ class GeneratePreSaleView(APIView):
                 username = f"{base_username}{counter}"
                 counter += 1
             
-            phone_number = lead.phone
-            match = re.match(r'(\d{2})(\d+)', phone_number)
-            if match:
-                area_code, number = match.groups()
-                phone = PhoneNumber.objects.get_or_create(
-                    phone_number=number,
-                    defaults={
-                        'country_code': 55,
-                        'area_code': area_code,
-                        'is_main': True,
-                    }
-                )
                 
             user_data = {
                 'complete_name': lead.name,
@@ -482,7 +485,7 @@ class GeneratePreSaleView(APIView):
                 'addresses_ids': [address.id for address in lead.addresses.all()],
                 'user_types_ids': [UserType.objects.get(id=2).id],
                 'first_document': lead.first_document,
-                'phones_ids': [phone.id],
+                'phone_numbers_ids': [phone.id],
             }
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid():
@@ -491,11 +494,19 @@ class GeneratePreSaleView(APIView):
                 return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Atualiza o cliente existente com os dados do lead, se necessário
+            phone_ids = []
+            for phone in PhoneNumber.objects.filter(user=customer):
+                phone_ids.append(phone.id)
+                
+            if phone.id not in phone_ids:
+                phone_ids.append(phone.id)
+            
             user_serializer = UserSerializer(customer, data={
                 'complete_name': lead.name,
                 'email': lead.contact_email,
                 'addresses': [address.id for address in lead.addresses.all()],
                 'user_types': UserType.objects.get(id=2).id,
+                'phone_numbers_ids': phone_ids,
             }, partial=True)
             if user_serializer.is_valid():
                 customer = user_serializer.save()
@@ -535,31 +546,25 @@ class GeneratePreSaleView(APIView):
                         return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            if not lead.seller:
-                return Response({'message': 'Lead não possui vendedor associado.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if not lead.seller.employee:
-                return Response({'message': 'Vendedor não possui funcionário associado.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if not lead.seller.employee.branch:
-                return Response({'message': 'Vendedor não possui filial associada.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if not lead.seller.employee.user_manager:
-                return Response({'message': 'Vendedor não possui supervisor associado.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if not lead.seller.employee.user_manager.employee.user_manager:
-                return Response({'message': 'Supervisor não possui gerente associado.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Criação da pré-venda usando Serializer
+            try:
+                seller_id = lead.seller
+                sales_supervisor_id = lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None
+                sales_manager_id = lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None
+            except Exception as e:
+                logger.error(f'Erro ao recuperar informações do vendedor: {str(e)}')
+                return Response({'message': 'Erro ao recuperar informações do vendedor.'}, status=status.HTTP_400_BAD_REQUEST)
+                
             sale_data = {
                 'customer_id': customer.id,
                 'lead_id': lead.id,
                 'is_pre_sale': True,
                 'status': 'P',
                 'branch_id': lead.seller.employee.branch.id,
-                'seller_id': lead.seller.id,
-                'sales_supervisor_id': lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None,
-                'sales_manager_id': lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None,
+                'seller_id': seller_id,
+                'sales_supervisor_id': sales_supervisor_id,
+                'sales_manager_id': sales_manager_id,
                 'total_value': round(total_value, 3),
                 # **({'commercial_proposal_id': commercial_proposal_id} if commercial_proposal_id else {}),
                 **({'products_ids': [product.id for product in products_]} if products else {})

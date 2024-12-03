@@ -19,7 +19,7 @@ class RoleSerializer(BaseSerializer):
 
 class PhoneNumberSerializer(BaseSerializer):
     user = SerializerMethodField(read_only=True)  # Apenas leitura
-    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')  # Apenas escrita
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user', required=False)  # Apenas escrita
 
     class Meta:
         model = PhoneNumber
