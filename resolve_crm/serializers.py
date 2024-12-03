@@ -9,6 +9,7 @@ from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
 from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
+import re
 
 
 class OriginSerializer(BaseSerializer):
@@ -60,6 +61,12 @@ class LeadSerializer(BaseSerializer):
         model = Lead
         depth = 1
         fields = '__all__'
+        
+    def validate(self, data):
+        phone = data.get('phone')
+        if phone and len(re.sub(r'\D', '', phone)) != 11:
+            raise ValidationError({'phone': 'Phone number must have exactly 11 digits.'})
+        return data
         
     def get_sales(self, obj):
         # Aqui, obtenha as vendas vinculadas ao usuário do lead (exemplo para seller)
