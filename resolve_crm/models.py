@@ -492,7 +492,7 @@ class Project(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
-    id_plant = models.CharField("ID da Planta", max_length=20, null=True, blank=True)
+    plant_integration = models.CharField("ID da Usina", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
