@@ -72,10 +72,11 @@ class MobileProjectSerializer(BaseSerializer):
     field_services_urls = SerializerMethodField(read_only=True)
     requests_energy_company_urls = SerializerMethodField(read_only=True)
     contract_url = SerializerMethodField(read_only=True)
+    monitoring_url = SerializerMethodField(read_only=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls']
+        fields = ['id', 'start_date', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
 
     def get_deadlines(self, obj):
         # Slugs a serem removidos
@@ -130,6 +131,12 @@ class MobileProjectSerializer(BaseSerializer):
             grouped_urls[type_slug].append(url)
 
         return grouped_urls
+
+    def get_monitoring_url(self, obj):
+        request = self.context.get('request')
+        if obj.plant_integration:
+            return reverse('mobile_app:monitoring-detail', args=[obj.plant_integration], request=request)
+        return None
 
 
 class FieldServiceSerializer(BaseSerializer):
