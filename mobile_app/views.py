@@ -201,7 +201,7 @@ SOLARZ_USERNAME = os.getenv('SOLARZ_USERNAME')
 SOLARZ_PASSWORD = os.getenv('SOLARZ_PASSWORD')
 
 
-class ContractsListView(APIView):
+class MonitoringListView(APIView):
     """
     Lista todos os contratos.
     """
@@ -246,7 +246,7 @@ class ContractsListView(APIView):
             return Response({"error": "Erro ao buscar contratos"}, status=400)
 
 
-class ContractDetailView(APIView):
+class MonitoringDetailView(APIView):
     """
     Retorna os detalhes do contrato para economia, consumo e produção de energia.
     """

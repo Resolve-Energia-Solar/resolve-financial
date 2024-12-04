@@ -44,7 +44,7 @@ urlpatterns = [
     path('', include(mobile_app_router.urls)),
     re_path(r'^swagger/$', mobile_app_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui-mobile_app'),
     re_path(r'^redoc/$', mobile_app_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc-mobile_app'),
-    path("contracts/", ContractsListView.as_view(), name="contracts-list"),
-    path("contracts/<int:plant_id>/", ContractDetailView.as_view(), name="contract-detail"),
+    path("monitoring/", MonitoringListView.as_view(), name="monitoring-list"),
+    path("monitoring/<int:plant_id>/", MonitoringDetailView.as_view(), name="monitoring-detail"),
     path("attach-document/", AttachDocumentView.as_view(), name="attach-document"),
 ]
