@@ -133,7 +133,10 @@ class FranchiseInstallment(models.Model):
         """
         Calcula a diferença entre o valor total da venda e a soma dos valores de referência dos produtos.
         """
-        return self.sale.total_value - sum(self.sale.sale_products.all().values_list("reference_value", flat=True))
+        reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
+        # Filtra valores None
+        valid_values = [value for value in reference_values if value is not None]
+        return self.sale.total_value - sum(valid_values)
 
     @property
     def margin_7(self):
@@ -152,13 +155,31 @@ class FranchiseInstallment(models.Model):
     
     @property
     def total_value(self):
-        reference_value = sum(self.sale.sale_products.all().values_list("reference_value", flat=True))
+        reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
+        if not reference_values:
+            return Decimal("0.00")
+        
+        # Remove valores None antes de calcular
+        reference_values = [value for value in reference_values if value is not None]
+        
+        if not reference_values:  # Se todos forem None, retorna 0
+            return Decimal("0.00")
+        
+        reference_value = sum(reference_values)
+        
         if self.difference_value <= 0:
             return reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7 - self.difference_value)
+        
         return round((reference_value * (1 - self.sale.transfer_percentage / 100)) - self.margin_7 + self.difference_value, 3)
+
     
     @property
     def transfer_percentage(self):
+        """
+        Retorna o percentual de transferência arredondado, ou 0.00 caso seja None.
+        """
+        if self.sale.transfer_percentage is None:
+            return Decimal("0.00")  # Retorna um valor padrão
         return round(self.sale.transfer_percentage, 2)
 
     @staticmethod
@@ -178,20 +199,20 @@ class FranchiseInstallment(models.Model):
         """
         if not self.sale:
             raise ValidationError("A venda associada a esta parcela é obrigatória.")
-        
-        total_value = Decimal(self.total_value)
-        total_installments = sum(
-            Decimal(installment.installment_value)
-            for installment in self.sale.franchise_installments.exclude(id=self.id)
-        )
-        
-        # Verificar se o valor desta parcela somado às existentes excede o total
-        if total_installments + Decimal(self.installment_value) > total_value:
-            raise ValidationError(
-                f"O valor total das parcelas ({total_installments + Decimal(self.installment_value)}) "
-                f"excede o limite permitido de {total_value}. "
-                f"Valor restante disponível: {total_value - total_installments}."
+        if self.total_value:
+            total_value = Decimal(self.total_value)
+            total_installments = sum(
+                Decimal(installment.installment_value)
+                for installment in self.sale.franchise_installments.exclude(id=self.id)
             )
+            
+            # Verificar se o valor desta parcela somado às existentes excede o total
+            if total_installments + Decimal(self.installment_value) > total_value:
+                raise ValidationError(
+                    f"O valor total das parcelas ({total_installments + Decimal(self.installment_value)}) "
+                    f"excede o limite permitido de {total_value}. "
+                    f"Valor restante disponível: {total_value - total_installments}."
+                )
 
     def save(self, *args, **kwargs):
         """
