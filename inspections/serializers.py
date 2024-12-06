@@ -88,3 +88,25 @@ class ScheduleSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+
+class BlockTimeAgentSerializer(BaseSerializer):
+    #leitura
+    agent = UserSerializer(read_only=True)
+
+    #escrita
+    agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
+
+    class Meta(BaseSerializer.Meta):
+        model = BlockTimeAgent
+        fields = '__all__'
+
+class FreeTimeAgentSerializer(BaseSerializer):
+    #leitura
+    agent = UserSerializer(read_only=True)
+
+    #escrita
+    agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
+
+    class Meta(BaseSerializer.Meta):
+        model = FreeTimeAgent
+        fields = '__all__'
