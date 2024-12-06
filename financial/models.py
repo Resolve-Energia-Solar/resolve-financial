@@ -127,14 +127,23 @@ class FranchiseInstallment(models.Model):
     paid_at = models.DateTimeField("Pago em", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    @property
+    def transfer_percentage(self):
+        if not self.sale or not self.sale.transfer_percentage:
+            return Decimal("0.00")
+        return self.sale.transfer_percentage
 
     @property
     def difference_value(self):
         """
         Calcula a diferença entre o valor total da venda e a soma dos valores de referência dos produtos.
+        Retorna 0 se valores forem inválidos.
         """
+        if not self.sale or not self.sale.total_value:
+            return Decimal("0.00")
+
         reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
-        # Filtra valores None
         valid_values = [value for value in reference_values if value is not None]
         return self.sale.total_value - sum(valid_values)
 
@@ -148,45 +157,44 @@ class FranchiseInstallment(models.Model):
         return self.difference_value * Decimal("0.07")
 
     @property
+    def total_value(self):
+        """
+        Calcula o valor total da venda considerando repasse, margem e diferença de valor.
+        Retorna 0 se os valores forem inválidos.
+        """
+        if not self.sale or not self.sale.transfer_percentage:
+            return Decimal("0.00")
+
+        reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
+        valid_values = [value for value in reference_values if value is not None]
+
+        if not valid_values:
+            return Decimal("0.00")
+
+        reference_value = sum(valid_values)
+
+        if self.difference_value <= 0:
+            return reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7)
+
+        return round((reference_value * (1 - self.sale.transfer_percentage / 100)) - self.margin_7 + self.difference_value, 3)
+
+    @property
     def percentage(self):
+        """
+        Calcula o percentual da parcela em relação ao total da venda.
+        """
         if self.total_value == 0:
             return 0.0
         return round((self.installment_value / self.total_value) * 100, 2)
-    
-    @property
-    def total_value(self):
-        reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
-        if not reference_values:
-            return Decimal("0.00")
-        
-        # Remove valores None antes de calcular
-        reference_values = [value for value in reference_values if value is not None]
-        
-        if not reference_values:  # Se todos forem None, retorna 0
-            return Decimal("0.00")
-        
-        reference_value = sum(reference_values)
-        
-        if self.difference_value <= 0:
-            return reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7 - self.difference_value)
-        
-        return round((reference_value * (1 - self.sale.transfer_percentage / 100)) - self.margin_7 + self.difference_value, 3)
-
-    
-    @property
-    def transfer_percentage(self):
-        """
-        Retorna o percentual de transferência arredondado, ou 0.00 caso seja None.
-        """
-        if self.sale.transfer_percentage is None:
-            return Decimal("0.00")  # Retorna um valor padrão
-        return round(self.sale.transfer_percentage, 2)
 
     @staticmethod
     def remaining_percentage(sale):
         """
         Calcula o percentual restante de repasse permitido pela branch da venda.
         """
+        if not sale or not sale.transfer_percentage:
+            return Decimal("0.00")
+
         total_repass = sum(
             Decimal(installment.percentage) for installment in sale.franchise_installments.all()
         )
@@ -199,14 +207,14 @@ class FranchiseInstallment(models.Model):
         """
         if not self.sale:
             raise ValidationError("A venda associada a esta parcela é obrigatória.")
+        
         if self.total_value:
             total_value = Decimal(self.total_value)
             total_installments = sum(
                 Decimal(installment.installment_value)
                 for installment in self.sale.franchise_installments.exclude(id=self.id)
             )
-            
-            # Verificar se o valor desta parcela somado às existentes excede o total
+
             if total_installments + Decimal(self.installment_value) > total_value:
                 raise ValidationError(
                     f"O valor total das parcelas ({total_installments + Decimal(self.installment_value)}) "
@@ -221,17 +229,16 @@ class FranchiseInstallment(models.Model):
         if self.is_paid:
             self.status = "PG"
             self.paid_at = timezone.now()
-            
+        
         if not self.installment_value and not self.pk:
             self.installment_value = self.total_value
-            
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.sale.customer} - {self.percentage}%"
+        return f"{self.sale.customer}%"
     
     class Meta:
         verbose_name = "Parcela do Franquiado"
         verbose_name_plural = "Parcelas do Franquiado"
         ordering = ['-created_at']
-
