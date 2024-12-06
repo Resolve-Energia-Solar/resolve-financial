@@ -54,25 +54,22 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
     actions = ['mark_as_paid']
     
     def total_value(self, obj):
-        return obj.total_value
+        return obj.total_value if obj.total_value else 0
 
     def percentage(self, obj):
-        """
-        Exibe a propriedade `transfer_percentage` no Django Admin.
-        """
-        return obj.percentage
+        return obj.percentage if obj.percentage else 0
     
     def difference_value(self, obj):
-        return obj.difference_value
+        return obj.difference_value if obj.difference_value else 0
     
     def margin_7(self, obj):
-        return obj.margin_7
+        return obj.margin_7 if obj.margin_7 else 0
     
     def installment_value(self, obj):
-        return obj.installment_value
+        return obj.installment_value if obj.installment_value else 0
     
     def transfer_percentage(self, obj):
-        return obj.transfer_percentage
+        return obj.transfer_percentage if obj.transfer_percentage else 0
 
     def mark_as_paid(self, request, queryset):
         for installment in queryset:
