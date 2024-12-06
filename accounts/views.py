@@ -158,6 +158,7 @@ class UserViewSet(BaseModelViewSet):
 
                 queryset = queryset.exclude(id__in=overlapping_schedules)    
 
+                #logica para ordenar os agentes por distancia e contagem de agendamentos
                 if latitude and longitude:
                     latitude = float(latitude)
                     longitude = float(longitude)
