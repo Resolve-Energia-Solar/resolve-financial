@@ -2,22 +2,22 @@ from django.db import models
 
 
 class API(models.Model):
-    name = models.CharField(max_length=100)
-    url = models.URLField()
+    name = models.CharField('Nome', max_length=100)
+    url = models.URLField('URL')
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name_plural = 'API'
+        verbose_name_plural = 'APIs'
         ordering = ['name']
     
 
 class Discount(models.Model):
-    banner = models.ImageField(upload_to='discounts')
-    title = models.CharField(max_length=100)
-    description = models.CharField(max_length=100, blank=True, null=True)
-    link = models.URLField(blank=True, null=True)
+    banner = models.ImageField('Banner', upload_to='discounts')
+    title = models.CharField('Título', max_length=100)
+    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -29,10 +29,10 @@ class Discount(models.Model):
 
 
 class Reel(models.Model):
-    video = models.FileField(upload_to='reels')
-    title = models.CharField(max_length=100)
-    description = models.CharField(max_length=100, blank=True, null=True)
-    link = models.URLField(blank=True, null=True)
+    video = models.FileField('Vídeo', upload_to='reels')
+    title = models.CharField('Título', max_length=100)
+    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -44,10 +44,10 @@ class Reel(models.Model):
     
 
 class Media(models.Model):
-    image = models.ImageField(upload_to='media')
-    title = models.CharField(max_length=100)
-    description = models.CharField(max_length=100, blank=True, null=True)
-    link = models.URLField(blank=True, null=True)
+    image = models.ImageField('Imagem', upload_to='media')
+    title = models.CharField('Título', max_length=100)
+    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
         return self.title
