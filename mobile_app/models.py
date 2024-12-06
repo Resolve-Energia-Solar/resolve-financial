@@ -16,7 +16,7 @@ class API(models.Model):
 class Discount(models.Model):
     banner = models.ImageField('Banner', upload_to='discounts')
     title = models.CharField('Título', max_length=100)
-    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Discount(models.Model):
 class Reel(models.Model):
     video = models.FileField('Vídeo', upload_to='reels')
     title = models.CharField('Título', max_length=100)
-    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
@@ -46,7 +46,7 @@ class Reel(models.Model):
 class Media(models.Model):
     image = models.ImageField('Imagem', upload_to='media')
     title = models.CharField('Título', max_length=100)
-    description = models.CharField('Descrição', max_length=100, blank=True, null=True)
+    description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
 
     def __str__(self):
