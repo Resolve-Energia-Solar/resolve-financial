@@ -297,3 +297,27 @@ class AttachDocumentView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class APIViewSet(BaseModelViewSet):
+    queryset = API.objects.all()
+    serializer_class = APISerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+
+class DiscountViewSet(BaseModelViewSet):
+    queryset = Discount.objects.all()
+    serializer_class = DiscountSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+
+class ReelViewSet(BaseModelViewSet):
+    queryset = Reel.objects.all()
+    serializer_class = ReelSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+
+class MediaViewSet(BaseModelViewSet):
+    queryset = Media.objects.all()
+    serializer_class = MediaSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']

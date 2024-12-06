@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from django.utils.text import slugify
+from .models import *
 from resolve_crm.serializers import ContractSubmissionSerializer
 from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
@@ -163,3 +164,27 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
             'status', 'conclusion_date', 'interim_protocol',
             'final_protocol', 'created_at'
         ]
+
+
+class APISerializer(BaseSerializer):
+    class Meta:
+        model = API
+        fields = '__all__'
+
+
+class DiscountSerializer(BaseSerializer):
+    class Meta:
+        model = Discount
+        fields = '__all__'
+
+
+class ReelSerializer(BaseSerializer):
+    class Meta:
+        model = Reel
+        fields = '__all__'
+
+
+class MediaSerializer(BaseSerializer):
+    class Meta:
+        model = Media
+        fields = '__all__'

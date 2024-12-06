@@ -29,11 +29,17 @@ mobile_app_schema_view = get_schema_view(
     patterns=[path('api/mobile/', include('mobile_app.urls'))],
 )
 
+
 mobile_app_router.register('customers', CustomerViewset, basename='customer')
 mobile_app_router.register('mobile_sales', SaleViewset, basename='mobile_sale')
 mobile_app_router.register('mobile_projects', ProjectViewset, basename='mobile_project')
 mobile_app_router.register('field_services', FieldServiceViewset, basename='field_service')
 mobile_app_router.register('requests_energy_company', RequestsEnergyCompanyViewset, basename='requests_energy_company')
+mobile_app_router.register('apis', APIViewSet, basename='api')
+mobile_app_router.register('discounts', DiscountViewSet, basename='discount')
+mobile_app_router.register('reels', ReelViewSet, basename='reel')
+mobile_app_router.register('media', MediaViewSet, basename='media')
+
 
 app_name = 'mobile_app'
 urlpatterns = [
