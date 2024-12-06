@@ -455,13 +455,7 @@ class Sale(models.Model):
                 self.contract_number = f'RES{last_number + 1:02}'
             else:
                 self.contract_number = 'RES01'
-                
-        if not self.transfer_percentage:
-            self.transfer_percentage = self.branch.transfer_percentage
 
-        if self.transfer_percentage and not (0 <= self.transfer_percentage <= 100):
-            raise ValueError("Transfer percentage must be between 0 and 100.")
-            
         super().save(*args, **kwargs)
 
     class Meta:

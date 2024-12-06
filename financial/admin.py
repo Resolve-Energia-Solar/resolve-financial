@@ -54,7 +54,7 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
     actions = ['mark_as_paid']
     
     def total_value(self, obj):
-        return obj.total_value if obj.total_value else 0
+        return obj.total_value
 
     def percentage(self, obj):
         return obj.percentage if obj.percentage else 0
