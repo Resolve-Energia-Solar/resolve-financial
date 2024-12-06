@@ -254,7 +254,7 @@ class SaleViewSet(BaseModelViewSet):
                 sale.total_value = total_value
                 sale.save()
 
-            except serializers.ValidationError as e:
+            except ValidationError as e:
                 return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response(
