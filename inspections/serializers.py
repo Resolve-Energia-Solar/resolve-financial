@@ -3,6 +3,7 @@ from inspections.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField
 from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
 from resolve_crm.models import Project
+from resolve_crm.serializers import ProjectSerializer
 
 
 class RoofTypeSerializer(BaseSerializer):
@@ -78,6 +79,7 @@ class ScheduleSerializer(BaseSerializer):
     service = ServiceSerializer(read_only=True)
     schedule_agent = UserSerializer(read_only=True)
     address = AddressSerializer(read_only=True)
+    project = ProjectSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
