@@ -3,7 +3,6 @@ from inspections.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField
 from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
 from resolve_crm.models import Project
-from resolve_crm.serializers import ProjectSerializer
 
 
 class RoofTypeSerializer(BaseSerializer):
@@ -74,13 +73,17 @@ class AnswerSerializer(BaseSerializer):
 
 
 class ScheduleSerializer(BaseSerializer):
-    
     # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
     schedule_agent = UserSerializer(read_only=True)
     address = AddressSerializer(read_only=True)
-    project = ProjectSerializer(read_only=True)
     
+    # Importação atrasada
+    @property
+    def project(self):
+        from resolve_crm.serializers import ProjectSerializer
+        return ProjectSerializer(read_only=True)
+
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
@@ -90,6 +93,7 @@ class ScheduleSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+
 
 class BlockTimeAgentSerializer(BaseSerializer):
     #leitura
