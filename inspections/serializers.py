@@ -1,6 +1,6 @@
 from accounts.models import Address, User
 from inspections.models import *
-from rest_framework.serializers import PrimaryKeyRelatedField
+from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
 from resolve_crm.models import Project
 
@@ -78,7 +78,7 @@ class ScheduleSerializer(BaseSerializer):
     service = ServiceSerializer(read_only=True)
     schedule_agent = UserSerializer(read_only=True)
     address = AddressSerializer(read_only=True)
-    project = None
+    project = SerializerMethodField()
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
@@ -88,12 +88,13 @@ class ScheduleSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
-        fields = '_all_'
-        
-    def _init_(self, *args, **kwargs):
-        super()._init_(*args, **kwargs)
+        fields = '__all__'
+
+    def get_project(self, obj):
+        # problema com o import circular
         from resolve_crm.serializers import ProjectSerializer
-        self.fields['project'] = ProjectSerializer(read_only=True)
+        return ProjectSerializer(obj.project).data
+
 
 
 class BlockTimeAgentSerializer(BaseSerializer):
