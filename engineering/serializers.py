@@ -77,3 +77,15 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
     class Meta:
         model = RequestsEnergyCompany
         exclude = ['is_deleted']
+
+
+class ReadRequestsEnergyCompanySerializer(BaseSerializer):
+    company = EnergyCompanySerializer(read_only=True)
+    type = ResquestTypeSerializer(read_only=True)
+    situation = SituationEnergyCompanySerializer(read_only=True, many=True)
+    unit = UnitsSerializer(read_only=True)
+    requested_by = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = RequestsEnergyCompany
+        exclude = ['is_deleted']

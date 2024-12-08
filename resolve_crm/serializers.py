@@ -145,6 +145,7 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    requests_energy_company = SerializerMethodField()
 
     # Para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
@@ -162,7 +163,13 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-
+        death = 1
+    
+    def get_requests_energy_company(self, obj):
+        from engineering.serializers import ReadRequestsEnergyCompanySerializer
+        requests = obj.requests_energy_company.all()
+        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
+    
     def update(self, instance, validated_data):
         # Extrair dados de materiais e endereços
         materials_data = validated_data.pop('materials_data', [])
