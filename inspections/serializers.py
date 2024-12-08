@@ -51,9 +51,6 @@ class FormsSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
 
-    # Para escrita: usar apenas ID
-    service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
-
     class Meta(BaseSerializer.Meta):
         model = Forms
         fields = '__all__'
