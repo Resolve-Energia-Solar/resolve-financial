@@ -81,6 +81,24 @@ class Attachment(models.Model):
         ordering = ['-created_at']
 
 
+class Comment(models.Model):
+    object_id = models.PositiveSmallIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField("Comentário")
+    # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.text
+    
+    class Meta:
+        verbose_name = "Comentário"
+        verbose_name_plural = "Comentários"
+        ordering = ['-created_at']
+
+
 class Board(models.Model):
     
     title = models.CharField("Título", max_length=200)
@@ -143,8 +161,6 @@ class Task(models.Model):
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
     depends_on = models.ManyToManyField('core.Task', related_name='dependents', symmetrical=False, blank=True)
-    # object_id = models.PositiveSmallIntegerField()
-    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     is_archived = models.BooleanField(default=False, verbose_name='Arquivado')
     archived_at = models.DateTimeField(blank=True, null=True)
     id_integration = models.CharField(max_length=200, verbose_name='ID de Integração', blank=True, null=True)
