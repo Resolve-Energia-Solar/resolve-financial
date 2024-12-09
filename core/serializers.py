@@ -50,6 +50,18 @@ class AttachmentSerializer(BaseSerializer):
         return data
 
 
+class CommentSerializer(BaseSerializer):
+    owner = RelatedUserSerializer(read_only=True)
+    content_type = ContentTypeSerializer(read_only=True)
+    
+    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+
 class ColumnNameSerializer(BaseSerializer):
         
         class Meta:

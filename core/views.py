@@ -24,7 +24,12 @@ class AttachmentViewSet(BaseModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
     pagination_class = AttachmentPagination
-    
+
+
+class CommentViewSet(BaseModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
 
 class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
