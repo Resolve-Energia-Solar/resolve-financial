@@ -12,11 +12,11 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ("name", "category")
+    list_display = ("name", "category", "form")
 
 @admin.register(Forms)
 class FormsAdmin(admin.ModelAdmin):
-    list_display = ("name", "service")
+    list_display = ("name",)
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
@@ -29,3 +29,11 @@ class DeadlineAdmin(admin.ModelAdmin):
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ("schedule_date", "project", "service")
+
+@admin.register(BlockTimeAgent)
+class BlockTimeAgentAdmin(admin.ModelAdmin):
+    list_display = ("agent", 'start_time', 'end_time', 'start_date', 'end_date')
+
+@admin.register(FreeTimeAgent)
+class FreeTimeAgentAdmin(admin.ModelAdmin):
+    list_display = ("agent", 'start_time', 'end_time', 'day_of_week')
