@@ -10,10 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
-
 from accounts.models import *
 from accounts.serializers import *
 from api.views import BaseModelViewSet
+from inspections.models import FreeTimeAgent, BlockTimeAgent
 
 
 # Accounts views
@@ -138,14 +138,27 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
 
             if date and start_time and end_time:
+                #verificar bloqueio de horario
+                blocked_agents = BlockTimeAgent.objects.filter(start_date=date, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time)).values_list('agent', flat=True)
+                queryset = queryset.exclude(id__in=blocked_agents)
+
+                #verificar horarios livres
+                day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
+                for user in queryset:
+                    free_time = FreeTimeAgent.objects.filter(agent=user, day_of_week=day_of_week, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time))
+                    if not free_time.exists():
+                        queryset = queryset.exclude(id=user.id)
+
+                #verificar agendamentos existentes
                 overlapping_schedules = Schedule.objects.filter(
                     schedule_date=date,
                     schedule_start_time__lt=parse_time(end_time),
                     schedule_end_time__gt=parse_time(start_time)
                 ).values_list('schedule_agent_id', flat=True)
 
-                queryset = queryset.exclude(id__in=overlapping_schedules)
+                queryset = queryset.exclude(id__in=overlapping_schedules)    
 
+                #logica para ordenar os agentes por distancia e contagem de agendamentos
                 if latitude and longitude:
                     latitude = float(latitude)
                     longitude = float(longitude)

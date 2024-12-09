@@ -54,6 +54,7 @@ class Service(models.Model):
     category = models.ForeignKey(Category, verbose_name="Categoria", on_delete=models.CASCADE)
     description = models.TextField("Descrição", blank=True, null=True)
     deadline = models.ForeignKey(Deadline, verbose_name="Prazo", on_delete=models.CASCADE, blank=True, null=True)
+    form = models.ForeignKey("Forms", verbose_name="Formulário", on_delete=models.CASCADE, blank=False, null=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -69,7 +70,6 @@ class Service(models.Model):
 
 class Forms(models.Model):
     name = models.CharField("Nome do Formulário", max_length=50, unique=True)
-    service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     campos = models.JSONField("Campos", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
@@ -129,3 +129,47 @@ class Schedule(models.Model):
         verbose_name_plural = "Agendamentos"
         ordering = ["-created_at"]
 
+class BlockTimeAgent(models.Model):
+    agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
+    start_date = models.DateField("Data de Início")
+    end_date = models.DateField("Data de Fim")
+    start_time = models.TimeField("Horário de Início")
+    end_time = models.TimeField("Horário de Fim")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Bloqueio de Horário"
+        verbose_name_plural = "Bloqueios de Horário"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=['agent', 'start_date', 'end_date', 'start_time', 'end_time'], name='unique_block_time_agent')
+        ]
+
+class FreeTimeAgent(models.Model):
+    day_of_week = [
+        (0, "Segunda-feira"),
+        (1, "Terça-feira"),
+        (2, "Quarta-feira"),
+        (3, "Quinta-feira"),
+        (4, "Sexta-feira"),
+        (5, "Sábado"),
+        (6, "Domingo"),
+    ]
+
+    agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
+    day_of_week = models.IntegerField("Dia da Semana", choices=day_of_week)
+    start_time = models.TimeField("Horário de Início")
+    end_time = models.TimeField("Horário de Fim")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Disponibilidade de Horário"
+        verbose_name_plural = "Disponibilidades de Horário"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=['agent', 'day_of_week'], name='unique_free_time_agent')
+        ]
