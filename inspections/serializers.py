@@ -64,7 +64,7 @@ class AnswerSerializer(BaseSerializer):
     # Para escrita: usar apenas ID
     form_id = PrimaryKeyRelatedField(queryset=Forms.objects.all(), 
     write_only=True, source='form')
-    schedule_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='schedule_id')
+    schedule_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='schedule')
 
     class Meta(BaseSerializer.Meta):
         model = Answer
