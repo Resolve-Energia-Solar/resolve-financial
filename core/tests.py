@@ -1,4 +1,3 @@
-# tests.py
 from django.urls import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -10,6 +9,7 @@ from core.models import (
 from accounts.models import Address, User, Branch
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 class BaseAPITestCase(TestCase):
     def setUp(self):
