@@ -183,6 +183,7 @@ class GenerateSalesProjectsView(APIView):
         
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 class GeneratePreSaleView(APIView): 
     http_method_names = ['post']
 

@@ -9,6 +9,7 @@ from core.models import (
 )
 from accounts.models import Address, User, Branch
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 class BaseAPITestCase(TestCase):
     def setUp(self):
@@ -383,4 +384,138 @@ class HistoryViewTestCase(BaseAPITestCase):
         # Caso queira gerar histórico, você pode editar o objeto antes e chamar novamente a view.
 
 
-# Caso necessário, inclua outros testes para Attachment, Comment, etc.
+class AttachmentViewSetTestCase(BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        # Cria dependências para o Attachment
+        self.user = User.objects.create_user(username='attachment_user', password='123456')
+        self.doc_type = DocumentType.objects.create(
+            name="Documento de Teste",
+            app_label="contracts",
+            reusable=False,
+            required=False
+        )
+        self.content_type = ContentType.objects.get_for_model(DocumentType)
+
+        # Cria um arquivo de teste
+        self.test_file = SimpleUploadedFile("testfile.txt", b"file_content", content_type=self.content_type)
+
+        self.attachment = Attachment.objects.create(
+            object_id=1,
+            content_type=self.content_type,
+            file=self.test_file,
+            status='pendente',
+            document_type=self.doc_type,
+            description='Anexo de teste'
+        )
+
+        self.list_url = reverse('api:attachment-list')
+        self.detail_url = reverse('api:attachment-detail', args=[self.attachment.id])
+
+    def test_list_attachments(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_retrieve_attachment(self):
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.attachment.id)
+
+    def test_create_attachment(self):
+        new_file = SimpleUploadedFile("novoteste.txt", b"novo_conteudo", content_type=self.content_type)
+        data = {
+            "object_id": 2,
+            "content_type_id": self.content_type.id,
+            "file": new_file,
+            "document_type_id": self.doc_type.id,
+            "description": "Novo anexo"
+        }
+        response = self.client.post(self.list_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('id', response.data)
+        self.assertTrue(Attachment.objects.filter(id=response.data['id']).exists())
+
+    def test_update_attachment(self):
+        new_file = SimpleUploadedFile("novoteste.txt", b"novo_conteudo", content_type=self.content_type)
+        data = {
+            "object_id": 1,
+            "content_type_id": self.content_type.id,
+            "description": "Anexo atualizado",
+            "file": new_file
+        }
+        response = self.client.patch(self.detail_url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.attachment.refresh_from_db()
+        self.assertEqual(self.attachment.description, "Anexo atualizado")
+
+    def test_delete_attachment(self):
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Attachment.objects.filter(id=self.attachment.id).exists())
+
+
+class CommentViewSetTestCase(BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        # Criando usuário autor do comentário
+        self.author = User.objects.create_user(username='comentador', password='abc123')
+
+        # Criando um ContentType para associar ao comentário
+        # Aqui usamos DocumentType apenas como exemplo, pode ser qualquer modelo
+        self.doc_type = DocumentType.objects.create(
+            name="Documento Comentado",
+            app_label="contracts",
+            reusable=False,
+            required=False
+        )
+        self.content_type = ContentType.objects.get_for_model(DocumentType)
+        
+        self.comment = Comment.objects.create(
+            object_id=1,
+            content_type=self.content_type,
+            author=self.author,
+            text="Comentário inicial"
+        )
+
+        self.list_url = reverse('api:comment-list')
+        self.detail_url = reverse('api:comment-detail', args=[self.comment.id])
+
+    def test_list_comments(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_retrieve_comment(self):
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.comment.id)
+
+    def test_create_comment(self):
+        data = {
+            "object_id": 2,
+            "content_type_id": self.content_type.id,
+            "author_id": self.author.id,
+            "text": "Novo comentário criado via teste"
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('id', response.data)
+        self.assertTrue(Comment.objects.filter(id=response.data['id']).exists())
+
+    def test_update_comment(self):
+        data = {
+            "object_id": 1,
+            "content_type_id": self.content_type.id,
+            "author_id": self.author.id,
+            "text": "Comentário atualizado"
+        }
+        response = self.client.put(self.detail_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.text, "Comentário atualizado")
+
+    def test_delete_comment(self):
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(id=self.comment.id).exists())
