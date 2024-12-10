@@ -65,7 +65,7 @@ def get_model_data(instance):
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     # Ignora o sinal durante as migrações
-    if 'migrate' in sys.argv:
+    if 'migrate' or 'test' in sys.argv:
         return
 
     try:

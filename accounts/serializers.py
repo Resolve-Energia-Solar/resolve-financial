@@ -6,9 +6,12 @@ from accounts.models import *
 
 
 class DepartmentSerializer(BaseSerializer):
+
+    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
+
     class Meta:
         model = Department
-        exclude = ['is_deleted']
+        exclude = ['is_deleted', 'owner']
         
         
 class RoleSerializer(BaseSerializer):
@@ -155,34 +158,50 @@ class UserSerializer(BaseSerializer):
     
 
 class EmployeeSerializer(BaseSerializer):
-    user = UserSerializer()
+
+    user = RelatedUserSerializer(required=False)
+    department = DepartmentSerializer(read_only=True)
+    branch = BranchSerializer(read_only=True)
+    role = RoleSerializer(read_only=True)
+    user_manager = RelatedUserSerializer(read_only=True)
+
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
+    department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
+    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
+    role_id = PrimaryKeyRelatedField(queryset=Role.objects.all(), write_only=True, source='role')
+    user_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user_manager', required=False)
 
     class Meta:
         model = Employee
-        fields = ['user', 'contract_type', 'branch', 'department', 'role', 'user_manager', 'hire_date']
+        fields = '__all__'
         
     def create(self, validated_data):
-        # Extrair dados do usuário
-        user_data = validated_data.pop('user')
-        addresses = user_data.pop('addresses', [])
-        user_types = user_data.pop('user_types', [])
-        groups = user_data.pop('groups', [])
-        
-        # Criar o usuário primeiro
-        user = User.objects.create(**user_data)
-        
-        # Atribuir relações many-to-many após a criação do usuário
-        if addresses:
-            user.addresses.set(addresses)
-        if user_types:
-            user.user_types.set(user_types)
-        if groups:
-            user.groups.set(groups)
-        
+        user_data = validated_data.pop('user', None)
+        addresses = []
+        user_types = []
+        groups = []
+
+        if isinstance(user_data, dict):
+            addresses = user_data.pop('addresses', [])
+            user_types = user_data.pop('user_types', [])
+            groups = user_data.pop('groups', [])
+
+            # Criar o usuário primeiro
+            user = User.objects.create(**user_data)
+
+            # Atribuir relações many-to-many após a criação do usuário
+            if addresses:
+                user.addresses.set(addresses)
+            if user_types:
+                user.user_types.set(user_types)
+            if groups:
+                user.groups.set(groups)
+        else:
+            user = user_data  # Assuma que é um objeto User já existente
+
         # Criar o empregado associado
         employee = Employee.objects.create(user=user, **validated_data)
         return employee
-
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user')
