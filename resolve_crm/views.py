@@ -52,249 +52,18 @@ class SaleViewSet(BaseModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        # Extraindo os dados do request
-        data = request.data
-        print("Request data:", data)
-        commercial_proposal_id = data.get('commercial_proposal_id', None)
-        print("Commercial proposal ID:", commercial_proposal_id)
-
-        # Inicializando o serializer com os dados recebidos
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        print("Serializer valid data:", serializer.validated_data)
-
-        # Salvando a instância da venda
         sale = serializer.save()
-        print("Sale instance created:", sale)
-        products_list = []
-        total_installment_value = 0
-
-        # Se há uma proposta comercial associada, reutilizar os produtos dela
-        if commercial_proposal_id:
-            try:
-                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
-                print("Commercial proposal found:", commercial_proposal)
-                sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
-                print("Sale products found:", sale_products)
-
-                if not sale_products.exists():
-                    print("No products associated with the commercial proposal.")
-                    return Response(
-                        {"detail": "Proposta comercial não possui produtos associados."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Verificando se algum produto já está vinculado a uma venda
-                if sale_products.filter(sale__isnull=False).exists():
-                    print("Commercial proposal already linked to a sale.")
-                    return Response(
-                        {"detail": "Proposta comercial já vinculada a uma venda."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Associando os produtos da proposta à venda
-                for sale_product in sale_products:
-                    products_list.append(sale_product)
-
-                    sale_product.sale = sale
-                    sale_product.save()
-                    print("Sale product linked to sale:", sale_product)
-
-            except ComercialProposal.DoesNotExist:
-                print("Commercial proposal not found.")
-                return Response(
-                    {"detail": "Proposta comercial não encontrada."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-        else:
-            # Caso contrário, associar os produtos enviados diretamente
-            products_ids = data.get('products_ids', [])
-            print("Products IDs:", products_ids)
-            for product_id in products_ids:
-                try:
-                    product = Product.objects.get(id=product_id)
-                    sale_product = SaleProduct.objects.create(
-                        sale=sale,
-                        product=product,
-                        amount=1,  # Ajuste de acordo com sua necessidade
-                        value=product.product_value,
-                        reference_value=product.reference_value,
-                        cost_value=product.cost_value
-                    )
-                    products_list.append(sale_product)
-                    print("Product linked to sale:", product)
-                except Product.DoesNotExist:
-                    print(f"Product with ID {product_id} not found.")
-                    return Response(
-                        {"detail": f"Produto com ID {product_id} não encontrado."},
-                        status=status.HTTP_404_NOT_FOUND
-                    )
-
-        if sale.total_value is None or sale.total_value == 0:
-            try:
-                total_value = self.calculate_total_value(products_list)
-                sale.total_value = total_value
-                sale.save()
-            except Exception as e:
-                print(f"Error calculating total value: {str(e)}")
-                return Response(
-                    {"detail": "Erro ao calcular o valor total da venda.", "error": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-                
-        if sale.sale_products.exists():
-            print("Sale products linked to sale:", sale.sale_products.all())
-            try:
-                total_installment_value = self.calculate_total_installment_value(sale, sale.sale_products.all())
-                print("Total installment value:", total_installment_value)
-            except Exception as e:
-                print(f"Error calculating total installment value: {str(e)}")
-                return Response(
-                    {"detail": "Erro ao calcular o valor total da parcela.", "error": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-        try:
-            total_value = sale.total_value
-            if total_value:
-                franchise_installment = FranchiseInstallment.objects.create(
-                    sale=sale,
-                    installment_value=total_installment_value,
-                )
-                print("FranchiseInstallment created:", franchise_installment)
-        except Exception as e:
-            print(f"Error creating FranchiseInstallment: {str(e)}")
-            return Response(
-                {"detail": "Erro ao criar a parcela do franqueado.", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-        # Retornando a resposta com os dados da nova venda criada
-        headers = self.get_success_headers(serializer.data)
-        print("Response headers:", headers)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)      
-        
-    def validate_products_ids(self, products_ids):
-        """Valida os IDs dos produtos enviados."""
-        products = []
-        for product_id in products_ids:
-            try:
-                product = Product.objects.get(id=product_id)
-                products.append(product)
-            except Product.DoesNotExist:
-                raise ValidationError(
-                    {"detail": f"Produto com ID {product_id} não encontrado."}
-                )
-        return products
-
-    def calculate_linked_products(self, sale, products):
-        """Verifica se há projetos vinculados aos produtos."""
-        existing_projects = Project.objects.filter(sale=sale, product__in=products).values_list('product_id', flat=True)
-        linked_products = [product for product in products if product.id in existing_projects]
-        return linked_products
-
-    def remove_unlinked_products(self, sale, products_ids):
-        """Remove produtos da venda que não estão mais na lista enviada."""
-        existing_sale_products = SaleProduct.objects.filter(sale=sale)
-        for sale_product in existing_sale_products:
-            if sale_product.product.id not in products_ids:
-                sale_product.delete()
+        return Response(self.get_serializer(sale).data, status=status.HTTP_201_CREATED)
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
-        print("Update request data:", request.data)
         instance = self.get_object()
-        data = request.data
-
-        # Atualizando os dados da venda
-        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         sale = serializer.save()
-
-        # Atualizando os produtos vinculados à venda
-        products_ids = data.get('products_ids', [])
-        if products_ids:
-            try:
-                # Validando os produtos
-                products = self.validate_products_ids(products_ids)
-
-                # Verificando se há produtos vinculados a projetos
-                linked_products = self.calculate_linked_products(sale, products)
-                if linked_products:
-                    return Response(
-                        {
-                            "detail": "A venda já possui projetos vinculados a alguns produtos.",
-                            "linked_products": [
-                                {"id": product.id, "name": product.name} for product in linked_products
-                            ]
-                        },
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Removendo produtos não enviados
-                self.remove_unlinked_products(sale, products_ids)
-
-                # Adicionando ou atualizando produtos na venda
-                for product in products:
-                    SaleProduct.objects.update_or_create(
-                        sale=sale,
-                        product=product,
-                        defaults={
-                            "amount": 1,
-                            "value": product.product_value,
-                            "reference_value": product.reference_value,
-                            "cost_value": product.cost_value,
-                        }
-                    )
-
-                # Recalculando o valor total da venda
-                total_value = self.calculate_total_value(SaleProduct.objects.filter(sale=sale))
-                sale.total_value = total_value
-                sale.save()
-
-            except ValidationError as e:
-                return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                return Response(
-                    {"detail": "Erro ao atualizar os produtos da venda.", "error": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-        else:
-            # Removendo todos os produtos caso nenhum seja enviado
-            SaleProduct.objects.filter(sale=sale).delete()
-
-        # Retornando a resposta com os dados atualizados
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
-    
-    def calculate_total_installment_value(self, sale, products):
-        reference_value = sum(product.reference_value for product in products)
-        print(f"Reference Value: {reference_value}")
-
-        # Calcula a diferença de valor entre o total da venda e o valor de referência
-        difference_value = sale.total_value - reference_value
-        print(f"Difference Value: {difference_value}")
-
-        # Calcula a margem de 7%
-        if difference_value <= 0:
-            margin_7 = Decimal("0.00")
-            total_value = reference_value * (1 - sale.transfer_percentage / 100) - difference_value
-            print(f"Margin 7 (<=0): {margin_7}")
-        else:
-            margin_7 = difference_value * Decimal("0.07")
-            total_value = (reference_value * (1 - sale.transfer_percentage / 100)) + difference_value - margin_7
-            print(f"Margin 7 (>0): {margin_7}")
-
-        print(f"Total Value: {total_value}")
-        return total_value
-    
-    def calculate_total_value(self, sales_products):
-        total_value = 0
-        for sales_product in sales_products:
-            total_value += sales_product.value * sales_product.amount
-        return total_value
+        return Response(self.get_serializer(sale).data, status=status.HTTP_200_OK)
 
 
 class ProjectViewSet(BaseModelViewSet):
@@ -372,7 +141,6 @@ class GenerateSalesProjectsView(APIView):
 
     def get(self, request):
         sale_id = request.query_params.get('sale_id')
-        print("Sale ID:", sale_id)
         
         if not sale_id:
             return Response({'message': 'É necessário informar o ID da venda.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -423,7 +191,6 @@ class GeneratePreSaleView(APIView):
         lead_id = request.data.get('lead_id')
         products = request.data.get('products')
         commercial_proposal_id = request.data.get('commercial_proposal_id')
-        print("Commercial Proposal ID:", commercial_proposal_id)
         # payment_data = request.data.get('payment')
 
         if not lead_id:
@@ -576,7 +343,6 @@ class GeneratePreSaleView(APIView):
                 if commercial_proposal_id:
                     try:
                         salesproduct = SaleProduct.objects.filter(commercial_proposal=comercial_proposal)
-                        print(salesproduct)
                         
                         for saleproduct in salesproduct:
                             if saleproduct.sale:
