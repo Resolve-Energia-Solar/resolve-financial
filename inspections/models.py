@@ -89,6 +89,7 @@ class Answer(models.Model):
     form = models.ForeignKey(Forms, verbose_name="Formulário", on_delete=models.CASCADE)
     answers = models.JSONField("Respostas", blank=True, null=True)
     answerer = models.ForeignKey("accounts.User", verbose_name="Respondente", on_delete=models.CASCADE)
+    schedule = models.ForeignKey("Schedule", verbose_name="Agendamento", on_delete=models.CASCADE)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
