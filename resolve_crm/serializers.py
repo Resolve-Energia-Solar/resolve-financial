@@ -100,6 +100,25 @@ class MarketingCampaignSerializer(BaseSerializer):
     class Meta:
         model = MarketingCampaign
         fields = '__all__'
+        
+        
+class ReadProjectSerializer(BaseSerializer):
+    # Para leitura: usar serializadores completos
+    designer = RelatedUserSerializer(read_only=True)
+    homologator = RelatedUserSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
+    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    requests_energy_company = SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = '__all__'
+        depth = 1
+
+    def get_requests_energy_company(self, obj):
+        from engineering.serializers import ReadRequestsEnergyCompanySerializer
+        requests = obj.requests_energy_company.all()
+        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
 
 class SaleSerializer(BaseSerializer):
@@ -114,6 +133,8 @@ class SaleSerializer(BaseSerializer):
     sale_products = SaleProductSerializer(many=True, read_only=True)
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
+    
+    projects = ReadProjectSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
