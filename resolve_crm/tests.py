@@ -1,13 +1,13 @@
 from django.urls import reverse
-from django.test import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import User, Branch, UserType, Address
 from core.tests import BaseAPITestCase
 from resolve_crm.models import Origin, Lead, MarketingCampaign, ComercialProposal, Sale, Project, ContractSubmission
 from logistics.models import Product
 from django.contrib.contenttypes.models import ContentType
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
+
 
 
 class OriginViewSetTestCase(BaseAPITestCase):
@@ -117,8 +117,8 @@ class MarketingCampaignViewSetTestCase(BaseAPITestCase):
         banner_file = SimpleUploadedFile("banner.png", image_io.read(), content_type='image/png')
         self.marketing_campaign = MarketingCampaign.objects.create(
             name="Campanha de Verão",
-            start_datetime=datetime.now(),
-            end_datetime=datetime.now() + timedelta(days=5),
+            start_datetime=timezone.now(),
+            end_datetime=timezone.now() + timedelta(days=5),
             description="Promoção de verão",
             banner=banner_file
         )
@@ -143,8 +143,8 @@ class MarketingCampaignViewSetTestCase(BaseAPITestCase):
         banner_file = SimpleUploadedFile("banner2.png", image_io.read(), content_type='image/png')
         data = {
             "name": "Campanha de Inverno",
-            "start_datetime": datetime.now().isoformat(),
-            "end_datetime": (datetime.now() + timedelta(days=10)).isoformat(),
+            "start_datetime": timezone.now().isoformat(),
+            "end_datetime": (timezone.now() + timedelta(days=10)).isoformat(),
             "description": "Promoção de inverno",
             "banner": banner_file
         }
@@ -160,8 +160,8 @@ class MarketingCampaignViewSetTestCase(BaseAPITestCase):
         banner_file = SimpleUploadedFile("banner3.png", image_io.read(), content_type='image/png')
         data = {
             "name": "Campanha Atualizada",
-            "start_datetime": self.marketing_campaign.start_datetime.isoformat(),
-            "end_datetime": self.marketing_campaign.end_datetime.isoformat(),
+            "start_datetime": timezone.now().isoformat(),
+            "end_datetime": (timezone.now() + timedelta(days=10)).isoformat(),
             "description": "Atualizada",
             "banner": banner_file
         }
@@ -184,7 +184,7 @@ class ComercialProposalViewSetTestCase(BaseAPITestCase):
         self.user = User.objects.create_user(username='user_proposal', password='123456', email='user_proposal@email.com')
         self.proposal = ComercialProposal.objects.create(
             lead=self.lead,
-            due_date=datetime.now().date() + timedelta(days=10),
+            due_date=(timezone.now().date() + timedelta(days=5)).isoformat(),
             value=1000.00,
             status="P",
             created_by=self.user
@@ -204,19 +204,19 @@ class ComercialProposalViewSetTestCase(BaseAPITestCase):
     def test_create_proposal(self):
         data = {
             "lead_id": self.lead.id,
-            "due_date": (datetime.now().date() + timedelta(days=5)).isoformat(),
+            "due_date": (timezone.now().date() + timedelta(days=5)).isoformat(),
             "value": "2000.00",
             "status": "P",
             "created_by_id": self.user.id
         }
-        list_url = self.list_url  # renomear por clareza
+        list_url = self.list_url
         response = self.client.post(list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_update_proposal(self):
         data = {
             "lead_id": self.lead.id,
-            "due_date": self.proposal.due_date.isoformat(),
+            "due_date": self.proposal.due_date,
             "value": "2500.00",
             "status": "A",
             "created_by_id": self.user.id
@@ -368,9 +368,9 @@ class ContractSubmissionViewSetTestCase(BaseAPITestCase):
         )
         self.contract_submission = ContractSubmission.objects.create(
             sale=self.sale,
-            submit_datetime=datetime.now(),
+            submit_datetime=timezone.now(),
             status="P",
-            due_date=(datetime.now().date() + timedelta(days=5)),
+            due_date=(timezone.now().date() + timedelta(days=5)),
             link="http://example.com/contract"
         )
         self.list_url = reverse('api:marketing-campaign-list').replace('marketing-campaign', 'contract-submission')
@@ -388,9 +388,9 @@ class ContractSubmissionViewSetTestCase(BaseAPITestCase):
     def test_create_contract_submission(self):
         data = {
             "sale_id": self.sale.id,
-            "submit_datetime": datetime.now().isoformat(),
+            "submit_datetime": timezone.now().isoformat(),
             "status": "P",
-            "due_date": (datetime.now().date() + timedelta(days=3)).isoformat(),
+            "due_date": (timezone.now().date() + timedelta(days=3)).isoformat(),
             "link": "http://example.com/contract2"
         }
         response = self.client.post(self.list_url, data, format='json')
