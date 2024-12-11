@@ -169,14 +169,12 @@ class FranchiseInstallment(models.Model):
             return Decimal("0.00")
 
         reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
-        print(reference_values)
         valid_values = [value for value in reference_values if value is not None]
 
         if not valid_values:
             return Decimal("0.00")
 
         reference_value = sum(valid_values)
-        print("reference_value", reference_value)
 
         if self.difference_value <= 0:
             return reference_value * ((1 - self.sale.transfer_percentage / 100) - self.margin_7)

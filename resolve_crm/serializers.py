@@ -326,7 +326,6 @@ class ComercialProposalSerializer(BaseSerializer):
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().create(validated_data)
         
-        print(products_data)
         # Criar entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
