@@ -35,6 +35,7 @@ class ContentTypeViewSet(BaseModelViewSet):
     queryset = ContentType.objects.all()
     serializer_class = ContentTypeSerializer
     http_method_names = ['get']
+    ordering_fields = ['app_label', 'model']
 
 
 class BoardViewSet(BaseModelViewSet):

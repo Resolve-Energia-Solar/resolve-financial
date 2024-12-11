@@ -90,9 +90,10 @@ class BranchSerializer(BaseSerializer):
 
 class ContentTypeSerializer(BaseSerializer):
         
-        class Meta:
-            model = ContentType
-            fields = '__all__'
+    class Meta:
+        model = ContentType
+        fields = '__all__'
+        ordering = ['app_label', 'model']
 
 
 class PermissionSerializer(BaseSerializer):
