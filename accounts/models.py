@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.db import models
@@ -152,9 +153,9 @@ class Branch(models.Model):
         decimal_places=4,
         blank=True,
         null=True,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
-    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=4, blank=True, null=True)
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=4, blank=True, null=True, )
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 

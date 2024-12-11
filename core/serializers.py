@@ -36,7 +36,7 @@ class AttachmentSerializer(BaseSerializer):
     document_subtype = DocumentSubTypeSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
     document_subtype_id = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), write_only=True, source='document_subtype', required=False)
     
@@ -55,7 +55,7 @@ class CommentSerializer(BaseSerializer):
     content_type = ContentTypeSerializer(read_only=True)
     
     author_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='author')
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     
     class Meta:
         model = Comment

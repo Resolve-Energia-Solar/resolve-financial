@@ -10,9 +10,7 @@ from django.db import transaction
 from logistics.models import ProductMaterials
 from .serializers import *
 from .models import *
-from decimal import Decimal
 from logistics.models import Product, SaleProduct
-from financial.models import FranchiseInstallment
 import re
 
 

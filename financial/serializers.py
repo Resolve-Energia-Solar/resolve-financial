@@ -1,4 +1,3 @@
-from django.forms import CharField, DecimalField
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
