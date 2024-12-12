@@ -8,14 +8,11 @@ def store_old_total_value(sender, instance, **kwargs):
     """
     Antes de salvar, armazena o valor antigo de total_value na instância.
     """
-    print(f"Pré-Save: {instance.pk}")
-    if instance.pk:  # Verifica se a instância já existe no banco (update)
+    if instance.pk:
         old_instance = Sale.objects.get(pk=instance.pk)
         instance.old_total_value = old_instance.total_value
     else:
-        instance.old_total_value = None  # Para novas instâncias
-        
-    print(f"Valor antigo: {instance.old_total_value}")
+        instance.old_total_value = None 
 
 
 @receiver(post_save, sender=Sale)
@@ -23,11 +20,8 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     """
     Ajusta as parcelas do franquiado se o valor total da venda foi alterado.
     """
-    if not created and instance.old_total_value is not None:  # Garantir que não é criação e que temos um valor antigo
+    if not created and instance.old_total_value is not None:
         if instance.old_total_value != instance.total_value:
-            # print(f"Valor antigo: {instance.old_total_value}")
-            # print(f"Valor atualizado: {instance.total_value}")
-
             # Recalcula o valor total esperado para cada parcela
             franchise_installments = instance.franchise_installments.all()
             if franchise_installments.exists():
@@ -42,8 +36,6 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
                     3
                 )
 
-                # print(f"Novo Total Value Calculado: {total_value}")
-
                 # Ajustar parcelas proporcionalmente
                 num_installments = franchise_installments.count()
                 installment_value = round(total_value / num_installments, 6)
@@ -52,5 +44,3 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
                     installment.installment_value = installment_value
                     installment.full_clean()  # Validar antes de salvar
                     installment.save()
-
-                print("Parcelas recalculadas com sucesso.")

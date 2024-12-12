@@ -1,4 +1,3 @@
-from django.forms import CharField, DecimalField
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
@@ -105,19 +104,11 @@ class PaymentSerializer(BaseSerializer):
         return instance
 
 class FranchiseInstallmentSerializer(BaseSerializer):
-    # relacionados para leitura
-    # sale = SaleSerializer(read_only=True)
-    financier = FinancierSerializer(read_only=True)
-    difference_value = SerializerMethodField()
-    total_value = SerializerMethodField()
-    transfer_percentage = SerializerMethodField()
-    percentage = SerializerMethodField()
-    margin_7 = SerializerMethodField()
-    
-    
-    # Campos para escrita usando PrimaryKeyRelatedField
+    # Campos para leitura
+    sale = SaleSerializer(read_only=True)
+
+    # Campos para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
     class Meta:
         model = FranchiseInstallment

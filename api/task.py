@@ -19,10 +19,8 @@ def processar_contrato(dados_contrato, token):
     response = requests.post(url, json=dados_contrato, headers=headers)
     
     if response.status_code == 200:
-        print(response.json())
         logger.info(f"Contrato processado com sucesso: {response.json()}")
         return {"status": "sucesso", "detalhes": response.json()}
     else:
-        print(response.text)
         logger.error(f"Falha ao processar contrato: {response.text}")
         return {"status": "falha", "erro": response.text}

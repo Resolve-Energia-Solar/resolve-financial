@@ -32,9 +32,10 @@ class CommentViewSet(BaseModelViewSet):
 
 
 class ContentTypeViewSet(BaseModelViewSet):
-    queryset = ContentType.objects.all()
+    queryset = ContentType.objects.all().order_by('app_label', 'model')
     serializer_class = ContentTypeSerializer
     http_method_names = ['get']
+    ordering_fields = ['app_label', 'model']
 
 
 class BoardViewSet(BaseModelViewSet):

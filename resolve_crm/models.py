@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -366,7 +367,7 @@ class Sale(models.Model):
         decimal_places=4,
         blank=True,
         null=True,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
     )
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
@@ -388,7 +389,7 @@ class Sale(models.Model):
             if not payment.borrower:
                 all_payments_have_borrower = False
 
-        payment_data = value == self.total_value and all_payments_have_borrower
+        payment_data = value >= self.total_value and all_payments_have_borrower
         have_units = all(project.units.exists() for project in self.projects.all())
 
         result = customer_data and payment_data and have_units and all_payments_have_borrower

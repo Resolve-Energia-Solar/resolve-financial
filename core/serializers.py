@@ -36,7 +36,7 @@ class AttachmentSerializer(BaseSerializer):
     document_subtype = DocumentSubTypeSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
     document_subtype_id = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), write_only=True, source='document_subtype', required=False)
     
@@ -51,11 +51,11 @@ class AttachmentSerializer(BaseSerializer):
 
 
 class CommentSerializer(BaseSerializer):
-    owner = RelatedUserSerializer(read_only=True)
+    author = RelatedUserSerializer(read_only=True)
     content_type = ContentTypeSerializer(read_only=True)
     
-    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
+    author_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='author')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     
     class Meta:
         model = Comment
@@ -150,24 +150,18 @@ class TaskTemplatesSerializer(BaseSerializer):
 
 
 class TaskSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
     owner = RelatedUserSerializer(read_only=True)
-    board = BoardSerializer(read_only=True)
-    content_type = ContentTypeSerializer(read_only=True)
-    lead = ReadLeadSerializer(read_only=True)
+    column = ColumnNameSerializer(read_only=True)
     depends_on = SerializerMethodField()
     project = SerializerMethodField()
 
-    # Para escrita: usar apenas IDs
     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-    board_id = PrimaryKeyRelatedField(queryset=Board.objects.all(), write_only=True, source='board')
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True, source='content_type')
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
 
     class Meta:
         model = Task
         fields = '__all__'
-
+    
     def get_depends_on(self, obj):
         return TaskSerializer(obj.depends_on, many=True).data
 

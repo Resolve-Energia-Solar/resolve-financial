@@ -6,7 +6,10 @@ from django.contrib.contenttypes.models import ContentType
 import requests
 from .models import Lead, Sale, Task
 from core.models import Webhook
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 def send_webhook_request(web_hook_url, data, secret):
     headers = {
@@ -16,9 +19,9 @@ def send_webhook_request(web_hook_url, data, secret):
     try:
         response = requests.post(web_hook_url, json=data, headers=headers)
         response.raise_for_status()
-        print(f"Webhook enviado com sucesso: {response.status_code}")
+        logger.info(f"Webhook enviado com sucesso: {response.status_code}")
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao enviar o webhook: {e}")
+        logger.error(f"Erro ao enviar o webhook: {e}")
 
 
 def get_model_data(instance):
@@ -65,7 +68,7 @@ def get_model_data(instance):
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     # Ignora o sinal durante as migrações
-    if 'migrate' in sys.argv:
+    if 'migrate' or 'test' in sys.argv:
         return
 
     try:

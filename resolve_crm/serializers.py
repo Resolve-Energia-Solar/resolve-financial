@@ -2,6 +2,7 @@ from django.forms import ValidationError
 from accounts.models import Address, User
 from core.models import Column
 from engineering.models import Units
+from financial.models import FranchiseInstallment
 from resolve_crm.models import *
 from accounts.serializers import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
 from api.serializers import BaseSerializer
@@ -100,6 +101,25 @@ class MarketingCampaignSerializer(BaseSerializer):
     class Meta:
         model = MarketingCampaign
         fields = '__all__'
+        
+        
+class ReadProjectSerializer(BaseSerializer):
+    # Para leitura: usar serializadores completos
+    designer = RelatedUserSerializer(read_only=True)
+    homologator = RelatedUserSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
+    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    requests_energy_company = SerializerMethodField()
+
+    class Meta:
+        model = Project
+        fields = '__all__'
+        depth = 1
+
+    def get_requests_energy_company(self, obj):
+        from engineering.serializers import ReadRequestsEnergyCompanySerializer
+        requests = obj.requests_energy_company.all()
+        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
 
 class SaleSerializer(BaseSerializer):
@@ -114,6 +134,8 @@ class SaleSerializer(BaseSerializer):
     sale_products = SaleProductSerializer(many=True, read_only=True)
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
+    
+    projects = ReadProjectSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -122,18 +144,139 @@ class SaleSerializer(BaseSerializer):
     sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-
+    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
+    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
+    
     class Meta:
         model = Sale
         fields = '__all__'
 
+    def create(self, validated_data):
+        products_ids = validated_data.pop('products_ids', [])
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+        sale = super().create(validated_data)
+
+        self._handle_products(sale, products_ids, commercial_proposal_id)
+        return sale
+
+    def update(self, instance, validated_data):
+        products_ids = validated_data.pop('products_ids', None)
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+        sale = super().update(instance, validated_data)
+
+        if products_ids is not None or commercial_proposal_id is not None:
+            SaleProduct.objects.filter(sale=sale).delete()
+            self._handle_products(sale, products_ids or [], commercial_proposal_id)
+
+        return sale
+
+    def _handle_products(self, sale, products_ids, commercial_proposal_id):
+        products_list = []
+
+        if commercial_proposal_id:
+            try:
+                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
+                sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
+
+                if not sale_products.exists():
+                    raise ValidationError({"detail": "Proposta comercial não possui produtos associados."})
+
+                if sale_products.filter(sale__isnull=False).exists():
+                    raise ValidationError({"detail": "Proposta comercial já vinculada a uma venda."})
+
+                for sale_product in sale_products:
+                    sale_product.sale = sale
+                    sale_product.save()
+                    products_list.append(sale_product)
+
+            except ComercialProposal.DoesNotExist:
+                raise ValidationError({"detail": "Proposta comercial não encontrada."})
+        else:
+            products = self.validate_products_ids(products_ids)
+            for product in products:
+                sale_product = SaleProduct.objects.create(
+                    sale=sale,
+                    product=product,
+                    amount=1,
+                    value=product.product_value,
+                    reference_value=product.reference_value,
+                    cost_value=product.cost_value,
+                )
+                products_list.append(sale_product)
+                
+        self.create_projects(sale, products_list)
+
+        # Recalcular valores da venda, se necessário
+        if sale.total_value is None or sale.total_value == 0:
+            total_value = self.calculate_total_value(products_list)
+            sale.total_value = total_value
+            sale.save()
+
+        if sale.sale_products.exists():
+            total_installment_value = self.calculate_total_installment_value(sale, sale.sale_products.all())
+            if sale.total_value:
+                FranchiseInstallment.objects.create(
+                    sale=sale,
+                    installment_value=total_installment_value,
+                )
+                
+    def create_projects(self, sale, products):
+        for product in products:
+            project = Project.objects.create(
+                sale=sale,
+                product=product.product,
+            )
+            try:
+                project.save()
+            except Exception as e:
+                raise ValidationError({"detail": f"Erro ao criar projeto para o produto {product.name}: {e}"})
+            
+            
+
+    def validate_products_ids(self, products_ids):
+        products = []
+        for product_id in products_ids:
+            if isinstance(product_id, Product):
+                products.append(product_id)  # Já é uma instância do modelo
+            else:
+                try:
+                    product = Product.objects.get(id=product_id)
+                    products.append(product)
+                except Product.DoesNotExist:
+                    raise ValidationError({"detail": f"Produto com ID {product_id} não encontrado."})
+        return products
+
+    def calculate_total_value(self, sale_products):
+        total_value = 0
+        for sp in sale_products:
+            total_value += sp.value * sp.amount
+        return total_value
+
+    def calculate_total_installment_value(self, sale, products):
+        from decimal import Decimal
+        reference_value = sum(p.reference_value for p in products)
+        difference_value = sale.total_value - reference_value
+
+        if difference_value <= 0:
+            if sale.transfer_percentage:
+                total_value = reference_value * (1 - sale.transfer_percentage / 100) - difference_value
+            else:
+                total_value = reference_value * (1 - sale.branch.transfer_percentage / 100) + difference_value
+        else:
+            margin_7 = difference_value * Decimal("0.07")
+            if sale.transfer_percentage:
+                total_value = (reference_value * (1 - sale.transfer_percentage / 100)) + difference_value - margin_7
+            else:
+                total_value = (reference_value * (1 - sale.branch.transfer_percentage / 100)) + difference_value - margin_7
+
+        return total_value
+    
     def get_missing_documents(self, obj):
         return obj.missing_documents()
     
     def get_can_generate_contract(self, obj):
         return obj.can_generate_contract
 
-    
     def get_total_paid(self, obj):
         return obj.total_paid
 
@@ -228,7 +371,6 @@ class ComercialProposalSerializer(BaseSerializer):
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().create(validated_data)
         
-        print(products_data)
         # Criar entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
