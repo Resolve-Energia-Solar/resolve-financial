@@ -138,8 +138,9 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
 
             if date and start_time and end_time:
-                #verificar bloqueio de horario
-                blocked_agents = BlockTimeAgent.objects.filter(start_date=date, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time)).values_list('agent', flat=True)
+                #verificar bloqueio de horario 
+                #verificar se a data do agendamento esta entre o inicio e o fim do bloqueio
+                blocked_agents = BlockTimeAgent.objects.filter(start_date__lte=date, end_date__gte=date, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time)).values_list('agent', flat=True)
                 queryset = queryset.exclude(id__in=blocked_agents)
 
                 #verificar horarios livres

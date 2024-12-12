@@ -56,19 +56,6 @@ class FormsSerializer(BaseSerializer):
         fields = '__all__'
 
 
-class AnswerSerializer(BaseSerializer):
-
-    # Para leitura: usar serializador completo
-    form = FormsSerializer(read_only=True)
-
-    # Para escrita: usar apenas ID
-    form_id = PrimaryKeyRelatedField(queryset=Forms.objects.all(), write_only=True, source='form')
-
-    class Meta(BaseSerializer.Meta):
-        model = Answer
-        fields = '__all__'
-
-
 class ScheduleSerializer(BaseSerializer):
     
     # Para leitura: usar serializador completo
@@ -92,6 +79,21 @@ class ScheduleSerializer(BaseSerializer):
         from resolve_crm.serializers import ProjectSerializer
         return ProjectSerializer(obj.project).data
 
+
+class AnswerSerializer(BaseSerializer):
+
+    # Para leitura: usar serializador completo
+    form = FormsSerializer(read_only=True)
+    schedule = ScheduleSerializer(read_only=True)
+
+    # Para escrita: usar apenas ID
+    form_id = PrimaryKeyRelatedField(queryset=Forms.objects.all(), 
+    write_only=True, source='form')
+    schedule_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='schedule')
+
+    class Meta(BaseSerializer.Meta):
+        model = Answer
+        fields = '__all__'
 
 
 class BlockTimeAgentSerializer(BaseSerializer):
