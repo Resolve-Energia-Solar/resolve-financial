@@ -389,7 +389,7 @@ class Sale(models.Model):
             if not payment.borrower:
                 all_payments_have_borrower = False
 
-        payment_data = value == self.total_value and all_payments_have_borrower
+        payment_data = value >= self.total_value and all_payments_have_borrower
         have_units = all(project.units.exists() for project in self.projects.all())
 
         result = customer_data and payment_data and have_units and all_payments_have_borrower
