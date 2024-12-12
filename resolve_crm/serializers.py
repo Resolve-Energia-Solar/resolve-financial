@@ -203,6 +203,8 @@ class SaleSerializer(BaseSerializer):
                     cost_value=product.cost_value,
                 )
                 products_list.append(sale_product)
+                
+        self.create_projects(sale, products_list)
 
         # Recalcular valores da venda, se necessário
         if sale.total_value is None or sale.total_value == 0:
@@ -217,6 +219,19 @@ class SaleSerializer(BaseSerializer):
                     sale=sale,
                     installment_value=total_installment_value,
                 )
+                
+    def create_projects(self, sale, products):
+        for product in products:
+            project = Project.objects.create(
+                sale=sale,
+                product=product.product,
+            )
+            try:
+                project.save()
+            except Exception as e:
+                raise ValidationError({"detail": f"Erro ao criar projeto para o produto {product.name}: {e}"})
+            
+            
 
     def validate_products_ids(self, products_ids):
         products = []
