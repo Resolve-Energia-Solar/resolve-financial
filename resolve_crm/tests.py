@@ -1,13 +1,19 @@
-from django.urls import reverse
-from rest_framework import status
-from accounts.models import User, Branch, UserType, Address
-from core.tests import BaseAPITestCase
-from resolve_crm.models import Origin, Lead, MarketingCampaign, ComercialProposal, Sale, Project, ContractSubmission
-from logistics.models import Product
-from django.contrib.contenttypes.models import ContentType
 from datetime import timedelta
-from django.utils import timezone
+import io
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
+from rest_framework import status
+
+from accounts.models import User, Branch, Address
+from core.tests import BaseAPITestCase
+from resolve_crm.models import (
+    Origin, Lead, MarketingCampaign, 
+    ComercialProposal, Sale, Project, 
+    ContractSubmission
+)
 
 
 class OriginViewSetTestCase(BaseAPITestCase):
@@ -101,10 +107,6 @@ class LeadViewSetTestCase(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Lead.objects.filter(id=self.lead.id).exists())
 
-
-import io
-from PIL import Image
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 class MarketingCampaignViewSetTestCase(BaseAPITestCase):
     def setUp(self):
