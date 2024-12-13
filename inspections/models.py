@@ -112,6 +112,7 @@ class Schedule(models.Model):
     schedule_start_time = models.TimeField("Horário de Início")
     schedule_end_time = models.TimeField("Horário de Fim")
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
+    customer = models.ForeignKey("accounts.User", verbose_name="Cliente", on_delete=models.CASCADE, related_name='costumer')
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE, related_name='field_services')
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
@@ -122,6 +123,7 @@ class Schedule(models.Model):
     execution_finished_at = models.DateTimeField("Execução Finalizada em", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
+    observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
