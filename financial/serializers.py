@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
-from financial.models import FranchiseInstallment, Payment, PaymentInstallment, Financier
+from financial.models import FinancialRecord, FranchiseInstallment, Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField
 from resolve_crm.models import Sale
@@ -138,3 +138,17 @@ class FranchiseInstallmentSerializer(BaseSerializer):
     
     def get_margin_7(self, obj):
         return obj.margin_7
+
+
+class FinancialRecordSerializer(BaseSerializer):
+    # Campos para leitura
+    requester = RelatedUserSerializer(read_only=True)
+    responsible = RelatedUserSerializer(read_only=True)
+
+    # Campos para escrita
+    requester_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requester')
+    responsible_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='responsible')
+
+    class Meta:
+        model = FinancialRecord
+        fields = '__all__'
