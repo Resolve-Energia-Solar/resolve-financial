@@ -11,6 +11,7 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
 from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
 import re
+from inspections.serializers import ScheduleSerializer
 
 
 class OriginSerializer(BaseSerializer):
@@ -150,6 +151,7 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        
 
     def create(self, validated_data):
         products_ids = validated_data.pop('products_ids', [])
@@ -288,6 +290,7 @@ class ProjectSerializer(BaseSerializer):
     homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    field_services = ScheduleSerializer(many=True, read_only=True)
     requests_energy_company = SerializerMethodField()
 
     # Para escrita
@@ -307,6 +310,7 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         death = 1
+        
     
     def get_requests_energy_company(self, obj):
         from engineering.serializers import ReadRequestsEnergyCompanySerializer

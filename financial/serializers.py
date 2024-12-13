@@ -103,16 +103,26 @@ class PaymentSerializer(BaseSerializer):
 
         return instance
 
+
 class FranchiseInstallmentSerializer(BaseSerializer):
     # Campos para leitura
     sale = SaleSerializer(read_only=True)
-
+    difference_value = SerializerMethodField()
+    total_value = SerializerMethodField()
+    transfer_percentage = SerializerMethodField()
+    percentage = SerializerMethodField()
+    margin_7 = SerializerMethodField()
+    
     # Campos para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
         model = FranchiseInstallment
-        fields = '__all__'
+        fields = [
+            'id', 'sale', 'status', 'installment_value', 'is_paid', 'paid_at', 'created_at',
+            'difference_value', 'total_value', 'transfer_percentage', 'percentage', 'margin_7',
+            'sale_id'
+        ]
         
     def get_difference_value(self, obj):
         return float(obj.difference_value) if obj.difference_value is not None else 0.0
