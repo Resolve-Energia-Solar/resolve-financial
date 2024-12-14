@@ -17,6 +17,8 @@ class DocumentSubTypeSerializer(BaseSerializer):
 class DocumentTypeSerializer(BaseSerializer):
     subtypes = DocumentSubTypeSerializer(many=True, read_only=True)
     
+    subtypes_ids = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), many=True, write_only=True, source='subtypes')
+    
     class Meta:
         model = DocumentType
         fields = '__all__'
