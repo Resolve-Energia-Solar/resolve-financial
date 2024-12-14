@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
-
+from api.pagination import CustomLimitOffsetPagination
 from api.task import processar_contrato
 
 
@@ -14,6 +14,8 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+    pagination_class = CustomLimitOffsetPagination 
+
 
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
