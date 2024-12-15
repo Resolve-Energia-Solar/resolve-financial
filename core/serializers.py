@@ -131,7 +131,7 @@ class BoardSerializer(BaseSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'description', 'columns', 'branch', 'columns_ids', 'branch_id']
+        fields = '__all__'
 
 
 class TaskTemplatesSerializer(BaseSerializer):
