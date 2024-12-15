@@ -285,9 +285,9 @@ class SaleSerializer(BaseSerializer):
 
 class ProjectSerializer(BaseSerializer):
     # Para leitura
-    sale = SaleSerializer(read_only=True)
-    designer = RelatedUserSerializer(read_only=True)
-    homologator = RelatedUserSerializer(read_only=True)
+    # sale = SaleSerializer(read_only=True)
+    # designer = RelatedUserSerializer(read_only=True)
+    # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
     field_services = ScheduleSerializer(many=True, read_only=True)

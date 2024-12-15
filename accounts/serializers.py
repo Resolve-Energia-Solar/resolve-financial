@@ -133,6 +133,7 @@ class UserSerializer(BaseSerializer):
     user_types = UserTypeSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    employee = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
@@ -148,6 +149,12 @@ class UserSerializer(BaseSerializer):
         model = User
         exclude = ['password']
         
+    def get_employee(self, obj):
+        try:
+            return EmployeeSerializer(obj.employee).data
+        except:
+            return None
+        
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
     
@@ -160,11 +167,9 @@ class UserSerializer(BaseSerializer):
 
 class EmployeeSerializer(BaseSerializer):
 
-    user = RelatedUserSerializer(required=False)
     department = DepartmentSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
-    user_manager = RelatedUserSerializer(read_only=True)
 
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
     department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
