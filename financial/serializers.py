@@ -1,3 +1,6 @@
+import os
+import requests
+from dotenv import load_dotenv
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
@@ -6,6 +9,9 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField
 from resolve_crm.models import Sale
 from django.db import transaction
+
+
+load_dotenv()
 
 
 class FinancierSerializer(BaseSerializer):
@@ -144,6 +150,7 @@ class FinancialRecordSerializer(BaseSerializer):
     # Campos para leitura
     requester = RelatedUserSerializer(read_only=True)
     responsible = RelatedUserSerializer(read_only=True)
+    client_supplier_name = SerializerMethodField()
 
     # Campos para escrita
     requester_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requester')
@@ -152,3 +159,25 @@ class FinancialRecordSerializer(BaseSerializer):
     class Meta:
         model = FinancialRecord
         fields = '__all__'
+
+    def get_client_supplier_name(self, obj):
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        body = {
+            "call": "ConsultarCliente",
+            "app_key": os.environ.get('OMIE_ACESSKEY'),
+            "app_secret": os.environ.get('OMIE_ACESSTOKEN'),
+            "param": [
+                {
+                    "codigo_cliente_omie": obj.client_supplier_code,
+                    "codigo_cliente_integracao": ""
+                }
+            ]
+        }
+        print(f"Request Headers: {headers}")
+        print(f"Request Body: {body}")
+        response = requests.post(f"{os.environ.get('OMIE_API_URL')}/geral/clientes/", headers=headers, json=body)
+        print(f"Response Status Code: {response.status_code}")
+        print(f"Response Body: {response.json()}")
+        return response.json().get('nome_fantasia') if response.status_code == 200 else None
