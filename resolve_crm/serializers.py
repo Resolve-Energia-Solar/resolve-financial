@@ -11,7 +11,6 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
 from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
 import re
-from inspections.serializers import ScheduleSerializer
 
 
 class OriginSerializer(BaseSerializer):
@@ -281,16 +280,34 @@ class SaleSerializer(BaseSerializer):
 
     def get_total_paid(self, obj):
         return obj.total_paid
+    
+class ReadSaleSerializer(BaseSerializer):
+    can_generate_contract = SerializerMethodField()
+    total_paid = SerializerMethodField()
+    
+    projects = ReadProjectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = '__all__'
+        depth = 1
+
+    
+    def get_can_generate_contract(self, obj):
+        return obj.can_generate_contract
+
+    def get_total_paid(self, obj):
+        return obj.total_paid
 
 
 class ProjectSerializer(BaseSerializer):
     # Para leitura
-    # sale = SaleSerializer(read_only=True)
+    sale = ReadSaleSerializer(read_only=True)
     # designer = RelatedUserSerializer(read_only=True)
     # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
-    field_services = ScheduleSerializer(many=True, read_only=True)
+    field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
 
     # Para escrita
@@ -310,7 +327,11 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         death = 1
-        
+    
+    
+    def get_field_services(self, obj):
+        field_services = obj.field_services.values_list('id', flat=True)
+        return list(field_services)
     
     def get_requests_energy_company(self, obj):
         from engineering.serializers import ReadRequestsEnergyCompanySerializer
