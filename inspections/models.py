@@ -117,7 +117,7 @@ class Schedule(models.Model):
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
     longitude = models.CharField("Longitude", max_length=50, blank=True, null=True)
-    schedule_agent = models.ForeignKey("accounts.User", verbose_name="Agente de Campo", on_delete=models.CASCADE, related_name='schedule_agent')
+    schedule_agent = models.ForeignKey("accounts.User", verbose_name="Agente de Campo", on_delete=models.CASCADE, related_name='schedule_agent', blank=True, null=True)
     going_to_location_at = models.DateTimeField("Indo para o Local em", blank=True, null=True)
     execution_started_at = models.DateTimeField("Execução Iniciada em", blank=True, null=True)
     execution_finished_at = models.DateTimeField("Execução Finalizada em", blank=True, null=True)
