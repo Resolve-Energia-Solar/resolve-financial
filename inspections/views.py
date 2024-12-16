@@ -170,3 +170,19 @@ class FreeTimeAgentViewSet(BaseModelViewSet):
             queryset = queryset.filter(day_of_week=day_of_week)
 
         return queryset
+    
+class AgentRouteViewSet(BaseModelViewSet):
+    queryset = AgentRoute.objects.all()
+    serializer_class = AgentRouteSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        agent = self.request.query_params.get('agent')
+        status = self.request.query_params.get('status')
+
+        if agent:
+            queryset = queryset.filter(agent__id=agent)
+        if status:
+            queryset = queryset.filter(status=status)
+
+        return queryset

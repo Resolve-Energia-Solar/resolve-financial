@@ -176,3 +176,26 @@ class FreeTimeAgent(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['agent', 'day_of_week'], name='unique_free_time_agent')
         ]
+
+class AgentRoute(models.Model):
+    status_choices = [
+        ("Pendente", "Pendente"),
+        ("Concluído", "Concluído"),
+    ]
+    
+    agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
+    schedule = models.ForeignKey(Schedule, verbose_name="Agendamento", on_delete=models.CASCADE)
+    latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
+    longitude = models.CharField("Longitude", max_length=50, blank=True, null=True)
+    status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Rota do Agente"
+        verbose_name_plural = "Rotas do Agente"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=['agent', 'schedule'], name='unique_agent_route')
+        ]
