@@ -88,28 +88,50 @@ class ReadLeadSerializer(BaseSerializer):
         return OriginSerializer(obj.origin).data
 
 
-class ReadTaskSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    owner = RelatedUserSerializer(read_only=True)
+# class ReadTaskSerializer(BaseSerializer):
+#     # Para leitura: usar serializador completo
+#     owner = RelatedUserSerializer(read_only=True)
     
-    # Para escrita: usar apenas ID
-    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
+#     # Para escrita: usar apenas ID
+#     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
 
-    # Campo personalizado para dependências da tarefa
+#     # Campo personalizado para dependências da tarefa
+#     depends_on = SerializerMethodField()
+
+#     class Meta:
+#         model = Task
+#         fields = '__all__'
+
+#     def get_depends_on(self, obj):
+#         return TaskSerializer(obj.depends_on, many=True).data
+    
+    
+class TaskSerializer(BaseSerializer):
+    owner = RelatedUserSerializer(read_only=True)
+    column = ColumnNameSerializer(read_only=True)
     depends_on = SerializerMethodField()
+    project = SerializerMethodField()
+
+    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
+    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
 
     class Meta:
         model = Task
         fields = '__all__'
-
+    
     def get_depends_on(self, obj):
         return TaskSerializer(obj.depends_on, many=True).data
+
+    def get_project(self, obj):
+        from resolve_crm.serializers import ProjectSerializer
+        return ProjectSerializer(obj.project).data
+
 
 
 class ColumnSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     leads = ReadLeadSerializer(many=True, read_only=True)
-    task = ReadTaskSerializer(many=True, read_only=True)
+    task = TaskSerializer(many=True, read_only=True)
     proposals_value = SerializerMethodField()
 
     class Meta:
