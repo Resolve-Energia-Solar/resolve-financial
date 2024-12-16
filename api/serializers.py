@@ -1,4 +1,3 @@
-# serializers.py
 from rest_flex_fields import FlexFieldsModelSerializer
 from django.apps import apps
 
@@ -21,7 +20,7 @@ class BaseSerializer(FlexFieldsModelSerializer):
         expandable_fields = {}
         related_fields = [
             field for field in self.Meta.model._meta.get_fields()
-            if field.is_relation and field.related_model is not None and not field.auto_created
+            if field.is_relation and field.related_model is not None
         ]
         for field in related_fields:
             related_model = field.related_model

@@ -14,7 +14,6 @@ from logistics.models import Product, SaleProduct
 import re
 
 
-
 logger = logging.getLogger(__name__)
 
 
