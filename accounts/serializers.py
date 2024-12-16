@@ -167,6 +167,7 @@ class UserSerializer(BaseSerializer):
 
 class EmployeeSerializer(BaseSerializer):
 
+    user = RelatedUserSerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
