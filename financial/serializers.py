@@ -40,9 +40,9 @@ class PaymentSerializer(BaseSerializer):
     financier = FinancierSerializer(read_only=True)
     installments = PaymentInstallmentSerializer(many=True, required=False)
     borrower = RelatedUserSerializer(read_only=True)
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier', required=False)
     is_paid = SerializerMethodField()
     total_paid = SerializerMethodField()
     percentual_paid = SerializerMethodField()
