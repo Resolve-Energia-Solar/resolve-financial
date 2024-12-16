@@ -109,6 +109,7 @@ class Payment(models.Model):
         ordering = ["-created_at"]
 
 
+
 class PaymentInstallment(models.Model):
     payment = models.ForeignKey(
         "financial.Payment",

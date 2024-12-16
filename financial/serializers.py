@@ -1,4 +1,5 @@
 import os
+from django.forms import ValidationError
 import requests
 from dotenv import load_dotenv
 from accounts.models import Address, User
@@ -51,6 +52,11 @@ class PaymentSerializer(BaseSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+        
+    def validate(self, data):
+        if data.get('payment_type') == 'F' and not data.get('financier'):
+            raise ValidationError("Financiadora é obrigatória para pagamentos Financiados.")
+        return data
 
     def get_is_paid(self, obj):
         return obj.is_paid
