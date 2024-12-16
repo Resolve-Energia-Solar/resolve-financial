@@ -1,9 +1,11 @@
 from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
+
 from accounts.models import Branch, User
+from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from api.serializers import BaseSerializer
 from core.models import *
-from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead, Origin
+from notifications.models import Notification
 
 
 class DocumentSubTypeSerializer(BaseSerializer):
@@ -87,24 +89,6 @@ class ReadLeadSerializer(BaseSerializer):
         from resolve_crm.serializers import OriginSerializer
         return OriginSerializer(obj.origin).data
 
-
-# class ReadTaskSerializer(BaseSerializer):
-#     # Para leitura: usar serializador completo
-#     owner = RelatedUserSerializer(read_only=True)
-    
-#     # Para escrita: usar apenas ID
-#     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-
-#     # Campo personalizado para dependências da tarefa
-#     depends_on = SerializerMethodField()
-
-#     class Meta:
-#         model = Task
-#         fields = '__all__'
-
-#     def get_depends_on(self, obj):
-#         return TaskSerializer(obj.depends_on, many=True).data
-    
     
 class TaskSerializer(BaseSerializer):
     owner = RelatedUserSerializer(read_only=True)
@@ -187,3 +171,19 @@ class TaskSerializer(BaseSerializer):
     def get_project(self, obj):
         from resolve_crm.serializers import ProjectSerializer
         return ProjectSerializer(obj.project).data
+
+
+class NotificationSerializer(BaseSerializer):
+    user = RelatedUserSerializer(read_only=True)
+    task = TaskSerializer(read_only=True)
+    read = SerializerMethodField()
+
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
+    task_id = PrimaryKeyRelatedField(queryset=Task.objects.all(), write_only=True, source='task')
+
+    class Meta:
+        model = Notification
+        fields = '__all__'
+    
+    def get_read(self, obj):
+        return obj.read
