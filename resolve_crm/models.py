@@ -527,6 +527,10 @@ class Project(models.Model):
             return missing_documents
         return None
     
+    @property
+    def documents_under_analysis(self):
+        return self.attachments.filter(document_type__app_label='contracts', status='Em análise')
+    
     def create_deadlines(self):
         steps = Step.objects.all()
         for step in steps:

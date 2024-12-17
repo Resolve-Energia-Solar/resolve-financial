@@ -1,6 +1,7 @@
 from django.forms import ValidationError
 from accounts.models import Address, User
 from core.models import Column
+from core.serializers import AttachmentSerializer
 from engineering.models import Units
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
@@ -280,7 +281,8 @@ class SaleSerializer(BaseSerializer):
 
     def get_total_paid(self, obj):
         return obj.total_paid
-    
+
+
 class ReadSaleSerializer(BaseSerializer):
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
@@ -307,6 +309,7 @@ class ProjectSerializer(BaseSerializer):
     # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    documents_under_analysis = SerializerMethodField()
     field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
 
@@ -326,8 +329,11 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        death = 1
+        depth = 1
     
+    def get_documents_under_analysis(self, obj):
+        documents = obj.documents_under_analysis.all()
+        return AttachmentSerializer(documents, many=True).data
     
     def get_field_services(self, obj):
         field_services = obj.field_services.values_list('id', flat=True)
