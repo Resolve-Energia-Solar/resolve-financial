@@ -67,8 +67,8 @@ class ScheduleSerializer(BaseSerializer):
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
-    schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False)
+    schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
 
