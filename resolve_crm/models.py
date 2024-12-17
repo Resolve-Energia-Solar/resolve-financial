@@ -347,6 +347,14 @@ class ComercialProposal(models.Model):
 
 
 class Sale(models.Model):
+    
+    PAYMENT_STATUS_CHOICES = [
+        ("P", "Pendente"),
+        ("PG", "Pago"),
+        ("PA", "Parcialmente Pago"),
+        ("D", "Distrato"),
+    ]
+    
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
@@ -354,7 +362,7 @@ class Sale(models.Model):
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
-
+    payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P")
     contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
@@ -415,14 +423,6 @@ class Sale(models.Model):
         for installment in installments:
             total_paid += installment.installment_value
         return total_paid
-
-    @property
-    def payment_status(self):
-        if self.total_paid >= self.total_value:
-            return "PAGO"
-        elif self.total_paid >= 0.8 * float(self.total_value):
-            return "PARCIAL"
-        return "PENDENTE"
 
     @property
     def attachments(self):
@@ -492,7 +492,7 @@ class Project(models.Model):
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
     
-    # schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
+    inspection = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
@@ -505,6 +505,14 @@ class Project(models.Model):
     registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    def is_released_to_engineering(self):
+        """
+        Está liberado para engenharia se o projeto estiver com documentação concluída,
+        pagamento completo ou parcial
+        e a vistoria estiver aprovada
+        """
+        return self.is_documentation_completed and self.sale.payment_status in ['PG', 'PA'] and self.inspection.status == 'A'
 
     @property
     def attachments(self):
