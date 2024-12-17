@@ -65,7 +65,6 @@ def get_model_data(instance):
     elif isinstance(instance, Sale):
         return {
             "id": instance.id,
-            "lead": instance.lead.id,
             "customer": instance.customer.id,
             "seller": instance.seller.id,
             "sales_supervisor": instance.sales_supervisor.id,
@@ -100,7 +99,6 @@ def send_webhook_on_save(sender, instance, created, **kwargs):
         # Retorna caso o ContentType ainda não exista
         return
 
-    print("WEBHOOK", content_type)
     event_type = 'C' if created else 'U'
     webhooks = Webhook.objects.filter(
         content_type=content_type,
