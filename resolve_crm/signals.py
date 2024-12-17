@@ -62,7 +62,9 @@ def get_model_data(instance):
             "created_at": instance.created_at.isoformat(),
         }
 
-    return {}
+    return {
+        "id": instance.id,
+    }
 
 
 @receiver(post_save)
