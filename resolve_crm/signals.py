@@ -61,6 +61,27 @@ def get_model_data(instance):
             "is_deleted": instance.is_deleted,
             "created_at": instance.created_at.isoformat(),
         }
+        
+    elif isinstance(instance, Sale):
+        return {
+            "id": instance.id,
+            "lead": instance.lead.id,
+            "customer": instance.customer.id,
+            "seller": instance.seller.id,
+            "sales_supervisor": instance.sales_supervisor.id,
+            "sales_manager": instance.sales_manager.id,
+            "total_value": instance.total_value,
+            "contract_number": instance.contract_number,
+            "signature_date": instance.signature_date.isoformat() if instance.signature_date else None,
+            "branch": instance.branch.id,
+            "marketing_campaign": instance.marketing_campaign.id if instance.marketing_campaign else None,
+            "is_pre_sale": instance.is_pre_sale,
+            "status": instance.get_status_display(),
+            "transfer_percentage": str(instance.transfer_percentage) if instance.transfer_percentage else None,
+            "products": [product.id for product in instance.products.all()],
+            "financial_completion_date": instance.financial_completion_date.isoformat() if instance.financial_completion_date else None,
+            "created_at": instance.created_at.isoformat(),
+        }
 
     return {
         "id": instance.id,
@@ -70,7 +91,7 @@ def get_model_data(instance):
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     # Ignora o sinal durante as migrações
-    if 'migrate' or 'test' in sys.argv:
+    if 'migrate' in sys.argv or 'test' in sys.argv:
         return
 
     try:
@@ -79,6 +100,7 @@ def send_webhook_on_save(sender, instance, created, **kwargs):
         # Retorna caso o ContentType ainda não exista
         return
 
+    print("WEBHOOK", content_type)
     event_type = 'C' if created else 'U'
     webhooks = Webhook.objects.filter(
         content_type=content_type,
