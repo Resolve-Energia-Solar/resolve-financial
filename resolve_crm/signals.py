@@ -25,50 +25,30 @@ def send_webhook_request(web_hook_url, data, secret):
 
 
 def get_model_data(instance):
-    if isinstance(instance, Lead):
-        return {
-            "id": instance.id,
-            "name": instance.name,
-            "type": instance.get_type_display(), 
-            "byname": instance.byname,
-            "first_document": instance.first_document,
-            "second_document": instance.second_document,
-            "birth_date": instance.birth_date.isoformat() if instance.birth_date else None,
-            "gender": instance.get_gender_display(),
-            "contact_email": instance.contact_email,
-            "phone": instance.phone,
-            "addresses": [address.id for address in instance.addresses.all()],
-            "customer": instance.customer.id if instance.customer else None,
-            "origin": instance.origin,
-            "seller": instance.seller.id if instance.seller else None,
-            "sdr": instance.sdr.id if instance.sdr else None,
-            "funnel": instance.get_funnel_display(), 
-            "column": instance.column.id if instance.column else None,
-            "is_deleted": instance.is_deleted,
-            "created_at": instance.created_at.isoformat(),
-        }
+    data = {}
+    for field in instance._meta.get_fields():
+        field_name = field.name
+        field_value = getattr(instance, field_name, None)
+
+        # Tratamento especial para relacionamentos
+        if field.one_to_many or field.many_to_many:
+            # Exemplo: retornar lista de IDs relacionados
+            field_value = [obj.id for obj in field_value.all()] if field_value else []
+        elif field.is_relation:
+            # Exemplo: retornar apenas ID do objeto relacionado
+            field_value = field_value.id if field_value else None
+        elif hasattr(field_value, 'isoformat'):
+            # Exemplo: datas e horários
+            field_value = field_value.isoformat()
+
+        data[field_name] = field_value
     
-    elif isinstance(instance, Task):
-        return {
-            "id": instance.id,
-            "lead": instance.lead.id,
-            "title": instance.title,
-            "delivery_date": instance.delivery_date.isoformat(),
-            "description": instance.description,
-            "status": instance.get_status_display(),
-            "task_type": instance.get_task_type_display(),
-            "members": [member.id for member in instance.members.all()],
-            "is_deleted": instance.is_deleted,
-            "created_at": instance.created_at.isoformat(),
-        }
-
-    return {}
-
+    return data
 
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     # Ignora o sinal durante as migrações
-    if 'migrate' or 'test' in sys.argv:
+    if 'migrate' in sys.argv or 'test' in sys.argv:
         return
 
     try:
