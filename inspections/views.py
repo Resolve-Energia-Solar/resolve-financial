@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.utils.dateparse import parse_datetime
 from datetime import datetime
+from .consumers import LocationConsumer
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -186,3 +187,31 @@ class AgentRouteViewSet(BaseModelViewSet):
             queryset = queryset.filter(status=status)
 
         return queryset
+    
+    def update(self, request, *args, **kwargs):
+        data = request.data
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        route = AgentRoute.objects.get(id=serializer.data['id'])
+
+        update_data = {
+            "agent_id": route.agent.id,
+            "customer_id": route.schedule.customer.id,
+            "schedule_id": route.schedule.id,
+            "latitude": route.latitude,
+            "longitude": route.longitude,
+        }
+
+        client_group = f"client_{route.schedule.customer.id}"
+
+        LocationConsumer.send_location_update(
+            update_data,
+            supervisor_group="supervisors",
+            client_group=client_group
+        )
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
