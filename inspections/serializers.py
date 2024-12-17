@@ -2,6 +2,7 @@ from accounts.models import Address, User
 from inspections.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
+from logistics.models import Product
 from resolve_crm.models import Project
 
 
@@ -69,6 +70,7 @@ class ScheduleSerializer(BaseSerializer):
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent')
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
+    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='products', many=True)
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
