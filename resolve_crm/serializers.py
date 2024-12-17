@@ -309,6 +309,8 @@ class ProjectSerializer(BaseSerializer):
     # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    
+    is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
     field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
@@ -330,6 +332,10 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         depth = 1
+        
+        
+    def get_is_released_to_engineering(self, obj):
+        return obj.is_released_to_engineering()
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()
