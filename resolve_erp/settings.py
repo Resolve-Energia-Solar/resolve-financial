@@ -28,6 +28,7 @@ if not DEBUG:
 
 INSTALLED_APPS = [
     'jazzmin',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,8 +51,18 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_filters',
     'corsheaders',
+    'channels',
 ]
 
+ASGI_APPLICATION = 'resolve_erp.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis', 6379)], 
+        },
+    },
+}
 
 DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 

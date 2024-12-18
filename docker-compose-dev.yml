@@ -9,3 +9,13 @@ services:
     command: sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:31813"
     ports:
       - 31813:31813
+    depends_on:
+      - redis  # Garante que o Redis seja iniciado antes do serviço web
+    environment:
+      - REDIS_HOST=redis  # Nome do serviço Redis definido abaixo
+
+  redis:
+    image: redis:latest  # Usa a imagem oficial do Redis
+    container_name: redis
+    ports:
+      - "6379:6379"  # Exponha a porta 6379 para conexões externas (opcional)

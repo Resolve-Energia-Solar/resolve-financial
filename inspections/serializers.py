@@ -2,7 +2,6 @@ from accounts.models import Address, User
 from inspections.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
-from logistics.models import Product
 from resolve_crm.models import Project
 
 
@@ -64,13 +63,14 @@ class ScheduleSerializer(BaseSerializer):
     schedule_agent = UserSerializer(read_only=True)
     address = AddressSerializer(read_only=True)
     project = SerializerMethodField()
+    customer = UserSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False)
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
-    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='products', many=True, required=False)
+    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
@@ -118,4 +118,17 @@ class FreeTimeAgentSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = FreeTimeAgent
+        fields = '__all__'
+
+class AgentRouteSerializer(BaseSerializer):
+    #leitura
+    agent = UserSerializer(read_only=True)
+    schedule = ScheduleSerializer(read_only=True)
+
+    #escrita
+    agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
+    schedule_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='schedule')
+
+    class Meta(BaseSerializer.Meta):
+        model = AgentRoute
         fields = '__all__'
