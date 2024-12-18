@@ -350,13 +350,6 @@ class Sale(models.Model):
     
     PAYMENT_STATUS_CHOICES = [
         ("P", "Pendente"),
-        ("PG", "Pago"),
-        ("PA", "Parcialmente Pago"),
-        ("D", "Distrato"),
-    ]
-    
-    FINANCIAL_STATUS_CHOICES = [
-        ("P", "Pendente"),
         ("L", "Liberado"),
         ("C", "Concluído"),
     ]
@@ -386,7 +379,6 @@ class Sale(models.Model):
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
-    financial_status = models.CharField("Status do Financeiro", max_length=2, choices=FINANCIAL_STATUS_CHOICES, default="P")
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
     # Logs
