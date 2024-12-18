@@ -154,8 +154,11 @@ class UserViewSet(BaseModelViewSet):
                 overlapping_schedules = Schedule.objects.filter(
                     schedule_date=date,
                     schedule_start_time__lt=parse_time(end_time),
-                    schedule_end_time__gt=parse_time(start_time)
+                    schedule_end_time__gt=parse_time(start_time),
+                    schedule_agent_id__isnull=False  
                 ).values_list('schedule_agent_id', flat=True)
+
+                print(overlapping_schedules)
 
                 queryset = queryset.exclude(id__in=overlapping_schedules)    
 
