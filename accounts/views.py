@@ -158,8 +158,6 @@ class UserViewSet(BaseModelViewSet):
                     schedule_agent_id__isnull=False  
                 ).values_list('schedule_agent_id', flat=True)
 
-                print(overlapping_schedules)
-
                 queryset = queryset.exclude(id__in=overlapping_schedules)    
 
                 #logica para ordenar os agentes por distancia e contagem de agendamentos
