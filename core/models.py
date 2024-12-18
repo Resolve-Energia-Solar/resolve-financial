@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 class DocumentType(models.Model):
@@ -230,3 +231,27 @@ class Webhook(models.Model):
         verbose_name = 'Webhook'
         verbose_name_plural = 'Webhooks'
         ordering = ['-created_at']
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Tag'
+        verbose_name_plural = 'Tags'
+        ordering = ['name']
+
+
+class TaggedItem(models.Model):
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="tagged_items")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        verbose_name = 'Item Taggeado'
+        verbose_name_plural = 'Itens Taggeados'

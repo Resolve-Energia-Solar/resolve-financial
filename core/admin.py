@@ -1,9 +1,7 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
-
-from .models import Attachment, Board, Column, DocumentSubType, DocumentType
-from .models import Task, Webhook
+from .models import *
 
 
 @admin.register(DocumentType)
@@ -74,3 +72,15 @@ class PermissionAdmin(admin.ModelAdmin):
     list_filter = ("content_type",)
     list_per_page = 10
     list_max_show_all = 100
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name", "color")
+    
+    
+@admin.register(TaggedItem)
+class TaggedItemAdmin(admin.ModelAdmin):
+    list_display = ("tag", "content_type", "object_id")
+    search_fields = ("tag", "content_type", "object_id")
+    list_filter = ("tag", "content_type", "object_id")

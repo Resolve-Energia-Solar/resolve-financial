@@ -355,6 +355,12 @@ class Sale(models.Model):
         ("D", "Distrato"),
     ]
     
+    FINANCIAL_STATUS_CHOICES = [
+        ("P", "Pendente"),
+        ("L", "Liberado"),
+        ("C", "Concluído"),
+    ]
+    
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
@@ -380,6 +386,7 @@ class Sale(models.Model):
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
+    financial_status = models.CharField("Status do Financeiro", max_length=2, choices=FINANCIAL_STATUS_CHOICES, default="P")
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
     # Logs
