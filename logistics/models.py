@@ -19,7 +19,7 @@ class MaterialAttributes(models.Model):
 
 #ITEM
 class Materials(models.Model):
-    name = models.CharField("Nome", max_length=50, null=False, blank=False)
+    name = models.CharField("Nome", max_length=100, null=False, blank=False)
     price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=False, blank=False)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
