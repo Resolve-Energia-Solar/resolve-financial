@@ -207,11 +207,13 @@ class AgentRouteViewSet(BaseModelViewSet):
 
         client_group = f"client_{route.schedule.customer.id}"
 
+        # Passa os argumentos posicionais para o método estático
         LocationConsumer.send_location_update(
-            update_data,
-            supervisor_group="supervisors",
-            client_group=client_group
+            update_data,  # Primeiro argumento
+            "supervisors",  # Segundo argumento
+            client_group  # Terceiro argumento
         )
         
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
