@@ -309,7 +309,7 @@ class ProjectSerializer(BaseSerializer):
     # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
-    
+    attachments = AttachmentSerializer(many=True, read_only=True)
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
     field_services = SerializerMethodField()
