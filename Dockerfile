@@ -13,9 +13,11 @@ RUN echo "America/Belem" > /etc/timezone
 
 WORKDIR /app
 
+# Criar diretório para logs
+RUN mkdir -p /app/logs
+
 COPY requirements.txt .
 RUN pip install --break-system-packages -r requirements.txt
-
 
 COPY . .
 
