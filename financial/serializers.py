@@ -124,6 +124,7 @@ class FranchiseInstallmentSerializer(BaseSerializer):
     transfer_percentage = SerializerMethodField()
     percentage = SerializerMethodField()
     margin_7 = SerializerMethodField()
+    is_payment_released = SerializerMethodField()
     
     # Campos para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
@@ -133,8 +134,11 @@ class FranchiseInstallmentSerializer(BaseSerializer):
         fields = [
             'id', 'sale', 'status', 'installment_value', 'is_paid', 'paid_at', 'created_at',
             'difference_value', 'total_value', 'transfer_percentage', 'percentage', 'margin_7',
-            'sale_id'
+            'sale_id', 'is_payment_released'
         ]
+        
+    def get_is_payment_released(self, obj):
+        return obj.is_payment_released
         
     def get_difference_value(self, obj):
         return float(obj.difference_value) if obj.difference_value is not None else 0.0

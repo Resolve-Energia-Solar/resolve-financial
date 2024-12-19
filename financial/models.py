@@ -157,7 +157,7 @@ class FranchiseInstallment(models.Model):
     status = models.CharField(
         "Status",
         max_length=2,
-        choices=[("PE", "Pendente"), ("PG", "PAGO")],
+        choices=[("PE", "Pendente"), ("PG", "Pago")],
         default="PE",
     )
     installment_value = models.DecimalField(
@@ -172,6 +172,11 @@ class FranchiseInstallment(models.Model):
     paid_at = models.DateTimeField("Pago em", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    
+    @property
+    def is_payment_released(self):
+        return all(project.is_released_to_engineering() for project in self.sale.projects.all())
 
     @property
     def transfer_percentage(self):
