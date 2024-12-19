@@ -41,7 +41,7 @@ jobs:
     - name: Configure Access to AKS
       run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
 
-    # 6. Criar a variavel do google   
+    # 6. Criar a variavel do google no AKS  
     - name: Create or update Kubernetes Secret
       env:
         GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
