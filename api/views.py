@@ -8,6 +8,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 from api.pagination import CustomLimitOffsetPagination
 from api.task import processar_contrato
+from django.views.decorators.csrf import csrf_exempt
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -102,9 +103,10 @@ class ContratoView(APIView):
 
 
 class GanttView(APIView):
+    permission_classes = []  # Remove authentication requirement
+
     def get(self, request):
-        # Definindo as colunas
-        sale_id = request.query_params.get('sale_id')
+        # Colunas definidas no formato esperado
         columns = [
             {"type": "string", "label": "Task ID"},
             {"type": "string", "label": "Task Name"},
@@ -115,13 +117,13 @@ class GanttView(APIView):
             {"type": "string", "label": "Dependencies"},
         ]
 
-        # Definindo as linhas
+        # Dados das linhas no formato especificado
         rows = [
             [
                 "Research",
                 "Find sources",
-                datetime(2015, 1, 1),
-                datetime(2015, 1, 5),
+                datetime(2015, 1, 1).isoformat(),  # Envia a data como string ISO
+                datetime(2015, 1, 5).isoformat(),  # Envia a data como string ISO
                 None,
                 100,
                 None,
@@ -130,14 +132,14 @@ class GanttView(APIView):
                 "Write",
                 "Write paper",
                 None,
-                datetime(2015, 1, 9),
+                datetime(2015, 1, 9).isoformat(),
                 3 * 24 * 60 * 60 * 1000,  # Duração em milissegundos
                 25,
                 "Research,Outline",
             ],
         ]
 
-        # Estruturando a resposta final
-        data = [columns] + rows
+        # Retorna no formato {columns, rows}
+        data = {"columns": columns, "rows": rows}
 
         return Response(data)
