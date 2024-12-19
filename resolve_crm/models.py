@@ -513,6 +513,28 @@ class Project(models.Model):
         """
         return self.is_documentation_completed and self.sale.payment_status in ['PG', 'PA'] and self.inspection.status == 'A'
 
+    
+    def access_opinion(self):
+        """"
+        Parecer de acesso é liberado se o projeto estiver TRT concluída e
+        todas as unidades tiverem número de contrato (não forem nova UC)
+        """
+        documents = self.attachments.filter(object_id=self.id, content_type='engineering')
+        document_status = []
+        check_document = False
+        
+        for document in documents:
+            if document.document_type.name == 'TRT/ART':
+                document_status.append(document.status)
+        
+        if 'C' in document_status:
+            check_document = True
+        
+        check_units = any(unit.new_contract_number for unit in self.units.all())        
+        
+        return check_document and check_units
+
+    
     @property
     def attachments(self):
         return Attachment.objects.filter(
