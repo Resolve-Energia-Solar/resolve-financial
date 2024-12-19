@@ -515,24 +515,23 @@ class Project(models.Model):
 
     
     def access_opinion(self):
-        """"
-        Parecer de acesso é liberado se o projeto estiver TRT concluída e
-        todas as unidades tiverem número de contrato (não forem nova UC)
         """
-        documents = self.attachments.filter(object_id=self.id, content_type='engineering')
-        document_status = []
-        check_document = False
+        O parecer de acesso é liberado se:
+        - O projeto tiver pelo menos um documento TRT/ART com status 'C'.
+        - Todas as unidades tiverem um número de contrato (não forem nova UC).
+        """
+        # Verifica se existe algum documento TRT/ART com status 'C'
+        has_valid_document = self.attachments.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            document_type__name='TRT/ART',
+            status='C'
+        ).exists()
         
-        for document in documents:
-            if document.document_type.name == 'TRT/ART':
-                document_status.append(document.status)
+        # Verifica se todas as unidades têm número de contrato
+        all_units_have_contract = all(unit.new_contract_number for unit in self.units.all())
         
-        if 'C' in document_status:
-            check_document = True
-        
-        check_units = any(unit.new_contract_number for unit in self.units.all())        
-        
-        return check_document and check_units
+        return has_valid_document and all_units_have_contract
 
     
     @property

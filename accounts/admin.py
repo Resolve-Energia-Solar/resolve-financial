@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import *
+from django.contrib.contenttypes.models import ContentType
 
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
+
 
 
 class PhoneNumberInline(admin.TabularInline):
