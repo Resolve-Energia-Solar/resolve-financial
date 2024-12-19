@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import DjangoModelPermissions
@@ -98,3 +99,45 @@ class ContratoView(APIView):
         processar_contrato.delay(dados_contrato, token)
         
         return Response({"message": "Contrato enviado para processamento"}, status=status.HTTP_202_ACCEPTED)
+
+
+class GanttView(APIView):
+    def get(self, request):
+        # Definindo as colunas
+        sale_id = request.query_params.get('sale_id')
+        columns = [
+            {"type": "string", "label": "Task ID"},
+            {"type": "string", "label": "Task Name"},
+            {"type": "date", "label": "Start Date"},
+            {"type": "date", "label": "End Date"},
+            {"type": "number", "label": "Duration"},
+            {"type": "number", "label": "Percent Complete"},
+            {"type": "string", "label": "Dependencies"},
+        ]
+
+        # Definindo as linhas
+        rows = [
+            [
+                "Research",
+                "Find sources",
+                datetime(2015, 1, 1),
+                datetime(2015, 1, 5),
+                None,
+                100,
+                None,
+            ],
+            [
+                "Write",
+                "Write paper",
+                None,
+                datetime(2015, 1, 9),
+                3 * 24 * 60 * 60 * 1000,  # Duração em milissegundos
+                25,
+                "Research,Outline",
+            ],
+        ]
+
+        # Estruturando a resposta final
+        data = [columns] + rows
+
+        return Response(data)

@@ -10,7 +10,7 @@ from accounts.views import UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView
 from core.views import HistoryView
 from resolve_crm.views import GeneratePreSaleView, GenerateSalesProjectsView
-from .views import ContratoView
+from .views import ContratoView, GanttView
 
 
 router = DefaultRouter()
@@ -53,4 +53,5 @@ urlpatterns = [
     re_path(r'^swagger/$', api_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', api_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('send-contract/', ContratoView.as_view(), name='send_contract'),  
+    path('gantt/', GanttView.as_view(), name='gantt'),
 ]
