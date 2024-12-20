@@ -128,9 +128,21 @@ class UserTypeSerializer(BaseSerializer):
 
 
 class CustomFieldSerializer(BaseSerializer):
+    user = SerializerMethodField(read_only=True)
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
+
     class Meta:
         model = CustomField
         fields = '__all__'
+
+    def create(self, validated_data):
+        # Pop the user_id from validated_data and set it as the related user
+        user = validated_data.pop('user_id')
+        instance = CustomField.objects.create(user=user, **validated_data)
+        return instance
+
+    def get_user(self, obj):
+        return obj.user.id if obj.user else None
 
 
 class UserSerializer(BaseSerializer):
