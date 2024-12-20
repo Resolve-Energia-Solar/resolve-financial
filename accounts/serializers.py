@@ -127,6 +127,12 @@ class UserTypeSerializer(BaseSerializer):
             fields = '__all__'
 
 
+class CustomFieldSerializer(BaseSerializer):
+    class Meta:
+        model = CustomField
+        fields = '__all__'
+
+
 class UserSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     addresses = AddressSerializer(many=True, read_only=True)

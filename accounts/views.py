@@ -290,3 +290,15 @@ class PermissionViewSet(BaseModelViewSet):
 class GroupViewSet(BaseModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    
+
+class CustomFieldViewSet(BaseModelViewSet):
+    queryset = CustomField.objects.all()
+    serializer_class = CustomFieldSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user')
+        if user_id:
+            queryset = queryset.filter(user__id=user_id)
+        return queryset

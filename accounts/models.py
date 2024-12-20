@@ -17,7 +17,22 @@ class UserType(models.Model):
         verbose_name = "Tipo de Usuário"
         verbose_name_plural = "Tipos de Usuário"
         ordering = ['name']
+        
 
+class CustomField(models.Model):
+    key = models.CharField("Chave", max_length=50, unique=True)
+    value = models.CharField("Valor", max_length=50)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Usuário", related_name="custom_fields")
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.key + " - " + self.value + " - " + self.user.complete_name
+    
+    class Meta:
+        verbose_name = "Campo Personalizado"
+        verbose_name_plural = "Campos Personalizados"
+        ordering = ['key']
+        
 
 class Employee(models.Model):
     user = models.OneToOneField("accounts.User", verbose_name="Usuário", on_delete=models.CASCADE, related_name="employee")
