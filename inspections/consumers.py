@@ -13,9 +13,9 @@ class LocationConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         
-        is_supervisor = await sync_to_async(
-            self.user.user_permissions.filter(codename="view_agentroute").exists
-        )()
+        #is_supervisor = await sync_to_async(
+        #    self.user.user_permissions.filter(codename="view_agentroute").exists
+        #)()
 
         is_client = await sync_to_async(
             self.user.user_types.filter(name="Cliente").exists
@@ -25,9 +25,9 @@ class LocationConsumer(AsyncWebsocketConsumer):
             self.user.user_types.filter(name="agent").exists
         )()
 
-        if is_supervisor:
-            self.group_name = "supervisors"
-        elif is_client:
+        #if is_supervisor:
+            #.group_name = "supervisors"
+        if is_client:
             self.group_name = f"client_{self.user.id}"
         elif is_agent:
             self.group_name = f"agent_{self.user.id}"
@@ -50,14 +50,23 @@ class LocationConsumer(AsyncWebsocketConsumer):
         data = event["data"]
         await self.send(text_data=json.dumps(data))
 
-    @staticmethod
-    def send_location_update(update_data, *groups):
-        channel_layer = get_channel_layer()
-        for group in groups:
-            async_to_sync(channel_layer.group_send)(
-                group,
-                {
-                    "type": "location_update",
-                    "data": update_data
-                }
-            )
+    async def receive(self, text_data):
+        try:   
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"error": "Invalid data format"}))
+            return
+        
+        #enviar para o cliente e para os supervisores
+        customer_id = data.get("custumer_id")
+
+        if customer_id:
+            await self.channel_layer.group_send(f"client_{customer_id}", {
+                "type": "location_update",
+                "data": data
+            })
+
+        await self.channel_layer.group_send("supervisors", {    
+            "type": "location_update",
+            "data": data
+        })
