@@ -36,6 +36,7 @@ class Payment(models.Model):
         ("B", "Boleto"),
         ("F", "Financiamento"),
         ("PI", "Parcelamento interno"),
+        ("P", "Pix"),
     ]
 
     INVOICE_STATUS_CHOICES = [
