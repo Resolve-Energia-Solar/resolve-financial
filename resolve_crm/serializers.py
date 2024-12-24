@@ -114,7 +114,7 @@ class ReadProjectSerializer(BaseSerializer):
 
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company']
         depth = 1
 
     def get_requests_energy_company(self, obj):
@@ -304,7 +304,7 @@ class ReadSaleSerializer(BaseSerializer):
 
 class ProjectSerializer(BaseSerializer):
     # Para leitura
-    sale = ReadSaleSerializer(read_only=True)
+    # sale = ReadSaleSerializer(read_only=True)
     # designer = RelatedUserSerializer(read_only=True)
     # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)

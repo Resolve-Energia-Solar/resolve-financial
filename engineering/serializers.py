@@ -2,7 +2,7 @@ from accounts.models import Address, User
 from resolve_crm.serializers import SaleSerializer
 from engineering.models import *
 from api.serializers import BaseSerializer
-from accounts.serializers import AddressSerializer, UserSerializer
+from accounts.serializers import AddressSerializer, RelatedUserSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 
 
@@ -64,7 +64,7 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
     type = ResquestTypeSerializer(read_only=True)
     situation = SituationEnergyCompanySerializer(read_only=True, many=True)
     unit = UnitsSerializer(read_only=True)
-    requested_by = UserSerializer(read_only=True)
+    requested_by = RelatedUserSerializer(read_only=True)
     
     # Para escrita: usar apenas ID
     company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
@@ -84,7 +84,7 @@ class ReadRequestsEnergyCompanySerializer(BaseSerializer):
     type = ResquestTypeSerializer(read_only=True)
     situation = SituationEnergyCompanySerializer(read_only=True, many=True)
     unit = UnitsSerializer(read_only=True)
-    requested_by = UserSerializer(read_only=True)
+    requested_by = RelatedUserSerializer(read_only=True)
     
     class Meta:
         model = RequestsEnergyCompany
