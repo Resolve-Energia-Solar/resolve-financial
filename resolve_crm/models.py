@@ -496,7 +496,7 @@ class Project(models.Model):
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
     is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
-    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
@@ -525,7 +525,7 @@ class Project(models.Model):
             object_id=self.id,
             content_type=ContentType.objects.get_for_model(self),
             document_type__name='TRT/ART',
-            status='C'
+            status='A'
         ).exists()
         
         # Verifica se todas as unidades têm número de contrato
