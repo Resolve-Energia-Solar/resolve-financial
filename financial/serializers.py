@@ -185,9 +185,5 @@ class FinancialRecordSerializer(BaseSerializer):
                 }
             ]
         }
-        print(f"Request Headers: {headers}")
-        print(f"Request Body: {body}")
         response = requests.post(f"{os.environ.get('OMIE_API_URL')}/geral/clientes/", headers=headers, json=body)
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Body: {response.json()}")
         return response.json().get('nome_fantasia') if response.status_code == 200 else None

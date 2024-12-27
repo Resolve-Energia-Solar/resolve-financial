@@ -2,7 +2,10 @@ import json
 from asgiref.sync import sync_to_async, async_to_sync
 from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -35,16 +38,16 @@ class LocationConsumer(AsyncWebsocketConsumer):
         if self.group_name:
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             await self.accept()
-            print(f"Usuário {self.user.username} conectado ao grupo {self.group_name}")
+            logger.info(f"Usuário {self.user.username} conectado ao grupo {self.group_name}")
         else:
             await self.close()
 
-    async def disconnect(self, close_code):
-        if self.group_name:
-            await self.channel_layer.group_discard(self.group_name, self.channel_name)
-            print(f"Usuário desconectado do grupo {self.group_name}")
-        else:
-            print("Erro: Nenhum grupo definido para este WebSocket")
+        async def disconnect(self, close_code):
+            if self.group_name:
+                await self.channel_layer.group_discard(self.group_name, self.channel_name)
+                logger.info(f"Usuário desconectado do grupo {self.group_name}")
+            else:
+                logger.error("Erro: Nenhum grupo definido para este WebSocket")
 
     async def location_update(self, event):
         data = event["data"]
