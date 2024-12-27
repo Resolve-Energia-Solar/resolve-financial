@@ -13,9 +13,9 @@ class LocationConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         
-        #is_supervisor = await sync_to_async(
-        #    self.user.user_permissions.filter(codename="view_agentroute").exists
-        #)()
+        is_supervisor = await sync_to_async(
+           self.user.user_permissions.filter(codename="change_schedule").exists
+        )()
 
         is_client = await sync_to_async(
             self.user.user_types.filter(name="Cliente").exists
@@ -25,9 +25,9 @@ class LocationConsumer(AsyncWebsocketConsumer):
             self.user.user_types.filter(name="agent").exists
         )()
 
-        #if is_supervisor:
-            #.group_name = "supervisors"
-        if is_client:
+        if is_supervisor:
+            self.group_name = "supervisors"
+        elif is_client:
             self.group_name = f"client_{self.user.id}"
         elif is_agent:
             self.group_name = f"agent_{self.user.id}"
@@ -53,6 +53,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         try:   
             data = json.loads(text_data)
+            print(data)
         except json.JSONDecodeError:
             await self.send(text_data=json.dumps({"error": "Invalid data format"}))
             return
