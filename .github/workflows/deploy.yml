@@ -26,9 +26,12 @@ jobs:
       - name: Log in to Azure Container Registry (ACR)
         run: echo "${{ vars.AZURE_ACR_PASSWORD }}" | docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" --password-stdin
 
-      # 3. Criar o arquivo .env com as variáveis do GitHub Secrets
-      - name: Create .env File
+      # 3. Criar os arquivos necessários para o build
+      - name: Create .env and google_application_credentials.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
         run: |
+          # Criar .env
           echo "DB_USED=${{ vars.DB_USED }}" >> .env
           echo "DB1_NAME=${{ vars.DB1_NAME }}" >> .env
           echo "DB1_USER=${{ vars.DB1_USER }}" >> .env
@@ -55,11 +58,18 @@ jobs:
           echo "OMIE_API_URL=${{ vars.OMIE_API_URL }}" >> .env
           echo "OMIE_ACESSKEY=${{ vars.OMIE_ACESSKEY }}" >> .env
           echo "OMIE_ACESSTOKEN=${{ vars.OMIE_ACESSTOKEN }}" >> .env
+          
+          # Criar google_application_credentials.json
+          echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
 
       # 4. Build e Push da Imagem Docker
       - name: Build and Push Docker Image
         run: |
-          docker build --no-cache --build-arg ENV_FILE=.env -t "${DOCKER_IMAGE}:${{ github.sha }}" .       
+          docker build \
+            --no-cache \
+            --build-arg ENV_FILE=.env \
+            --build-arg GOOGLE_APPLICATION_CREDENTIALS_FILE=google_application_credentials.json \
+            -t "${DOCKER_IMAGE}:${{ github.sha }}" .
           docker push "${DOCKER_IMAGE}:${{ github.sha }}"
 
       # 5. Log in ao Azure CLI
@@ -70,21 +80,7 @@ jobs:
       - name: Configure Access to AKS
         run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
 
-      # 7. Criar Secret para Google Application Credentials
-      - name: Create or Update Kubernetes Secret for Google Credentials
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-        run: |
-          echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
-          kubectl create secret generic google-application-credentials \
-            --from-file=google_application_credentials.json -n $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-      # 8. Criar ou Atualizar ConfigMap com as variáveis do .env
-      - name: Create or Update Kubernetes ConfigMap
-        run: |
-          kubectl create configmap app-env-config --from-env-file=.env -n $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-      # 9. Atualizar Deployment no AKS
+      # 7. Atualizar Deployment no AKS
       - name: Update Deployment on AKS
         run: |
           kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
