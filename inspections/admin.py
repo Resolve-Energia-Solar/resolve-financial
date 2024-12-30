@@ -37,7 +37,3 @@ class BlockTimeAgentAdmin(admin.ModelAdmin):
 @admin.register(FreeTimeAgent)
 class FreeTimeAgentAdmin(admin.ModelAdmin):
     list_display = ("agent", 'start_time', 'end_time', 'day_of_week')
-
-@admin.register(AgentRoute)
-class AgentRouteAdmin(admin.ModelAdmin):
-    list_display = ("agent", 'status')
