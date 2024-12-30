@@ -315,6 +315,7 @@ class ProjectSerializer(BaseSerializer):
     field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
     access_opinion = SerializerMethodField()
+    address = SerializerMethodField()
 
     # Para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
@@ -333,7 +334,9 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         depth = 1
-        
+    
+    def get_address(self, obj):
+        return AddressSerializer(obj.address).data
     
     def get_access_opinion(self, obj):
         return obj.access_opinion()    

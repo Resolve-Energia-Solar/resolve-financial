@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
 
 from accounts.models import User
-from accounts.serializers import PhoneNumberSerializer, RelatedUserSerializer
+from accounts.serializers import AddressSerializer, PhoneNumberSerializer, RelatedUserSerializer
 from api.serializers import BaseSerializer
 from engineering.models import RequestsEnergyCompany
 from engineering.serializers import UnitsSerializer
@@ -74,10 +74,14 @@ class MobileProjectSerializer(BaseSerializer):
     requests_energy_company_urls = SerializerMethodField(read_only=True)
     contract_url = SerializerMethodField(read_only=True)
     monitoring_url = SerializerMethodField(read_only=True)
+    address = SerializerMethodField()
 
     class Meta:
         model = Project
         fields = ['id', 'start_date', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
+
+    def get_address(self, obj):
+        return AddressSerializer(obj.address).data
 
     def get_deadlines(self, obj):
         # Slugs a serem removidos
