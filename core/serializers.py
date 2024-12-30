@@ -153,25 +153,25 @@ class TaskTemplatesSerializer(BaseSerializer):
         return TaskTemplatesSerializer(obj.depends_on, many=True).data
 
 
-class TaskSerializer(BaseSerializer):
-    owner = RelatedUserSerializer(read_only=True)
-    column = ColumnNameSerializer(read_only=True)
-    depends_on = SerializerMethodField()
-    project = SerializerMethodField()
+# class TaskSerializer2(BaseSerializer):
+#     owner = RelatedUserSerializer(read_only=True)
+#     column = ColumnNameSerializer(read_only=True)
+#     depends_on = SerializerMethodField()
+#     project = SerializerMethodField()
 
-    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
+#     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
+#     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
 
-    class Meta:
-        model = Task
-        fields = '__all__'
+#     class Meta:
+#         model = Task
+#         fields = '__all__'
     
-    def get_depends_on(self, obj):
-        return TaskSerializer(obj.depends_on, many=True).data
+#     def get_depends_on(self, obj):
+#         return TaskSerializer(obj.depends_on, many=True).data
 
-    def get_project(self, obj):
-        from resolve_crm.serializers import ProjectSerializer
-        return ProjectSerializer(obj.project).data
+#     def get_project(self, obj):
+#         from resolve_crm.serializers import ProjectSerializer
+#         return ProjectSerializer(obj.project).data
 
 
 class NotificationSerializer(BaseSerializer):
