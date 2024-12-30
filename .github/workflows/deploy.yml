@@ -18,45 +18,70 @@ jobs:
     environment: resolve
 
     steps:
+      # 1. Checkout do Código
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # 1. Checkout do Código
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 2. Log in ao Azure Container Registry (ACR)
+      - name: Log in to Azure Container Registry (ACR)
+        run: echo "${{ vars.AZURE_ACR_PASSWORD }}" | docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" --password-stdin
 
-    # 2. Log in ao Azure Container Registry
-    - name: Log in to Azure Container Registry (ACR)
-      run: echo "${{ vars.AZURE_ACR_PASSWORD }}" | docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" --password-stdin
+      # 3. Criar os arquivos necessários para o build
+      - name: Create .env and google_application_credentials.json
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          # Criar .env
+          echo "DB_USED=${{ vars.DB_USED }}" >> .env
+          echo "DB1_NAME=${{ vars.DB1_NAME }}" >> .env
+          echo "DB1_USER=${{ vars.DB1_USER }}" >> .env
+          echo "DB1_PASSWORD=${{ vars.DB1_PASSWORD }}" >> .env
+          echo "DB1_HOST=${{ vars.DB1_HOST }}" >> .env
+          echo "DB1_PORT=${{ vars.DB1_PORT }}" >> .env
+          echo "ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}" >> .env
+          echo "CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}" >> .env
+          echo "CORS_ALLOW_ALL_ORIGINS=${{ vars.CORS_ALLOW_ALL_ORIGINS }}" >> .env
+          echo "CORS_ALLOW_CREDENTIALS=${{ vars.CORS_ALLOW_CREDENTIALS }}" >> .env
+          echo "ADMIN_NAME=${{ vars.ADMIN_NAME }}" >> .env
+          echo "ADMIN_EMAIL=${{ vars.ADMIN_EMAIL }}" >> .env
+          echo "EMAIL_BACKEND=${{ vars.EMAIL_BACKEND }}" >> .env
+          echo "EMAIL_HOST=${{ vars.EMAIL_HOST }}" >> .env
+          echo "EMAIL_PORT=${{ vars.EMAIL_PORT }}" >> .env
+          echo "EMAIL_USE_TLS=${{ vars.EMAIL_USE_TLS }}" >> .env
+          echo "EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }}" >> .env
+          echo "EMAIL_HOST_PASSWORD=${{ vars.EMAIL_HOST_PASSWORD }}" >> .env
+          echo "GS_BUCKET_NAME=${{ vars.GS_BUCKET_NAME }}" >> .env
+          echo "GS_LOCATION=${{ vars.GS_LOCATION }}" >> .env
+          echo "GOOGLE_APPLICATION_CREDENTIALS=google_application_credentials.json" >> .env
+          echo "SOLARZ_USERNAME=${{ vars.SOLARZ_USERNAME }}" >> .env
+          echo "SOLARZ_PASSWORD=${{ vars.SOLARZ_PASSWORD }}" >> .env
+          echo "OMIE_API_URL=${{ vars.OMIE_API_URL }}" >> .env
+          echo "OMIE_ACESSKEY=${{ vars.OMIE_ACESSKEY }}" >> .env
+          echo "OMIE_ACESSTOKEN=${{ vars.OMIE_ACESSTOKEN }}" >> .env
+          
+          # Criar google_application_credentials.json
+          echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
 
-    # 3. Build e Push da Imagem Docker
-    - name: Build and Push Docker Image
-      run: |
-        docker build -t "${DOCKER_IMAGE}:${{ github.sha }}" .
-        docker push "${DOCKER_IMAGE}:${{ github.sha }}"
+      # 4. Build e Push da Imagem Docker
+      - name: Build and Push Docker Image
+        run: |
+          docker build \
+            --no-cache \
+            --build-arg ENV_FILE=.env \
+            --build-arg GOOGLE_APPLICATION_CREDENTIALS_FILE=google_application_credentials.json \
+            -t "${DOCKER_IMAGE}:${{ github.sha }}" .
+          docker push "${DOCKER_IMAGE}:${{ github.sha }}"
 
-    # 4. Log in ao Azure CLI
-    - name: Log in to Azure
-      run: az login --service-principal -u "${{ vars.AZURE_CLIENT_ID }}" -p "${{ vars.AZURE_CLIENT_SECRET }}" --tenant "${{ vars.AZURE_TENANT_ID }}"
+      # 5. Log in ao Azure CLI
+      - name: Log in to Azure
+        run: az login --service-principal -u "${{ vars.AZURE_CLIENT_ID }}" -p "${{ vars.AZURE_CLIENT_SECRET }}" --tenant "${{ vars.AZURE_TENANT_ID }}"
 
-    # 5. Configurar Acesso ao Cluster AKS
-    - name: Configure Access to AKS
-      run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
+      # 6. Configurar Acesso ao Cluster AKS
+      - name: Configure Access to AKS
+        run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
 
-    # 6. Criar a variavel do google no AKS  
-    - name: Create or update Kubernetes Secret
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-      run: |
-        echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
-        kubectl create secret generic google-application-credentials --from-file=google_application_credentials.json -n $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-    # 7. Deploy da Aplicação no AKS
-    - name: Update Deployment on AKS
-      run: |
+      # 7. Atualizar Deployment no AKS
+      - name: Update Deployment on AKS
+        run: |
           kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
           kubectl rollout status deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"
-
-    # 8. Debug Deployment (Opcional)
-    #- name: Debug Deployment Logs
-    # run: |
-    #      kubectl get pods -n "$NAMESPACE"
-    #      kubectl logs deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"
