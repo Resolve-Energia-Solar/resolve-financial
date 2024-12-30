@@ -42,12 +42,12 @@ class LocationConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
-        async def disconnect(self, close_code):
-            if self.group_name:
-                await self.channel_layer.group_discard(self.group_name, self.channel_name)
-                logger.info(f"Usuário desconectado do grupo {self.group_name}")
-            else:
-                logger.error("Erro: Nenhum grupo definido para este WebSocket")
+    async def disconnect(self, close_code):
+        if self.group_name:
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            logger.info(f"Usuário desconectado do grupo {self.group_name}")
+        else:
+            logger.error("Erro: Nenhum grupo definido para este WebSocket")
 
     async def location_update(self, event):
         data = event["data"]

@@ -169,6 +169,7 @@ DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
 # Google Cloud Storage
 GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME')
 GS_LOCATION = os.getenv('GS_LOCATION')
+GOOGLE_APPLICATION_CREDENTIALS=os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
 STORAGES = {
     "default": {
