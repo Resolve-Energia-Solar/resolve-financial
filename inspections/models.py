@@ -111,6 +111,7 @@ class Schedule(models.Model):
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
     schedule_end_time = models.TimeField("Horário de Fim")
+    products = models.ManyToManyField("logistics.Product", verbose_name="Produtos", blank=True)
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     customer = models.ForeignKey("accounts.User", verbose_name="Cliente", on_delete=models.CASCADE, related_name='costumer')
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE, related_name='field_services', blank=True, null=True)

@@ -1,11 +1,18 @@
+import os
+from django.forms import ValidationError
+import requests
+from dotenv import load_dotenv
 from accounts.models import Address, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
-from financial.models import FranchiseInstallment, Payment, PaymentInstallment, Financier
+from financial.models import FinancialRecord, FranchiseInstallment, Payment, PaymentInstallment, Financier
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import SerializerMethodField
 from resolve_crm.models import Sale
 from django.db import transaction
+
+
+load_dotenv()
 
 
 class FinancierSerializer(BaseSerializer):
@@ -34,9 +41,9 @@ class PaymentSerializer(BaseSerializer):
     financier = FinancierSerializer(read_only=True)
     installments = PaymentInstallmentSerializer(many=True, required=False)
     borrower = RelatedUserSerializer(read_only=True)
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier')
 
+    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier', required=False)
     is_paid = SerializerMethodField()
     total_paid = SerializerMethodField()
     percentual_paid = SerializerMethodField()
@@ -45,6 +52,11 @@ class PaymentSerializer(BaseSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+        
+    def validate(self, data):
+        if data.get('payment_type') == 'F' and not data.get('financier'):
+            raise ValidationError("Financiadora é obrigatória para pagamentos Financiados.")
+        return data
 
     def get_is_paid(self, obj):
         return obj.is_paid
@@ -103,16 +115,30 @@ class PaymentSerializer(BaseSerializer):
 
         return instance
 
+
 class FranchiseInstallmentSerializer(BaseSerializer):
     # Campos para leitura
     sale = SaleSerializer(read_only=True)
-
+    difference_value = SerializerMethodField()
+    total_value = SerializerMethodField()
+    transfer_percentage = SerializerMethodField()
+    percentage = SerializerMethodField()
+    margin_7 = SerializerMethodField()
+    is_payment_released = SerializerMethodField()
+    
     # Campos para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
         model = FranchiseInstallment
-        fields = '__all__'
+        fields = [
+            'id', 'sale', 'status', 'installment_value', 'is_paid', 'paid_at', 'created_at',
+            'difference_value', 'total_value', 'transfer_percentage', 'percentage', 'margin_7',
+            'sale_id', 'is_payment_released'
+        ]
+        
+    def get_is_payment_released(self, obj):
+        return obj.is_payment_released
         
     def get_difference_value(self, obj):
         return float(obj.difference_value) if obj.difference_value is not None else 0.0
@@ -128,3 +154,36 @@ class FranchiseInstallmentSerializer(BaseSerializer):
     
     def get_margin_7(self, obj):
         return obj.margin_7
+
+
+class FinancialRecordSerializer(BaseSerializer):
+    # Campos para leitura
+    requester = RelatedUserSerializer(read_only=True)
+    responsible = RelatedUserSerializer(read_only=True)
+    client_supplier_name = SerializerMethodField()
+
+    # Campos para escrita
+    requester_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requester')
+    responsible_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='responsible')
+
+    class Meta:
+        model = FinancialRecord
+        fields = '__all__'
+
+    def get_client_supplier_name(self, obj):
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        body = {
+            "call": "ConsultarCliente",
+            "app_key": os.environ.get('OMIE_ACESSKEY'),
+            "app_secret": os.environ.get('OMIE_ACESSTOKEN'),
+            "param": [
+                {
+                    "codigo_cliente_omie": obj.client_supplier_code,
+                    "codigo_cliente_integracao": ""
+                }
+            ]
+        }
+        response = requests.post(f"{os.environ.get('OMIE_API_URL')}/geral/clientes/", headers=headers, json=body)
+        return response.json().get('nome_fantasia') if response.status_code == 200 else None

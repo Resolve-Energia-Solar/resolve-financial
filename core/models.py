@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 class DocumentType(models.Model):
@@ -151,12 +152,15 @@ class Column(models.Model):
 
 
 class Task(models.Model):
+
+    task_template = models.ForeignKey('core.TaskTemplates', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True, verbose_name='Modelo de Tarefa')
     
     project = models.ForeignKey('resolve_crm.Project', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True, verbose_name='Projeto')
     title = models.CharField(max_length=200)
     column = models.ForeignKey('core.Column', related_name='task', on_delete=models.CASCADE)
     description = models.TextField()
-    owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável')
+    owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável', blank=True, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
@@ -191,7 +195,7 @@ class TaskTemplates(models.Model):
     title = models.CharField(max_length=200)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
     deadline = models.PositiveIntegerField()
-    automatico = models.BooleanField(default=False)
+    auto_create = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField()
     
@@ -230,3 +234,27 @@ class Webhook(models.Model):
         verbose_name = 'Webhook'
         verbose_name_plural = 'Webhooks'
         ordering = ['-created_at']
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Tag'
+        verbose_name_plural = 'Tags'
+        ordering = ['name']
+
+
+class TaggedItem(models.Model):
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="tagged_items")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        verbose_name = 'Item Taggeado'
+        verbose_name_plural = 'Itens Taggeados'

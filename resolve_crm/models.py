@@ -347,6 +347,13 @@ class ComercialProposal(models.Model):
 
 
 class Sale(models.Model):
+    
+    PAYMENT_STATUS_CHOICES = [
+        ("P", "Pendente"),
+        ("L", "Liberado"),
+        ("C", "Concluído"),
+    ]
+    
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
@@ -354,7 +361,7 @@ class Sale(models.Model):
     sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
-
+    payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P")
     contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
@@ -415,14 +422,6 @@ class Sale(models.Model):
         for installment in installments:
             total_paid += installment.installment_value
         return total_paid
-
-    @property
-    def payment_status(self):
-        if self.total_paid >= self.total_value:
-            return "PAGO"
-        elif self.total_paid >= 0.8 * float(self.total_value):
-            return "PARCIAL"
-        return "PENDENTE"
 
     @property
     def attachments(self):
@@ -492,12 +491,12 @@ class Project(models.Model):
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
     
-    # schedule = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True)
+    inspection = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_inspections")
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
     is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
-    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
@@ -506,6 +505,40 @@ class Project(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
+    @property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
+    
+    def is_released_to_engineering(self):
+        """
+        Está liberado para engenharia se o projeto estiver com documentação concluída,
+        pagamento completo ou parcial
+        e a vistoria estiver aprovada
+        """
+        return self.is_documentation_completed and self.sale.payment_status in ['PG', 'PA'] and self.inspection.status == 'A'
+
+    
+    def access_opinion(self):
+        """
+        O parecer de acesso é liberado se:
+        - O projeto tiver pelo menos um documento TRT/ART com status 'C'.
+        - Todas as unidades tiverem um número de contrato (não forem nova UC).
+        """
+        # Verifica se existe algum documento TRT/ART com status 'C'
+        has_valid_document = self.attachments.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            document_type__name='TRT/ART',
+            status='A'
+        ).exists()
+        
+        # Verifica se todas as unidades têm número de contrato
+        all_units_have_contract = all(unit.new_contract_number for unit in self.units.all())
+        
+        return has_valid_document and all_units_have_contract
+
+    
     @property
     def attachments(self):
         return Attachment.objects.filter(
@@ -526,6 +559,10 @@ class Project(models.Model):
                     })
             return missing_documents
         return None
+    
+    @property
+    def documents_under_analysis(self):
+        return self.attachments.filter(document_type__app_label='contracts', status='Em análise')
     
     def create_deadlines(self):
         steps = Step.objects.all()

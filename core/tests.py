@@ -244,7 +244,7 @@ class TaskTemplatesViewSetTestCase(BaseAPITestCase):
             board=self.board,
             title="Template Teste",
             deadline=5,
-            automatico=False,
+            auto_create=False,
             column=self.column,
             description="Descrição do Template"
         )

@@ -127,12 +127,31 @@ class UserTypeSerializer(BaseSerializer):
             fields = '__all__'
 
 
+class CustomFieldSerializer(BaseSerializer):
+    user = SerializerMethodField(read_only=True)
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
+
+    class Meta:
+        model = CustomField
+        fields = '__all__'
+
+    def create(self, validated_data):
+        # Pop the user_id from validated_data and set it as the related user
+        user = validated_data.pop('user_id')
+        instance = CustomField.objects.create(user=user, **validated_data)
+        return instance
+
+    def get_user(self, obj):
+        return obj.user.id if obj.user else None
+
+
 class UserSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     addresses = AddressSerializer(many=True, read_only=True)
     user_types = UserTypeSerializer(many=True, read_only=True)
     groups = GroupSerializer(many=True, read_only=True)
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    employee = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
@@ -148,6 +167,12 @@ class UserSerializer(BaseSerializer):
         model = User
         exclude = ['password']
         
+    def get_employee(self, obj):
+        try:
+            return EmployeeSerializer(obj.employee).data
+        except:
+            return None
+        
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
     
@@ -160,11 +185,10 @@ class UserSerializer(BaseSerializer):
 
 class EmployeeSerializer(BaseSerializer):
 
-    user = RelatedUserSerializer(required=False)
+    user = RelatedUserSerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
-    user_manager = RelatedUserSerializer(read_only=True)
 
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
     department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')

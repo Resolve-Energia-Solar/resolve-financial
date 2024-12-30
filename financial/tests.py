@@ -4,9 +4,9 @@ from accounts.models import Address, Branch, User
 from core.tests import BaseAPITestCase
 from resolve_crm.models import Sale
 from financial.models import (
-    Financier, Payment, PaymentInstallment, FranchiseInstallment
+    FinancialRecord, Financier, Payment, PaymentInstallment, FranchiseInstallment
 )
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from django.utils import timezone
 
 
@@ -308,3 +308,69 @@ class FranchiseInstallmentViewSetTestCase(BaseAPITestCase):
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(FranchiseInstallment.objects.filter(id=self.installment.id).exists())
+
+
+class PaymentRequestViewSetTestCase(BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.create_user(username='customer', password='123456', first_document='12345678900', email='customer@example.com')
+
+
+class FinancialRecordAPITestCase(BaseAPITestCase):
+    def setUp(self):
+        super().setUp()
+        self.list_url = reverse('api:financial-record-list')
+        self.user2 = User.objects.create_user(username='user2', password='pass123', email='user2@email.com')
+        self.financial_record = FinancialRecord.objects.create(
+            integration_code='INT123',
+            protocol='PROTO001',
+            is_receivable=True,
+            status='P',
+            value=1000.00,
+            due_date=date.today(),
+            department_code='DEP001',
+            category_code='CAT001',
+            client_supplier_code=123456789,
+            requester=self.user,
+            responsible=self.user2
+        )
+
+    def test_list_financial_records(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_retrieve_financial_record(self):
+        url = reverse('api:financial-record-detail', args=[self.financial_record.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.financial_record.pk)
+
+    def test_create_financial_record(self):
+        data = {
+            "integration_code": "INT999",
+            "is_receivable": False,
+            "status": "S",
+            "value": 1500.50,
+            "due_date": str(date.today()),
+            "department_code": "DEP999",
+            "category_code": "CAT999",
+            "client_supplier_code": 987654321,
+            "requester_id": self.user.id,
+            "responsible_id": self.user2.id
+        }
+        response = self.client.post(self.list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_financial_record(self):
+        url = reverse('api:financial-record-detail', args=[self.financial_record.pk])
+        data = {"status": "E"}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], "E")
+
+    def test_delete_financial_record(self):
+        url = reverse('api:financial-record-detail', args=[self.financial_record.pk])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(FinancialRecord.objects.filter(pk=self.financial_record.pk).exists())

@@ -20,7 +20,7 @@ from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from inspections.models import Schedule
 from mobile_app.serializers import *
-from resolve_crm.models import Project, Sale
+from resolve_crm.models import Project, ProjectStep, Sale
 
 
 # Carrega o .env
@@ -133,7 +133,10 @@ class DocumentationView(APIView):
         }
 
         if not project.is_documentation_completed:
-            deadline = project.project_steps.get(step__name='documentacao').deadline
+            try:
+                deadline = project.project_steps.get(step__name='documentacao').deadline
+            except ProjectStep.DoesNotExist:
+                deadline = None
             data['deadline'] = deadline if deadline else None
         else:
             data['completion_date'] = project.documention_completion_date
@@ -302,22 +305,18 @@ class AttachDocumentView(APIView):
 class APIViewSet(BaseModelViewSet):
     queryset = API.objects.all()
     serializer_class = APISerializer
-    http_method_names = ['get', 'post', 'put', 'delete']
 
 
 class DiscountViewSet(BaseModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
-    http_method_names = ['get', 'post', 'put', 'delete']
 
 
 class ReelViewSet(BaseModelViewSet):
     queryset = Reel.objects.all()
     serializer_class = ReelSerializer
-    http_method_names = ['get', 'post', 'put', 'delete']
 
 
 class MediaViewSet(BaseModelViewSet):
     queryset = Media.objects.all()
     serializer_class = MediaSerializer
-    http_method_names = ['get', 'post', 'put', 'delete']

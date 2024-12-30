@@ -19,7 +19,7 @@ class MaterialAttributes(models.Model):
 
 #ITEM
 class Materials(models.Model):
-    name = models.CharField("Nome", max_length=50, null=False, blank=False)
+    name = models.CharField("Nome", max_length=100, null=False, blank=False)
     price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=False, blank=False)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
@@ -103,7 +103,7 @@ class ProjectMaterials(models.Model):
 
 class SaleProduct(models.Model):
     sale = models.ForeignKey("resolve_crm.Sale", on_delete=models.CASCADE, verbose_name="Venda", null=True, blank=True, related_name="sale_products")
-    commercial_proposal = models.ForeignKey("resolve_crm.ComercialProposal", on_delete=models.CASCADE, verbose_name="Proposta Comercial", null=True, blank=True, related_name="commercial_products")
+    commercial_proposal = models.ForeignKey("resolve_crm.ComercialProposal", on_delete=models.CASCADE,verbose_name="Proposta Comercial", null=True, blank=True, related_name="commercial_products")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto", related_name="sales", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=True, blank=True)

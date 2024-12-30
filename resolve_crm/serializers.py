@@ -1,6 +1,7 @@
 from django.forms import ValidationError
 from accounts.models import Address, User
 from core.models import Column
+from core.serializers import AttachmentSerializer
 from engineering.models import Units
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
@@ -113,7 +114,7 @@ class ReadProjectSerializer(BaseSerializer):
 
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company']
         depth = 1
 
     def get_requests_energy_company(self, obj):
@@ -150,6 +151,7 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        
 
     def create(self, validated_data):
         products_ids = validated_data.pop('products_ids', [])
@@ -281,14 +283,39 @@ class SaleSerializer(BaseSerializer):
         return obj.total_paid
 
 
+class ReadSaleSerializer(BaseSerializer):
+    can_generate_contract = SerializerMethodField()
+    total_paid = SerializerMethodField()
+    
+    projects = ReadProjectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = '__all__'
+        depth = 1
+
+    
+    def get_can_generate_contract(self, obj):
+        return obj.can_generate_contract
+
+    def get_total_paid(self, obj):
+        return obj.total_paid
+
+
 class ProjectSerializer(BaseSerializer):
     # Para leitura
-    sale = SaleSerializer(read_only=True)
-    designer = RelatedUserSerializer(read_only=True)
-    homologator = RelatedUserSerializer(read_only=True)
+    # sale = ReadSaleSerializer(read_only=True)
+    # designer = RelatedUserSerializer(read_only=True)
+    # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
+    is_released_to_engineering = SerializerMethodField()
+    documents_under_analysis = SerializerMethodField()
+    field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
+    access_opinion = SerializerMethodField()
+    address = SerializerMethodField()
 
     # Para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
@@ -306,7 +333,26 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        death = 1
+        depth = 1
+    
+    def get_address(self, obj):
+        if obj.address:
+            return AddressSerializer(obj.address).data
+        return None
+    
+    def get_access_opinion(self, obj):
+        return obj.access_opinion()    
+        
+    def get_is_released_to_engineering(self, obj):
+        return obj.is_released_to_engineering()
+    
+    def get_documents_under_analysis(self, obj):
+        documents = obj.documents_under_analysis.all()
+        return AttachmentSerializer(documents, many=True).data
+    
+    def get_field_services(self, obj):
+        field_services = obj.field_services.values_list('id', flat=True)
+        return list(field_services)
     
     def get_requests_energy_company(self, obj):
         from engineering.serializers import ReadRequestsEnergyCompanySerializer

@@ -1,3 +1,4 @@
+from datetime import datetime
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import DjangoModelPermissions
@@ -5,8 +6,9 @@ from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
-
+from api.pagination import CustomLimitOffsetPagination
 from api.task import processar_contrato
+from django.views.decorators.csrf import csrf_exempt
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -14,6 +16,8 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
+    pagination_class = CustomLimitOffsetPagination 
+
 
     def list(self, request, *args, **kwargs):
         fields = request.query_params.get('fields')
@@ -96,3 +100,46 @@ class ContratoView(APIView):
         processar_contrato.delay(dados_contrato, token)
         
         return Response({"message": "Contrato enviado para processamento"}, status=status.HTTP_202_ACCEPTED)
+
+
+class GanttView(APIView):
+    permission_classes = []  # Remove authentication requirement
+
+    def get(self, request):
+        # Colunas definidas no formato esperado
+        columns = [
+            {"type": "string", "label": "Task ID"},
+            {"type": "string", "label": "Task Name"},
+            {"type": "date", "label": "Start Date"},
+            {"type": "date", "label": "End Date"},
+            {"type": "number", "label": "Duration"},
+            {"type": "number", "label": "Percent Complete"},
+            {"type": "string", "label": "Dependencies"},
+        ]
+
+        # Dados das linhas no formato especificado
+        rows = [
+            [
+                "Research",
+                "Find sources",
+                datetime(2015, 1, 1).isoformat(),  # Envia a data como string ISO
+                datetime(2015, 1, 5).isoformat(),  # Envia a data como string ISO
+                None,
+                100,
+                None,
+            ],
+            [
+                "Write",
+                "Write paper",
+                None,
+                datetime(2015, 1, 9).isoformat(),
+                3 * 24 * 60 * 60 * 1000,  # Duração em milissegundos
+                25,
+                "Research,Outline",
+            ],
+        ]
+
+        # Retorna no formato {columns, rows}
+        data = {"columns": columns, "rows": rows}
+
+        return Response(data)

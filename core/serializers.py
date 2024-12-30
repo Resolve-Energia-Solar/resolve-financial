@@ -1,9 +1,11 @@
 from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
+
 from accounts.models import Branch, User
+from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from api.serializers import BaseSerializer
 from core.models import *
-from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
 from resolve_crm.models import Lead, Origin
+from notifications.models import Notification
 
 
 class DocumentSubTypeSerializer(BaseSerializer):
@@ -17,16 +19,13 @@ class DocumentSubTypeSerializer(BaseSerializer):
 class DocumentTypeSerializer(BaseSerializer):
     subtypes = DocumentSubTypeSerializer(many=True, read_only=True)
     
+    subtypes_ids = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), many=True, write_only=True, source='subtypes', required=False)
+    
     class Meta:
         model = DocumentType
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
         
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['app_label'] = instance.get_app_label_display()
-        return data
-
 
 class AttachmentSerializer(BaseSerializer):
     
@@ -90,29 +89,34 @@ class ReadLeadSerializer(BaseSerializer):
         from resolve_crm.serializers import OriginSerializer
         return OriginSerializer(obj.origin).data
 
-
-class ReadTaskSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    owner = RelatedUserSerializer(read_only=True)
     
-    # Para escrita: usar apenas ID
-    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-
-    # Campo personalizado para dependências da tarefa
+class TaskSerializer(BaseSerializer):
+    owner = RelatedUserSerializer(read_only=True)
+    column = ColumnNameSerializer(read_only=True)
     depends_on = SerializerMethodField()
+    project = SerializerMethodField()
+
+    owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner', required=False)
+    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type', required=False)
 
     class Meta:
         model = Task
         fields = '__all__'
-
+    
     def get_depends_on(self, obj):
         return TaskSerializer(obj.depends_on, many=True).data
+
+    def get_project(self, obj):
+        from resolve_crm.serializers import ProjectSerializer
+        return ProjectSerializer(obj.project).data
+
 
 
 class ColumnSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     leads = ReadLeadSerializer(many=True, read_only=True)
-    task = ReadTaskSerializer(many=True, read_only=True)
+    task = TaskSerializer(many=True, read_only=True)
     proposals_value = SerializerMethodField()
 
     class Meta:
@@ -134,7 +138,7 @@ class BoardSerializer(BaseSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'description', 'columns', 'branch', 'columns_ids', 'branch_id']
+        fields = '__all__'
 
 
 class TaskTemplatesSerializer(BaseSerializer):
@@ -168,3 +172,19 @@ class TaskSerializer(BaseSerializer):
     def get_project(self, obj):
         from resolve_crm.serializers import ProjectSerializer
         return ProjectSerializer(obj.project).data
+
+
+class NotificationSerializer(BaseSerializer):
+    user = RelatedUserSerializer(read_only=True)
+    task = TaskSerializer(read_only=True)
+    read = SerializerMethodField()
+
+    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
+    task_id = PrimaryKeyRelatedField(queryset=Task.objects.all(), write_only=True, source='task')
+
+    class Meta:
+        model = Notification
+        fields = '__all__'
+    
+    def get_read(self, obj):
+        return obj.read

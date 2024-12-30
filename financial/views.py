@@ -64,3 +64,8 @@ class FranchiseInstallmentViewSet(BaseModelViewSet):
     #                                   f"Não é possível adicionar {repass_percentage}%."}
     #         )
     #     serializer.save()
+
+
+class FinancialRecordViewSet(BaseModelViewSet):
+    queryset = FinancialRecord.objects.all()
+    serializer_class = FinancialRecordSerializer

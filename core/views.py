@@ -1,13 +1,16 @@
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.views import APIView
-from api.views import BaseModelViewSet
-from .models import *
-from .serializers import *
-from .pagination import AttachmentPagination
 from django.core.exceptions import FieldDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils.text import capfirst
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from api.views import BaseModelViewSet
+from notifications.models import Notification
+
+from .models import *
+from .pagination import AttachmentPagination
+from .serializers import *
 
 
 class DocumentTypeViewSet(BaseModelViewSet):
@@ -136,3 +139,8 @@ class HistoryView(APIView):
         return Response({
             'changes': changes
         }, status=status.HTTP_200_OK)
+
+
+class NotificationViewSet(BaseModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
