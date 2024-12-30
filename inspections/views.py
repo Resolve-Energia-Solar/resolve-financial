@@ -171,49 +171,5 @@ class FreeTimeAgentViewSet(BaseModelViewSet):
             queryset = queryset.filter(day_of_week=day_of_week)
 
         return queryset
-    
-class AgentRouteViewSet(BaseModelViewSet):
-    queryset = AgentRoute.objects.all()
-    serializer_class = AgentRouteSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        agent = self.request.query_params.get('agent')
-        status = self.request.query_params.get('status')
-
-        if agent:
-            queryset = queryset.filter(agent__id=agent)
-        if status:
-            queryset = queryset.filter(status=status)
-
-        return queryset
-    
-    def update(self, request, *args, **kwargs):
-        data = request.data
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        route = AgentRoute.objects.get(id=serializer.data['id'])
-
-        update_data = {
-            "agent_id": route.agent.id,
-            "customer_id": route.schedule.customer.id,
-            "schedule_id": route.schedule.id,
-            "latitude": route.latitude,
-            "longitude": route.longitude,
-        }
-
-        client_group = f"client_{route.schedule.customer.id}"
-
-        # Passa os argumentos posicionais para o método estático
-        LocationConsumer.send_location_update(
-            update_data,  # Primeiro argumento
-            "supervisors",  # Segundo argumento
-            client_group  # Terceiro argumento
-        )
-        
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 

@@ -17,7 +17,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
             return
         
         is_supervisor = await sync_to_async(
-            self.user.user_permissions.filter(codename="view_agentroute").exists
+           self.user.user_permissions.filter(codename="change_schedule").exists
         )()
 
         is_client = await sync_to_async(
@@ -53,14 +53,24 @@ class LocationConsumer(AsyncWebsocketConsumer):
         data = event["data"]
         await self.send(text_data=json.dumps(data))
 
-    @staticmethod
-    def send_location_update(update_data, *groups):
-        channel_layer = get_channel_layer()
-        for group in groups:
-            async_to_sync(channel_layer.group_send)(
-                group,
-                {
-                    "type": "location_update",
-                    "data": update_data
-                }
-            )
+    async def receive(self, text_data):
+        try:   
+            data = json.loads(text_data)
+            print(data)
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"error": "Invalid data format"}))
+            return
+        
+        #enviar para o cliente e para os supervisores
+        customer_id = data.get("custumer_id")
+
+        if customer_id:
+            await self.channel_layer.group_send(f"client_{customer_id}", {
+                "type": "location_update",
+                "data": data
+            })
+
+        await self.channel_layer.group_send("supervisors", {    
+            "type": "location_update",
+            "data": data
+        })
