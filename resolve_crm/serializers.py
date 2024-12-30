@@ -336,7 +336,9 @@ class ProjectSerializer(BaseSerializer):
         depth = 1
     
     def get_address(self, obj):
-        return AddressSerializer(obj.address).data
+        if obj.address:
+            return AddressSerializer(obj.address).data
+        return None
     
     def get_access_opinion(self, obj):
         return obj.access_opinion()    

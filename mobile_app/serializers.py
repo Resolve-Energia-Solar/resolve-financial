@@ -81,7 +81,9 @@ class MobileProjectSerializer(BaseSerializer):
         fields = ['id', 'start_date', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
 
     def get_address(self, obj):
-        return AddressSerializer(obj.address).data
+        if obj.address:
+            return AddressSerializer(obj.address).data
+        return None
 
     def get_deadlines(self, obj):
         # Slugs a serem removidos
