@@ -99,6 +99,9 @@ class Answer(models.Model):
         verbose_name_plural = "Respostas"
         ordering = ["-created_at"]
 
+    def __str__(self):
+        return f"{self.form.name} - {self.answerer.get_full_name()}"
+
 
 class Schedule(models.Model):
     status_choices = [
@@ -178,3 +181,17 @@ class FreeTimeAgent(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['agent', 'day_of_week'], name='unique_free_time_agent')
         ]
+
+
+class FormFile(models.Model):
+    answer = models.ForeignKey("Answer", verbose_name="Resposta", on_delete=models.CASCADE)
+    field_id = models.CharField("ID do Campo", max_length=40)
+    file = models.FileField("Arquivo", upload_to="form_files/%Y/%m/%d/")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Arquivo de Formulário"
+        verbose_name_plural = "Arquivos de Formulário"
+        ordering = ["-created_at"]
