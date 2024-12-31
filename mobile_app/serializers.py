@@ -45,7 +45,7 @@ class MobileSaleSerializer(BaseSerializer):
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'financial_url', 'projects_urls', 'contract_submission']
+        fields = ['id', 'contract_number', 'customer', 'seller', 'address', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'financial_url', 'projects_urls', 'contract_submission']
 
     def get_projects_urls(self, obj):
         request = self.context.get('request')
