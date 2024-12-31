@@ -34,7 +34,7 @@ class Category(models.Model):
 
 class Deadline(models.Model):
     name = models.CharField("Nome do Prazo", max_length=50, unique=True)
-    hours = models.TimeField("Horas", blank=True, null=True)
+    hours = models.CharField("Horas", max_length=10, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -110,6 +110,7 @@ class Schedule(models.Model):
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
+    schedule_end_date = models.DateField("Data de Fim")
     schedule_end_time = models.TimeField("Horário de Fim")
     products = models.ManyToManyField("logistics.Product", verbose_name="Produtos", blank=True)
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
