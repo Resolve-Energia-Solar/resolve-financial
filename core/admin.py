@@ -35,11 +35,19 @@ class ColumnAdmin(admin.ModelAdmin):
     list_display = ("name", "position", "board", "proposals_value")
 
 
+@admin.register(TaskTemplates)
+class TaskTemplatesAdmin(admin.ModelAdmin):
+    list_display = ("title", "board", "deadline", "auto_create", "column")
+    search_fields = ("title", "board__title", "column__name", "description")
+    list_filter = ("board", "auto_create", "column")
+    ordering = ("title",)
+    
+
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     list_display = ("title", "description", "owner", "start_date", "due_date", "is_completed_date")
     search_fields = ("title", "description", "owner", "board", "start_date", "due_date", "is_completed_date")
-    
+
 
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):

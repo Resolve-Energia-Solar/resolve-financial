@@ -78,7 +78,7 @@ class MobileProjectSerializer(BaseSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'start_date', 'product', 'project_number', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
+        fields = ['id', 'start_date', 'product', 'project_number', 'address', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
 
     def get_address(self, obj):
         if obj.address:
