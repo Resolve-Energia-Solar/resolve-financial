@@ -98,7 +98,7 @@ class TaskSerializer(BaseSerializer):
 
     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
-    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type', required=False)
+    depends_on_ids = PrimaryKeyRelatedField(queryset=Task.objects.all(), many=True, write_only=True, source='depends_on', required=False)
 
     class Meta:
         model = Task
