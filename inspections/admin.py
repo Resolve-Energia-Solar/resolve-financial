@@ -37,3 +37,7 @@ class BlockTimeAgentAdmin(admin.ModelAdmin):
 @admin.register(FreeTimeAgent)
 class FreeTimeAgentAdmin(admin.ModelAdmin):
     list_display = ("agent", 'start_time', 'end_time', 'day_of_week')
+
+@admin.register(FormFile)
+class FormFileAdmin(admin.ModelAdmin):
+    list_display = ("created_at", 'answer', 'field_id')

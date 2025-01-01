@@ -171,5 +171,21 @@ class FreeTimeAgentViewSet(BaseModelViewSet):
             queryset = queryset.filter(day_of_week=day_of_week)
 
         return queryset
+    
+class FormFileViewSet(BaseModelViewSet):
+    queryset = FormFile.objects.all()
+    serializer_class = FormFileSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        answer = self.request.query_params.get('answer')
+        field_id = self.request.query_params.get('field_id')
+
+        if answer:
+            queryset = queryset.filter(answer__id=answer)
+        if field_id:
+            queryset = queryset.filter(field_id=field_id)
+
+        return queryset
 
 

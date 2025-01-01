@@ -119,3 +119,8 @@ class FreeTimeAgentSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = FreeTimeAgent
         fields = '__all__'
+
+class FormFileSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = FormFile
+        fields = '__all__'

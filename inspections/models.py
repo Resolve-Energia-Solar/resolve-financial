@@ -34,7 +34,7 @@ class Category(models.Model):
 
 class Deadline(models.Model):
     name = models.CharField("Nome do Prazo", max_length=50, unique=True)
-    hours = models.TimeField("Horas", blank=True, null=True)
+    hours = models.CharField("Horas", max_length=10, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -99,6 +99,9 @@ class Answer(models.Model):
         verbose_name_plural = "Respostas"
         ordering = ["-created_at"]
 
+    def __str__(self):
+        return f"{self.form.name} - {self.answerer.get_full_name()}"
+
 
 class Schedule(models.Model):
     status_choices = [
@@ -110,6 +113,7 @@ class Schedule(models.Model):
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
+    schedule_end_date = models.DateField("Data de Fim")
     schedule_end_time = models.TimeField("Horário de Fim")
     products = models.ManyToManyField("logistics.Product", verbose_name="Produtos", blank=True)
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
@@ -177,3 +181,17 @@ class FreeTimeAgent(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['agent', 'day_of_week'], name='unique_free_time_agent')
         ]
+
+
+class FormFile(models.Model):
+    answer = models.ForeignKey("Answer", verbose_name="Resposta", on_delete=models.CASCADE)
+    field_id = models.CharField("ID do Campo", max_length=40)
+    file = models.FileField("Arquivo", upload_to="form_files/%Y/%m/%d/")
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Arquivo de Formulário"
+        verbose_name_plural = "Arquivos de Formulário"
+        ordering = ["-created_at"]
