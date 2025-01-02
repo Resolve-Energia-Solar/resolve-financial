@@ -41,3 +41,7 @@ class FreeTimeAgentAdmin(admin.ModelAdmin):
 @admin.register(FormFile)
 class FormFileAdmin(admin.ModelAdmin):
     list_display = ("created_at", 'answer', 'field_id')
+
+@admin.register(ServiceOpinion)
+class ServiceOpinionAdmin(admin.ModelAdmin):
+    list_display = ("name", "service")
