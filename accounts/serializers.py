@@ -51,7 +51,7 @@ class RelatedUserSerializer(BaseSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers']
+        fields = ['id', 'profile_picture', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers']
 
 
 class AddressSerializer(BaseSerializer):

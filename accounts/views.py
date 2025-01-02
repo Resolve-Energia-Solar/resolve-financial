@@ -3,7 +3,7 @@ from django.db.models import Case, When, Value, FloatField, IntegerField, Q
 from django.utils.dateparse import parse_time
 
 from geopy.distance import geodesic
-from inspections.models import Category, Schedule
+from field_services.models import Category, Schedule
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.models import *
 from accounts.serializers import *
 from api.views import BaseModelViewSet
-from inspections.models import FreeTimeAgent, BlockTimeAgent
+from field_services.models import FreeTimeAgent, BlockTimeAgent
 
 
 # Accounts views

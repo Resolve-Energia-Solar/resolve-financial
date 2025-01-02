@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from accounts.models import Address, Branch
 from core.tests import BaseAPITestCase
-from inspections.models import RoofType
+from field_services.models import RoofType
 from logistics.models import Materials, Product, ProductMaterials
 
 

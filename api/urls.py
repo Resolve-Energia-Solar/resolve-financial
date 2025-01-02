@@ -26,7 +26,7 @@ import accounts.urls
 import core.urls
 import engineering.urls
 import financial.urls
-import inspections.urls
+import field_services.urls
 import logistics.urls
 import resolve_crm.urls
 

@@ -151,7 +151,6 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        
 
     def create(self, validated_data):
         products_ids = validated_data.pop('products_ids', [])
@@ -232,8 +231,6 @@ class SaleSerializer(BaseSerializer):
                 project.save()
             except Exception as e:
                 raise ValidationError({"detail": f"Erro ao criar projeto para o produto {product.name}: {e}"})
-            
-            
 
     def validate_products_ids(self, products_ids):
         products = []

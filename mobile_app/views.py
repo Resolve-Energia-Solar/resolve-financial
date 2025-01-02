@@ -18,7 +18,7 @@ from core.models import Attachment
 from core.pagination import AttachmentPagination
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
-from inspections.models import Schedule
+from field_services.models import Schedule
 from mobile_app.serializers import *
 from resolve_crm.models import Project, ProjectStep, Sale
 

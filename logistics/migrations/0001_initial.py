@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0002_squad_boards_squad_task_templates'),
-        ('inspections', '0001_initial'),
+        ('field_services', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -88,7 +88,7 @@ class Migration(migrations.Migration):
                 ('history_type', models.CharField(choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')], max_length=1)),
                 ('branch', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='accounts.branch', verbose_name='Filial')),
                 ('history_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('roof_type', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='inspections.rooftype', verbose_name='Tipo de Telhado')),
+                ('roof_type', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='field_services.rooftype', verbose_name='Tipo de Telhado')),
                 ('inversors_model', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='logistics.materials', verbose_name='Modelo dos Inversores')),
                 ('modules_model', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='logistics.materials', verbose_name='Modelo dos Módulos')),
             ],
@@ -161,7 +161,7 @@ class Migration(migrations.Migration):
                 ('branch', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.branch', verbose_name='Filial')),
                 ('inversors_model', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='inversors_kit_set', to='logistics.materials', verbose_name='Modelo dos Inversores')),
                 ('modules_model', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='modules_kit_set', to='logistics.materials', verbose_name='Modelo dos Módulos')),
-                ('roof_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='inspections.rooftype', verbose_name='Tipo de Telhado')),
+                ('roof_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='field_services.rooftype', verbose_name='Tipo de Telhado')),
             ],
             options={
                 'verbose_name': 'Kit de Materiais de Energia Solar',
