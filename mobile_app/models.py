@@ -44,7 +44,7 @@ class Reel(models.Model):
     
 
 class Media(models.Model):
-    image = models.ImageField('Imagem', upload_to='media')
+    file = models.FileField('Arquivo', upload_to='media')
     title = models.CharField('Título', max_length=100)
     description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
