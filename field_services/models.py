@@ -70,7 +70,7 @@ class Service(models.Model):
 
 class Forms(models.Model):
     name = models.CharField("Nome do Formulário", max_length=50, unique=True)
-    campos = models.JSONField("Campos", blank=True, null=True)
+    fields = models.JSONField("Campos", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -185,7 +185,7 @@ class FreeTimeAgent(models.Model):
 
 class FormFile(models.Model):
     answer = models.ForeignKey("Answer", verbose_name="Resposta", on_delete=models.CASCADE)
-    field_id = models.CharField("ID do Campo", max_length=40)
+    field_id = models.CharField("ID do Campo", max_length=50)
     file = models.FileField("Arquivo", upload_to="form_files/%Y/%m/%d/")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
@@ -194,4 +194,16 @@ class FormFile(models.Model):
     class Meta:
         verbose_name = "Arquivo de Formulário"
         verbose_name_plural = "Arquivos de Formulário"
+        ordering = ["-created_at"]
+
+class ServiceOpinion(models.Model):
+    name = models.CharField("Nome", max_length=50, blank=True, null=True)
+    service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Parecer do Serviço"
+        verbose_name_plural = "Pareceres do Serviço"
         ordering = ["-created_at"]

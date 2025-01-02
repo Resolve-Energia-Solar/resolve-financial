@@ -187,5 +187,18 @@ class FormFileViewSet(BaseModelViewSet):
             queryset = queryset.filter(field_id=field_id)
 
         return queryset
+    
+class ServiceOpinionViewSet(BaseModelViewSet):
+    queryset = ServiceOpinion.objects.all()
+    serializer_class = ServiceOpiSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        service = self.request.query_params.get('service')
+
+        if service:
+            queryset = queryset.filter(service__id=service)
+
+        return queryset
 
 

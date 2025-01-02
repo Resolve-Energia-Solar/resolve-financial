@@ -124,3 +124,8 @@ class FormFileSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = FormFile
         fields = '__all__'
+
+class ServiceOpiSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = ServiceOpinion
+        fields = '__all__'
