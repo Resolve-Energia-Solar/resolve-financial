@@ -195,3 +195,9 @@ class MediaSerializer(BaseSerializer):
     class Meta:
         model = Media
         fields = '__all__'
+
+
+class ProductSerializer(BaseSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'

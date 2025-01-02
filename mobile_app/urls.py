@@ -39,6 +39,7 @@ mobile_app_router.register('apis', APIViewSet, basename='api')
 mobile_app_router.register('discounts', DiscountViewSet, basename='discount')
 mobile_app_router.register('reels', ReelViewSet, basename='reel')
 mobile_app_router.register('media', MediaViewSet, basename='media')
+mobile_app_router.register('products', ProductViewSet, basename='product')
 
 
 app_name = 'mobile_app'

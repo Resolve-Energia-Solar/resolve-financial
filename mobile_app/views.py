@@ -320,3 +320,8 @@ class ReelViewSet(BaseModelViewSet):
 class MediaViewSet(BaseModelViewSet):
     queryset = Media.objects.all()
     serializer_class = MediaSerializer
+
+
+class ProductViewSet(BaseModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
