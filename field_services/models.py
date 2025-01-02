@@ -70,7 +70,7 @@ class Service(models.Model):
 
 class Forms(models.Model):
     name = models.CharField("Nome do Formulário", max_length=50, unique=True)
-    campos = models.JSONField("Campos", blank=True, null=True)
+    fields = models.JSONField("Campos", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
