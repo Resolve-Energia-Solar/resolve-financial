@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('inspections', '0039_schedule_products'),
+        ('field_services', '0039_schedule_products'),
         ('resolve_crm', '0048_remove_historicalproject_id_plant_and_more'),
     ]
 
@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicalproject',
             name='inspection',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='inspections.schedule', verbose_name='Agendamento da Vistoria'),
+            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='field_services.schedule', verbose_name='Agendamento da Vistoria'),
         ),
         migrations.AddField(
             model_name='historicalsale',
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='project',
             name='inspection',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='project_inspections', to='inspections.schedule', verbose_name='Agendamento da Vistoria'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='project_field_services', to='field_services.schedule', verbose_name='Agendamento da Vistoria'),
         ),
         migrations.AddField(
             model_name='sale',

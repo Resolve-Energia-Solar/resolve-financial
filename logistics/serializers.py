@@ -1,10 +1,10 @@
 from accounts.models import Branch
-from inspections.models import RoofType
+from field_services.models import RoofType
 from logistics.models import *
 from api.serializers import BaseSerializer
 from resolve_crm.models import ComercialProposal, Sale
 from accounts.serializers import BranchSerializer
-from inspections.serializers import RoofTypeSerializer
+from field_services.serializers import RoofTypeSerializer
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework import serializers
 from django.db import transaction

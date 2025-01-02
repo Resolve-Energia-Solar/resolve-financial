@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0015_remove_historicaluser_branch_and_more'),
-        ('inspections', '0001_initial'),
+        ('field_services', '0001_initial'),
         ('logistics', '0005_historicalsolarenergykit_kwp_solarenergykit_kwp'),
         ('resolve_crm', '0018_alter_historicaltask_options_alter_task_options_and_more'),
     ]
@@ -293,7 +293,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='solarenergykit',
             name='roof_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='inspections.rooftype', verbose_name='Tipo de Telhado'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='field_services.rooftype', verbose_name='Tipo de Telhado'),
         ),
         migrations.CreateModel(
             name='MaterialAttributes',

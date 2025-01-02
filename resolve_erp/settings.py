@@ -24,6 +24,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 3156000
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    USE_X_FORWARDED_HOST = True
 
 
 INSTALLED_APPS = [
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     'resolve_crm.apps.ResolveCRMConfig',
     'contracts.apps.ContractsConfig',
     'logistics.apps.LogisticsConfig',
-    'inspections.apps.InspectionsConfig',
+    'field_services.apps.FieldServicesConfig',
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'mobile_app.apps.MobileAppConfig',
@@ -86,7 +87,7 @@ REST_FLEX_FIELDS = {
         'resolve_crm.serializers',
         'contracts.serializers',
         'logistics.serializers',
-        'inspections.serializers',
+        'field_services.serializers',
         'engineering.serializers',
         'financial.serializers',
         'mobile_app.serializers',

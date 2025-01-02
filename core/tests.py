@@ -216,6 +216,8 @@ class ColumnViewSetTestCase(BaseAPITestCase):
         self.assertEqual(response.data['id'], self.column.id)
 
 
+from django.contrib.contenttypes.models import ContentType
+
 class TaskTemplatesViewSetTestCase(BaseAPITestCase):
     def setUp(self):
         super().setUp()
@@ -240,13 +242,15 @@ class TaskTemplatesViewSetTestCase(BaseAPITestCase):
             position=1,
             board=self.board
         )
+        self.content_type = ContentType.objects.get_for_model(Board)
         self.template = TaskTemplates.objects.create(
             board=self.board,
             title="Template Teste",
             deadline=5,
             auto_create=False,
             column=self.column,
-            description="Descrição do Template"
+            description="Descrição do Template",
+            content_type=self.content_type
         )
         self.list_url = reverse('api:task-template-list')
         self.detail_url = reverse('api:task-template-detail', args=[self.template.id])

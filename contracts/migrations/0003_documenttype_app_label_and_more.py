@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='documenttype',
             name='app_label',
-            field=models.CharField(choices=[('accounts', 'Contas'), ('contracts', 'Contratos'), ('inspections', 'Inspeções'), ('logistics', 'Logística'), ('resolve_crm', 'CRM'), ('core', 'Core'), ('engineering', 'Engenharia'), ('financial', 'Financeiro')], default='accounts', max_length=100, verbose_name='App Label'),
+            field=models.CharField(choices=[('accounts', 'Contas'), ('contracts', 'Contratos'), ('field_services', 'Inspeções'), ('logistics', 'Logística'), ('resolve_crm', 'CRM'), ('core', 'Core'), ('engineering', 'Engenharia'), ('financial', 'Financeiro')], default='accounts', max_length=100, verbose_name='App Label'),
             preserve_default=False,
         ),
         migrations.AlterField(

@@ -10,7 +10,7 @@ class DocumentType(models.Model):
     APP_LABEL_CHOICES = (
         ('accounts', 'Contas'),
         ('contracts', 'Contratos'),
-        ('inspections', 'Inspeções'),
+        ('field_services', 'Inspeções'),
         ('logistics', 'Logística'),
         ('resolve_crm', 'CRM'),
         ('core', 'Core'),

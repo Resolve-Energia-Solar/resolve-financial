@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, verbose_name='Nome')),
-                ('app_label', models.CharField(choices=[('accounts', 'Contas'), ('contracts', 'Contratos'), ('inspections', 'Inspeções'), ('logistics', 'Logística'), ('resolve_crm', 'CRM'), ('core', 'Core'), ('engineering', 'Engenharia'), ('financial', 'Financeiro')], max_length=100, verbose_name='App Label')),
+                ('app_label', models.CharField(choices=[('accounts', 'Contas'), ('contracts', 'Contratos'), ('field_services', 'Inspeções'), ('logistics', 'Logística'), ('resolve_crm', 'CRM'), ('core', 'Core'), ('engineering', 'Engenharia'), ('financial', 'Financeiro')], max_length=100, verbose_name='App Label')),
                 ('reusable', models.BooleanField(default=False, verbose_name='Reutilizável')),
                 ('required', models.BooleanField(default=False, verbose_name='Obrigatório')),
             ],
