@@ -152,13 +152,17 @@ class Column(models.Model):
 
 
 class Task(models.Model):
+
+    task_template = models.ForeignKey('core.TaskTemplates', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True, verbose_name='Modelo de Tarefa')
     
     project = models.ForeignKey('resolve_crm.Project', related_name='tasks', on_delete=models.CASCADE, blank=True, null=True, verbose_name='Projeto')
     title = models.CharField(max_length=200)
     column = models.ForeignKey('core.Column', related_name='task', on_delete=models.CASCADE)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('accounts.User', related_name='tasks_owned', on_delete=models.CASCADE, verbose_name='Responsável', blank=True, null=True)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    
+    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
     start_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_completed_date = models.DateTimeField(editable=False, blank=True, null=True)
@@ -191,9 +195,11 @@ class TaskTemplates(models.Model):
     
     board = models.ForeignKey('core.Board', related_name='board_task_templates', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    component = models.CharField(max_length=200, blank=True, null=True)
     depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False)
     deadline = models.PositiveIntegerField()
-    automatico = models.BooleanField(default=False)
+    auto_create = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField()
     

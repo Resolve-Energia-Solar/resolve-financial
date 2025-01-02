@@ -2,7 +2,10 @@ import json
 from asgiref.sync import sync_to_async, async_to_sync
 from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 class LocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -14,7 +17,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
             return
         
         is_supervisor = await sync_to_async(
-            self.user.user_permissions.filter(codename="view_agentroute").exists
+           self.user.user_permissions.filter(codename="change_schedule").exists
         )()
 
         is_client = await sync_to_async(
@@ -35,29 +38,39 @@ class LocationConsumer(AsyncWebsocketConsumer):
         if self.group_name:
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             await self.accept()
-            print(f"Usuário {self.user.username} conectado ao grupo {self.group_name}")
+            logger.info(f"Usuário {self.user.username} conectado ao grupo {self.group_name}")
         else:
             await self.close()
 
     async def disconnect(self, close_code):
         if self.group_name:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
-            print(f"Usuário desconectado do grupo {self.group_name}")
+            logger.info(f"Usuário desconectado do grupo {self.group_name}")
         else:
-            print("Erro: Nenhum grupo definido para este WebSocket")
+            logger.error("Erro: Nenhum grupo definido para este WebSocket")
 
     async def location_update(self, event):
         data = event["data"]
         await self.send(text_data=json.dumps(data))
 
-    @staticmethod
-    def send_location_update(update_data, *groups):
-        channel_layer = get_channel_layer()
-        for group in groups:
-            async_to_sync(channel_layer.group_send)(
-                group,
-                {
-                    "type": "location_update",
-                    "data": update_data
-                }
-            )
+    async def receive(self, text_data):
+        try:   
+            data = json.loads(text_data)
+            print(data)
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"error": "Invalid data format"}))
+            return
+        
+        #enviar para o cliente e para os supervisores
+        customer_id = data.get("custumer_id")
+
+        if customer_id:
+            await self.channel_layer.group_send(f"client_{customer_id}", {
+                "type": "location_update",
+                "data": data
+            })
+
+        await self.channel_layer.group_send("supervisors", {    
+            "type": "location_update",
+            "data": data
+        })

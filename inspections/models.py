@@ -34,7 +34,7 @@ class Category(models.Model):
 
 class Deadline(models.Model):
     name = models.CharField("Nome do Prazo", max_length=50, unique=True)
-    hours = models.TimeField("Horas", blank=True, null=True)
+    hours = models.CharField("Horas", max_length=10, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -70,7 +70,7 @@ class Service(models.Model):
 
 class Forms(models.Model):
     name = models.CharField("Nome do Formulário", max_length=50, unique=True)
-    campos = models.JSONField("Campos", blank=True, null=True)
+    fields = models.JSONField("Campos", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -99,17 +99,21 @@ class Answer(models.Model):
         verbose_name_plural = "Respostas"
         ordering = ["-created_at"]
 
+    def __str__(self):
+        return f"{self.form.name} - {self.answerer.get_full_name()}"
+
 
 class Schedule(models.Model):
     status_choices = [
         ("Pendente", "Pendente"),
-        ("Concluído", "Concluído"),
+        ("Confirmado", "Concluído"),
         ("Cancelado", "Cancelado"),
     ]
 
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
+    schedule_end_date = models.DateField("Data de Fim")
     schedule_end_time = models.TimeField("Horário de Fim")
     products = models.ManyToManyField("logistics.Product", verbose_name="Produtos", blank=True)
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
@@ -178,25 +182,16 @@ class FreeTimeAgent(models.Model):
             models.UniqueConstraint(fields=['agent', 'day_of_week'], name='unique_free_time_agent')
         ]
 
-class AgentRoute(models.Model):
-    status_choices = [
-        ("Pendente", "Pendente"),
-        ("Concluído", "Concluído"),
-    ]
-    
-    agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
-    schedule = models.ForeignKey(Schedule, verbose_name="Agendamento", on_delete=models.CASCADE)
-    latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
-    longitude = models.CharField("Longitude", max_length=50, blank=True, null=True)
-    status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
+
+class FormFile(models.Model):
+    answer = models.ForeignKey("Answer", verbose_name="Resposta", on_delete=models.CASCADE)
+    field_id = models.CharField("ID do Campo", max_length=40)
+    file = models.FileField("Arquivo", upload_to="form_files/%Y/%m/%d/")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
     class Meta:
-        verbose_name = "Rota do Agente"
-        verbose_name_plural = "Rotas do Agente"
+        verbose_name = "Arquivo de Formulário"
+        verbose_name_plural = "Arquivos de Formulário"
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=['agent', 'schedule'], name='unique_agent_route')
-        ]

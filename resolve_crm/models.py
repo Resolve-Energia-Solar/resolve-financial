@@ -504,6 +504,11 @@ class Project(models.Model):
     registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+
+    @property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
     
     def is_released_to_engineering(self):
         """

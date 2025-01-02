@@ -120,15 +120,7 @@ class FreeTimeAgentSerializer(BaseSerializer):
         model = FreeTimeAgent
         fields = '__all__'
 
-class AgentRouteSerializer(BaseSerializer):
-    #leitura
-    agent = UserSerializer(read_only=True)
-    schedule = ScheduleSerializer(read_only=True)
-
-    #escrita
-    agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
-    schedule_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='schedule')
-
+class FormFileSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
-        model = AgentRoute
+        model = FormFile
         fields = '__all__'

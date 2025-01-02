@@ -38,6 +38,6 @@ class BlockTimeAgentAdmin(admin.ModelAdmin):
 class FreeTimeAgentAdmin(admin.ModelAdmin):
     list_display = ("agent", 'start_time', 'end_time', 'day_of_week')
 
-@admin.register(AgentRoute)
-class AgentRouteAdmin(admin.ModelAdmin):
-    list_display = ("agent", 'status')
+@admin.register(FormFile)
+class FormFileAdmin(admin.ModelAdmin):
+    list_display = ("created_at", 'answer', 'field_id')

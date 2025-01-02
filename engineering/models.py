@@ -96,7 +96,7 @@ class Units(models.Model):
     new_contract_number = models.BooleanField("Nova UC", default=False)
     #Trocar nome para meter_number
     account_number = models.CharField("Número do medidor", max_length=100, null=True, blank=True)
-    bill_file = models.FileField("Arquivo da Fatura", upload_to="units-biils/", null=True, blank=True)
+    bill_file = models.FileField("Arquivo da Fatura", upload_to="units-bills/", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
