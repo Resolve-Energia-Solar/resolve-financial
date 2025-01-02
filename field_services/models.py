@@ -185,7 +185,7 @@ class FreeTimeAgent(models.Model):
 
 class FormFile(models.Model):
     answer = models.ForeignKey("Answer", verbose_name="Resposta", on_delete=models.CASCADE)
-    field_id = models.CharField("ID do Campo", max_length=40)
+    field_id = models.CharField("ID do Campo", max_length=50)
     file = models.FileField("Arquivo", upload_to="form_files/%Y/%m/%d/")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
