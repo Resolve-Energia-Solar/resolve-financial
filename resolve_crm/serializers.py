@@ -281,6 +281,7 @@ class SaleSerializer(BaseSerializer):
 
 
 class ReadSaleSerializer(BaseSerializer):
+    customer = RelatedUserSerializer(read_only=True)
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
     
@@ -291,7 +292,6 @@ class ReadSaleSerializer(BaseSerializer):
         fields = '__all__'
         depth = 1
 
-    
     def get_can_generate_contract(self, obj):
         return obj.can_generate_contract
 
