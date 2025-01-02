@@ -203,7 +203,6 @@ class TaskTemplates(models.Model):
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     
-    
     def __str__(self):
         return self.title
     

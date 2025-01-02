@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.core.exceptions import FieldDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils.text import capfirst
@@ -7,6 +8,8 @@ from rest_framework.views import APIView
 
 from api.views import BaseModelViewSet
 from notifications.models import Notification
+
+from resolve_crm.models import Sale
 
 from .models import *
 from .pagination import AttachmentPagination
@@ -144,3 +147,78 @@ class HistoryView(APIView):
 class NotificationViewSet(BaseModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+
+
+class CreateTasksFromSaleView(APIView):
+    def post(self, request, *args, **kwargs):
+        sale_id = request.data.get('sale_id')
+        if not sale_id:
+            return Response({"error": "sale_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verifica se a venda existe
+        try:
+            sale = Sale.objects.get(pk=sale_id)
+        except Sale.DoesNotExist:
+            return Response({"error": "Sale not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Obtém o ContentType da venda
+        sale_content_type = ContentType.objects.get_for_model(Sale)
+        
+        # Filtra os templates relacionados à venda com auto_create=True
+        task_templates = TaskTemplates.objects.filter(content_type=sale_content_type, auto_create=True)
+        
+        # Dicionário para mapear templates e tarefas criadas
+        template_task_map = {}
+
+        # Criação de tarefas para os templates de venda
+        for template in task_templates:
+            task = Task.objects.create(
+                task_template=template,
+                title=template.title,
+                column=template.column,
+                description=template.description,
+                due_date=sale.created_at + timedelta(days=template.deadline),
+                owner=None,
+                object_id=sale.pk
+            )
+            template_task_map[template] = task
+
+        # Configuração de dependências entre tarefas
+        for template, task in template_task_map.items():
+            dependencies = template.depends_on.all()  # Templates dos quais este depende
+            for dependency_template in dependencies:
+                if dependency_template in template_task_map:
+                    dependent_task = template_task_map[dependency_template]
+                    task.depends_on.add(dependent_task)
+
+        # Lógica adicional para projetos relacionados
+        if sale.projects.exists():
+            project_content_type = ContentType.objects.get_for_model(sale.projects.model)
+            project_templates = TaskTemplates.objects.filter(content_type=project_content_type, auto_create=True)
+
+            for project in sale.projects.all():
+                for template in project_templates:
+                    task = Task.objects.create(
+                        task_template=template,
+                        project=project,
+                        title=template.title,
+                        column=template.column,
+                        description=template.description,
+                        due_date=project.created_at + timedelta(days=template.deadline),
+                        owner=None,
+                        object_id=project.pk
+                    )
+                    template_task_map[template] = task
+
+            # Configuração de dependências entre tarefas de projetos
+            for template, task in template_task_map.items():
+                dependencies = template.depends_on.all()  # Templates dos quais este depende
+                for dependency_template in dependencies:
+                    if dependency_template in template_task_map:
+                        dependent_task = template_task_map[dependency_template]
+                        task.depends_on.add(dependent_task)
+
+        return Response(
+            {"message": "Tasks created successfully", "tasks": [t.title for t in template_task_map.values()]},
+            status=status.HTTP_201_CREATED
+        )
