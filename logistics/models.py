@@ -66,7 +66,7 @@ class Product(models.Model):
     reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial", null=True, blank=True)
-    roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
+    roof_type = models.ForeignKey("field_services.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
     default = models.CharField("Padrão", max_length=1, choices=DEFAULT_CHOICES, default="N", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)

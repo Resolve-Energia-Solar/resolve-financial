@@ -11,7 +11,7 @@ from accounts.serializers import AddressSerializer, BranchSerializer, PhoneNumbe
 from api.serializers import BaseSerializer
 from engineering.models import RequestsEnergyCompany
 from engineering.serializers import UnitsSerializer
-from inspections.models import Schedule
+from field_services.models import Schedule
 from resolve_crm.models import Project, Sale
 
 
