@@ -126,6 +126,12 @@ class FormFileSerializer(BaseSerializer):
         fields = '__all__'
 
 class ServiceOpiSerializer(BaseSerializer):
+    # Para leitura: usar serializador completo
+    service = ServiceSerializer(read_only=True)
+    
+    # Para escrita: usar apenas ID
+    service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
+    
     class Meta(BaseSerializer.Meta):
         model = ServiceOpinion
         fields = '__all__'
