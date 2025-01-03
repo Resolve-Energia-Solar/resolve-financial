@@ -197,7 +197,7 @@ class TaskTemplates(models.Model):
     title = models.CharField(max_length=200)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     component = models.CharField(max_length=200, blank=True, null=True)
-    depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False, blank=True, null=True)
+    depends_on = models.ManyToManyField('core.TaskTemplates', related_name='dependents', symmetrical=False, blank=True)
     deadline = models.PositiveIntegerField()
     auto_create = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
