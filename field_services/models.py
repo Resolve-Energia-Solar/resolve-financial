@@ -208,3 +208,6 @@ class ServiceOpinion(models.Model):
         verbose_name = "Parecer do Serviço"
         verbose_name_plural = "Pareceres do Serviço"
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
