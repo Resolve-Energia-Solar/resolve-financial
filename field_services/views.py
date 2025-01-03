@@ -190,7 +190,7 @@ class FormFileViewSet(BaseModelViewSet):
     
 class ServiceOpinionViewSet(BaseModelViewSet):
     queryset = ServiceOpinion.objects.all()
-    serializer_class = ServiceOpiSerializer
+    serializer_class = ServiceOpinionSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

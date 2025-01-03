@@ -72,7 +72,7 @@ class ScheduleSerializer(BaseSerializer):
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False)
+    service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False, allow_null=True)
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
@@ -84,9 +84,8 @@ class ScheduleSerializer(BaseSerializer):
         return ProjectSerializer(obj.project).data
     
     def get_service_opinion(self, obj):
-        from field_services.serializers import ServiceOpiSerializer
-        return ServiceOpiSerializer(obj.service_opinion).data
-
+        from field_services.serializers import ServiceOpinionSerializer
+        return ServiceOpinionSerializer(obj.service_opinion).data if obj.service_opinion else None
 
 class AnswerSerializer(BaseSerializer):
 
@@ -131,7 +130,7 @@ class FormFileSerializer(BaseSerializer):
         model = FormFile
         fields = '__all__'
 
-class ServiceOpiSerializer(BaseSerializer):
+class ServiceOpinionSerializer(BaseSerializer):
     # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
     
