@@ -128,6 +128,7 @@ class Schedule(models.Model):
     execution_finished_at = models.DateTimeField("Execução Finalizada em", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
+    service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.CASCADE, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
