@@ -64,6 +64,7 @@ class ScheduleSerializer(BaseSerializer):
     address = AddressSerializer(read_only=True)
     project = SerializerMethodField()
     customer = UserSerializer(read_only=True)
+    service_opinion = SerializerMethodField()
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
@@ -71,6 +72,7 @@ class ScheduleSerializer(BaseSerializer):
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
+    service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False)
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
@@ -80,6 +82,10 @@ class ScheduleSerializer(BaseSerializer):
         # problema com o import circular
         from resolve_crm.serializers import ProjectSerializer
         return ProjectSerializer(obj.project).data
+    
+    def get_service_opinion(self, obj):
+        from field_services.serializers import ServiceOpiSerializer
+        return ServiceOpiSerializer(obj.service_opinion).data
 
 
 class AnswerSerializer(BaseSerializer):
@@ -126,6 +132,12 @@ class FormFileSerializer(BaseSerializer):
         fields = '__all__'
 
 class ServiceOpiSerializer(BaseSerializer):
+    # Para leitura: usar serializador completo
+    service = ServiceSerializer(read_only=True)
+    
+    # Para escrita: usar apenas ID
+    service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
+    
     class Meta(BaseSerializer.Meta):
         model = ServiceOpinion
         fields = '__all__'
