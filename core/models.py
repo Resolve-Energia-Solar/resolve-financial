@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
@@ -126,9 +127,17 @@ class Board(models.Model):
 
 class Column(models.Model):
     
+    COLUMN_TYPES = (
+        ('B', 'Backlog'),
+        ('T', 'To Do'),
+        ('I', 'In Progress'),
+        ('D', 'Done'),
+    )
+    
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição",blank=False, null=False)
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, default='B')
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
     color = models.CharField("Cor", max_length=7, blank=True, null=True)
@@ -175,6 +184,11 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
     
+    def move_to_to_do(self):
+        if not self.depends_on.filter(is_completed_date__isnull=True).exists():
+            self.column = Column.objects.get(board=self.column.board, column_type='T')
+            self.save()
+    
     def get_absolute_url(self):
         url = f'{self.content_type.app_label}:{self.content_type.model}_detail'
         return reverse_lazy(url, kwargs={'pk': self.object_id})
@@ -189,6 +203,16 @@ class Task(models.Model):
         verbose_name = 'Tarefa'
         verbose_name_plural = 'Tarefas'
         ordering = ['-due_date']
+    
+    def save(self, *args, **kwargs):
+        if self.depends_on.filter(pk=self.pk).exists():
+            raise ValueError('Task cannot depend on itself')
+        super(Task, self).save(*args, **kwargs)
+        if self.column.finished and not self.is_completed_date:
+            self.is_completed_date = now()
+            super(Task, self).save(*args, **kwargs)            
+            for dependent in self.dependents.all():
+                dependent.move_to_to_do()
 
 
 class TaskTemplates(models.Model):
@@ -202,6 +226,10 @@ class TaskTemplates(models.Model):
     auto_create = models.BooleanField(default=False)
     column = models.ForeignKey('core.Column', related_name='column_tasks', on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
+    
+    def save(self, *args, **kwargs):
+        if self.depends_on.filter(pk=self.pk).exists():
+            raise ValueError('Task cannot depend on itself')
     
     def __str__(self):
         return self.title
@@ -223,7 +251,7 @@ class Webhook(models.Model):
     url = models.URLField()
     secret = models.CharField(max_length=200, blank=True, null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    event = models.CharField(max_length=1, choices=EVENT_CHOICES)  # Usa choices e define o tamanho correto
+    event = models.CharField(max_length=1, choices=EVENT_CHOICES)
     is_active = models.BooleanField(default=True)
     
     # Logs
