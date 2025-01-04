@@ -13,12 +13,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='column',
             name='column_type',
-            field=models.CharField(choices=[('B', 'Backlog'), ('T', 'To Do'), ('I', 'In Progress'), ('D', 'Done')], default='B', max_length=1, verbose_name='Tipo'),
+            field=models.CharField(choices=[('B', 'Backlog'), ('T', 'To Do'), ('I', 'In Progress'), ('D', 'Done')], null=True, blank=True, max_length=1, verbose_name='Tipo'),
         ),
         migrations.AddField(
             model_name='historicalcolumn',
             name='column_type',
-            field=models.CharField(choices=[('B', 'Backlog'), ('T', 'To Do'), ('I', 'In Progress'), ('D', 'Done')], default='B', max_length=1, verbose_name='Tipo'),
+            field=models.CharField(choices=[('B', 'Backlog'), ('T', 'To Do'), ('I', 'In Progress'), ('D', 'Done')], null=True, blank=True, max_length=1, verbose_name='Tipo'),
         ),
         migrations.AlterField(
             model_name='tasktemplates',
