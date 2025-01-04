@@ -137,7 +137,7 @@ class Column(models.Model):
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição", blank=False, null=False)
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
-    column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=False, null=False)
+    column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=True, null=True)
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
     color = models.CharField("Cor", max_length=7, blank=True, null=True)
