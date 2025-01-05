@@ -106,7 +106,7 @@ class Answer(models.Model):
 class Schedule(models.Model):
     status_choices = [
         ("Pendente", "Pendente"),
-        ("Confirmado", "Concluído"),
+        ("Confirmado", "Confirmado"),
         ("Cancelado", "Cancelado"),
     ]
 
