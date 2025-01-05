@@ -65,6 +65,7 @@ class ScheduleSerializer(BaseSerializer):
     project = SerializerMethodField()
     customer = UserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
+    final_service_opinion = SerializerMethodField()
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
@@ -73,6 +74,7 @@ class ScheduleSerializer(BaseSerializer):
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
     service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False, allow_null=True)
+    final_service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='final_service_opinion', required=False, allow_null=True)
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
@@ -86,6 +88,10 @@ class ScheduleSerializer(BaseSerializer):
     def get_service_opinion(self, obj):
         from field_services.serializers import ServiceOpinionSerializer
         return ServiceOpinionSerializer(obj.service_opinion).data if obj.service_opinion else None
+    
+    def get_final_service_opinion(self, obj):
+        from field_services.serializers import ServiceOpinionSerializer
+        return ServiceOpinionSerializer(obj.final_service_opinion).data if obj.final_service_opinion else None
 
 class AnswerSerializer(BaseSerializer):
 
