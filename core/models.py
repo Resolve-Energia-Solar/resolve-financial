@@ -228,6 +228,7 @@ class TaskTemplates(models.Model):
     description = models.TextField(blank=True, null=True)
     
     def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
         if self.depends_on.filter(pk=self.pk).exists():
             raise ValueError('Task cannot depend on itself')
     
