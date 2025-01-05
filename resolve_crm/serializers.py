@@ -251,22 +251,22 @@ class SaleSerializer(BaseSerializer):
             total_value += sp.value * sp.amount
         return total_value
 
-    def calculate_total_installment_value(self, sale, products):
+    def calculate_total_installment_value(self, sale, products): 
         from decimal import Decimal
-        reference_value = sum(p.reference_value for p in products)
-        difference_value = sale.total_value - reference_value
+
+        reference_value = sum(Decimal(p.reference_value) for p in products)
+        difference_value = Decimal(sale.total_value) - reference_value
+
+        transfer_percentage = sale.transfer_percentage
+        if transfer_percentage is None:
+            transfer_percentage = sale.branch.transfer_percentage or 0
+        transfer_percentage = Decimal(transfer_percentage)
 
         if difference_value <= 0:
-            if sale.transfer_percentage:
-                total_value = reference_value * (1 - sale.transfer_percentage / 100) - difference_value
-            else:
-                total_value = reference_value * (1 - sale.branch.transfer_percentage / 100) + difference_value
+            total_value = reference_value * (Decimal("1") - transfer_percentage / Decimal("100")) - difference_value
         else:
             margin_7 = difference_value * Decimal("0.07")
-            if sale.transfer_percentage:
-                total_value = (reference_value * (1 - sale.transfer_percentage / 100)) + difference_value - margin_7
-            else:
-                total_value = (reference_value * (1 - sale.branch.transfer_percentage / 100)) + difference_value - margin_7
+            total_value = (reference_value * (Decimal("1") - transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
         return total_value
     
