@@ -152,7 +152,7 @@ class Column(models.Model):
         return sum([proposal.value for lead in self.leads.all() for proposal in lead.proposals.all()])
     
     def __str__(self):
-        return self.name
+        return f'{self.name} | {self.board}'
 
     class Meta:
         verbose_name = 'Coluna'
