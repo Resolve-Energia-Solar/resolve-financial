@@ -65,7 +65,7 @@ class ScheduleViewSet(BaseModelViewSet):
         schedule_agent = self.request.query_params.get('schedule_agent')
 
         if project:
-            queryset = queryset.filter(project__id=project)
+            queryset = queryset.filter(project__id=project).filter(status='Confirmado')
         if service:
             queryset = queryset.filter(service__id=service)
         if schedule_agent:
