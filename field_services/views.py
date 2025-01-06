@@ -60,7 +60,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        project = self.request.query_params.get('project')
+        project = self.request.query_params.get('project_confirmed')
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
 
