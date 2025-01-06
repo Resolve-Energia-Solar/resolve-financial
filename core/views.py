@@ -10,7 +10,7 @@ from django.apps import apps
 
 from api.views import BaseModelViewSet
 from notifications.models import Notification
-from resolve_crm.models import Sale
+from resolve_crm.models import Project, Sale
 
 from .models import *
 from .pagination import AttachmentPagination
@@ -173,62 +173,44 @@ class CreateTasksFromSaleView(APIView):
         except Sale.DoesNotExist:
             return Response({"error": "Sale not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Obtém o ContentType da venda
-        sale_content_type = ContentType.objects.get_for_model(Sale)
+        # Filtra os templates com auto_create=True
+        task_templates = TaskTemplates.objects.filter(auto_create=True)
         
-        # Filtra os templates relacionados à venda com auto_create=True
-        task_templates = TaskTemplates.objects.filter(content_type=sale_content_type, auto_create=True)
-        
-        # Dicionário para mapear templates e tarefas criadas
+        # Dicionário para mapear templates e tarefas criadas (usando template e projeto como chave)
         template_task_map = {}
 
-        # Criação de tarefas para os templates de venda
-        for template in task_templates:
-            task = Task.objects.create(
-                task_template=template,
-                title=template.title,
-                column=template.column,
-                description=template.description,
-                due_date=sale.created_at + timedelta(days=template.deadline),
-                owner=None,
-                object_id=sale.pk
-            )
-            template_task_map[template] = task
+        # Criação de tarefas para os projetos associados à venda
+        for project in sale.projects.all():
+            for template in task_templates:
+                # Define o object_id com base no tipo de template
+                object_id = None
+                if template.content_type.model == 'project':
+                    object_id = project.pk
+                elif template.content_type.model == 'sale':
+                    object_id = sale.pk
+
+                # Cria a tarefa com o project e/ou object_id apropriados
+                task = Task.objects.create(
+                    task_template=template,
+                    title=template.title,
+                    column=template.column,
+                    description=template.description,
+                    due_date=project.created_at + timedelta(days=template.deadline),
+                    owner=None,
+                    object_id=object_id,
+                    project=project
+                )
+                # Adiciona ao mapeamento usando o template e o projeto
+                template_task_map[(template, project)] = task
 
         # Configuração de dependências entre tarefas
-        for template, task in template_task_map.items():
-            dependencies = template.depends_on.all()  # Templates dos quais este depende
+        for (template, project), task in template_task_map.items():
+            dependencies = template.depends_on.all()
             for dependency_template in dependencies:
-                if dependency_template in template_task_map:
-                    dependent_task = template_task_map[dependency_template]
+                # Busca a tarefa dependente usando o mesmo projeto
+                dependent_task = template_task_map.get((dependency_template, project))
+                if dependent_task:
                     task.depends_on.add(dependent_task)
-
-        # Lógica adicional para projetos relacionados
-        if sale.projects.exists():
-            project_content_type = ContentType.objects.get_for_model(sale.projects.model)
-            project_templates = TaskTemplates.objects.filter(content_type=project_content_type, auto_create=True)
-
-            for project in sale.projects.all():
-                for template in project_templates:
-                    task = Task.objects.create(
-                        task_template=template,
-                        project=project,
-                        title=template.title,
-                        column=template.column,
-                        description=template.description,
-                        due_date=project.created_at + timedelta(days=template.deadline),
-                        owner=None,
-                        object_id=project.pk
-                    )
-                    template_task_map[template] = task
-
-            # Configuração de dependências entre tarefas de projetos
-            for template, task in template_task_map.items():
-                dependencies = template.depends_on.all()  # Templates dos quais este depende
-                for dependency_template in dependencies:
-                    if dependency_template in template_task_map:
-                        dependent_task = template_task_map[dependency_template]
-                        task.depends_on.add(dependent_task)
 
         return Response(
             {"message": "Tasks created successfully", "tasks": [t.title for t in template_task_map.values()]},
