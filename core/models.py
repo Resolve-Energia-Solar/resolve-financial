@@ -205,6 +205,7 @@ class Task(models.Model):
         ordering = ['-due_date']
     
     def save(self, *args, **kwargs):
+        super(Task, self).save(*args, **kwargs)
         if self.depends_on.filter(pk=self.pk).exists():
             raise ValueError('Task cannot depend on itself')
         super(Task, self).save(*args, **kwargs)
