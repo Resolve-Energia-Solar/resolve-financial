@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import *
 from django.contrib.contenttypes.models import ContentType
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
 
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
@@ -41,6 +43,29 @@ class UserAdmin(UserAdmin):
             'fields': ('email', 'addresses',)
         }),
     )
+    actions = ["send_invitation"]
+
+    def send_invitation(self, request, queryset): 
+        for user in queryset:
+            context = {
+                'user': user,
+                'invitation_link': 'https://example.com/invite'  # Mocked invitation link
+            }
+            subject = 'Você foi convidado para o sistema'
+            html_content = render_to_string('invitation-email.html', context)
+            
+            # Configura o e-mail como HTML
+            email = EmailMessage(
+                subject=subject,
+                body=html_content,
+                to=[user.email]
+            )
+            email.content_subtype = "html"
+            email.send()
+        
+        self.message_user(request, "Convite(s) enviado(s) com sucesso.")
+
+    send_invitation.short_description = "Enviar convite"
 
 
 @admin.register(Employee)
