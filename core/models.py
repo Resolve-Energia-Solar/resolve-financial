@@ -205,13 +205,21 @@ class Task(models.Model):
         ordering = ['-due_date']
     
     def save(self, *args, **kwargs):
+        # Salva a instância pela primeira vez
         super(Task, self).save(*args, **kwargs)
+
+        # Verifica se a tarefa está configurada para depender dela mesma
         if self.depends_on.filter(pk=self.pk).exists():
             raise ValueError('Task cannot depend on itself')
-        super(Task, self).save(*args, **kwargs)
+
+        # Verifica se a tarefa foi movida para a coluna "finished"
         if self.column.finished and not self.is_completed_date:
             self.is_completed_date = now()
-            super(Task, self).save(*args, **kwargs)            
+
+            # Atualiza apenas o campo `is_completed_date`
+            super(Task, self).save(update_fields=['is_completed_date'])
+
+            # Move dependentes para "To Do"
             for dependent in self.dependents.all():
                 dependent.move_to_to_do()
 
