@@ -3,6 +3,7 @@ from django.contrib.auth.models import Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from api.serializers import BaseSerializer
 from accounts.models import *
+from rest_framework import serializers
 
 
 class DepartmentSerializer(BaseSerializer):
@@ -12,7 +13,7 @@ class DepartmentSerializer(BaseSerializer):
     class Meta:
         model = Department
         exclude = ['is_deleted', 'owner']
-        
+
         
 class RoleSerializer(BaseSerializer):
     class Meta:
@@ -276,3 +277,9 @@ class SquadSerializer(BaseSerializer):
     def get_boards(self, obj):
         from core.serializers import BoardSerializer
         return BoardSerializer(obj.boards, many=True).data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    uid = serializers.IntegerField()
+    new_password = serializers.CharField(min_length=8)

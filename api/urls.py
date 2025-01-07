@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework.routers import DefaultRouter, APIRootView
 from rest_framework import permissions
 
-from accounts.views import UserLoginView, UserTokenRefreshView
+from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView
 from core.views import CreateTasksFromSaleView, HistoryView
 from resolve_crm.views import GeneratePreSaleView, GenerateSalesProjectsView
@@ -55,4 +55,6 @@ urlpatterns = [
     re_path(r'^redoc/$', api_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('send-contract/', ContratoView.as_view(), name='send_contract'),  
     path('gantt/', GanttView.as_view(), name='gantt'),
+    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
+    path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
 ]

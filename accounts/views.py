@@ -1,26 +1,40 @@
-from django.utils import timezone
+import os
+from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.mail import send_mail
 from django.db.models import Case, When, Value, FloatField, IntegerField, Q
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.dateparse import parse_time
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from geopy.distance import geodesic
-from field_services.models import Category, Schedule
+
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+
 from accounts.models import *
 from accounts.serializers import *
 from api.views import BaseModelViewSet
-from field_services.models import FreeTimeAgent, BlockTimeAgent
-
+from accounts.serializers import PasswordResetConfirmSerializer
+from field_services.models import BlockTimeAgent, Category, FreeTimeAgent, Schedule
 
 # Accounts views
 
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
     http_method_names = ['post']
+
+    serializer_class = PasswordResetConfirmSerializer
 
     def post(self, request):
         email = request.data.get('email')
@@ -302,3 +316,84 @@ class CustomFieldViewSet(BaseModelViewSet):
         if user_id:
             queryset = queryset.filter(user__id=user_id)
         return queryset
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PasswordResetRequestView(GenericAPIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        if not email:
+            raise ValidationError({"email": "Email é obrigatório."})
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Não informar se o e-mail não existe
+            return Response({"detail": "E-mail de redefinição de senha enviado com sucesso."}, status=status.HTTP_200_OK)
+        
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+
+        reset_url = os.getenv("FRONTEND_RESET_PASSWORD_URL", "")
+        
+        if not reset_url:
+            return Response({"detail": "URL de redefinição de senha não configurada."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        reset_url_with_token = f"{reset_url}?token={token}&uid={user.pk}"
+
+        # Envie o e-mail usando um template HTML
+        context = {
+            'invitation_link': reset_url_with_token,
+            'user': user,
+        }
+        subject = 'Reset de senha'
+        html_content = render_to_string('invitation-email.html', context)
+        
+        # Configura o e-mail como HTML
+        email = EmailMessage(
+            subject=subject,
+            body=html_content,
+            to=[user.email]
+        )
+        email.content_subtype = "html"
+        send_mail(
+            subject=subject,
+            message='',
+            from_email=None,
+            recipient_list=[user.email],
+            html_message=html_content,
+        )
+        
+        return Response({"detail": "E-mail de redefinição de senha enviado com sucesso."}, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PasswordResetConfirmView(GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token = serializer.validated_data["token"]
+        uid = serializer.validated_data["uid"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            user = User.objects.get(pk=uid)
+        except User.DoesNotExist:
+            return Response({"detail": "Usuário inválido."}, status=status.HTTP_404_NOT_FOUND)
+
+        token_generator = PasswordResetTokenGenerator()
+
+        if not token_generator.check_token(user, token):
+            return Response({"detail": "Token inválido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"detail": "Senha alterada com sucesso."}, status=status.HTTP_200_OK)
