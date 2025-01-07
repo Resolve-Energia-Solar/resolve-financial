@@ -84,6 +84,15 @@
 
         <!-- Content -->
         <div class="content">
+            {% if user.last_login %}
+            <h1>Bem-vindo(a) de volta ao nosso sistema, {{ user.complete_name }}!</h1>
+            <p>
+                Uma pena que você tenha esquecido a sua senha, mas não se preocupe! Você pode redefini-la clicando no botão abaixo.
+            </p>
+            <p>
+                Clique no botão abaixo para redefinir sua senha e acessar o sistema:
+            </p>
+            {% else %}
             <h1>Bem-vindo(a) ao nosso sistema, {{ user.complete_name }}!</h1>
             <p>
                 Estamos muito felizes em tê-lo(a) conosco. Nosso sistema foi desenvolvido para ajudá-lo(a) a alcançar
@@ -92,6 +101,7 @@
             <p>
                 Clique no botão abaixo para criar sua conta e começar:
             </p>
+            {% endif %}
             <center><a href="{{ invitation_link }}" class="cta-button">Acessar o Sistema</a></center>
         </div>
 
