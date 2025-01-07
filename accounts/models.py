@@ -185,7 +185,7 @@ class Branch(models.Model):
 
 class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
-    email = models.EmailField("E-mail", unique=True)
+    email = models.EmailField("E-mail", blank=True, null=True)
     owner = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='department_owner')
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
