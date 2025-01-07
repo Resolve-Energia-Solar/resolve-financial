@@ -9,6 +9,7 @@ from rest_framework import permissions
 from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView
 from core.views import CreateTasksFromSaleView, HistoryView
+from engineering.views import ProjectMaterialsCSVUploadAPIView
 from resolve_crm.views import GeneratePreSaleView, GenerateSalesProjectsView
 from .views import ContratoView, GanttView
 
@@ -49,7 +50,8 @@ urlpatterns = [
     path('history/', HistoryView.as_view(), name='history'),
     path('fatura/', InformacaoFaturaAPIView.as_view(), name='invoice_information'),
     path('generate-projects/', GenerateSalesProjectsView.as_view(), name='generate_projects'),
-    path('create-tasks/', CreateTasksFromSaleView.as_view(), name='create_tasks'), 
+    path('create-tasks/', CreateTasksFromSaleView.as_view(), name='create_tasks'),
+    path('projects/insert-materials/', ProjectMaterialsCSVUploadAPIView.as_view(), name='insert_materials'),
     path('', include(router.urls)),
     re_path(r'^swagger/$', api_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', api_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
