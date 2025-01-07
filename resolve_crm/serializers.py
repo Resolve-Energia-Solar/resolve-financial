@@ -254,7 +254,7 @@ class SaleSerializer(BaseSerializer):
     def calculate_total_installment_value(self, sale, products): 
         from decimal import Decimal
 
-        reference_value = sum(Decimal(p.reference_value) for p in products)
+        reference_value = sum(Decimal(p.reference_value or 0) for p in products)
         difference_value = Decimal(sale.total_value) - reference_value
 
         transfer_percentage = sale.transfer_percentage
