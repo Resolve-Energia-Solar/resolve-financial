@@ -54,4 +54,6 @@ urlpatterns = [
     path("monitoring/", MonitoringListView.as_view(), name="monitoring-list"),
     path("monitoring/<int:plant_id>/", MonitoringDetailView.as_view(), name="monitoring-detail"),
     path("attach-document/", AttachDocumentView.as_view(), name="attach-document"),
+    
+    path("send-nps/", SendNPSView.as_view(), name="send-nps"),
 ]

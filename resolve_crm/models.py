@@ -595,6 +595,7 @@ class ProjectStep(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_steps")
     step = models.ForeignKey(Step, on_delete=models.CASCADE, related_name="project_steps")
     deadline = models.DateField("Prazo", null=True, blank=True)
+    nps = models.PositiveSmallIntegerField("NPS", null=True, blank=True)
 
     class Meta:
         verbose_name = "Etapa do Projeto"
