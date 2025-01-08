@@ -1,8 +1,7 @@
 import csv
 import openpyxl
 from api.views import BaseModelViewSet
-from logistics.models import ProductMaterials
-from logistics.serializers import ProductMaterialsSerializer
+from logistics.serializers import ProjectMaterialsSerializer
 from .models import *
 from .serializers import *
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -83,7 +82,7 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
                 }
 
                 # Validate and save using the serializer
-                serializer = ProductMaterialsSerializer(data=data)
+                serializer = ProjectMaterialsSerializer(data=data)
                 if serializer.is_valid():
                     serializer.save()
                 else:
