@@ -11,10 +11,10 @@ class Financier(models.Model):
     name = models.CharField("Nome", max_length=200, null=False, blank=False)
     cnpj = models.CharField("CNPJ", max_length=20, null=True, blank=True)
     address = models.ForeignKey(
-        "accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço"
+        "accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True
     )
-    phone = models.CharField("Telefone", max_length=20)
-    email = models.EmailField("E-mail")
+    phone = models.CharField("Telefone", max_length=20, null=True, blank=True)
+    email = models.EmailField("E-mail", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()

@@ -53,9 +53,9 @@ class ProductViewSetTestCase(BaseAPITestCase):
             product_value=1000,
             reference_value=900,
             cost_value=700,
-            branch=self.branch,
             roof_type=self.roof_type
         )
+        self.product.branch.add(self.branch)
         self.product_material = ProductMaterials.objects.create(product=self.product, material=self.material, amount=10)
         self.list_url = reverse('api:product-list')
         self.detail_url = reverse('api:product-detail', args=[self.product.id])
@@ -76,7 +76,7 @@ class ProductViewSetTestCase(BaseAPITestCase):
             "product_value": 1500,
             "reference_value": 1200,
             "cost_value": 1000,
-            "branch_id": self.branch.id,
+            "branch_ids": [self.branch.id],
             "roof_type_id": self.roof_type.id,
             "materials_ids": [{"material_id": self.material.id, "amount": 5}]
         }
@@ -91,7 +91,7 @@ class ProductViewSetTestCase(BaseAPITestCase):
             "product_value": 2000,
             "reference_value": 1800,
             "cost_value": 1500,
-            "branch_id": self.branch.id,
+            "branch_ids": [self.branch.id],
             "roof_type_id": self.roof_type.id,
             "materials_ids": [{"material_id": self.material.id, "amount": 20}]
         }

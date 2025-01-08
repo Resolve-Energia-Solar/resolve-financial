@@ -22,8 +22,8 @@ class ProductMaterialsInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'branch', 'roof_type', 'default', 'is_deleted', 'created_at')
-    search_fields = ('inversors_model__description', 'modules_model__description', 'branch__name', 'roof_type__name')
+    list_display = ('id','name', 'roof_type', 'default', 'is_deleted', 'created_at')
+    search_fields = ('inversors_model__description', 'modules_model__description', 'roof_type__name')
     list_filter = ('default', 'is_deleted', 'created_at')
     inlines = [ProductMaterialsInline]
 
