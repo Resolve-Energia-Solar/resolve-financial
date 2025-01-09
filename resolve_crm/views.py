@@ -1,17 +1,20 @@
 import logging
-from rest_framework.response import Response
+import re
+import tempfile
+
+from django.db import transaction
+from django.template.loader import render_to_string
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from weasyprint import HTML
+
 from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
-from rest_framework.views import APIView
-from django.db import transaction
-
-from logistics.models import ProductMaterials
-from .serializers import *
+from logistics.models import Product, ProductMaterials, SaleProduct
 from .models import *
-from logistics.models import Product, SaleProduct
-import re
+from .serializers import *
 
 
 logger = logging.getLogger(__name__)
@@ -428,3 +431,51 @@ class GeneratePreSaleView(APIView):
 class ContractTemplateViewSet(BaseModelViewSet):
     queryset = ContractTemplate.objects.all()
     serializer_class = ContractTemplateSerializer
+
+
+import re
+from django.core.files.base import ContentFile
+
+class GenerateContract(APIView):
+    def post(self, request):
+        sale_id = request.data.get('sale_id')
+        contract_html = request.data.get('contract_html')
+
+        if not sale_id:
+            return Response({'message': 'sale_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not contract_html:
+            return Response({'message': 'contract_html é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Gerando o PDF a partir do HTML
+        try:
+            rendered_html = render_to_string('contract_base.html', {'content': contract_html})
+            pdf = HTML(string=rendered_html).write_pdf()
+        except Exception as e:
+            return Response({'message': f'Erro ao gerar o PDF: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Salvando o arquivo PDF no backend de armazenamento padrão
+        try:
+            # Sanitizar o nome do arquivo
+            file_name = f"contract_sale_{sale_id}.pdf"
+            sanitized_file_name = re.sub(r'[^a-zA-Z0-9_.]', '_', file_name)
+            
+            # Criar o arquivo no Google Cloud Storage
+            attachment = Attachment.objects.create(
+                object_id=sale.id,
+                content_type_id=ContentType.objects.get_for_model(Sale).id,
+                status="Em Análise",
+            )
+            
+            # Salvar o arquivo diretamente no campo `file` do modelo
+            attachment.file.save(sanitized_file_name, ContentFile(pdf))
+
+        except Exception as e:
+            return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response({'message': 'Contrato gerado com sucesso.', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)

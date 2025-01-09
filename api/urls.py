@@ -10,7 +10,7 @@ from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, U
 from contracts.views import InformacaoFaturaAPIView
 from core.views import CreateTasksFromSaleView, HistoryView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
-from resolve_crm.views import GeneratePreSaleView, GenerateSalesProjectsView
+from resolve_crm.views import GenerateContract, GeneratePreSaleView, GenerateSalesProjectsView
 from .views import ContratoView, GanttView
 
 
@@ -59,4 +59,5 @@ urlpatterns = [
     path('gantt/', GanttView.as_view(), name='gantt'),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path('generate-contract/', GenerateContract.as_view(), name='generate_contract'),
 ]
