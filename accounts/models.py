@@ -159,7 +159,7 @@ class Address(models.Model):
 
 class Branch(models.Model):
     name = models.CharField("Nome", max_length=255)
-    address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
+    address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE, blank=True, null=True)
     owners = models.ManyToManyField("accounts.User", verbose_name="Proprietários", related_name='branch_owners', blank=True)
     picture = models.ImageField("Foto", upload_to="branches", blank=True, null=True)
     transfer_percentage = models.DecimalField(
