@@ -424,3 +424,7 @@ class GeneratePreSaleView(APIView):
 
         return product_value
 
+
+class ContractTemplateViewSet(BaseModelViewSet):
+    queryset = ContractTemplate.objects.all()
+    serializer_class = ContractTemplateSerializer

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from financial.admin import PaymentInline
-from .models import ComercialProposal, ContractSubmission, Lead, ProjectStep, Step, Task, Project, Sale, Origin
+from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, ProjectStep, Step, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
@@ -66,3 +66,11 @@ class ProjectStepAdmin(admin.ModelAdmin):
     search_fields = ("project_number", "step__name")
     list_filter = ("deadline",)
     ordering = ("-deadline",)
+
+
+@admin.register(ContractTemplate)
+class ContractTemplateAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active", "person_type")
+    list_filter = ("is_active", "person_type")
+    search_fields = ("name","template")
+    ordering = ("name",)

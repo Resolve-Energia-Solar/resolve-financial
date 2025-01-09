@@ -9,3 +9,4 @@ router.register('comercial-proposals', ComercialProposalViewSet, basename='comer
 router.register('sales', SaleViewSet, basename='sale')
 router.register('projects', ProjectViewSet, basename='project')
 router.register('contract-submissions', ContractSubmissionViewSet, basename='contract-submission')
+router.register('contract-template', ContractTemplateViewSet, basename='contract-template')

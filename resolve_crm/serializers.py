@@ -459,3 +459,16 @@ class ContractSubmissionSerializer(BaseSerializer):
     class Meta:
         model = ContractSubmission
         fields = '__all__'
+
+
+class ContractTemplateSerializer(BaseSerializer):
+    
+    # Para leitura: usar serializadores completos
+    branches = BranchSerializer(many=True, read_only=True)
+    
+    # Para escrita: usar apenas IDs
+    branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
+    
+    class Meta:
+        model = ContractTemplate
+        fields = '__all__'
