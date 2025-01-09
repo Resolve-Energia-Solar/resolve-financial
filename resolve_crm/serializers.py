@@ -263,7 +263,7 @@ class SaleSerializer(BaseSerializer):
         transfer_percentage = Decimal(transfer_percentage)
 
         if difference_value <= 0:
-            total_value = reference_value * (Decimal("1") - transfer_percentage / Decimal("100")) - difference_value
+            total_value = reference_value * (transfer_percentage / Decimal("100")) - difference_value
         else:
             margin_7 = difference_value * Decimal("0.07")
             total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
