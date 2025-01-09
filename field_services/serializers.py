@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from field_services.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
-from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer, UserSerializer
+from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.models import Project
 
 
@@ -15,7 +15,7 @@ class RoofTypeSerializer(BaseSerializer):
 class CategorySerializer(BaseSerializer):
 
     # Para leitura: usar serializador completo
-    members = UserSerializer(read_only=True, many=True)
+    members = RelatedUserSerializer(read_only=True, many=True)
 
     # Para escrita: usar apenas ID
     members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='members', many=True)
@@ -112,7 +112,7 @@ class AnswerSerializer(BaseSerializer):
 
 class BlockTimeAgentSerializer(BaseSerializer):
     #leitura
-    agent = UserSerializer(read_only=True)
+    agent = RelatedUserSerializer(read_only=True)
 
     #escrita
     agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
@@ -123,7 +123,7 @@ class BlockTimeAgentSerializer(BaseSerializer):
 
 class FreeTimeAgentSerializer(BaseSerializer):
     #leitura
-    agent = UserSerializer(read_only=True)
+    agent = RelatedUserSerializer(read_only=True)
 
     #escrita
     agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
