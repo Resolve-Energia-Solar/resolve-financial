@@ -232,12 +232,12 @@ class FranchiseInstallment(models.Model):
         reference_value = sum(valid_values)
 
         if self.difference_value <= 0:
-            return reference_value * (
-                (1 - self.sale.transfer_percentage / 100) - self.margin_7
-            )
+            return round( 
+                reference_value * ((self.sale.transfer_percentage / 100) - self.margin_7), 3
+                )
 
         return round(
-            (reference_value * (1 - self.sale.transfer_percentage / 100))
+            (reference_value * (self.sale.transfer_percentage / 100))
             - self.margin_7
             + self.difference_value,
             3,
