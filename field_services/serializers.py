@@ -1,7 +1,7 @@
 from accounts.models import Address, User
 from field_services.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
-from accounts.serializers import AddressSerializer, BaseSerializer, UserSerializer
+from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer, UserSerializer
 from resolve_crm.models import Project
 
 
@@ -60,15 +60,16 @@ class ScheduleSerializer(BaseSerializer):
     
     # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
-    schedule_agent = UserSerializer(read_only=True)
+    schedule_agent = RelatedUserSerializer(read_only=True)
     address = AddressSerializer(read_only=True)
     project = SerializerMethodField()
-    customer = UserSerializer(read_only=True)
+    customer = RelatedUserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     
     # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
+    parent_schedules_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='parent_schedules', many=True, required=False)
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False)
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')

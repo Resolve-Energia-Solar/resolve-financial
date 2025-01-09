@@ -119,6 +119,7 @@ class Schedule(models.Model):
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
     customer = models.ForeignKey("accounts.User", verbose_name="Cliente", on_delete=models.CASCADE, related_name='costumer')
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.CASCADE, related_name='field_services', blank=True, null=True)
+    parent_schedules = models.ManyToManyField("self", verbose_name="Agendamentos Pai", blank=True, symmetrical=False, related_name='child_schedules')
     address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
     latitude = models.CharField("Latitude", max_length=50, blank=True, null=True)
     longitude = models.CharField("Longitude", max_length=50, blank=True, null=True)
