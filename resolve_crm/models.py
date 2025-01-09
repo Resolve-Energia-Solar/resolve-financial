@@ -613,3 +613,19 @@ class ProjectStep(models.Model):
             self.deadline = self.project.start_date + timedelta(days=self.step.default_duration_days)
 
         super().save(*args, **kwargs)
+
+
+class ContractTemplate(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    content = models.TextField("Conteúdo")
+    is_active = models.BooleanField("Ativo", default=True)
+    branches = models.ManyToManyField(Branch, verbose_name="Unidades", related_name="contract_templates")
+    person_type = models.CharField("Tipo de Pessoa", max_length=1, choices=[("F", "Física"), ("J", "Jurídica")], default="F")
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Modelo de Contrato"
+        verbose_name_plural = "Modelos de Contrato"
+        ordering = ['name']
