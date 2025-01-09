@@ -170,7 +170,7 @@ class Branch(models.Model):
         null=True,
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
-    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=4, blank=True, null=True, )
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True, )
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 
