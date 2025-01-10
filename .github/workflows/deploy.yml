@@ -52,6 +52,7 @@ jobs:
           echo "EMAIL_USE_TLS=${{ vars.EMAIL_USE_TLS }}" >> .env
           echo "EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ vars.EMAIL_HOST_PASSWORD }}" >> .env
+          echo "DEFAULT_FROM_EMAIL=${{ vars.DEFAULT_FROM_EMAIL }}" >> .env
           echo "GS_BUCKET_NAME=${{ vars.GS_BUCKET_NAME }}" >> .env
           echo "GS_LOCATION=${{ vars.GS_LOCATION }}" >> .env
           echo "GOOGLE_APPLICATION_CREDENTIALS=google_application_credentials.json" >> .env
