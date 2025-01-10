@@ -7,16 +7,15 @@ RUN apk update && apk add --no-cache \
 
 # Instalar dependências para WeasyPrint
 RUN apk add --no-cache \
-    cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev
-
-SHELL ["/bin/zsh", "-c"]
-
-# Configurar shell zsh
-RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
+    fontconfig font-noto font-noto-cjk font-noto-emoji ttf-dejavu ttf-freefont
 
 # Configurar timezone
 RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime
 RUN echo "America/Belem" > /etc/timezone
+
+# Configurar FontConfig
+RUN fc-cache -f -v
 
 # Definir diretório de trabalho
 WORKDIR /app
