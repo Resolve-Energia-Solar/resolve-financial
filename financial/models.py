@@ -207,6 +207,13 @@ class FranchiseInstallment(models.Model):
         valid_values = [value for value in reference_values if value is not None]
         return self.sale.total_value - sum(valid_values)
 
+    
+    def reference_value(self):
+        return sum(
+            self.sale.sale_products.all().values_list("reference_value", flat=True)
+        )
+
+
     @property
     def margin_7(self):
         """
