@@ -71,7 +71,7 @@ class UserAdmin(UserAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = ("user", "role", "department", "branch")
-    search_fields = ("user", "role", "department", "branch")
+    search_fields = ("user__username", "user__complete_name", "role__name", "department__name", "branch__name")
     list_filter = ("role", "department", "branch")
     list_per_page = 10
     list_max_show_all = 100

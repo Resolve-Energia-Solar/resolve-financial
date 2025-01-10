@@ -118,7 +118,7 @@ class PaymentSerializer(BaseSerializer):
 
 class FranchiseInstallmentSerializer(BaseSerializer):
     # Campos para leitura
-    sale = SaleSerializer(read_only=True)
+    # sale = SaleSerializer(read_only=True)
     difference_value = SerializerMethodField()
     total_value = SerializerMethodField()
     transfer_percentage = SerializerMethodField()
