@@ -84,7 +84,7 @@ class User(AbstractUser):
     history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
-        if not self.first_name and not self.last_name and self.complete_name:
+        if not self.first_ncomplete_nameame and not self.complete_name and self.complete_name:
             name_parts = self.complete_name.split(" ")
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
