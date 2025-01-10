@@ -68,6 +68,7 @@ class Product(models.Model):
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     branch = models.ManyToManyField("accounts.Branch", verbose_name="Filial")
     roof_type = models.ForeignKey("field_services.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
+    params = models.DecimalField("Parâmetros", max_digits=6, decimal_places=2, null=True, blank=True)
     default = models.CharField("Padrão", max_length=1, choices=DEFAULT_CHOICES, default="N", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
