@@ -39,6 +39,7 @@ mobile_app_router.register('apis', APIViewSet, basename='api')
 mobile_app_router.register('discounts', DiscountViewSet, basename='discount')
 mobile_app_router.register('reels', ReelViewSet, basename='reel')
 mobile_app_router.register('media', MediaViewSet, basename='media')
+mobile_app_router.register('products', ProductViewSet, basename='product')
 
 
 app_name = 'mobile_app'
@@ -53,4 +54,6 @@ urlpatterns = [
     path("monitoring/", MonitoringListView.as_view(), name="monitoring-list"),
     path("monitoring/<int:plant_id>/", MonitoringDetailView.as_view(), name="monitoring-detail"),
     path("attach-document/", AttachDocumentView.as_view(), name="attach-document"),
+    
+    path("send-nps/", SendNPSView.as_view(), name="send-nps"),
 ]

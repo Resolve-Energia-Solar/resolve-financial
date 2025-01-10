@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import API, Discount, Reel, Media
+from .models import API, Discount, Product, Reel, Media
 
 
 @admin.register(API)
@@ -24,3 +24,9 @@ class ReelAdmin(admin.ModelAdmin):
 class MediaAdmin(admin.ModelAdmin):
     list_display = ('title', 'description', 'link')
     search_fields = ('title',)
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'price')
+    search_fields = ('name',)

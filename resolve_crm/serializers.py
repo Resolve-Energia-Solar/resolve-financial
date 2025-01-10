@@ -151,7 +151,6 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        
 
     def create(self, validated_data):
         products_ids = validated_data.pop('products_ids', [])
@@ -161,16 +160,16 @@ class SaleSerializer(BaseSerializer):
         self._handle_products(sale, products_ids, commercial_proposal_id)
         return sale
 
-    def update(self, instance, validated_data):
-        products_ids = validated_data.pop('products_ids', None)
-        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-        sale = super().update(instance, validated_data)
+    # def update(self, instance, validated_data):
+    #     products_ids = validated_data.pop('products_ids', None)
+    #     commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+    #     sale = super().update(instance, validated_data)
 
-        if products_ids is not None or commercial_proposal_id is not None:
-            SaleProduct.objects.filter(sale=sale).delete()
-            self._handle_products(sale, products_ids or [], commercial_proposal_id)
+    #     if products_ids is not None or commercial_proposal_id is not None:
+    #         SaleProduct.objects.filter(sale=sale).delete()
+    #         self._handle_products(sale, products_ids or [], commercial_proposal_id)
 
-        return sale
+    #     return sale
 
     def _handle_products(self, sale, products_ids, commercial_proposal_id):
         products_list = []
@@ -232,8 +231,6 @@ class SaleSerializer(BaseSerializer):
                 project.save()
             except Exception as e:
                 raise ValidationError({"detail": f"Erro ao criar projeto para o produto {product.name}: {e}"})
-            
-            
 
     def validate_products_ids(self, products_ids):
         products = []
@@ -254,22 +251,22 @@ class SaleSerializer(BaseSerializer):
             total_value += sp.value * sp.amount
         return total_value
 
-    def calculate_total_installment_value(self, sale, products):
+    def calculate_total_installment_value(self, sale, products): 
         from decimal import Decimal
-        reference_value = sum(p.reference_value for p in products)
-        difference_value = sale.total_value - reference_value
+
+        reference_value = sum(Decimal(p.reference_value or 0) for p in products)
+        difference_value = Decimal(sale.total_value) - reference_value
+
+        transfer_percentage = sale.transfer_percentage
+        if transfer_percentage is None:
+            transfer_percentage = sale.branch.transfer_percentage or 0
+        transfer_percentage = Decimal(transfer_percentage)
 
         if difference_value <= 0:
-            if sale.transfer_percentage:
-                total_value = reference_value * (1 - sale.transfer_percentage / 100) - difference_value
-            else:
-                total_value = reference_value * (1 - sale.branch.transfer_percentage / 100) + difference_value
+            total_value = reference_value * (transfer_percentage / Decimal("100")) - difference_value
         else:
             margin_7 = difference_value * Decimal("0.07")
-            if sale.transfer_percentage:
-                total_value = (reference_value * (1 - sale.transfer_percentage / 100)) + difference_value - margin_7
-            else:
-                total_value = (reference_value * (1 - sale.branch.transfer_percentage / 100)) + difference_value - margin_7
+            total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
         return total_value
     
@@ -284,6 +281,7 @@ class SaleSerializer(BaseSerializer):
 
 
 class ReadSaleSerializer(BaseSerializer):
+    customer = RelatedUserSerializer(read_only=True)
     can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
     
@@ -294,7 +292,6 @@ class ReadSaleSerializer(BaseSerializer):
         fields = '__all__'
         depth = 1
 
-    
     def get_can_generate_contract(self, obj):
         return obj.can_generate_contract
 
@@ -322,7 +319,7 @@ class ProjectSerializer(BaseSerializer):
     homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
     units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
-    
+    designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
     # Lista de materiais com detalhes
     materials_data = ListField(
         child= DictField(),
@@ -461,4 +458,17 @@ class ContractSubmissionSerializer(BaseSerializer):
 
     class Meta:
         model = ContractSubmission
+        fields = '__all__'
+
+
+class ContractTemplateSerializer(BaseSerializer):
+    
+    # Para leitura: usar serializadores completos
+    branches = BranchSerializer(many=True, read_only=True)
+    
+    # Para escrita: usar apenas IDs
+    branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
+    
+    class Meta:
+        model = ContractTemplate
         fields = '__all__'

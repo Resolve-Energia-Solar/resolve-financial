@@ -6,10 +6,11 @@ from drf_yasg.views import get_schema_view
 from rest_framework.routers import DefaultRouter, APIRootView
 from rest_framework import permissions
 
-from accounts.views import UserLoginView, UserTokenRefreshView
+from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView
-from core.views import HistoryView
-from resolve_crm.views import GeneratePreSaleView, GenerateSalesProjectsView
+from core.views import CreateTasksFromSaleView, HistoryView
+from engineering.views import ProjectMaterialsCSVUploadAPIView
+from resolve_crm.views import GenerateContract, GeneratePreSaleView, GenerateSalesProjectsView
 from .views import ContratoView, GanttView
 
 
@@ -26,7 +27,7 @@ import accounts.urls
 import core.urls
 import engineering.urls
 import financial.urls
-import inspections.urls
+import field_services.urls
 import logistics.urls
 import resolve_crm.urls
 
@@ -48,10 +49,15 @@ urlpatterns = [
     path('generate-pre-sale/', GeneratePreSaleView.as_view(), name='generate_pre_sale'),
     path('history/', HistoryView.as_view(), name='history'),
     path('fatura/', InformacaoFaturaAPIView.as_view(), name='invoice_information'),
-    path('generate-projects/', GenerateSalesProjectsView.as_view(), name='generate_projects'), 
+    path('generate-projects/', GenerateSalesProjectsView.as_view(), name='generate_projects'),
+    path('create-tasks/', CreateTasksFromSaleView.as_view(), name='create_tasks'),
+    path('projects/insert-materials/', ProjectMaterialsCSVUploadAPIView.as_view(), name='insert_materials'),
     path('', include(router.urls)),
     re_path(r'^swagger/$', api_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', api_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('send-contract/', ContratoView.as_view(), name='send_contract'),  
     path('gantt/', GanttView.as_view(), name='gantt'),
+    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
+    path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path('generate-contract/', GenerateContract.as_view(), name='generate_contract'),
 ]

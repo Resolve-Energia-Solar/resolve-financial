@@ -24,6 +24,7 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 3156000
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    USE_X_FORWARDED_HOST = True
 
 
 INSTALLED_APPS = [
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     'resolve_crm.apps.ResolveCRMConfig',
     'contracts.apps.ContractsConfig',
     'logistics.apps.LogisticsConfig',
-    'inspections.apps.InspectionsConfig',
+    'field_services.apps.FieldServicesConfig',
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'mobile_app.apps.MobileAppConfig',
@@ -68,6 +69,7 @@ DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -86,7 +88,7 @@ REST_FLEX_FIELDS = {
         'resolve_crm.serializers',
         'contracts.serializers',
         'logistics.serializers',
-        'inspections.serializers',
+        'field_services.serializers',
         'engineering.serializers',
         'financial.serializers',
         'mobile_app.serializers',
@@ -128,7 +130,7 @@ LOGIN_REDIRECT_URL = '/'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates/'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -177,8 +179,8 @@ STORAGES = {
         "OPTIONS": {}
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    }
 }
 
 
@@ -258,12 +260,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Configuração de envio de e-mail
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS')
+EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 
 # Admins

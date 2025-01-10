@@ -23,6 +23,7 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     if not created and instance.old_total_value is not None:
         if instance.old_total_value != instance.total_value:
             # Recalcula o valor total esperado para cada parcela
+            transfer_percentage = instance.transfer_percentage if instance.transfer_percentage else instance.branch.transfer_percentage
             franchise_installments = instance.franchise_installments.all()
             if franchise_installments.exists():
                 reference_value = sum(
@@ -30,9 +31,9 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
                 )
                 difference_value = instance.total_value - reference_value
                 margin_7 = max(difference_value * Decimal("0.07"), Decimal("0.00"))
-                transfer_percentage = instance.transfer_percentage / 100
+                transfer_percentage =  transfer_percentage / 100
                 total_value = round(
-                    (reference_value * (1 - transfer_percentage)) - margin_7 + difference_value,
+                    (reference_value * (transfer_percentage)) - margin_7 + difference_value,
                     3
                 )
 

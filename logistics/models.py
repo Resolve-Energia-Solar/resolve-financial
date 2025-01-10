@@ -21,6 +21,7 @@ class MaterialAttributes(models.Model):
 class Materials(models.Model):
     name = models.CharField("Nome", max_length=100, null=False, blank=False)
     price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=False, blank=False)
+    is_extra = models.BooleanField("Extra", default=False, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
     
@@ -65,8 +66,8 @@ class Product(models.Model):
     product_value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=False, blank=False)
     reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    branch = models.ForeignKey("accounts.Branch", on_delete=models.CASCADE, verbose_name="Filial", null=True, blank=True)
-    roof_type = models.ForeignKey("inspections.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
+    branch = models.ManyToManyField("accounts.Branch", verbose_name="Filial")
+    roof_type = models.ForeignKey("field_services.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
     default = models.CharField("Padrão", max_length=1, choices=DEFAULT_CHOICES, default="N", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)

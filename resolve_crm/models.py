@@ -491,7 +491,7 @@ class Project(models.Model):
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
     
-    inspection = models.ForeignKey('inspections.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_inspections")
+    inspection = models.ForeignKey('field_services.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_field_services")
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
@@ -595,6 +595,7 @@ class ProjectStep(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_steps")
     step = models.ForeignKey(Step, on_delete=models.CASCADE, related_name="project_steps")
     deadline = models.DateField("Prazo", null=True, blank=True)
+    nps = models.PositiveSmallIntegerField("NPS", null=True, blank=True)
 
     class Meta:
         verbose_name = "Etapa do Projeto"
@@ -612,3 +613,19 @@ class ProjectStep(models.Model):
             self.deadline = self.project.start_date + timedelta(days=self.step.default_duration_days)
 
         super().save(*args, **kwargs)
+
+
+class ContractTemplate(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    content = models.TextField("Conteúdo")
+    is_active = models.BooleanField("Ativo", default=True)
+    branches = models.ManyToManyField(Branch, verbose_name="Unidades", related_name="contract_templates")
+    person_type = models.CharField("Tipo de Pessoa", max_length=1, choices=[("F", "Física"), ("J", "Jurídica")], default="F")
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Modelo de Contrato"
+        verbose_name_plural = "Modelos de Contrato"
+        ordering = ['name']

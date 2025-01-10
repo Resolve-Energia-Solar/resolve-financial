@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/app
-    command: sh -c "python3 manage.py collectstatic --noinput && python3 manage.py migrate && gunicorn -c ./configs/configs.py resolve_erp.wsgi"
+    command: >
+      sh -c "python3 manage.py collectstatic --noinput &&
+             python3 manage.py migrate &&
+             gunicorn -c ./configs/configs.py --workers 5 resolve_erp.wsgi"
     ports:
       - "8060:8060"

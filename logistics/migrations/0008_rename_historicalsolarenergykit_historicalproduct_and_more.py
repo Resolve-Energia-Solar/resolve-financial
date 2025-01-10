@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0015_remove_historicaluser_branch_and_more'),
-        ('inspections', '0001_initial'),
+        ('field_services', '0001_initial'),
         ('logistics', '0007_remove_materialattributes_description_and_more'),
         ('resolve_crm', '0024_alter_project_registered_circuit_breaker2'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

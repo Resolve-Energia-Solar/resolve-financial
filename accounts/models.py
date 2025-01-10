@@ -84,7 +84,7 @@ class User(AbstractUser):
     history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
-        if not self.first_name and not self.last_name and self.complete_name:
+        if not self.first_ncomplete_nameame and not self.complete_name and self.complete_name:
             name_parts = self.complete_name.split(" ")
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
@@ -159,7 +159,7 @@ class Address(models.Model):
 
 class Branch(models.Model):
     name = models.CharField("Nome", max_length=255)
-    address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE)
+    address = models.ForeignKey("accounts.Address", verbose_name="Endereço", on_delete=models.CASCADE, blank=True, null=True)
     owners = models.ManyToManyField("accounts.User", verbose_name="Proprietários", related_name='branch_owners', blank=True)
     picture = models.ImageField("Foto", upload_to="branches", blank=True, null=True)
     transfer_percentage = models.DecimalField(
@@ -170,7 +170,7 @@ class Branch(models.Model):
         null=True,
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
-    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=4, blank=True, null=True, )
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True, )
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 
@@ -185,7 +185,7 @@ class Branch(models.Model):
 
 class Department(models.Model):
     name = models.CharField("Nome", max_length=255)
-    email = models.EmailField("E-mail", unique=True)
+    email = models.EmailField("E-mail", blank=True, null=True)
     owner = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name='department_owner')
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)

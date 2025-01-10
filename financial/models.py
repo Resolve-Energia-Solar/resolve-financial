@@ -11,10 +11,10 @@ class Financier(models.Model):
     name = models.CharField("Nome", max_length=200, null=False, blank=False)
     cnpj = models.CharField("CNPJ", max_length=20, null=True, blank=True)
     address = models.ForeignKey(
-        "accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço"
+        "accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True
     )
-    phone = models.CharField("Telefone", max_length=20)
-    email = models.EmailField("E-mail")
+    phone = models.CharField("Telefone", max_length=20, null=True, blank=True)
+    email = models.EmailField("E-mail", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
@@ -207,6 +207,13 @@ class FranchiseInstallment(models.Model):
         valid_values = [value for value in reference_values if value is not None]
         return self.sale.total_value - sum(valid_values)
 
+    
+    def reference_value(self):
+        return sum(
+            self.sale.sale_products.all().values_list("reference_value", flat=True)
+        )
+
+
     @property
     def margin_7(self):
         """
@@ -218,26 +225,28 @@ class FranchiseInstallment(models.Model):
 
     @property
     def total_value(self):
-        if not self.sale or not self.sale.transfer_percentage:
+        if not self.sale or not self.sale.transfer_percentage and not self.sale.branch.transfer_percentage:
             return Decimal("0.00")
 
         reference_values = self.sale.sale_products.all().values_list(
             "reference_value", flat=True
         )
         valid_values = [value for value in reference_values if value is not None]
-
+        
+        transfer_percentage = self.sale.transfer_percentage if self.sale.transfer_percentage else self.sale.branch.transfer_percentage
+        
         if not valid_values:
             return Decimal("0.00")
 
         reference_value = sum(valid_values)
 
         if self.difference_value <= 0:
-            return reference_value * (
-                (1 - self.sale.transfer_percentage / 100) - self.margin_7
-            )
+            return round( 
+                reference_value * ((transfer_percentage / 100) - self.margin_7), 3
+                )
 
         return round(
-            (reference_value * (1 - self.sale.transfer_percentage / 100))
+            (reference_value * (transfer_percentage / 100))
             - self.margin_7
             + self.difference_value,
             3,

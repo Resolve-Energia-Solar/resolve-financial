@@ -144,6 +144,8 @@ class BoardSerializer(BaseSerializer):
 class TaskTemplatesSerializer(BaseSerializer):
   
     depends_on = SerializerMethodField()
+    
+    depends_on_ids = PrimaryKeyRelatedField(queryset=TaskTemplates.objects.all(), many=True, write_only=True, source='depends_on', required=False)
       
     class Meta:
         model = TaskTemplates

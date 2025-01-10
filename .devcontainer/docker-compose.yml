@@ -10,12 +10,6 @@ services:
       - ~/.ssh:/root/.ssh:cached
       - ~/.vscode-server:/root/.vscode-server:cached
 
-    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
-    # cap_add:
-    #   - SYS_PTRACE
-    # security_opt:
-    #   - seccomp:unconfined
-
     command: /bin/zsh -c "while sleep 1000; do :; done"
     ports:
       - "8060:8060"

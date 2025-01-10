@@ -44,7 +44,7 @@ class Reel(models.Model):
     
 
 class Media(models.Model):
-    image = models.ImageField('Imagem', upload_to='media')
+    file = models.FileField('Arquivo', upload_to='media')
     title = models.CharField('Título', max_length=100)
     description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
@@ -56,3 +56,18 @@ class Media(models.Model):
         verbose_name = 'Mídia'
         verbose_name_plural = 'Mídias'
         ordering = ['title']
+
+
+class Product(models.Model):
+    name = models.CharField('Nome', max_length=100)
+    description = models.TextField('Descrição', blank=True, null=True)
+    price = models.DecimalField('Preço', max_digits=8, decimal_places=2)
+    image = models.ImageField('Imagem', upload_to='products')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Produto'
+        verbose_name_plural = 'Produtos'
+        ordering = ['name']

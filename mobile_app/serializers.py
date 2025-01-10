@@ -7,11 +7,11 @@ from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
 
 from accounts.models import User
-from accounts.serializers import AddressSerializer, PhoneNumberSerializer, RelatedUserSerializer
+from accounts.serializers import AddressSerializer, BranchSerializer, PhoneNumberSerializer, RelatedUserSerializer
 from api.serializers import BaseSerializer
 from engineering.models import RequestsEnergyCompany
 from engineering.serializers import UnitsSerializer
-from inspections.models import Schedule
+from field_services.models import Schedule
 from resolve_crm.models import Project, Sale
 
 
@@ -41,6 +41,7 @@ class MobileSaleSerializer(BaseSerializer):
     sales_manager = RelatedUserSerializer(read_only=True)
     projects_urls = SerializerMethodField(read_only=True)
     contract_submission = SerializerMethodField(read_only=True)
+    branch = BranchSerializer(read_only=True)
     financial_url = SerializerMethodField(read_only=True)
     
     class Meta:
@@ -193,4 +194,10 @@ class ReelSerializer(BaseSerializer):
 class MediaSerializer(BaseSerializer):
     class Meta:
         model = Media
+        fields = '__all__'
+
+
+class ProductSerializer(BaseSerializer):
+    class Meta:
+        model = Product
         fields = '__all__'
