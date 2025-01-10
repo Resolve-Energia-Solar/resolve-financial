@@ -227,8 +227,6 @@ class FranchiseInstallment(models.Model):
         valid_values = [value for value in reference_values if value is not None]
         
         transfer_percentage = self.sale.transfer_percentage if self.sale.transfer_percentage else self.sale.branch.transfer_percentage
-
-        print(valid_values)
         
         if not valid_values:
             return Decimal("0.00")
