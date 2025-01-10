@@ -62,7 +62,7 @@ class User(AbstractUser):
     ]
     
     # Personal Info
-    complete_name = models.CharField("Nome Completo", max_length=255)
+    complete_name = models.CharField("Nome Completo", max_length=255, blank=False, null=False)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
     gender = models.CharField("Gênero", max_length=1, choices=(("M", "Masculino"), ("F", "Feminino"), ("O", "Outro")), default="M")
     first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
@@ -84,10 +84,12 @@ class User(AbstractUser):
     history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
-        if not self.first_ncomplete_nameame and not self.complete_name and self.complete_name:
-            name_parts = self.complete_name.split(" ")
+        name_parts = self.complete_name.split(" ")
+        if not self.first_name or not self.last_name and self.complete_name:
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
+        if not self.username:
+            self.username = name_parts[0].lower() + '.' + name_parts[-1].lower()
         super().save(*args, **kwargs)
 
     def __str__(self):
