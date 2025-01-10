@@ -68,6 +68,8 @@ class User(AbstractUser):
     first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
     second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
+    
+    username = models.CharField("Nome de Usuário", max_length=150, unique=True, blank=True, null=True)
 
     # Contact
     email = models.EmailField("E-mail", unique=True)
