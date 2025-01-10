@@ -160,16 +160,14 @@ class SaleSerializer(BaseSerializer):
         self._handle_products(sale, products_ids, commercial_proposal_id)
         return sale
 
-    # def update(self, instance, validated_data):
-    #     products_ids = validated_data.pop('products_ids', None)
-    #     commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-    #     sale = super().update(instance, validated_data)
+    def update(self, instance, validated_data):
+        # Atualizar os campos restantes
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
 
-    #     if products_ids is not None or commercial_proposal_id is not None:
-    #         SaleProduct.objects.filter(sale=sale).delete()
-    #         self._handle_products(sale, products_ids or [], commercial_proposal_id)
+        instance.save()
 
-    #     return sale
+        return instance
 
     def _handle_products(self, sale, products_ids, commercial_proposal_id):
         products_list = []
