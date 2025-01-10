@@ -1,4 +1,4 @@
-name: CI/CD Pipeline for RESOLVE-ERP-API Update Back
+name: CI/CD Pipeline for RESOLVE-ERP-API Update Back env
 
 on:
   push:
