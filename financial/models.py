@@ -175,6 +175,15 @@ class FranchiseInstallment(models.Model):
     history = HistoricalRecords()
     
     
+    def payments_methods(self):
+        return [
+            {
+                "payment_type": payment.payment_type, "financier": payment.financier.name if payment.financier else None
+            }
+            for payment in self.sale.payments.all()
+        ]
+    
+    
     @property
     def is_payment_released(self):
         return all(project.is_released_to_engineering() for project in self.sale.projects.all())

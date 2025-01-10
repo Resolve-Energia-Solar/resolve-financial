@@ -126,6 +126,7 @@ class FranchiseInstallmentSerializer(BaseSerializer):
     margin_7 = SerializerMethodField()
     is_payment_released = SerializerMethodField()
     reference_value = SerializerMethodField()
+    payments_methods = SerializerMethodField()
     
     # Campos para escrita
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
@@ -135,9 +136,12 @@ class FranchiseInstallmentSerializer(BaseSerializer):
         fields = [
             'id', 'sale', 'status', 'installment_value', 'is_paid', 'paid_at', 'created_at',
             'difference_value', 'total_value', 'transfer_percentage', 'percentage', 'margin_7',
-            'sale_id', 'is_payment_released', 'reference_value'
+            'sale_id', 'is_payment_released', 'reference_value', 'payments_methods'
         ]
-        
+    
+    def get_payments_methods(self, obj):
+        return obj.payments_methods()
+    
     def get_reference_value(self, obj):
         return float(obj.reference_value()) if obj.reference_value() is not None else 0.0
         
