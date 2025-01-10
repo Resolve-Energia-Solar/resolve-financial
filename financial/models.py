@@ -218,14 +218,18 @@ class FranchiseInstallment(models.Model):
 
     @property
     def total_value(self):
-        if not self.sale or not self.sale.transfer_percentage:
+        if not self.sale or not self.sale.transfer_percentage and not self.sale.branch.transfer_percentage:
             return Decimal("0.00")
 
         reference_values = self.sale.sale_products.all().values_list(
             "reference_value", flat=True
         )
         valid_values = [value for value in reference_values if value is not None]
+        
+        transfer_percentage = self.sale.transfer_percentage if self.sale.transfer_percentage else self.sale.branch.transfer_percentage
 
+        print(valid_values)
+        
         if not valid_values:
             return Decimal("0.00")
 
@@ -233,11 +237,11 @@ class FranchiseInstallment(models.Model):
 
         if self.difference_value <= 0:
             return round( 
-                reference_value * ((self.sale.transfer_percentage / 100) - self.margin_7), 3
+                reference_value * ((transfer_percentage / 100) - self.margin_7), 3
                 )
 
         return round(
-            (reference_value * (self.sale.transfer_percentage / 100))
+            (reference_value * (transfer_percentage / 100))
             - self.margin_7
             + self.difference_value,
             3,
