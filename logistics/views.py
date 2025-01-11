@@ -20,8 +20,7 @@ class ProductViewSet(BaseModelViewSet):
             kwp_values = [Decimal(value) for value in kwp_in.split(',')]
             
             query = query.filter(
-                materials__material__attributes__key='kwp',
-                materials__material__attributes__value__in=kwp_values
+                params__in=kwp_values
             ).distinct()
         
         return query

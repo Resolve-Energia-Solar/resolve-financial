@@ -451,7 +451,7 @@ class Sale(models.Model):
         if not self.contract_number:
             last_sale = Sale.objects.all().order_by('id').last()
             if last_sale:
-                last_number = int(last_sale.contract_number.replace('RES', ''))
+                last_number = int(last_sale.contract_number.replace('RES', '')) if last_sale.contract_number else 0
                 self.contract_number = f'RES{last_number + 1:02}'
             else:
                 self.contract_number = 'RES01'
