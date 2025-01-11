@@ -32,6 +32,8 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
         run: |
           # Criar .env
+          echo "CLICKSIGN_API_URL=${{ vars.CLICKSIGN_API_URL}}" >> .env
+          echo "CLICKSIGN_ACCESS_TOKEN=${{ vars.CLICKSIGN_ACCESS_TOKEN}}" >> .env
           echo "SECRET_KEY=${{ vars.SECRET_KEY}}" >> .env
           echo "DEBUG=${{ vars.DEBUG}}" >> .env
           echo "DB_USED=${{ vars.DB_USED }}" >> .env
