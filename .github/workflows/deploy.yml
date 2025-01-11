@@ -1,5 +1,5 @@
-name: CI/CD Pipeline for RESOLVE-ERP-API Update Backend env
- 
+name: CI/CD Pipeline for RESOLVE-ERP-API Update Backend env v2
+  
 on:
   push:
     branches:
