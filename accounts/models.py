@@ -95,8 +95,8 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.first_name if self.first_name else self.email
-
+        return self.complete_name if self.complete_name else self.email
+    
     def get_absolute_url(self):
         return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})
     
