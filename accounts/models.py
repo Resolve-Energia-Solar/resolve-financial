@@ -68,6 +68,8 @@ class User(AbstractUser):
     first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
     second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
+    
+    username = models.CharField("Nome de Usuário", max_length=150, unique=True, blank=True, null=True)
 
     # Contact
     email = models.EmailField("E-mail", unique=True)
@@ -93,8 +95,8 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.first_name if self.first_name else self.email
-
+        return self.complete_name if self.complete_name else self.email
+    
     def get_absolute_url(self):
         return reverse_lazy("accounts:user_detail", kwargs={"slug": self.username})
     
