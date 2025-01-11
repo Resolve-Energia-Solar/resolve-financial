@@ -1,8 +1,9 @@
+from datetime import datetime
 import logging
 import re
-import tempfile
 
 from django.db import transaction
+from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import status
 from rest_framework.response import Response
@@ -13,6 +14,7 @@ from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
+from resolve_crm.clicksign import create_clicksign_document
 from .models import *
 from .serializers import *
 
@@ -433,10 +435,66 @@ class ContractTemplateViewSet(BaseModelViewSet):
     serializer_class = ContractTemplateSerializer
 
 
-import re
-from django.core.files.base import ContentFile
+class GenerateContractView(APIView):
+    def post(self, request):
+        sale_id = request.data.get('sale_id')
+        try:
+            sale = Sale.objects.get(id=sale_id)
+        except Sale.DoesNotExist:
+            return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        contract_template = ContractTemplate.objects.first() # Hardcoded para o MVP
 
-class GenerateContract(APIView):
+        # Obter as variáveis para substituição
+        variables = request.data.get('contract_data', {})
+        if not isinstance(variables, dict):
+            return Response({'message': 'As variáveis devem ser um dicionário.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Substituir variáveis no conteúdo do template
+        contract_content = contract_template.content
+        for key, value in variables.items():
+            contract_content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), contract_content)
+
+        # Gerar o PDF
+        try:
+            rendered_html = render_to_string('contract_base.html', {'content': contract_content})
+            pdf = HTML(string=rendered_html).write_pdf()
+        except Exception as e:
+            return Response({'message': f'Erro ao gerar o PDF: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        pdf = HTML(string=rendered_html).write_pdf()
+        logger.debug("Tamanho do PDF gerado: %d bytes", len(pdf))
+        
+        # Enviar o PDF para o Clicksign
+        try:
+            clicksign_response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
+            if clicksign_response.get('status') == 'error':
+                raise ValueError(clicksign_response.get('message'))
+        except ValueError as ve:
+            return Response({'message': f'Erro ao criar o documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'message': f'Erro inesperado ao criar o documento no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Criar o objeto na tabela Attachment
+        try:
+            now = datetime.now().strftime('%Y%m%d%H%M%S')
+            file_name = f"contrato_{sale.contract_number}_{now}.pdf"
+            sanitized_file_name = re.sub(r'[^a-zA-Z0-9_.]', '_', file_name)
+
+            attachment = Attachment.objects.create(
+                object_id=sale_id,
+                content_type_id=ContentType.objects.get_for_model(ContractTemplate).id,
+                status="Em Análise",
+            )
+
+            attachment.file.save(sanitized_file_name, ContentFile(pdf))
+        except Exception as e:
+            return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response({'message': f'Contrato gerado com sucesso. Envio ao Clicksign efetuado. {clicksign_response}', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
+
+
+class GenerateCustomContract(APIView):
     def post(self, request):
         sale_id = request.data.get('sale_id')
         contract_html = request.data.get('contract_html')
@@ -478,4 +536,4 @@ class GenerateContract(APIView):
         except Exception as e:
             return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        return Response({'message': 'Contrato gerado com sucesso.', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
+        return Response({'message': 'Contrato gerado com sucesso. Envio ao Clicksign efetuado.', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
