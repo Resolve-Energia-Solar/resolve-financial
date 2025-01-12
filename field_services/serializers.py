@@ -66,8 +66,10 @@ class ScheduleSerializer(BaseSerializer):
     customer = RelatedUserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
+    attachments = SerializerMethodField()
     
     # Para escrita: usar apenas ID
+    attachments_id = PrimaryKeyRelatedField(queryset=FormFile.objects.all(), write_only=True, source='attachments', many=True, required=False)
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     parent_schedules_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='parent_schedules', many=True, required=False)
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False)
@@ -80,6 +82,10 @@ class ScheduleSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+        
+    # def get_attachments(self, obj):
+    #     from core.serializers import AttachmentSerializer
+    #     return AttachmentSerializer(obj.attachments, many=True).data
 
     def get_project(self, obj):
         # problema com o import circular
