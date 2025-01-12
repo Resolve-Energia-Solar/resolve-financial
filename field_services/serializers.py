@@ -83,9 +83,9 @@ class ScheduleSerializer(BaseSerializer):
         model = Schedule
         fields = '__all__'
         
-    # def get_attachments(self, obj):
-    #     from core.serializers import AttachmentSerializer
-    #     return AttachmentSerializer(obj.attachments, many=True).data
+    def get_attachments(self, obj):
+        from core.serializers import AttachmentSerializer
+        return AttachmentSerializer(obj.attachments, many=True).data
 
     def get_project(self, obj):
         # problema com o import circular
