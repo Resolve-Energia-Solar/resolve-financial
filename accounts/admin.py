@@ -5,11 +5,12 @@ from .models import *
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
+from django.contrib.auth.forms import UserCreationForm
+
 
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
-
 
 
 class PhoneNumberInline(admin.TabularInline):
@@ -22,6 +23,7 @@ class PhoneNumberInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    add_form = UserCreationForm
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined")
