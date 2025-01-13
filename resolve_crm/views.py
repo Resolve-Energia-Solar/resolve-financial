@@ -17,6 +17,8 @@ from logistics.models import Product, ProductMaterials, SaleProduct
 from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer
 from .models import *
 from .serializers import *
+from django.db.models import Count, Q
+
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,33 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Indicadores
+        indicators = queryset.aggregate(
+            pending_count=Count('id', filter=Q(status="P")),
+            finalized_count=Count('id', filter=Q(status="F")),
+            in_progress_count=Count('id', filter=Q(status="EA")),
+            canceled_count=Count('id', filter=Q(status="C")),
+            terminated_count=Count('id', filter=Q(status="D")),
+        )
+        
+        # Paginação (se habilitada)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({
+                'results': serialized_data,
+                'indicators': indicators
+            })
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({
+            'results': serialized_data,
+            'indicators': indicators
+        })
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
