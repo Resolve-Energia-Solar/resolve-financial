@@ -147,10 +147,21 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
     commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
-    
+
     class Meta:
         model = Sale
         fields = '__all__'
+        
+    def validate(self, data):
+        branch = data.get('branch')
+        if 'transfer_percentage' not in data:
+            if branch and branch.transfer_percentage:
+                data['transfer_percentage'] = branch.transfer_percentage
+            else:
+                raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
+        
+        
+        return data
 
     def create(self, validated_data):
         products_ids = validated_data.pop('products_ids', [])

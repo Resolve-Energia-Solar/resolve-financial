@@ -14,9 +14,11 @@ from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import create_clicksign_document
+from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer
 from .models import *
 from .serializers import *
+from django.db.models import Count, Q
+
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,33 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Indicadores
+        indicators = queryset.aggregate(
+            pending_count=Count('id', filter=Q(status="P")),
+            finalized_count=Count('id', filter=Q(status="F")),
+            in_progress_count=Count('id', filter=Q(status="EA")),
+            canceled_count=Count('id', filter=Q(status="C")),
+            terminated_count=Count('id', filter=Q(status="D")),
+        )
+        
+        # Paginação (se habilitada)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({
+                'results': serialized_data,
+                'indicators': indicators
+            })
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({
+            'results': serialized_data,
+            'indicators': indicators
+        })
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -467,13 +496,29 @@ class GenerateContractView(APIView):
         
         # Enviar o PDF para o Clicksign
         try:
-            clicksign_response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
+            clicksign_response, doc_key = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
             if clicksign_response.get('status') == 'error':
                 raise ValueError(clicksign_response.get('message'))
         except ValueError as ve:
             return Response({'message': f'Erro ao criar o documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'message': f'Erro inesperado ao criar o documento no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            clicksign_response_for_signer = create_signer(sale.customer)
+            if clicksign_response_for_signer.get('status') == 'error':
+                raise ValueError(clicksign_response_for_signer.get('message'))
+        except ValueError as ve:
+            return Response({'message': f'Erro ao criar o signatário no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:  
+            return Response({'message': f'Erro inesperado ao criar o signatário no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            clicksign_response_for_document_signer = create_document_signer(doc_key, clicksign_response_for_signer)
+            if clicksign_response_for_document_signer.get('status') == 'error':
+                raise ValueError(clicksign_response_for_document_signer.get('message'))
+        except ValueError as ve:
+            return Response({'message': f'Erro ao criar o signatário do documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Criar o objeto na tabela Attachment
         try:
