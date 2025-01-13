@@ -70,6 +70,7 @@ class User(AbstractUser):
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
     
     username = models.CharField("Nome de Usuário", max_length=150, unique=True, blank=True, null=True)
+    password = models.CharField("Senha", max_length=128, blank=True, null=True)
 
     # Contact
     email = models.EmailField("E-mail", unique=True)
@@ -86,8 +87,8 @@ class User(AbstractUser):
     history = HistoricalRecords()
 
     def save(self, current_user=None, *args, **kwargs):
-        name_parts = self.complete_name.split(" ")
-        if not self.first_name or not self.last_name and self.complete_name:
+        name_parts = self.get_full_name().split(" ")
+        if not self.first_name or not self.last_name and self.get_full_name():
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
         if not self.username:
