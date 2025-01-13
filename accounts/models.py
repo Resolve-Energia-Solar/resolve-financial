@@ -91,7 +91,13 @@ class User(AbstractUser):
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
         if not self.username:
-            self.username = name_parts[0].lower() + '.' + name_parts[-1].lower()
+            base_username = name_parts[0].lower() + '.' + name_parts[-1].lower()
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            self.username = username
         super().save(*args, **kwargs)
 
     def __str__(self):
