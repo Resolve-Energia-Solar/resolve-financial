@@ -14,8 +14,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import User
 from api.views import BaseModelViewSet
-from core.models import Attachment
-from core.pagination import AttachmentPagination
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
 from field_services.models import Schedule
