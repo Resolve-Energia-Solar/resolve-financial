@@ -53,6 +53,20 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
+            return self.queryset
+        
+        # Filtra as vendas onde o usuário é um dos stakeholders
+        return self.queryset.filter(
+            Q(customer=user) | 
+            Q(seller=user) | 
+            Q(sales_supervisor=user) | 
+            Q(sales_manager=user)
+        )
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
