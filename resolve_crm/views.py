@@ -14,7 +14,7 @@ from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import create_clicksign_document
+from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer
 from .models import *
 from .serializers import *
 
@@ -467,13 +467,29 @@ class GenerateContractView(APIView):
         
         # Enviar o PDF para o Clicksign
         try:
-            clicksign_response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
+            clicksign_response, doc_key = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
             if clicksign_response.get('status') == 'error':
                 raise ValueError(clicksign_response.get('message'))
         except ValueError as ve:
             return Response({'message': f'Erro ao criar o documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'message': f'Erro inesperado ao criar o documento no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            clicksign_response_for_signer = create_signer(sale.customer)
+            if clicksign_response_for_signer.get('status') == 'error':
+                raise ValueError(clicksign_response_for_signer.get('message'))
+        except ValueError as ve:
+            return Response({'message': f'Erro ao criar o signatário no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:  
+            return Response({'message': f'Erro inesperado ao criar o signatário no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            clicksign_response_for_document_signer = create_document_signer(doc_key, clicksign_response_for_signer)
+            if clicksign_response_for_document_signer.get('status') == 'error':
+                raise ValueError(clicksign_response_for_document_signer.get('message'))
+        except ValueError as ve:
+            return Response({'message': f'Erro ao criar o signatário do documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Criar o objeto na tabela Attachment
         try:

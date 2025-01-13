@@ -1,8 +1,9 @@
+import os
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import *
-from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
 
 admin.site.site_header = "Administração do CRM"
@@ -45,12 +46,21 @@ class UserAdmin(UserAdmin):
     )
     actions = ["send_invitation"]
 
-    def send_invitation(self, request, queryset): 
+    def send_invitation(self, request, queryset):
+
+        token_generator = PasswordResetTokenGenerator()
+
         for user in queryset:
+            
+            token = token_generator.make_token(user)
+            reset_url = os.environ.get('FRONTEND_RESET_PASSWORD_URL')
+            reset_url_with_token = f"{reset_url}?token={token}&uid={user.pk}"
+
             context = {
                 'user': user,
-                'invitation_link': 'https://example.com/invite'  # Mocked invitation link
+                'invitation_link': reset_url_with_token
             }
+
             subject = 'Você foi convidado para o sistema'
             html_content = render_to_string('invitation-email.html', context)
             
