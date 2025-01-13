@@ -170,8 +170,9 @@ class Branch(models.Model):
         "Porcentagem de Repasse",
         max_digits=7,
         decimal_places=4,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=Decimal('20.00'),
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
     discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True, )
