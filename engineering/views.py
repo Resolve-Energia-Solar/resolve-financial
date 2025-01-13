@@ -48,7 +48,7 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
 
     def post(self, request):
         file = request.FILES.get('file')
-        id_project = request.data.get('id_project')
+        id_project = request.data.get('project_id')
 
         if not id_project:
             return Response({"error": "Project ID is required."}, status=status.HTTP_400_BAD_REQUEST)
