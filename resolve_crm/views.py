@@ -100,6 +100,39 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Indicadores
+        indicators = queryset.aggregate(
+            designer_pending_count=Count('id', filter=Q(designer_status="P")),
+            designer_in_progress_count=Count('id', filter=Q(designer_status="EA")),
+            designer_complete_count=Count('id', filter=Q(designer_status="CO")),
+            designer_canceled_count=Count('id', filter=Q(designer_status="C")),
+            designer_termination_count=Count('id', filter=Q(designer_status="D")),
+            
+            pending_count=Count('id', filter=Q(status="P")),
+            in_progress_count=Count('id', filter=Q(status="EA")),
+            complete_count=Count('id', filter=Q(status="CO")),
+            canceled_count=Count('id', filter=Q(status="C")),
+            termination_count=Count('id', filter=Q(status="D")),
+        )
+        
+        # Paginação (se habilitada)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({
+                'results': serialized_data,
+                'indicators': indicators
+            })
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({
+            'results': serialized_data,
+            'indicators': indicators
+        })
 
 
 class ContractSubmissionViewSet(BaseModelViewSet):
