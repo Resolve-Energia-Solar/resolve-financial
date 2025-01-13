@@ -1,11 +1,12 @@
 import os
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import *
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
-from django.contrib.auth.forms import UserCreationForm
+
+from .models import *
+from .forms import CustomUserCreationForm
 
 
 admin.site.site_header = "Administração do CRM"
@@ -21,13 +22,23 @@ class PhoneNumberInline(admin.TabularInline):
     fields = ("country_code", "phone_number", "is_main")
 
 
+class EmployeeInline(admin.TabularInline):
+    model = Employee
+    extra = 1
+    verbose_name = "Funcionário"
+    verbose_name_plural = "Funcionários"
+    fields = ("role", "department", "branch")
+    autocomplete_fields = ["role", "department", "branch"]
+    fk_name = "user"    
+
+
 @admin.register(User)
 class UserAdmin(UserAdmin):
-    add_form = UserCreationForm
+    add_form = CustomUserCreationForm
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined")
-    inlines = [PhoneNumberInline]
+    inlines = [PhoneNumberInline, EmployeeInline]
 
     fieldsets = (
         ('Usuário', {
@@ -114,7 +125,7 @@ class BranchAdmin(admin.ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ("name",)
 
 
 @admin.register(Department)
@@ -124,6 +135,7 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name", "email")
     list_per_page = 10
     list_max_show_all = 100
+
 
 @admin.register(PhoneNumber)
 class PhoneNumber(admin.ModelAdmin):
