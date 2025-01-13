@@ -2,6 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from resolve_crm.models import Sale
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 @receiver(pre_save, sender=Sale)
 def store_old_total_value(sender, instance, **kwargs):
@@ -20,6 +21,11 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     """
     Ajusta as parcelas do franquiado se o valor total da venda foi alterado.
     """
+    
+    if not instance.branch or not instance.branch.transfer_percentage or not instance.transfer_percentage:
+        raise ValidationError("Percentual de Repasse não configurado para a filial ou para a venda.")
+        
+    
     if not created and instance.old_total_value is not None:
         if instance.old_total_value != instance.total_value:
             # Recalcula o valor total esperado para cada parcela

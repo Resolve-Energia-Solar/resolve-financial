@@ -91,7 +91,13 @@ class User(AbstractUser):
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
         if not self.username:
-            self.username = name_parts[0].lower() + '.' + name_parts[-1].lower()
+            base_username = name_parts[0].lower() + '.' + name_parts[-1].lower()
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            self.username = username
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -170,8 +176,9 @@ class Branch(models.Model):
         "Porcentagem de Repasse",
         max_digits=7,
         decimal_places=4,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default=Decimal('20.00'),
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
     discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True, )

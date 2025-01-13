@@ -1,14 +1,17 @@
+import os
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import *
-from django.contrib.contenttypes.models import ContentType
 from django.template.loader import render_to_string
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
+
+from .models import *
+from .forms import CustomUserCreationForm
+
 
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
-
 
 
 class PhoneNumberInline(admin.TabularInline):
@@ -19,12 +22,23 @@ class PhoneNumberInline(admin.TabularInline):
     fields = ("country_code", "phone_number", "is_main")
 
 
+class EmployeeInline(admin.TabularInline):
+    model = Employee
+    extra = 1
+    verbose_name = "Funcionário"
+    verbose_name_plural = "Funcionários"
+    fields = ("role", "department", "branch")
+    autocomplete_fields = ["role", "department", "branch"]
+    fk_name = "user"    
+
+
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    add_form = CustomUserCreationForm
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined")
-    inlines = [PhoneNumberInline]
+    inlines = [PhoneNumberInline, EmployeeInline]
 
     fieldsets = (
         ('Usuário', {
@@ -45,12 +59,21 @@ class UserAdmin(UserAdmin):
     )
     actions = ["send_invitation"]
 
-    def send_invitation(self, request, queryset): 
+    def send_invitation(self, request, queryset):
+
+        token_generator = PasswordResetTokenGenerator()
+
         for user in queryset:
+            
+            token = token_generator.make_token(user)
+            reset_url = os.environ.get('FRONTEND_RESET_PASSWORD_URL')
+            reset_url_with_token = f"{reset_url}?token={token}&uid={user.pk}"
+
             context = {
                 'user': user,
-                'invitation_link': 'https://example.com/invite'  # Mocked invitation link
+                'invitation_link': reset_url_with_token
             }
+
             subject = 'Você foi convidado para o sistema'
             html_content = render_to_string('invitation-email.html', context)
             
@@ -102,7 +125,7 @@ class BranchAdmin(admin.ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ("name",)
 
 
 @admin.register(Department)
@@ -112,6 +135,7 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name", "email")
     list_per_page = 10
     list_max_show_all = 100
+
 
 @admin.register(PhoneNumber)
 class PhoneNumber(admin.ModelAdmin):
