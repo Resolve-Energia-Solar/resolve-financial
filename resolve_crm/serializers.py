@@ -158,7 +158,7 @@ class SaleSerializer(BaseSerializer):
             if branch and branch.transfer_percentage:
                 data['transfer_percentage'] = branch.transfer_percentage
             else:
-                raise ValidationError({'Percentual de repasse não cadastrado.'})
+                raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
         
         
         return data
