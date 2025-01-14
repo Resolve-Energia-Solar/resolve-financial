@@ -96,7 +96,7 @@ class SaleViewSet(BaseModelViewSet):
             return self.get_paginated_response({
                 'results': serialized_data,
                 'indicators': indicators
-            })g
+            })
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({
