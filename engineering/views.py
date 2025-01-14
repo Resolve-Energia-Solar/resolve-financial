@@ -48,9 +48,9 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
 
     def post(self, request):
         file = request.FILES.get('file')
-        id_project = request.data.get('project_id')
+        project_id = request.data.get('project_id')
 
-        if not id_project:
+        if not project_id:
             return Response({"error": "Project ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not file:
@@ -78,7 +78,7 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
                 data = {
                     "material_id": id_material,
                     "amount": amount,
-                    "project_id": id_project
+                    "project_id": project_id
                 }
 
                 # Validate and save using the serializer
