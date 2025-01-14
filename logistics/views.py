@@ -11,25 +11,50 @@ class MaterialsViewSet(BaseModelViewSet):
 class ProductViewSet(BaseModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    
+
     def get_queryset(self):
+        # Recupera a consulta inicial
         query = super().get_queryset()
-        user = self.request.user
-        
-        if not user.is_superuser or not user.has_perm('logistics.view_all_products'):
-            branch = user.employee.branch
-            query = query.filter(branch=branch)
-            
-            kwp_in = self.request.query_params.get('kwp_in', None)
-            if kwp_in:
-                kwp_values = kwp_in.split(',')
-                
-                query = query.filter(
-                    params__gte=kwp_values[0],
-                    params__lte=kwp_values[1]
-                ).distinct()
-        
+
+        # Aplica o filtro `kwp_in` se presente nos parâmetros da requisição
+        kwp_in = self.request.query_params.get('kwp_in', None)
+        if kwp_in:
+            try:
+                kwp_values = [float(value) for value in kwp_in.split(',')]
+                if len(kwp_values) == 2:
+                    query = query.filter(
+                        params__gte=kwp_values[0],
+                        params__lte=kwp_values[1]
+                    )
+            except ValueError:
+                # Retorna a query sem filtro adicional se os valores forem inválidos
+                pass
+
         return query
+
+    def filter_queryset(self, queryset):
+        """
+        Extende a lógica de filter_queryset para aplicar o ordering e outros filtros.
+        """
+        # Aplica os filtros normais e ordering
+        queryset = super().filter_queryset(queryset)
+
+        # Adicionalmente, aplica o filtro kwp_in
+        kwp_in = self.request.query_params.get('kwp_in', None)
+        if kwp_in:
+            try:
+                kwp_values = [float(value) for value in kwp_in.split(',')]
+                if len(kwp_values) == 2:
+                    queryset = queryset.filter(
+                        params__gte=kwp_values[0],
+                        params__lte=kwp_values[1]
+                    )
+            except ValueError:
+                # Ignore filtros malformados
+                pass
+
+        return queryset
+
 
 
     def perform_create(self, serializer):
