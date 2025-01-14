@@ -89,7 +89,13 @@ class ReadLeadSerializer(BaseSerializer):
         from resolve_crm.serializers import OriginSerializer
         return OriginSerializer(obj.origin).data
 
-    
+
+class SimplifiedTaskSerializer(BaseSerializer):
+    class Meta:
+        model = Task
+        fields = ('id', 'title')
+
+
 class TaskSerializer(BaseSerializer):
     owner = RelatedUserSerializer(read_only=True)
     column = ColumnNameSerializer(read_only=True)
@@ -105,12 +111,14 @@ class TaskSerializer(BaseSerializer):
         fields = '__all__'
     
     def get_depends_on(self, obj):
-        return TaskSerializer(obj.depends_on, many=True).data
+        depends_on_qs = obj.depends_on.all()
+        return SimplifiedTaskSerializer(depends_on_qs, many=True).data
 
     def get_project(self, obj):
         from resolve_crm.serializers import ProjectSerializer
-        return ProjectSerializer(obj.project).data
-
+        if obj.project_id:
+            return ProjectSerializer(obj.project).data
+        return None
 
 
 class ColumnSerializer(BaseSerializer):
@@ -153,27 +161,6 @@ class TaskTemplatesSerializer(BaseSerializer):
     
     def get_depends_on(self, obj):
         return TaskTemplatesSerializer(obj.depends_on, many=True).data
-
-
-# class TaskSerializer2(BaseSerializer):
-#     owner = RelatedUserSerializer(read_only=True)
-#     column = ColumnNameSerializer(read_only=True)
-#     depends_on = SerializerMethodField()
-#     project = SerializerMethodField()
-
-#     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
-#     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
-
-#     class Meta:
-#         model = Task
-#         fields = '__all__'
-    
-#     def get_depends_on(self, obj):
-#         return TaskSerializer(obj.depends_on, many=True).data
-
-#     def get_project(self, obj):
-#         from resolve_crm.serializers import ProjectSerializer
-#         return ProjectSerializer(obj.project).data
 
 
 class NotificationSerializer(BaseSerializer):
