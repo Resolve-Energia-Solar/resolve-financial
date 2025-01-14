@@ -18,6 +18,7 @@ from resolve_crm.clicksign import create_clicksign_document, create_signer, crea
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q
+from django.http import HttpResponse
 
 
 
@@ -580,6 +581,12 @@ class GenerateContractView(APIView):
             pdf = HTML(string=rendered_html).write_pdf()
         except Exception as e:
             return Response({'message': f'Erro ao gerar o PDF: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Verificar se é apenas uma pré-visualização
+        if request.query_params.get('preview') == 'true':
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = 'inline; filename="preview_contract.pdf"'
+            return response
 
         # Enviar o PDF para o Clicksign
         try:
