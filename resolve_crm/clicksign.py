@@ -89,17 +89,6 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
                 "message": f"Sale not found for contract number: {sale_number}",
             }
 
-        original_url = document_data["document"]["downloads"]["original_file_url"]
-        shortened_url = original_url.split('?')[0]  
-        
-        contract_submission = ContractSubmission.objects.create(
-            sale=sale,
-            key_number=document_data["document"]["key"],
-            status="P",
-            submit_datetime=datetime.now(),
-            due_date=datetime.strptime(deadline_at, "%Y-%m-%dT%H:%M:%S-03:00"),
-            link=shortened_url,
-        )
         return document_data, document_data["document"]["key"]
     else:
         logger.error("Erro ao criar o documento: %s", response.text)
@@ -177,7 +166,7 @@ def create_signer(customer):
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
-def create_document_signer(key_number, signer_key):
+def create_document_signer(key_number, signer_key, sale):
     url = f"{API_URL}/api/v1/lists?access_token={ACCESS_TOKEN}"
 
     payload = {
@@ -199,6 +188,16 @@ def create_document_signer(key_number, signer_key):
 
         if response.status_code == 201:
             list_data = response.json()
+            doc_signer = list_data["list"]
+            ContractSubmission.objects.create(
+                sale=sale,
+                key_number=doc_signer["key"],
+                request_signature_key=doc_signer["request_signature_key"],
+                status="P",
+                submit_datetime=datetime.now(),
+                due_date=datetime.now() + timedelta(days=7),
+                link=doc_signer['url'],
+            )
             return {"status": "success", "list": list_data["list"]}
         else:
             return {
@@ -206,6 +205,7 @@ def create_document_signer(key_number, signer_key):
                 "message": "Failed to create document signer.",
                 "response": response.content,
             }
+        
     except requests.exceptions.RequestException as e:
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
