@@ -58,15 +58,24 @@ class SaleViewSet(BaseModelViewSet):
         user = self.request.user
         
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
+            # Retorna todas as vendas para superusuários e usuários com permissão
             return self.queryset
         
+        if user.employee.related_branches:
+            # Filtra as vendas onde a filial do usuário é a mesma da venda
+            branch_sales = self.queryset.filter(branch__in=user.employee.related_branches.all())
+        else:
+            branch_sales = self.queryset.none()
+        
         # Filtra as vendas onde o usuário é um dos stakeholders
-        return self.queryset.filter(
+        stakeholder_sales = self.queryset.filter(
             Q(customer=user) | 
             Q(seller=user) | 
             Q(sales_supervisor=user) | 
             Q(sales_manager=user)
         )
+        
+        return branch_sales | stakeholder_sales
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -87,7 +96,7 @@ class SaleViewSet(BaseModelViewSet):
             return self.get_paginated_response({
                 'results': serialized_data,
                 'indicators': indicators
-            })
+            })g
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({
