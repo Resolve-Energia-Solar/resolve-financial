@@ -5,17 +5,22 @@ RUN apk update && apk add --no-cache \
     zsh git python3 py3-pip tzdata pkgconfig \
     mysql-dev gcc musl-dev python3-dev libffi-dev openssl-dev
 
-# Instalar dependências para WeasyPrint
+# Instalar dependências para WeasyPrint e fontes
 RUN apk add --no-cache \
     cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
-    fontconfig font-noto font-noto-cjk font-noto-emoji ttf-dejavu ttf-freefont
+    fontconfig fontconfig-dev \
+    ttf-dejavu ttf-freefont font-noto font-noto-cjk font-noto-emoji \
+    ttf-liberation ttf-droid
 
 # Configurar timezone
 RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime
 RUN echo "America/Belem" > /etc/timezone
 
-# Configurar FontConfig
+# Atualizar cache de fontes
 RUN fc-cache -f -v
+
+# Verificar fontes instaladas (para depuração)
+RUN fc-list
 
 # Definir diretório de trabalho
 WORKDIR /app
