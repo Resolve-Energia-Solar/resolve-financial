@@ -1,7 +1,7 @@
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
-from decimal import Decimal
+
 
 class MaterialsViewSet(BaseModelViewSet):
     queryset = Materials.objects.all()
@@ -14,16 +14,20 @@ class ProductViewSet(BaseModelViewSet):
     
     def get_queryset(self):
         query = super().get_queryset()
-        kwp_in = self.request.query_params.get('kwp_in', None)
+        user = self.request.user
         
-        if kwp_in:
-            kwp_values = kwp_in.split(',')
+        if not user.is_superuser or not user.has_perm('logistics.view_all_products'):
+            branch = user.employee.branch
+            query = query.filter(branch=branch)
             
-            query = query.filter(
-                params__gte=kwp_values[0],
-                params__lte=kwp_values[1]
-            ).distinct()
-            
+            kwp_in = self.request.query_params.get('kwp_in', None)
+            if kwp_in:
+                kwp_values = kwp_in.split(',')
+                
+                query = query.filter(
+                    params__gte=kwp_values[0],
+                    params__lte=kwp_values[1]
+                ).distinct()
         
         return query
 
