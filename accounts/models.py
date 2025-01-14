@@ -44,6 +44,7 @@ class Employee(models.Model):
     user_manager = models.ForeignKey("accounts.User", verbose_name="Gerente", on_delete=models.CASCADE, related_name="this_user_manager", blank=True, null=True)
     hire_date = models.DateField("Data de Admissão", blank=True, null=True)
     resignation_date = models.DateField("Data de Demissão", blank=True, null=True)
+    related_branches = models.ManyToManyField("accounts.Branch", verbose_name="Unidades Relacionadas", related_name="related_users", blank=True)
     history = HistoricalRecords()
 
     def __str__(self):
@@ -182,7 +183,7 @@ class Branch(models.Model):
         default=Decimal('20.00'),
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
-    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True, )
+    discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True)
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 
