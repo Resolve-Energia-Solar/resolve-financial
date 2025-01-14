@@ -90,8 +90,8 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
             }
 
         original_url = document_data["document"]["downloads"]["original_file_url"]
-        shortened_url = original_url.split('?')[0]  # Remove query parameters from URL
-
+        shortened_url = original_url.split('?')[0]  
+        
         contract_submission = ContractSubmission.objects.create(
             sale=sale,
             key_number=document_data["document"]["key"],
@@ -110,10 +110,7 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
         }
 
 def create_signer(customer):
-    api_url = API_URL
-    access_token = ACCESS_TOKEN
-
-    url = f"{api_url}/api/v1/signers?access_token={access_token}"
+    url = f"{API_URL}/api/v1/signers?access_token={ACCESS_TOKEN}"
     
     phone_number = customer.phone_numbers.filter(is_main=True).first()
     if not phone_number:
@@ -180,28 +177,24 @@ def create_signer(customer):
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
-def create_document_signer(signer_key, key_number):
-    api_url = API_URL
-    access_token = ACCESS_TOKEN
-
-    url = f"{api_url}/api/v1/lists?access_token={access_token}"
+def create_document_signer(key_number, signer_key):
+    url = f"{API_URL}/api/v1/lists?access_token={ACCESS_TOKEN}"
 
     payload = {
         "list": {
             "document_key": key_number,
             "signer_key": signer_key,
-            "sign_as": "sign",
-            "refusable": True,
-            "message": "Por favor, assine o documento."
+            "sign_as": "contractor"
         }
     }
-
+    
+    
     headers = {
         "Content-Type": "application/json",
     }
 
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
 
         if response.status_code == 201:

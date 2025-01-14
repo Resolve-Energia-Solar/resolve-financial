@@ -334,11 +334,6 @@ class SendNPSView(APIView):
         step_id = request.data.get('step_id')
         nps_score = request.data.get('nps')
 
-        # Debug prints
-        print(f"Received project_id: {project_id}")
-        print(f"Received step_id: {step_id}")
-        print(f"Received nps_score: {nps_score}")
-
         # Validar os campos recebidos
         if not project_id or not step_id or not nps_score:
             return Response({
@@ -358,17 +353,14 @@ class SendNPSView(APIView):
             step.nps = nps_score
             step.save()
         except Project.DoesNotExist:
-            print(f"Project with id {project_id} does not exist.")
             return Response({
                 'message': 'Projeto não encontrado.'
             }, status=status.HTTP_404_NOT_FOUND)
         except ProjectStep.DoesNotExist:
-            print(f"Step with id {step_id} does not exist for project {project_id}.")
             return Response({
                 'message': 'Step não encontrado para o projeto fornecido.'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        print(f"NPS score {nps_score} saved for project {project_id} and step {step_id}.")
         return Response({
             'message': 'NPS enviado com sucesso.'
         }, status=status.HTTP_201_CREATED)

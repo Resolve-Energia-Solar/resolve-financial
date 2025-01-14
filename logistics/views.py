@@ -15,18 +15,15 @@ class ProductViewSet(BaseModelViewSet):
     def get_queryset(self):
         query = super().get_queryset()
         kwp_in = self.request.query_params.get('kwp_in', None)
-        print(kwp_in)
         
         if kwp_in:
             kwp_values = kwp_in.split(',')
-            print(kwp_values)
             
             query = query.filter(
                 params__gte=kwp_values[0],
                 params__lte=kwp_values[1]
             ).distinct()
             
-            print(query)
         
         return query
 

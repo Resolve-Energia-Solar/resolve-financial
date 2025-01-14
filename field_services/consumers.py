@@ -56,7 +56,6 @@ class LocationConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         try:   
             data = json.loads(text_data)
-            print(data)
         except json.JSONDecodeError:
             await self.send(text_data=json.dumps({"error": "Invalid data format"}))
             return

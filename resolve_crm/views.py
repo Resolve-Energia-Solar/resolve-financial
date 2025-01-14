@@ -514,7 +514,8 @@ class GenerateContractView(APIView):
             return Response({'message': f'Erro inesperado ao criar o signatário no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         try:
-            clicksign_response_for_document_signer = create_document_signer(doc_key, clicksign_response_for_signer)
+            signer_key = clicksign_response_for_signer.get('signer_key')
+            clicksign_response_for_document_signer = create_document_signer(doc_key, signer_key)
             if clicksign_response_for_document_signer.get('status') == 'error':
                 raise ValueError(clicksign_response_for_document_signer.get('message'))
         except ValueError as ve:
