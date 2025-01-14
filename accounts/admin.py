@@ -1,12 +1,16 @@
 import os
+import random
+import string
+from django.contrib.auth.hashers import make_password
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
 
+from accounts.forms import CustomUserCreationForm
+
 from .models import *
-from .forms import CustomUserCreationForm
 
 
 admin.site.site_header = "Administração do CRM"
@@ -34,7 +38,6 @@ class EmployeeInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
-    add_form = CustomUserCreationForm
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
     readonly_fields = ("last_login", "date_joined")
@@ -57,6 +60,21 @@ class UserAdmin(UserAdmin):
             'fields': ('email', 'addresses',)
         }),
     )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('complete_name', 'email'),
+        }),
+    )
+
+    add_form = CustomUserCreationForm
+
+    def save_model(self, request, obj, form, change):
+        if not change: 
+            self.send_invitation(request, [obj])
+        super().save_model(request, obj, form, change)
+    
     actions = ["send_invitation"]
 
     def send_invitation(self, request, queryset):
