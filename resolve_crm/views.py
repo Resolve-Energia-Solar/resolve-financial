@@ -527,16 +527,50 @@ class GenerateContractView(APIView):
             sale = Sale.objects.get(id=sale_id)
         except Sale.DoesNotExist:
             return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        contract_template = ContractTemplate.objects.first() # Hardcoded para o MVP
+
+        contract_template = ContractTemplate.objects.first()  # Hardcoded para o MVP
 
         # Obter as variáveis para substituição
         variables = request.data.get('contract_data', {})
         if not isinstance(variables, dict):
             return Response({'message': 'As variáveis devem ser um dicionário.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Obter lista de materiais
+        materials = []
+        for project in sale.projects.all():
+            for product_material in project.product.materials.filter(is_deleted=False):
+                materials.append({
+                    'name': product_material.material.name,
+                    'amount': round(product_material.amount, 2),
+                    'price': product_material.material.price
+                })
+
+        materials_list = "".join(
+            [f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials]
+        )
+
+        # Obter lista de pagamentos
+        payments = []
+        for payment in sale.payments.all():
+            payments.append({
+                'type': payment.get_payment_type_display(),
+                'value': f"{payment.value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            })
+
+        payments_list = "".join(
+            [
+                f"<li>Tipo: {p['type']} - Valor: R$ {p['value']}</li>"
+                for p in payments
+            ]
+        )
+
         # Substituir variáveis no conteúdo do template
         contract_content = contract_template.content
+        variables.update({
+            'materials_list': materials_list,
+            'payments_list': payments_list
+        })
+
         for key, value in variables.items():
             contract_content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), contract_content)
 
@@ -546,10 +580,7 @@ class GenerateContractView(APIView):
             pdf = HTML(string=rendered_html).write_pdf()
         except Exception as e:
             return Response({'message': f'Erro ao gerar o PDF: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        pdf = HTML(string=rendered_html).write_pdf()
-        logger.debug("Tamanho do PDF gerado: %d bytes", len(pdf))
-        
+
         # Enviar o PDF para o Clicksign
         try:
             clicksign_response, doc_key = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
@@ -559,16 +590,16 @@ class GenerateContractView(APIView):
             return Response({'message': f'Erro ao criar o documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'message': f'Erro inesperado ao criar o documento no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         try:
             clicksign_response_for_signer = create_signer(sale.customer)
             if clicksign_response_for_signer.get('status') == 'error':
                 raise ValueError(clicksign_response_for_signer.get('message'))
         except ValueError as ve:
             return Response({'message': f'Erro ao criar o signatário no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:  
+        except Exception as e:
             return Response({'message': f'Erro inesperado ao criar o signatário no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         try:
             signer_key = clicksign_response_for_signer.get('signer_key')
             clicksign_response_for_document_signer = create_document_signer(doc_key, signer_key, sale)
@@ -592,7 +623,7 @@ class GenerateContractView(APIView):
             attachment.file.save(sanitized_file_name, ContentFile(pdf))
         except Exception as e:
             return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         return Response({'message': f'Contrato gerado com sucesso. Envio ao Clicksign efetuado. {clicksign_response}', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
 
 

@@ -5,7 +5,7 @@ import logging
 import os
 import requests
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from resolve_crm.models import ContractSubmission, Sale
 
@@ -194,8 +194,8 @@ def create_document_signer(key_number, signer_key, sale):
                 key_number=doc_signer["key"],
                 request_signature_key=doc_signer["request_signature_key"],
                 status="P",
-                submit_datetime=datetime.now(),
-                due_date=datetime.now() + timedelta(days=7),
+                submit_datetime=datetime.now(tz=timezone.utc),
+                due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
                 link=doc_signer['url'],
             )
             return {"status": "success", "list": list_data["list"]}
