@@ -1,30 +1,31 @@
 name: CI/CD Pipeline for RESOLVE-ERP-API Update Backend env v2
+  
 on:
   push:
     branches:
       - main
- 
+
 env:
   DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-api
   AKS_CLUSTER_NAME: Resolve-AKS-Web
   AKS_RESOURCE_GROUP: Resolve
   NAMESPACE: resolve-erp
   DEPLOYMENT_NAME: resolve-erp-api
- 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-20.04
     environment: resolve
- 
+
     steps:
       # 1. Checkout do Código
       - name: Checkout code
         uses: actions/checkout@v3
- 
+
       # 2. Log in ao Azure Container Registry (ACR)
       - name: Log in to Azure Container Registry (ACR)
         run: echo "${{ vars.AZURE_ACR_PASSWORD }}" | docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" --password-stdin
- 
+
       # 3. Criar os arquivos necessários para o build
       - name: Create .env and google_application_credentials.json
         env:
@@ -65,27 +66,25 @@ jobs:
           
           # Criar google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
- 
-      # 4. Build e Push da Imagem Docker com `collectstatic` e `migrate`
+
+      # 4. Build e Push da Imagem Docker
       - name: Build and Push Docker Image
         run: |
           docker build \
             --no-cache \
             --build-arg ENV_FILE=.env \
             --build-arg GOOGLE_APPLICATION_CREDENTIALS_FILE=google_application_credentials.json \
-            --build-arg COLLECTSTATIC=true \
-            --build-arg MIGRATE=true \
             -t "${DOCKER_IMAGE}:${{ github.sha }}" .
           docker push "${DOCKER_IMAGE}:${{ github.sha }}"
- 
+
       # 5. Log in ao Azure CLI
       - name: Log in to Azure
         run: az login --service-principal -u "${{ vars.AZURE_CLIENT_ID }}" -p "${{ vars.AZURE_CLIENT_SECRET }}" --tenant "${{ vars.AZURE_TENANT_ID }}"
- 
+
       # 6. Configurar Acesso ao Cluster AKS
       - name: Configure Access to AKS
         run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
- 
+
       # 7. Atualizar Deployment no AKS
       - name: Update Deployment on AKS
         run: |
