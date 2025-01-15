@@ -15,7 +15,13 @@ class ProductViewSet(BaseModelViewSet):
     def get_queryset(self):
         # Recupera a consulta inicial
         query = super().get_queryset()
-
+        
+        user = self.request.user
+        
+        if not user.is_superuser or not user.has_perm('logistics.view_all_products'):
+            branch = user.employee.branch
+            query = query.filter(branch=branch)
+            
         # Aplica o filtro `kwp_in` se presente nos parâmetros da requisição
         kwp_in = self.request.query_params.get('kwp_in', None)
         if kwp_in:
@@ -27,7 +33,7 @@ class ProductViewSet(BaseModelViewSet):
                         params__lte=kwp_values[1]
                     )
             except ValueError:
-                # Retorna a query sem filtro adicional se os valores forem inválidos
+                query = query.none()
                 pass
 
         return query
