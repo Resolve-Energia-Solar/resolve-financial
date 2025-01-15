@@ -1,6 +1,6 @@
 from rest_flex_fields import FlexFieldsModelSerializer
 from django.contrib.contenttypes.models import ContentType
-from django.utils.functional import cached_property as chached_property
+from django.utils.functional import cached_property
 
 class BaseSerializer(FlexFieldsModelSerializer):
     class Meta:
@@ -12,7 +12,7 @@ class BaseSerializer(FlexFieldsModelSerializer):
         if 'is_deleted' in self.fields:
             self.fields.pop('is_deleted')
 
-    @chached_property
+    @cached_property
     def get_expandable_fields(self):
         expandable_fields = {}
         related_fields = [
