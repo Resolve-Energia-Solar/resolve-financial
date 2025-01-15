@@ -524,10 +524,16 @@ class ContractTemplateViewSet(BaseModelViewSet):
 class GenerateContractView(APIView):
     def post(self, request):
         sale_id = request.data.get('sale_id')
+        document_type_id = request.data.get('document_type_id')
 
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
             return sale
+        
+        if not document_type_id:
+            return Response({'message': 'document_type_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            document_type = DocumentType.objects.get(id=document_type_id)
 
         variables = self._validate_variables(request.data.get('contract_data', {}))
         if isinstance(variables, Response):
@@ -561,7 +567,7 @@ class GenerateContractView(APIView):
         if isinstance(notification_response, Response):
             return notification_response
 
-        attachment_response = self._save_attachment(sale, pdf)
+        attachment_response = self._save_attachment(sale, document_type, pdf)
         if isinstance(attachment_response, Response):
             return attachment_response
 
@@ -594,11 +600,12 @@ class GenerateContractView(APIView):
         payments = [
             {
                 'type': payment.get_payment_type_display(),
-                'value': f"{payment.value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                'value': f"{payment.value:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                'financier': f" - Financiadora: {payment.financier}" if payment.financier else ""
             }
             for payment in sale.payments.all()
         ]
-        return "".join(f"<li>Tipo: {p['type']} - Valor: R$ {p['value']}</li>" for p in payments)
+        return "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
 
     def _replace_variables(self, content, variables, materials_list, payments_list):
         variables.update({'materials_list': materials_list, 'payments_list': payments_list})
@@ -676,7 +683,7 @@ class GenerateContractView(APIView):
             logger.error(f'Erro ao enviar notificações: {e}')
             return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _save_attachment(self, sale, pdf):
+    def _save_attachment(self, sale, document_type, pdf):
         try:
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             file_name = f"contrato_{sale.contract_number}_{now}.pdf"
@@ -686,6 +693,7 @@ class GenerateContractView(APIView):
                 object_id=sale.id,
                 content_type_id=ContentType.objects.get_for_model(ContractTemplate).id,
                 status="Em Análise",
+                document_type=document_type
             )
 
             attachment.file.save(sanitized_file_name, ContentFile(pdf))
