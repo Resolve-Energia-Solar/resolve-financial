@@ -192,7 +192,7 @@ def create_document_signer(key_number, signer_key, sale):
             # Criação da instância de ContractSubmission
             submission = ContractSubmission.objects.create(
                 sale=sale,
-                key_number=doc_signer["key"],
+                key_number=key_number,
                 request_signature_key=doc_signer["request_signature_key"],
                 status="P",
                 submit_datetime=datetime.now(tz=timezone.utc),
