@@ -698,7 +698,7 @@ class GenerateContractView(APIView):
 
             attachment = Attachment.objects.create(
                 object_id=sale.id,
-                content_type_id=ContentType.objects.get_for_model(ContractTemplate).id,
+                content_type_id=ContentType.objects.get_for_model(Sale).id,
                 status="Em Análise",
                 document_type=document_type
             )
