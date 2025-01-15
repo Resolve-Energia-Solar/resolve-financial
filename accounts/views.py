@@ -59,6 +59,11 @@ class UserLoginView(APIView):
                 'message': 'Usuário inativo.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        if not user.is_superuser and not user.employee:
+            return Response({
+                'message': 'Usuário não é um funcionário.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         # Verificar senha
         if not user.check_password(password):
             return Response({
