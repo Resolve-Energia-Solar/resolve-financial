@@ -153,13 +153,13 @@ class SaleSerializer(BaseSerializer):
         fields = '__all__'
         
     def validate(self, data):
-        branch = data.get('branch')
-        if 'transfer_percentage' not in data:
-            if branch and branch.transfer_percentage:
-                data['transfer_percentage'] = branch.transfer_percentage
-            else:
-                raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
-        
+        if self.instance is None:
+            branch = data.get('branch')
+            if 'transfer_percentage' not in data:
+                if branch and branch.transfer_percentage:
+                    data['transfer_percentage'] = branch.transfer_percentage
+                else:
+                    raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
         
         return data
 
