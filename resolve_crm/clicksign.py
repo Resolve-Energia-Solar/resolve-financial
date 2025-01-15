@@ -109,8 +109,8 @@ def create_signer(customer):
             "message": "Número de telefone principal não encontrado para o cliente.",
         }
 
-    formatted_phone_number = f'+55{phone_number.area_code}{phone_number.phone_number}'
-    if len(formatted_phone_number) != 14:
+    formatted_phone_number = f'{phone_number.area_code}{phone_number.phone_number}'
+    if len(formatted_phone_number) != 11:
         logger.error("Número de telefone principal está em um formato inválido.")
         return {
             "status": "error",
@@ -192,7 +192,7 @@ def create_document_signer(key_number, signer_key, sale):
             # Criação da instância de ContractSubmission
             submission = ContractSubmission.objects.create(
                 sale=sale,
-                key_number=doc_signer["key"],
+                key_number=key_number,
                 request_signature_key=doc_signer["request_signature_key"],
                 status="P",
                 submit_datetime=datetime.now(tz=timezone.utc),
@@ -215,11 +215,17 @@ def send_notification(submission):
     url_email = f"{API_URL}/api/v1/notifications?access_token={ACCESS_TOKEN}"
     url_whatsapp = f"{API_URL}/api/v1/notify_by_whatsapp?access_token={ACCESS_TOKEN}"
     
-    payload = {
+    payload_email = {
         "notification": {
-            "request_signature_key": submission.key_number,
+            "request_signature_key": submission.request_signature_key,
             "url": submission.link,
             "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
+        }
+    }
+    
+    payload_whatsapp = {
+        "notification": {
+            "request_signature_key": submission.key_number
         }
     }
     
@@ -229,11 +235,11 @@ def send_notification(submission):
     
     try:
         # Send email notification
-        response_email = requests.post(url_email, headers=headers, json=payload)
+        response_email = requests.post(url_email, headers=headers, json=payload_email)
         response_email.raise_for_status()
         
         # Send WhatsApp notification
-        response_whatsapp = requests.post(url_whatsapp, headers=headers, json=payload)
+        response_whatsapp = requests.post(url_whatsapp, headers=headers, json=payload_whatsapp)
         response_whatsapp.raise_for_status()
         
         if response_email.status_code == 201 and response_whatsapp.status_code == 201:
