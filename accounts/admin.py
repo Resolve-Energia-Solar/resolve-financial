@@ -23,7 +23,7 @@ class PhoneNumberInline(admin.TabularInline):
     extra = 1
     verbose_name = "Número de Telefone"
     verbose_name_plural = "Números de Telefone"
-    fields = ("country_code", "phone_number", "is_main")
+    fields = ("country_code", "area_code", "phone_number", "is_main")
 
 
 class EmployeeInline(admin.TabularInline):
@@ -156,7 +156,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(PhoneNumber)
-class PhoneNumber(admin.ModelAdmin):
+class PhoneNumberAdmin(admin.ModelAdmin):
     pass
 
 
