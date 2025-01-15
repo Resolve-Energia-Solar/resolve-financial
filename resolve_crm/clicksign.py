@@ -109,8 +109,8 @@ def create_signer(customer):
             "message": "Número de telefone principal não encontrado para o cliente.",
         }
 
-    formatted_phone_number = f'+55{phone_number.area_code}{phone_number.phone_number}'
-    if len(formatted_phone_number) != 14:
+    formatted_phone_number = f'{phone_number.area_code}{phone_number.phone_number}'
+    if len(formatted_phone_number) != 11:
         logger.error("Número de telefone principal está em um formato inválido.")
         return {
             "status": "error",
