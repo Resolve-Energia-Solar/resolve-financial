@@ -72,7 +72,7 @@ class ScheduleSerializer(BaseSerializer):
     attachments_id = PrimaryKeyRelatedField(queryset=FormFile.objects.all(), write_only=True, source='attachments', many=True, required=False)
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     parent_schedules_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='parent_schedules', many=True, required=False)
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False)
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False, allow_null=True)
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
