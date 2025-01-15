@@ -225,7 +225,7 @@ def send_notification(submission):
     
     payload_whatsapp = {
         "notification": {
-            "request_signature_key": submission.key_number
+            "request_signature_key": submission.request_signature_key
         }
     }
     
