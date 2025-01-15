@@ -22,7 +22,11 @@ class DocumentSubTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("file", "description")
+    list_display = ("document_type", "document_subtype", "status", "file", "created_at")
+    list_display_links = ("document_type",)
+    search_fields = ("file", "description", "status", "document_type__name", "document_subtype__name")
+    list_filter = ("status", "document_type", "document_subtype", "created_at")
+    ordering = ("-created_at",)
 
 
 @admin.register(Board)
