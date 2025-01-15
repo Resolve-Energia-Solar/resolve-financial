@@ -217,7 +217,7 @@ def send_notification(submission):
     
     payload_email = {
         "notification": {
-            "request_signature_key": submission.key_number,
+            "request_signature_key": submission.request_signature_key,
             "url": submission.link,
             "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
         }
