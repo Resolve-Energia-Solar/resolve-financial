@@ -530,6 +530,13 @@ class GenerateContractView(APIView):
         if isinstance(sale, Response):
             return sale
         
+        if not sale.payments.exists():
+            return Response({'message': 'Venda não possui pagamentos associados.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        total_payments_value = sum(payment.value for payment in sale.payments.all())
+        if total_payments_value != sale.total_value:
+            return Response({'message': 'A soma dos valores dos pagamentos é diferente do valor total da venda.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not document_type_id:
             return Response({'message': 'document_type_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
         else:
