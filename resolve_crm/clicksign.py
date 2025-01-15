@@ -216,17 +216,13 @@ def send_notification(submission):
     url_whatsapp = f"{API_URL}/api/v1/notify_by_whatsapp?access_token={ACCESS_TOKEN}"
     
     payload_email = {
-        "notification": {
-            "request_signature_key": submission.request_signature_key,
-            "url": submission.link,
-            "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
-        }
+        "request_signature_key": submission.request_signature_key,
+        "url": submission.link,
+        "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
     }
     
     payload_whatsapp = {
-        "notification": {
-            "request_signature_key": submission.request_signature_key
-        }
+        "request_signature_key": submission.request_signature_key
     }
     
     headers = {
@@ -234,13 +230,13 @@ def send_notification(submission):
     }
     
     try:
-        # Send email notification
-        response_email = requests.post(url_email, headers=headers, json=payload_email)
-        response_email.raise_for_status()
-        
         # Send WhatsApp notification
         response_whatsapp = requests.post(url_whatsapp, headers=headers, json=payload_whatsapp)
         response_whatsapp.raise_for_status()
+        
+        # Send email notification
+        response_email = requests.post(url_email, headers=headers, json=payload_email)
+        response_email.raise_for_status()
         
         if response_email.status_code == 201 and response_whatsapp.status_code == 201:
             return {"status": "success", "message": "Notifications sent successfully."}
