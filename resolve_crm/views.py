@@ -14,7 +14,7 @@ from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer
+from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer, send_notification
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q
@@ -524,114 +524,175 @@ class ContractTemplateViewSet(BaseModelViewSet):
 class GenerateContractView(APIView):
     def post(self, request):
         sale_id = request.data.get('sale_id')
+
+        sale = self._get_sale(sale_id)
+        if isinstance(sale, Response):
+            return sale
+
+        variables = self._validate_variables(request.data.get('contract_data', {}))
+        if isinstance(variables, Response):
+            return variables
+
+        contract_template = ContractTemplate.objects.first()
+        materials_list = self._generate_materials_list(sale)
+        payments_list = self._generate_payments_list(sale)
+        contract_content = self._replace_variables(contract_template.content, variables, materials_list, payments_list)
+
+        pdf = self._generate_pdf(contract_content)
+        if isinstance(pdf, Response):
+            return pdf
+
+        if request.query_params.get('preview') == 'true':
+            return self._preview_pdf(pdf)
+
+        clicksign_response = self._send_to_clicksign(sale, pdf)
+        if isinstance(clicksign_response, Response):
+            return clicksign_response
+
+        signer_response = self._create_signer(sale.customer)
+        if isinstance(signer_response, Response):
+            return signer_response
+
+        document_signer_response = self._link_signer_to_document(sale, clicksign_response, signer_response)
+        if isinstance(document_signer_response, Response):
+            return document_signer_response
+
+        notification_response = self._send_notifications(document_signer_response)
+        if isinstance(notification_response, Response):
+            return notification_response
+
+        attachment_response = self._save_attachment(sale, pdf)
+        if isinstance(attachment_response, Response):
+            return attachment_response
+
+        return Response({'message': 'Contrato gerado com sucesso.', 'attachment_id': attachment_response}, status=status.HTTP_200_OK)
+
+    def _get_sale(self, sale_id):
         try:
-            sale = Sale.objects.get(id=sale_id)
+            return Sale.objects.get(id=sale_id)
         except Sale.DoesNotExist:
             return Response({'message': 'Venda não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
 
-        contract_template = ContractTemplate.objects.first()  # Hardcoded para o MVP
-
-        # Obter as variáveis para substituição
-        variables = request.data.get('contract_data', {})
+    def _validate_variables(self, variables):
         if not isinstance(variables, dict):
             return Response({'message': 'As variáveis devem ser um dicionário.'}, status=status.HTTP_400_BAD_REQUEST)
+        return variables
 
-        # Obter lista de materiais
-        materials = []
-        for project in sale.projects.all():
-            for product_material in project.product.materials.filter(is_deleted=False):
-                materials.append({
-                    'name': product_material.material.name,
-                    'amount': round(product_material.amount, 2),
-                    'price': product_material.material.price
-                })
+    def _generate_materials_list(self, sale):
+        materials = [
+            {
+                'name': pm.material.name,
+                'amount': round(pm.amount, 2),
+                'price': pm.material.price
+            }
+            for project in sale.projects.all()
+            for pm in project.product.materials.filter(is_deleted=False)
+        ]
+        return "".join(f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials)
 
-        materials_list = "".join(
-            [f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials]
-        )
-
-        # Obter lista de pagamentos
-        payments = []
-        for payment in sale.payments.all():
-            payments.append({
+    def _generate_payments_list(self, sale):
+        payments = [
+            {
                 'type': payment.get_payment_type_display(),
                 'value': f"{payment.value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            })
+            }
+            for payment in sale.payments.all()
+        ]
+        return "".join(f"<li>Tipo: {p['type']} - Valor: R$ {p['value']}</li>" for p in payments)
 
-        payments_list = "".join(
-            [
-                f"<li>Tipo: {p['type']} - Valor: R$ {p['value']}</li>"
-                for p in payments
-            ]
-        )
-
-        # Substituir variáveis no conteúdo do template
-        contract_content = contract_template.content
-        variables.update({
-            'materials_list': materials_list,
-            'payments_list': payments_list
-        })
-
+    def _replace_variables(self, content, variables, materials_list, payments_list):
+        variables.update({'materials_list': materials_list, 'payments_list': payments_list})
         for key, value in variables.items():
-            contract_content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), contract_content)
+            content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
+        return content
 
-        # Gerar o PDF
+    def _generate_pdf(self, content):
         try:
-            rendered_html = render_to_string('contract_base.html', {'content': contract_content})
-            pdf = HTML(string=rendered_html).write_pdf()
+            rendered_html = render_to_string('contract_base.html', {'content': content})
+            return HTML(string=rendered_html).write_pdf()
         except Exception as e:
+            logger.error(f'Erro ao gerar o PDF: {e}')
             return Response({'message': f'Erro ao gerar o PDF: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Verificar se é apenas uma pré-visualização
-        if request.query_params.get('preview') == 'true':
-            response = HttpResponse(pdf, content_type='application/pdf')
-            response['Content-Disposition'] = 'inline; filename="preview_contract.pdf"'
-            return response
+    def _preview_pdf(self, pdf):
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="preview_contract.pdf"'
+        return response
 
-        # Enviar o PDF para o Clicksign
+    def _send_to_clicksign(self, sale, pdf):
         try:
-            clicksign_response, doc_key = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
-            if clicksign_response.get('status') == 'error':
-                raise ValueError(clicksign_response.get('message'))
-        except ValueError as ve:
-            return Response({'message': f'Erro ao criar o documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
+            if isinstance(response, tuple):  # Certifique-se de que é uma tupla como esperado
+                document_data, document_key = response
+                if not document_key:
+                    raise ValueError("Chave do documento ausente no retorno do Clicksign.")
+                return {"key": document_key, "data": document_data}
+            elif isinstance(response, dict) and response.get("status") == "error":
+                raise ValueError(response.get("message", "Erro desconhecido ao criar documento no Clicksign"))
+            else:
+                raise ValueError("Formato inesperado na resposta de `create_clicksign_document`.")
         except Exception as e:
-            return Response({'message': f'Erro inesperado ao criar o documento no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erro ao enviar para Clicksign: {e}")
+            return Response({'message': f'Erro ao enviar para Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def _create_signer(self, customer):
         try:
-            clicksign_response_for_signer = create_signer(sale.customer)
-            if clicksign_response_for_signer.get('status') == 'error':
-                raise ValueError(clicksign_response_for_signer.get('message'))
-        except ValueError as ve:
-            return Response({'message': f'Erro ao criar o signatário no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            response = create_signer(customer)
+            if response.get("status") == "error":
+                raise ValueError(response.get("message", "Erro desconhecido ao criar signatário"))
+            signer_key = response.get("signer_key")
+            if not signer_key:
+                raise ValueError("Chave do signatário ausente na resposta.")
+            return {"signer_key": signer_key}
         except Exception as e:
-            return Response({'message': f'Erro inesperado ao criar o signatário no Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erro ao criar signatário: {e}")
+            return Response({'message': f'Erro ao criar signatário: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def _link_signer_to_document(self, sale, clicksign_response, signer_response):
         try:
-            signer_key = clicksign_response_for_signer.get('signer_key')
-            clicksign_response_for_document_signer = create_document_signer(doc_key, signer_key, sale)
-            if clicksign_response_for_document_signer.get('status') == 'error':
-                raise ValueError(clicksign_response_for_document_signer.get('message'))
-        except ValueError as ve:
-            return Response({'message': f'Erro ao criar o signatário do documento no Clicksign: {ve}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            document_key = clicksign_response.get("key")
+            signer_key = signer_response.get("signer_key")
 
-        # Criar o objeto na tabela Attachment
+            if not document_key or not signer_key:
+                raise ValueError("Chaves necessárias para associar signatário ao documento estão ausentes.")
+
+            submission = create_document_signer(document_key, signer_key, sale)
+
+            if isinstance(submission, dict) and submission.get("status") == "error":
+                raise ValueError(submission.get("message", "Erro desconhecido ao associar signatário."))
+
+            if not isinstance(submission, ContractSubmission):
+                raise ValueError("Retorno inesperado ao criar o signatário do documento.")
+
+            return submission
+        except Exception as e:
+            logger.error(f"Erro ao vincular signatário ao documento: {e}")
+            return Response({'message': f'Erro ao vincular signatário ao documento: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _send_notifications(self, submission):
+        try:
+            return send_notification(submission)
+        except Exception as e:
+            logger.error(f'Erro ao enviar notificações: {e}')
+            return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _save_attachment(self, sale, pdf):
         try:
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             file_name = f"contrato_{sale.contract_number}_{now}.pdf"
             sanitized_file_name = re.sub(r'[^a-zA-Z0-9_.]', '_', file_name)
 
             attachment = Attachment.objects.create(
-                object_id=sale_id,
+                object_id=sale.id,
                 content_type_id=ContentType.objects.get_for_model(ContractTemplate).id,
                 status="Em Análise",
             )
 
             attachment.file.save(sanitized_file_name, ContentFile(pdf))
+            return attachment.id
         except Exception as e:
+            logger.error(f'Erro ao salvar o arquivo: {e}')
             return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response({'message': f'Contrato gerado com sucesso. Envio ao Clicksign efetuado. {clicksign_response}', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
 
 
 class GenerateCustomContract(APIView):

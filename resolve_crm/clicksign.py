@@ -120,8 +120,8 @@ def create_signer(customer):
     payload = {
         "signer": {
             "email": customer.email,
-            "phone_number": f'+55{phone_number.area_code}{phone_number.phone_number}',
-            "auths": ['email'],
+            "phone_number": formatted_phone_number,
+            "auths": ['whatsapp'],
             "name": customer.complete_name,
             "has_documentation": True,
             "selfie_enabled": True,
@@ -176,8 +176,7 @@ def create_document_signer(key_number, signer_key, sale):
             "sign_as": "contractor"
         }
     }
-    
-    
+
     headers = {
         "Content-Type": "application/json",
     }
@@ -189,7 +188,9 @@ def create_document_signer(key_number, signer_key, sale):
         if response.status_code == 201:
             list_data = response.json()
             doc_signer = list_data["list"]
-            ContractSubmission.objects.create(
+
+            # Criação da instância de ContractSubmission
+            submission = ContractSubmission.objects.create(
                 sale=sale,
                 key_number=doc_signer["key"],
                 request_signature_key=doc_signer["request_signature_key"],
@@ -198,14 +199,52 @@ def create_document_signer(key_number, signer_key, sale):
                 due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
                 link=doc_signer['url'],
             )
-            return {"status": "success", "list": list_data["list"]}
+
+            return submission  # Retorne a instância em vez de um dicionário
+
+        return {
+            "status": "error",
+            "message": "Falha ao associar signatário ao documento.",
+            "response": response.content,
+        }
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro ao associar signatário: {e}")
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+def send_notification(submission):
+    url_email = f"{API_URL}/api/v1/notifications?access_token={ACCESS_TOKEN}"
+    url_whatsapp = f"{API_URL}/api/v1/notify_by_whatsapp?access_token={ACCESS_TOKEN}"
+    
+    payload = {
+        "notification": {
+            "request_signature_key": submission.key_number,
+            "url": submission.link,
+            "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
+        }
+    }
+    
+    headers = {
+        "Content-Type": "application/json",
+    }
+    
+    try:
+        # Send email notification
+        response_email = requests.post(url_email, headers=headers, json=payload)
+        response_email.raise_for_status()
+        
+        # Send WhatsApp notification
+        response_whatsapp = requests.post(url_whatsapp, headers=headers, json=payload)
+        response_whatsapp.raise_for_status()
+        
+        if response_email.status_code == 201 and response_whatsapp.status_code == 201:
+            return {"status": "success", "message": "Notifications sent successfully."}
         else:
             return {
                 "status": "error",
-                "message": "Failed to create document signer.",
-                "response": response.content,
+                "message": "Failed to send one or more notifications.",
+                "response_email": response_email.content,
+                "response_whatsapp": response_whatsapp.content,
             }
-        
     except requests.exceptions.RequestException as e:
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
