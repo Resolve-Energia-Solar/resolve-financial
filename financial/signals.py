@@ -24,7 +24,7 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     Ajusta as parcelas do franquiado se o valor total da venda foi alterado.
     """
     
-    if not instance.branch or not instance.branch.transfer_percentage or not instance.transfer_percentage:
+    if not instance.branch and not instance.branch.transfer_percentage and not instance.transfer_percentage:
         raise ValidationError("Percentual de Repasse não configurado para a filial ou para a venda.")
         
     
