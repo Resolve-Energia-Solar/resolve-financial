@@ -105,6 +105,12 @@ class Units(models.Model):
         if self.main_unit:
             # Desmarcar outras unidades geradoras no mesmo projeto
             Units.objects.filter(project=self.project, main_unit=True).exclude(id=self.id).update(main_unit=False)
+        
+        # Verificar se a soma das porcentagens das unidades não excede 100%
+        total_percentage = Units.objects.filter(project=self.project).exclude(id=self.id).aggregate(total=models.Sum('unit_percentage'))['total'] or 0
+        if total_percentage + (self.unit_percentage or 0) > 100:
+            raise ValueError("A soma da porcentagem das unidades não pode ser superior a 100%")
+        
         super().save(*args, **kwargs)
     
     class Meta:
