@@ -547,10 +547,12 @@ class GenerateContractView(APIView):
             return variables
 
         contract_template = ContractTemplate.objects.first()
+        customer_data = self._get_customer_data(sale.customer)
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
-        contract_content = self._replace_variables(contract_template.content, variables, materials_list, payments_list)
-
+        projects_data = self._get_projects_data(sale)
+        contract_content = self._replace_variables(contract_template.content, variables, customer_data, materials_list, payments_list, projects_data)
+        
         pdf = self._generate_pdf(contract_content)
         if isinstance(pdf, Response):
             return pdf
@@ -591,6 +593,34 @@ class GenerateContractView(APIView):
             return Response({'message': 'As variáveis devem ser um dicionário.'}, status=status.HTTP_400_BAD_REQUEST)
         return variables
 
+    def _get_customer_data(self, customer):
+        address = customer.addresses.first()
+        customer_data = {
+            'customer_name': customer.complete_name,
+            'customer_first_document': customer.first_document,
+            'customer_second_document': customer.second_document,
+            'customer_street': address.street,
+            'customer_house_number': address.number,
+            'customer_neighborhood': address.neighborhood,
+            'customer_city': address.city,
+            'customer_state': address.state,
+            'customer_zip_code': address.zip_code,
+            'customer_country': address.country,
+            'customer_complement': address.complement,
+        }
+        return customer_data
+    
+    def _get_projects_data(self, sale):
+        projects = sale.projects.all()
+        watt_peaks = [f"{project.product.params} kWp" for project in projects]
+        watt_peak = ', '.join(watt_peaks[:-1]) + (' e ' if len(watt_peaks) > 1 else '') + watt_peaks[-1] if watt_peaks else ''
+        projects_data = {
+            'project_count': len(projects),
+            'project_plural': "s" if len(projects) > 1 else "",
+            'watt_peak': watt_peak
+        }
+        return projects_data
+        
     def _generate_materials_list(self, sale):
         materials = [
             {
@@ -614,8 +644,8 @@ class GenerateContractView(APIView):
         ]
         return "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
 
-    def _replace_variables(self, content, variables, materials_list, payments_list):
-        variables.update({'materials_list': materials_list, 'payments_list': payments_list})
+    def _replace_variables(self, content, variables, customer_data, materials_list, payments_list, projects_data):
+        variables.update({customer_data**, 'materials_list': materials_list, 'payments_list': payments_list, **projects_data})
         for key, value in variables.items():
             content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
         return content
