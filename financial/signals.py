@@ -12,6 +12,8 @@ def store_old_total_value(sender, instance, **kwargs):
     if instance.pk:
         old_instance = Sale.objects.get(pk=instance.pk)
         instance.old_total_value = old_instance.total_value
+        old_transfer_percentage = instance.transfer_percentage
+        instance.old_transfer_percentage = old_transfer_percentage
     else:
         instance.old_total_value = None 
 
@@ -27,7 +29,7 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
         
     
     if not created and instance.old_total_value is not None:
-        if instance.old_total_value != instance.total_value:
+        if instance.old_total_value != instance.total_value or instance.old_transfer_percentage != instance.transfer_percentage:
             # Recalcula o valor total esperado para cada parcela
             transfer_percentage = instance.transfer_percentage if instance.transfer_percentage else instance.branch.transfer_percentage
             franchise_installments = instance.franchise_installments.all()
