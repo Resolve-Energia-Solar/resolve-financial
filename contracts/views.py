@@ -12,6 +12,7 @@ from core.models import Attachment
 from resolve_crm.models import ContractSubmission, Sale
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+import logging
 
 
 class InformacaoFaturaAPIView(APIView):
@@ -36,6 +37,8 @@ class InformacaoFaturaAPIView(APIView):
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+logger = logging.getLogger(__name__)
 
 class ReciveContractInfomation(APIView):
     http_method_names = ['post']
@@ -105,6 +108,8 @@ class ReciveContractInfomation(APIView):
 
                 return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
             except ValueError as e:
+                logger.error(f"ValueError: {str(e)}")
                 return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
+                logger.error(f"Exception: {str(e)}")
                 return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
