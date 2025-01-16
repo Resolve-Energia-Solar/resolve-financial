@@ -5,6 +5,7 @@ import re
 from django.db import transaction
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
+from django.utils import formats
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -551,7 +552,7 @@ class GenerateContractView(APIView):
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
         projects_data = self._get_projects_data(sale)
-        contract_content = self._replace_variables(contract_template.content, variables, customer_data, materials_list, payments_list, projects_data)
+        contract_content = self._replace_variables(contract_template.content, variables, customer_data, materials_list, payments_list, projects_data, sale.branch.address.city)
         
         pdf = self._generate_pdf(contract_content)
         if isinstance(pdf, Response):
@@ -644,12 +645,25 @@ class GenerateContractView(APIView):
         ]
         return "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
 
-    def _replace_variables(self, content, variables, customer_data, materials_list, payments_list, projects_data):
-        variables.update({customer_data**, 'materials_list': materials_list, 'payments_list': payments_list, **projects_data})
+    def _replace_variables(self, content, variables, customer_data, materials_list, payments_list, projects_data, city):
+        now = datetime.now()
+        day = now.day
+        month = formats.date_format(now, 'F')
+        year = now.year
+        today_formatted = f'{day} de {month} de {year}'
+        
+        variables.update({
+            'materials_list': materials_list,
+            'payments_list': payments_list,
+            **projects_data,
+            **customer_data,
+            'today': today_formatted,
+            'city': city
+        })
         for key, value in variables.items():
             content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
         return content
-
+    
     def _generate_pdf(self, content):
         try:
             rendered_html = render_to_string('contract_base.html', {'content': content})
