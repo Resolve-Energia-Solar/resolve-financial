@@ -14,7 +14,7 @@ class API(models.Model):
     
 
 class Discount(models.Model):
-    banner = models.ImageField('Banner', upload_to='discounts')
+    banner = models.ImageField('Banner', upload_to='discounts', blank=True, null=True)
     title = models.CharField('Título', max_length=100)
     description = models.TextField('Descrição', blank=True, null=True)
     link = models.URLField('Link', blank=True, null=True)
