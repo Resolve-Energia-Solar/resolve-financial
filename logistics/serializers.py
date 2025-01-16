@@ -54,7 +54,7 @@ class ProductSerializer(BaseSerializer):
     roof_type = RoofTypeSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs com quantidade
-    branchs_ids = serializers.ListField(
+    branches_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,
         source='branch',
