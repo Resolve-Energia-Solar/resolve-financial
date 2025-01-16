@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.utils import extract_data_from_pdf
-from core.models import Attachment
+from core.models import Attachment, DocumentType
 from resolve_crm.models import ContractSubmission, Sale
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -100,11 +100,12 @@ class ReciveContractInfomation(APIView):
                     return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
 
                 document_content = self.fetch_document(document_file)
+                document_type = DocumentType.objects.get(id=os.environ.get('DOCUMENT_TYPE_ID'))
 
                 contract = self.handle_contract_submission(document_key, signature_date, document_status)
                 self.save_signature_date(contract.sale, signature_date)
 
-                self.save_attachment(contract.sale.id, document_content)
+                self.save_attachment(contract.sale.id, document_content, document_type)
 
                 return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
             except ValueError as e:
