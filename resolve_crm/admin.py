@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from financial.admin import PaymentInline
-from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, ProjectStep, Step, Task, Project, Sale, Origin
+from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Step, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
@@ -74,3 +74,12 @@ class ContractTemplateAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "person_type")
     search_fields = ("name","template")
     ordering = ("name",)
+    
+
+@admin.register(MarketingCampaign)
+class MarketingCampaignAdmin(admin.ModelAdmin):
+    list_display = ("name", "start_datetime", "end_datetime")
+    search_fields = ("name",)
+    list_filter = ("start_datetime", "end_datetime")
+    ordering = ("-start_datetime",)
+    
