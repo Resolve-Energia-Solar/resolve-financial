@@ -95,11 +95,16 @@ class ProductSerializer(BaseSerializer):
                 raise serializers.ValidationError("Proposta comercial não encontrada.")
             
 
+        # Atualização das relações com branch
+        branch_ids = validated_data.pop('branch', [])
+
         # Criação do produto
         product = Product.objects.create(**validated_data)
 
         # Criação das relações com ProductMaterials
         self.create_or_update_materials(product, materials_data)
+
+        product.branch.set(branch_ids)
 
         # Criação do relacionamento com SaleProduct
         if sale_id:
@@ -129,8 +134,12 @@ class ProductSerializer(BaseSerializer):
             sale = Sale.objects.filter(id=sale_id).first()
             if not sale:
                 raise serializers.ValidationError("Venda não encontrada.")
+        # Atualização das relações com ProductMaterials
+        self.create_or_update_materials(instance, materials_data)
 
-        # Atualização do produto
+        # Atualização das relações com branch
+        branch_ids = validated_data.pop('branch', [])
+        instance.branch.set(branch_ids)
         instance = super().update(instance, validated_data)
 
         # Atualização das relações com ProductMaterials

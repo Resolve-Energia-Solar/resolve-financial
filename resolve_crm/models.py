@@ -376,6 +376,7 @@ class Sale(models.Model):
         null=True,
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
     )
+    
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
     # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
