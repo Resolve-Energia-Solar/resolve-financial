@@ -1,11 +1,9 @@
-from accounts.models import Branch
 from field_services.models import RoofType
 from logistics.models import *
 from api.serializers import BaseSerializer
 from resolve_crm.models import ComercialProposal, Sale
-from accounts.serializers import BranchSerializer
 from field_services.serializers import RoofTypeSerializer
-from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 from rest_framework import serializers
 from django.db import transaction
 
@@ -52,6 +50,7 @@ class ProductSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     materials = ProductMaterialsSerializer(many=True, read_only=True)
     roof_type = RoofTypeSerializer(read_only=True)
+    branch = StringRelatedField(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs com quantidade
     branches_ids = serializers.ListField(
