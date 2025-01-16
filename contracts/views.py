@@ -49,7 +49,7 @@ class ReciveContractInfomation(APIView):
         return (
             data.get('event', {}).get('occurred_at', None),
             data.get('document', {}).get('key', None),
-            data.get('document', {}).get('downloads', {}).get('original_file_url', None),
+            data.get('document', {}).get('downloads', {}).get('signed_file_url', None),
             data.get('document', {}).get('status', None)
         )
 
@@ -62,6 +62,7 @@ class ReciveContractInfomation(APIView):
     def handle_contract_submission(self, document_key, signature_date, status):
         try:
             contract = ContractSubmission.objects.get(key_number=document_key)
+            print('Contrato: ',contract)
             if status == 'closed':
                 contract.status = 'A'
             elif status == 'canceled':
@@ -69,6 +70,8 @@ class ReciveContractInfomation(APIView):
             else:
                 contract.status = 'P'
             contract.finished_at = signature_date
+            
+            contract.save()
             return contract
         except ContractSubmission.DoesNotExist:
             raise ValueError("Contrato não encontrado.")
@@ -120,3 +123,5 @@ class ReciveContractInfomation(APIView):
             except Exception as e:
                 logger.error(f"Exception: {str(e)}")
                 return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
