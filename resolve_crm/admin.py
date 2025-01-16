@@ -31,6 +31,9 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 class SaleAdmin(admin.ModelAdmin):
     list_display = ("total_value", "contract_number", "can_generate_contract", "total_paid", "created_at")
     inlines = [SaleProductInline, PaymentInline]
+    search_fields = ("contract_number", "customer__username", "seller__username")
+    list_filter = ("payment_status", "status", "created_at")
+    ordering = ("-created_at",)
 
 
 @admin.register(Task)
