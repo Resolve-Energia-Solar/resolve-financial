@@ -1,6 +1,7 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
 from resolve_crm.models import Project
+from django.core.exceptions import ValidationError
 
 
 class EnergyCompany(models.Model):
@@ -101,15 +102,18 @@ class Units(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
-    def save(self, *args, **kwargs):
-        if self.main_unit:
-            # Desmarcar outras unidades geradoras no mesmo projeto
-            Units.objects.filter(project=self.project, main_unit=True).exclude(id=self.id).update(main_unit=False)
-        
+    def clean(self):
         # Verificar se a soma das porcentagens das unidades não excede 100%
         total_percentage = Units.objects.filter(project=self.project).exclude(id=self.id).aggregate(total=models.Sum('unit_percentage'))['total'] or 0
         if total_percentage + (self.unit_percentage or 0) > 100:
-            raise ValueError("A soma da porcentagem das unidades não pode ser superior a 100%")
+            raise ValidationError("A soma da porcentagem das unidades não pode ser superior a 100%")
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        if self.main_unit:
+            # Desmarcar outras unidades geradoras no mesmo projeto
+            Units.objects.filter(project=self.project, main_unit=True).exclude(id=self.id).update(main_unit=False)
         
         super().save(*args, **kwargs)
     

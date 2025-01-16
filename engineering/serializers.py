@@ -51,6 +51,16 @@ class UnitsSerializer(BaseSerializer):
     supply_adquance_ids = PrimaryKeyRelatedField(queryset=SupplyAdequance.objects.all(), many=True, write_only=True, source='supply_adquance')
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
     
+    def validate(self, data):
+        project = data.get('project') or (self.instance.project if self.instance else None)
+        unit_percentage = data.get('unit_percentage') or (self.instance.unit_percentage if self.instance else 0)
+        total_percentage = Units.objects.filter(project=project)
+        if self.instance:
+            total_percentage = total_percentage.exclude(id=self.instance.id)
+        total_percentage = total_percentage.aggregate(total=models.Sum('unit_percentage'))['total'] or 0
+        if total_percentage + (unit_percentage or 0) > 100:
+            raise ValidationError({"unit_percentage": "A soma da porcentagem das unidades não pode ser superior a 100%"})
+        return data
     
     class Meta:
         model = Units
