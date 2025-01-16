@@ -11,7 +11,7 @@ from api.utils import extract_data_from_pdf
 from core.models import Attachment
 from resolve_crm.models import ContractSubmission, Sale
 from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
+from django.db import transaction
 
 
 class InformacaoFaturaAPIView(APIView):
@@ -83,27 +83,28 @@ class ReciveContractInfomation(APIView):
         )
 
     def post(self, request):
-        data = request.data
-        try:
-            signature_date, document_key, document_file, document_status = self.get_signature_data(data)
-            
-            signature_date = datetime.strptime(
-                signature_date.split('.')[0].replace('T', ' '), 
-                '%Y-%m-%d %H:%M:%S'
-            ).date()
-            
-            if not all([signature_date, document_key, document_file]):
-                return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            data = request.data
+            try:
+                signature_date, document_key, document_file, document_status = self.get_signature_data(data)
+                
+                signature_date = datetime.strptime(
+                    signature_date.split('.')[0].replace('T', ' '), 
+                    '%Y-%m-%d %H:%M:%S'
+                ).date()
+                
+                if not all([signature_date, document_key, document_file]):
+                    return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            document_content = self.fetch_document(document_file)
+                document_content = self.fetch_document(document_file)
 
-            contract = self.handle_contract_submission(document_key, signature_date, document_status)
-            self.save_signature_date(contract.sale, signature_date)
+                contract = self.handle_contract_submission(document_key, signature_date, document_status)
+                self.save_signature_date(contract.sale, signature_date)
 
-            self.save_attachment(contract.sale.id, document_content)
+                self.save_attachment(contract.sale.id, document_content)
 
-            return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
-        except ValueError as e:
-            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
+            except ValueError as e:
+                return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
