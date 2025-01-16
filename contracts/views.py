@@ -13,6 +13,7 @@ from resolve_crm.models import ContractSubmission, Sale
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 import logging
+from django.core.files.base import ContentFile
 
 
 class InformacaoFaturaAPIView(APIView):
@@ -78,10 +79,15 @@ class ReciveContractInfomation(APIView):
 
     def save_attachment(self, sale_id, file_content, document_type):
         content_type_model = ContentType.objects.get_for_model(Sale)
+
+        # Criar o ContentFile para encapsular o conteúdo do arquivo
+        content_file = ContentFile(file_content, name=f"{document_type.name}.pdf")
+
+        # Salvar o Attachment
         Attachment.objects.create(
             content_type=content_type_model,
             object_id=sale_id,
-            file=file_content,
+            file=content_file,
             document_type=document_type,
         )
 
