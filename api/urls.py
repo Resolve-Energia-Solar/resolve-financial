@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter, APIRootView
 from rest_framework import permissions
 
 from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
-from contracts.views import InformacaoFaturaAPIView
+from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView
@@ -61,4 +61,6 @@ urlpatterns = [
     path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path('generate-contract/', GenerateContractView.as_view(), name='generate_contract'),
     path('generate-custom-contract/', GenerateCustomContract.as_view(), name='generate_custom_contract'),
+    
+    path('recive-contract-infomation/', ReciveContractInfomation.as_view(), name='recive_contract_infomation'),
 ]
