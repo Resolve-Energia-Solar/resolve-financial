@@ -61,6 +61,5 @@ urlpatterns = [
     path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path('generate-contract/', GenerateContractView.as_view(), name='generate_contract'),
     path('generate-custom-contract/', GenerateCustomContract.as_view(), name='generate_custom_contract'),
-    
     path('recive-contract-infomation/', ReciveContractInfomation.as_view(), name='recive_contract_infomation'),
 ]

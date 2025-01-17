@@ -525,7 +525,6 @@ class ContractTemplateViewSet(BaseModelViewSet):
 class GenerateContractView(APIView):
     def post(self, request):
         sale_id = request.data.get('sale_id')
-        document_type_id = request.data.get('document_type_id')
 
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
@@ -537,11 +536,6 @@ class GenerateContractView(APIView):
         total_payments_value = sum(payment.value for payment in sale.payments.all())
         if total_payments_value != sale.total_value:
             return Response({'message': 'A soma dos valores dos pagamentos é diferente do valor total da venda.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not document_type_id:
-            return Response({'message': 'document_type_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            document_type = DocumentType.objects.get(id=document_type_id)
 
         variables = self._validate_variables(request.data.get('contract_data', {}))
         if isinstance(variables, Response):
@@ -577,11 +571,7 @@ class GenerateContractView(APIView):
         if isinstance(notification_response, Response):
             return notification_response
 
-        attachment_response = self._save_attachment(sale, document_type, pdf)
-        if isinstance(attachment_response, Response):
-            return attachment_response
-
-        return Response({'message': 'Contrato gerado com sucesso.', 'attachment_id': attachment_response}, status=status.HTTP_200_OK)
+        return Response({'message': 'Contrato gerado com sucesso.', 'contract_submission_id': document_signer_response.id}, status=status.HTTP_200_OK)
 
     def _get_sale(self, sale_id):
         try:
@@ -680,7 +670,7 @@ class GenerateContractView(APIView):
     def _send_to_clicksign(self, sale, pdf):
         try:
             response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
-            if isinstance(response, tuple):  # Certifique-se de que é uma tupla como esperado
+            if isinstance(response, tuple):
                 document_data, document_key = response
                 if not document_key:
                     raise ValueError("Chave do documento ausente no retorno do Clicksign.")
@@ -733,25 +723,6 @@ class GenerateContractView(APIView):
         except Exception as e:
             logger.error(f'Erro ao enviar notificações: {e}')
             return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _save_attachment(self, sale, document_type, pdf):
-        try:
-            now = datetime.now().strftime('%Y%m%d%H%M%S')
-            file_name = f"contrato_{sale.contract_number}_{now}.pdf"
-            sanitized_file_name = re.sub(r'[^a-zA-Z0-9_.]', '_', file_name)
-
-            attachment = Attachment.objects.create(
-                object_id=sale.id,
-                content_type_id=ContentType.objects.get_for_model(Sale).id,
-                status="Em Análise",
-                document_type=document_type
-            )
-
-            attachment.file.save(sanitized_file_name, ContentFile(pdf))
-            return attachment.id
-        except Exception as e:
-            logger.error(f'Erro ao salvar o arquivo: {e}')
-            return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GenerateCustomContract(APIView):

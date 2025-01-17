@@ -5,7 +5,7 @@ from core.serializers import AttachmentSerializer
 from engineering.models import Units
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
-from accounts.serializers import RelatedUserSerializer, AddressSerializer,  ContentTypeSerializer, BranchSerializer
+from accounts.serializers import RelatedUserSerializer, AddressSerializer, BranchSerializer
 from api.serializers import BaseSerializer
 from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct

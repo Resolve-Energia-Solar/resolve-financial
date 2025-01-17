@@ -200,7 +200,7 @@ def create_document_signer(key_number, signer_key, sale):
                 link=doc_signer['url'],
             )
 
-            return submission  # Retorne a instância em vez de um dicionário
+            return submission
 
         return {
             "status": "error",
