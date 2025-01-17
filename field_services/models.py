@@ -136,8 +136,7 @@ class Schedule(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
     service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.CASCADE, blank=True, null=True)
-    old_final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.CASCADE, related_name='final_service_opinion', blank=True, null=True)
-    final_service_opinion = models.CharField("Parecer Final do Serviço", max_length=50, blank=True, null=True)
+    final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.CASCADE, related_name='final_service_opinion', blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -209,6 +208,7 @@ class FormFile(models.Model):
 class ServiceOpinion(models.Model):
     name = models.CharField("Nome", max_length=50, blank=True, null=True)
     service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.CASCADE)
+    is_final_opinion = models.BooleanField("Parecer Final", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -220,3 +220,5 @@ class ServiceOpinion(models.Model):
 
     def __str__(self):
         return self.name
+
+
