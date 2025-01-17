@@ -82,9 +82,11 @@ class ReciveContractInfomation(APIView):
 
     def save_attachment(self, sale_id, file_content, document_type):
         content_type_model = ContentType.objects.get_for_model(Sale)
+        
+        sale = Sale.objects.get(id=sale_id)
 
         # Criar o ContentFile para encapsular o conteúdo do arquivo
-        content_file = ContentFile(file_content, name=f"{document_type.name}.pdf")
+        content_file = ContentFile(file_content, name=f"{document_type.name}-{sale.contract_number}.pdf")
 
         # Salvar o Attachment
         Attachment.objects.create(
