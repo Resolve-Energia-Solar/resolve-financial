@@ -109,6 +109,11 @@ class Schedule(models.Model):
         ("Confirmado", "Confirmado"),
         ("Cancelado", "Cancelado"),
     ]
+    
+    FINAL_SERVICE_CHOICES = [
+        ("Aprovado", "Aprovado"),
+        ("Reprovado", "Reprovado"),
+    ]
 
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
@@ -131,7 +136,8 @@ class Schedule(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
     service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.CASCADE, blank=True, null=True)
-    final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.CASCADE, related_name='final_service_opinion', blank=True, null=True)
+    old_final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.CASCADE, related_name='final_service_opinion', blank=True, null=True)
+    final_service_opinion = models.CharField("Parecer Final do Serviço", max_length=50, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()

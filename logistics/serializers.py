@@ -1,7 +1,7 @@
 from field_services.models import RoofType
 from logistics.models import *
 from api.serializers import BaseSerializer
-from resolve_crm.models import ComercialProposal, Sale
+from resolve_crm.models import ComercialProposal, Project, Sale
 from field_services.serializers import RoofTypeSerializer
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 from rest_framework import serializers
@@ -50,7 +50,7 @@ class ProductSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
     materials = ProductMaterialsSerializer(many=True, read_only=True)
     roof_type = RoofTypeSerializer(read_only=True)
-    branch = StringRelatedField(many=True, read_only=True)
+    branch = serializers.SerializerMethodField()
 
     # Para escrita: usar apenas IDs com quantidade
     branches_ids = serializers.ListField(
@@ -75,6 +75,9 @@ class ProductSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Product
         fields = '__all__'
+        
+    def get_branch(self, obj):
+        return [{'id': branch.id, 'name': branch.name} for branch in obj.branch.all()]
 
     @transaction.atomic
     def create(self, validated_data):
@@ -263,8 +266,10 @@ class SaleProductSerializer(BaseSerializer):
         
 
 class ProjectMaterialsSerializer(BaseSerializer):
+    # project = StringRelatedField(read_only=True)
     material = MaterialsSerializer(read_only=True)
     material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), source='material', write_only=True)
+    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), source='project', write_only=True)
     
     class Meta:
         model = ProjectMaterials
