@@ -72,3 +72,8 @@ class ProductViewSet(BaseModelViewSet):
                 raise serializers.ValidationError({"sale_id": "Este campo é obrigatório quando is_default é false."})
         
         serializer.save()
+
+
+class ProjectMaterialsViewSet(BaseModelViewSet):
+    queryset = ProjectMaterials.objects.all()
+    serializer_class = ProjectMaterialsSerializer
