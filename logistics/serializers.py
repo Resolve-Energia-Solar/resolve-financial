@@ -273,4 +273,4 @@ class ProjectMaterialsSerializer(BaseSerializer):
     
     class Meta:
         model = ProjectMaterials
-        fields = ['material', 'material_id', 'amount', 'is_exit', 'serial_number']
+        fields = ['material', 'material_id', 'project_id', 'amount', 'is_exit', 'serial_number']
