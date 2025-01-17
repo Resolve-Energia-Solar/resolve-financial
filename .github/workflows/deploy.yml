@@ -46,6 +46,7 @@ jobs:
           echo "CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}" >> .env
           echo "CORS_ALLOW_ALL_ORIGINS=${{ vars.CORS_ALLOW_ALL_ORIGINS }}" >> .env
           echo "CORS_ALLOW_CREDENTIALS=${{ vars.CORS_ALLOW_CREDENTIALS }}" >> .env
+          echo "CONTENT_TYPE_DOCUMENT=${{ vars.CONTENT_TYPE_DOCUMENT }}" >> .env
           echo "ADMIN_NAME=${{ vars.ADMIN_NAME }}" >> .env
           echo "ADMIN_EMAIL=${{ vars.ADMIN_EMAIL }}" >> .env
           echo "EMAIL_BACKEND=${{ vars.EMAIL_BACKEND }}" >> .env
