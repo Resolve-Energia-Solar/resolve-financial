@@ -288,10 +288,10 @@ class Contact(models.Model):
 
 class MarketingCampaign(models.Model):
     name = models.CharField("Nome", max_length=200)
-    start_datetime = models.DateTimeField("Data de Início")
-    end_datetime = models.DateTimeField("Data de Término")
-    description = models.TextField("Descrição")
-    banner = models.ImageField("Banner", upload_to="resolve_crm/img/marketing_campaign/")
+    start_datetime = models.DateTimeField("Data de Início", blank=True, null=True)
+    end_datetime = models.DateTimeField("Data de Término", blank=True, null=True)
+    description = models.TextField("Descrição", blank=True, null=True)
+    banner = models.ImageField("Banner", upload_to="resolve_crm/img/marketing_campaign/", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     
     def get_absolute_url(self):

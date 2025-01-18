@@ -184,6 +184,7 @@ class Branch(models.Model):
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))]
     )
     discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True)
+    energy_company = models.ForeignKey("engineering.EnergyCompany", verbose_name="Companhia Elétrica", on_delete=models.CASCADE, blank=True, null=True)
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 
