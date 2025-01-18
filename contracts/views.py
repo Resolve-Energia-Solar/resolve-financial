@@ -81,9 +81,16 @@ class ReciveContractInfomation(APIView):
 
     def save_attachment(self, sale_id, file_content, document_type):
         content_type_model = ContentType.objects.get_for_model(Sale)
+        
+        sale = Sale.objects.get(id=sale_id)
+        contract_number = sale.contract_number
+        current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+
+        # Criar o nome do arquivo com o número do contrato e a hora exata
+        file_name = f"{document_type.name}_{contract_number}_{current_time}.pdf"
 
         # Criar o ContentFile para encapsular o conteúdo do arquivo
-        content_file = ContentFile(file_content, name=f"{document_type.name}.pdf")
+        content_file = ContentFile(file_content, name=file_name)
 
         # Salvar o Attachment
         Attachment.objects.create(
@@ -107,13 +114,14 @@ class ReciveContractInfomation(APIView):
                 if not all([signature_date, document_key, document_file]):
                     return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
 
-                document_content = self.fetch_document(document_file)
-                document_type = DocumentType.objects.get(id=os.environ.get('DOCUMENT_TYPE_ID'))
 
                 contract = self.handle_contract_submission(document_key, signature_date, document_status)
                 self.save_signature_date(contract.sale, signature_date)
 
-                self.save_attachment(contract.sale.id, document_content, document_type)
+                if document_status == 'closed':
+                    document_content = self.fetch_document(document_file)
+                    document_type = DocumentType.objects.get(id=os.environ.get('CONTENT_TYPE_DOCUMENT'))
+                    self.save_attachment(contract.sale.id, document_content, document_type)
 
                 return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
             except ValueError as e:
