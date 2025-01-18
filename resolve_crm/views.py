@@ -556,6 +556,7 @@ class GenerateContractView(APIView):
             contract_template.content,
             variables,
             customer_data,
+            sale.branch.energy_company.name,
             materials_list,
             payments_list,
             projects_data,
@@ -682,7 +683,7 @@ class GenerateContractView(APIView):
         payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
         return payments_html
 
-    def _replace_variables(self, content, variables, customer_data, materials_list, payments_list, projects_data, city):
+    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city):
         now = datetime.now()
         day = now.day
         month = formats.date_format(now, 'F')
@@ -692,6 +693,7 @@ class GenerateContractView(APIView):
         variables.update({
             'materials_list': materials_list,
             'payments_list': payments_list,
+            'energy_company': energy_company,
             **projects_data,
             **customer_data,
             'today': today_formatted,
