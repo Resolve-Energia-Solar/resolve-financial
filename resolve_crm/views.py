@@ -18,7 +18,7 @@ from logistics.models import Product, ProductMaterials, SaleProduct
 from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer, send_notification
 from .models import *
 from .serializers import *
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 
 
@@ -89,6 +89,13 @@ class SaleViewSet(BaseModelViewSet):
             in_progress_count=Count('id', filter=Q(status="EA")),
             canceled_count=Count('id', filter=Q(status="C")),
             terminated_count=Count('id', filter=Q(status="D")),
+            
+            total_value_sum=Sum('total_value'),
+            total_value_pending=Sum('total_value', filter=Q(status="P")),
+            total_value_finalized=Sum('total_value', filter=Q(status="F")),
+            total_value_in_progress=Sum('total_value', filter=Q(status="EA")),
+            total_value_canceled=Sum('total_value', filter=Q(status="C")),
+            total_value_terminated=Sum('total_value', filter=Q(status="D")),
         )
         
         # Paginação (se habilitada)
