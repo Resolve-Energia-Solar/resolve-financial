@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import re
 
@@ -15,7 +15,7 @@ from accounts.models import PhoneNumber, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import create_clicksign_document, create_signer, create_document_signer, send_notification
+from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q
@@ -523,16 +523,19 @@ class ContractTemplateViewSet(BaseModelViewSet):
 
 
 class GenerateContractView(APIView):
+    http_method_names = ['post']
+
+    @transaction.atomic
     def post(self, request):
         sale_id = request.data.get('sale_id')
 
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
             return sale
-        
+
         if not sale.payments.exists():
             return Response({'message': 'Venda não possui pagamentos associados.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         total_payments_value = sum(payment.value for payment in sale.payments.all())
         if total_payments_value != sale.total_value:
             return Response({'message': 'A soma dos valores dos pagamentos é diferente do valor total da venda.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -542,12 +545,23 @@ class GenerateContractView(APIView):
             return variables
 
         contract_template = ContractTemplate.objects.first()
+        if not contract_template:
+            return Response({'message': 'Template de contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
         customer_data = self._get_customer_data(sale.customer)
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
         projects_data = self._get_projects_data(sale)
-        contract_content = self._replace_variables(contract_template.content, variables, customer_data, materials_list, payments_list, projects_data, sale.branch.address.city)
-        
+        contract_content = self._replace_variables(
+            contract_template.content,
+            variables,
+            customer_data,
+            materials_list,
+            payments_list,
+            projects_data,
+            sale.branch.address.city
+        )
+
         pdf = self._generate_pdf(contract_content)
         if isinstance(pdf, Response):
             return pdf
@@ -555,23 +569,46 @@ class GenerateContractView(APIView):
         if request.query_params.get('preview') == 'true':
             return self._preview_pdf(pdf)
 
-        clicksign_response = self._send_to_clicksign(sale, pdf)
-        if isinstance(clicksign_response, Response):
-            return clicksign_response
+        # Início do fluxo atualizado com as novas funções do Clicksign
+        envelope_response = self._create_envelope(sale)
+        if isinstance(envelope_response, Response):
+            return envelope_response
 
-        signer_response = self._create_signer(sale.customer)
+        envelope_id = envelope_response.get('envelope_id')
+        if not envelope_id:
+            return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        document_response = self._add_document_to_envelope(sale, envelope_id, pdf)
+        document_key = document_response.get('document_key')
+        if isinstance(document_response, Response):
+            return document_response
+        
+        signer_response = self._create_signer(envelope_id, sale.customer)
         if isinstance(signer_response, Response):
             return signer_response
+        signer_key = signer_response.get('signer_key')
+        
+        add_reqs_response = self._add_envelope_requirements(envelope_id, document_key, signer_key)
+        if isinstance(add_reqs_response, Response):
+            return add_reqs_response
 
-        document_signer_response = self._link_signer_to_document(sale, clicksign_response, signer_response)
-        if isinstance(document_signer_response, Response):
-            return document_signer_response
+        activate_response = self._activate_envelope(envelope_id)
+        if isinstance(activate_response, Response):
+            return activate_response
 
-        notification_response = self._send_notifications(document_signer_response)
+        notification_response = self._send_notifications(envelope_id)
         if isinstance(notification_response, Response):
             return notification_response
 
-        return Response({'message': 'Contrato gerado com sucesso.', 'contract_submission_id': document_signer_response.id}, status=status.HTTP_200_OK)
+        # Registro do ContractSubmission
+        submission = self._create_contract_submission(sale, document_key, signer_key)
+        if isinstance(submission, Response):
+            return submission
+
+        return Response({
+            'message': 'Contrato gerado com sucesso.',
+            'contract_submission_id': submission.id
+        }, status=status.HTTP_200_OK)
 
     def _get_sale(self, sale_id):
         try:
@@ -586,6 +623,10 @@ class GenerateContractView(APIView):
 
     def _get_customer_data(self, customer):
         address = customer.addresses.first()
+        if not address:
+            logger.error("Endereço do cliente não encontrado.")
+            return Response({'message': 'Endereço do cliente não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
         customer_data = {
             'customer_name': customer.complete_name,
             'customer_first_document': customer.first_document,
@@ -600,29 +641,34 @@ class GenerateContractView(APIView):
             'customer_complement': address.complement,
         }
         return customer_data
-    
+
     def _get_projects_data(self, sale):
         projects = sale.projects.all()
         watt_peaks = [f"{project.product.params} kWp" for project in projects]
-        watt_peak = ', '.join(watt_peaks[:-1]) + (' e ' if len(watt_peaks) > 1 else '') + watt_peaks[-1] if watt_peaks else ''
+        if len(watt_peaks) > 1:
+            watt_peak = ', '.join(watt_peaks[:-1]) + ' e ' + watt_peaks[-1]
+        elif watt_peaks:
+            watt_peak = watt_peaks[0]
+        else:
+            watt_peak = ''
         projects_data = {
             'project_count': len(projects),
             'project_plural': "s" if len(projects) > 1 else "",
             'watt_peak': watt_peak
         }
         return projects_data
-        
+
     def _generate_materials_list(self, sale):
-        materials = [
-            {
-                'name': pm.material.name,
-                'amount': round(pm.amount, 2),
-                'price': pm.material.price
-            }
-            for project in sale.projects.all()
-            for pm in project.product.materials.filter(is_deleted=False)
-        ]
-        return "".join(f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials)
+        materials = []
+        for project in sale.projects.all():
+            for pm in project.product.materials.filter(is_deleted=False):
+                materials.append({
+                    'name': pm.material.name,
+                    'amount': round(pm.amount, 2),
+                    'price': pm.material.price
+                })
+        materials_html = "".join(f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials)
+        return materials_html
 
     def _generate_payments_list(self, sale):
         payments = [
@@ -633,7 +679,8 @@ class GenerateContractView(APIView):
             }
             for payment in sale.payments.all()
         ]
-        return "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
+        payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
+        return payments_html
 
     def _replace_variables(self, content, variables, customer_data, materials_list, payments_list, projects_data, city):
         now = datetime.now()
@@ -641,7 +688,7 @@ class GenerateContractView(APIView):
         month = formats.date_format(now, 'F')
         year = now.year
         today_formatted = f'{day} de {month} de {year}'
-        
+
         variables.update({
             'materials_list': materials_list,
             'payments_list': payments_list,
@@ -653,7 +700,7 @@ class GenerateContractView(APIView):
         for key, value in variables.items():
             content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
         return content
-    
+
     def _generate_pdf(self, content):
         try:
             rendered_html = render_to_string('contract_base.html', {'content': content})
@@ -667,62 +714,115 @@ class GenerateContractView(APIView):
         response['Content-Disposition'] = 'inline; filename="preview_contract.pdf"'
         return response
 
-    def _send_to_clicksign(self, sale, pdf):
+    def _create_envelope(self, sale):
         try:
-            response = create_clicksign_document(sale.contract_number, sale.customer.complete_name, pdf)
-            if isinstance(response, tuple):
-                document_data, document_key = response
-                if not document_key:
-                    raise ValueError("Chave do documento ausente no retorno do Clicksign.")
-                return {"key": document_key, "data": document_data}
-            elif isinstance(response, dict) and response.get("status") == "error":
-                raise ValueError(response.get("message", "Erro desconhecido ao criar documento no Clicksign"))
+            response = create_clicksign_envelope(sale.contract_number, sale.customer.complete_name)
+            if response.get('status') == 'success':
+                envelope_id = response.get('envelope_id')
+                logger.info(f"Envelope criado com ID: {envelope_id}")
+                return {'envelope_id': envelope_id}
             else:
-                raise ValueError("Formato inesperado na resposta de `create_clicksign_document`.")
+                logger.error(f"Erro ao criar envelope: {response.get('message')}")
+                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
-            logger.error(f"Erro ao enviar para Clicksign: {e}")
-            return Response({'message': f'Erro ao enviar para Clicksign: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erro ao criar envelope: {e}")
+            return Response({'message': f'Erro ao criar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _create_signer(self, customer):
+    def _add_document_to_envelope(self, sale, envelope_id, pdf):
         try:
-            response = create_signer(customer)
-            if response.get("status") == "error":
-                raise ValueError(response.get("message", "Erro desconhecido ao criar signatário"))
-            signer_key = response.get("signer_key")
-            if not signer_key:
-                raise ValueError("Chave do signatário ausente na resposta.")
-            return {"signer_key": signer_key}
+            response = create_clicksign_document(envelope_id, sale.contract_number, sale.customer.complete_name, pdf)
+            if isinstance(response, dict) and 'data' in response:
+                document_data = response['data']
+                document_key = document_data['id']
+                logger.info(f"Document data: {document_data}")
+                if not document_key:
+                    logger.error("Chave do documento ausente no retorno do Clicksign.")
+                    return Response({'message': 'Chave do documento ausente no retorno do Clicksign.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                logger.info(f"Documento adicionado com chave: {document_key}")
+                return {'document_key': document_key}
+            elif isinstance(response, dict) and response.get("status") == "error":
+                logger.error(f"Erro ao adicionar documento: {response.get('message')}")
+                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                logger.error("Formato inesperado na resposta de `create_clicksign_document`.")
+                return Response({'message': 'Formato inesperado na resposta de `create_clicksign_document`.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
-            logger.error(f"Erro ao criar signatário: {e}")
-            return Response({'message': f'Erro ao criar signatário: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erro ao adicionar documento ao envelope: {e}")
+            return Response({'message': f'Erro ao adicionar documento ao envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _link_signer_to_document(self, sale, clicksign_response, signer_response):
+    def _create_signer(self, envelope_id, customer):
         try:
-            document_key = clicksign_response.get("key")
-            signer_key = signer_response.get("signer_key")
+            response = create_signer(envelope_id, customer)
+            if response.get('status') == 'success':
+                signer_key = response.get('signer_key')
+                logger.info(f"Signer criado com chave: {signer_key}")
+                return {'signer_key': signer_key}
+            else:
+                logger.error(f"Erro ao criar signer: {response.get('message')}")
+                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.error(f"Erro ao criar signer: {e}")
+            return Response({'message': f'Erro ao criar signer: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def _add_envelope_requirements(self, envelope_id, document_key, signer_key):
+        try:
+            response = add_envelope_requirements(envelope_id, document_key, signer_key)
+            if isinstance(response, list):
+                for item in response:
+                    if item.get('status') != 'success':
+                        logger.error(f"Erro ao adicionar requisitos ao envelope: {item.get('message')}")
+                        return Response({'message': item.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                logger.info("Requisitos do envelope adicionados com sucesso.")
+                return {'status': 'success'}
+            else:
+                logger.error(f"Formato inesperado na resposta de `add_envelope_requirements`: {response}")
+                return Response({'message': f'Formato inesperado na resposta de `add_envelope_requirements`: {response}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.error(f"Erro ao adicionar requisitos ao envelope: {e}")
+            return Response({'message': f'Erro ao adicionar requisitos ao envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if not document_key or not signer_key:
-                raise ValueError("Chaves necessárias para associar signatário ao documento estão ausentes.")
+    def _activate_envelope(self, envelope_id):
+        try:
+            response = activate_envelope(envelope_id)
+            if response.get('status') == 'success':
+                logger.info("Envelope ativado com sucesso.")
+                return {'status': 'success'}
+            else:
+                logger.error(f"Erro ao ativar envelope: {response.get('message')}")
+                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.error(f"Erro ao ativar envelope: {e}")
+            return Response({'message': f'Erro ao ativar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            submission = create_document_signer(document_key, signer_key, sale)
+    def _send_notifications(self, envelope_id):
+        try:
+            response = send_notification(envelope_id)
+            if response.get('status') == 'success':
+                logger.info("Notificações enviadas com sucesso.")
+                return {'status': 'success'}
+            else:
+                logger.error(f"Erro ao enviar notificações: {response.get('message')}")
+                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.error(f"Erro ao enviar notificações: {e}")
+            return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if isinstance(submission, dict) and submission.get("status") == "error":
-                raise ValueError(submission.get("message", "Erro desconhecido ao associar signatário."))
-
-            if not isinstance(submission, ContractSubmission):
-                raise ValueError("Retorno inesperado ao criar o signatário do documento.")
-
+    def _create_contract_submission(self, sale, envelope_id, document_key):
+        try:
+            submission = ContractSubmission.objects.create(
+                sale=sale,
+                request_signature_key=envelope_id,
+                key_number=document_key,
+                status="P",
+                submit_datetime=datetime.now(tz=timezone.utc),
+                due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
+                link=f"https://app.clicksign.com/envelopes/{envelope_id}"
+            )
+            logger.info(f"ContractSubmission criado com ID: {submission.id}")
             return submission
         except Exception as e:
-            logger.error(f"Erro ao vincular signatário ao documento: {e}")
-            return Response({'message': f'Erro ao vincular signatário ao documento: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _send_notifications(self, submission):
-        try:
-            return send_notification(submission)
-        except Exception as e:
-            logger.error(f'Erro ao enviar notificações: {e}')
-            return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Erro ao criar ContractSubmission: {e}")
+            return Response({'message': f'Erro ao criar ContractSubmission: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GenerateCustomContract(APIView):

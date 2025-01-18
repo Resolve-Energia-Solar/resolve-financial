@@ -5,9 +5,9 @@ import logging
 import os
 import requests
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-from resolve_crm.models import ContractSubmission, Sale
+from resolve_crm.models import Sale
 
 # Configuração do logger
 logging.basicConfig(level=logging.INFO)
@@ -22,8 +22,54 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
+def create_clicksign_envelope(sale_number, customer_name):
+    if not API_URL or not ACCESS_TOKEN:
+        logger.error("API_URL ou ACCESS_TOKEN não configurados.")
+        return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
 
-def create_clicksign_document(sale_number, customer_name, pdf_bytes):
+    url = f"{API_URL}/api/v3/envelopes"
+
+    payload = {
+        "data": {
+            "type": "envelopes",
+            "attributes": {
+                "name": f"CONTRATO-{sale_number}-{customer_name}",
+                "locale": "pt-BR",
+                "auto_close": True,
+                "block_after_refusal": True,
+                "deadline_at": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S-03:00"),
+                "default_subject": "Contrato de Venda de Sistema Fotovoltaico - Resolve Energia Solar",
+                "default_message": "Olá! O seu contrato está disponível para assinatura. Acesse o link para assinar."
+            }
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+
+        if response.status_code == 201:
+            envelope_id = response.json()["data"]["id"]
+            logger.info(f"Envelope {envelope_id} criado com sucesso!")
+            return {"status": "success", "envelope_id": envelope_id}
+        else:
+            logger.error("Erro ao criar o envelope: %s", response.content)
+            return {
+                "status": "error",
+                "message": "Failed to create envelope.",
+                "response": response.content,
+            }
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+def create_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes):
     if not API_URL or not ACCESS_TOKEN:
         logger.error("API_URL ou ACCESS_TOKEN não configurados.")
         return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
@@ -48,31 +94,35 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
     
     # Montar o payload...
     document_name = f"CONTRATO-{sale_number}-{customer_name}.pdf"
-    deadline_at = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S-03:00")
 
     payload = {
-        "document": {
-            "path": f"/{document_name}",
-            "content_base64": content_base64,
-            "deadline_at": deadline_at,
-            "auto_close": True,
-            "locale": "pt-BR",
-            "sequence_enabled": False,
-            "block_after_refusal": True,
-        },
+        "data": {
+            "type": "documents",
+            "attributes": {
+                "filename": document_name,
+                "content_base64": content_base64,
+                "metadata": {
+                    "sale_number": sale_number,
+                    "customer_name": customer_name
+                }
+            }
+        }
     }
 
     # Fazer a requisição
     try:
         response = requests.post(
-            f"{API_URL}/api/v1/documents?access_token={ACCESS_TOKEN}",
-            headers={"Content-Type": "application/json"},
+            f"{API_URL}/api/v3/envelopes/{envelope_id}/documents",
+            headers={
+                "Content-Type": "application/vnd.api+json",
+                "Accept": "application/vnd.api+json",
+                "Authorization": f"{ACCESS_TOKEN}"
+            },
             data=json.dumps(payload),
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         logger.error("Erro na requisição: %s", e)
-        # response.text só existe depois da requisição, verifique se está acessível
         return {
             "status": "error",
             "message": f"RequestException: {str(e)}",
@@ -88,8 +138,7 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
                 "status": "error",
                 "message": f"Sale not found for contract number: {sale_number}",
             }
-
-        return document_data, document_data["document"]["key"]
+        return document_data
     else:
         logger.error("Erro ao criar o documento: %s", response.text)
         return {
@@ -98,8 +147,8 @@ def create_clicksign_document(sale_number, customer_name, pdf_bytes):
             "response": response.json(),
         }
 
-def create_signer(customer):
-    url = f"{API_URL}/api/v1/signers?access_token={ACCESS_TOKEN}"
+def create_signer(envelope_id, customer):
+    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/signers"
     
     phone_number = customer.phone_numbers.filter(is_main=True).first()
     if not phone_number:
@@ -117,24 +166,33 @@ def create_signer(customer):
             "message": "Número de telefone principal está em um formato inválido.",
         }
 
+    formatted_documentation = f"{str(customer.first_document)[:3]}.{str(customer.first_document)[3:6]}.{str(customer.first_document)[6:9]}-{str(customer.first_document)[9:11]}"
+    
     payload = {
-        "signer": {
-            "email": customer.email,
-            "phone_number": formatted_phone_number,
-            "auths": ['whatsapp'],
-            "name": customer.complete_name,
-            "has_documentation": True,
-            "selfie_enabled": True,
-            "handwritten_enabled": False,
-            "location_required_enabled": False,
-            "official_document_enabled": True,
-            "liveness_enabled": False,
-            "facial_biometrics_enabled": False,
+        "data": {
+            "type": "signers",
+            "attributes": {
+                "name": customer.complete_name,
+                "birthday": customer.birth_date.strftime("%Y-%m-%d"),
+                "email": customer.email,
+                "phone_number": formatted_phone_number,
+                "has_documentation": True,
+                "documentation": formatted_documentation,
+                "refusable": True,
+                "group": "3",
+                "communicate_events": {
+                    "document_signed": "email",
+                    "signature_request": "whatsapp",
+                    "signature_reminder": "email"
+                }
+            }
         }
     }
 
     headers = {
-        "Content-Type": "application/json",
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
     }
 
     try:
@@ -144,8 +202,8 @@ def create_signer(customer):
         if response.status_code == 201:
             signer_response = response.json()
             logger.info("Signatário criado com sucesso!")
-            logger.info(f"ID do Signatário: {signer_response['signer']['key']}")
-            return {"status": "success", "signer_key": signer_response["signer"]["key"]}
+            logger.info(f"ID do Signatário: {signer_response['data']['id']}")
+            return {"status": "success", "signer_key": signer_response["data"]["id"]}
         else:
             logger.error("Erro ao criar o signatário: %s", response.content)
             return {
@@ -166,19 +224,126 @@ def create_signer(customer):
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
-def create_document_signer(key_number, signer_key, sale):
-    url = f"{API_URL}/api/v1/lists?access_token={ACCESS_TOKEN}"
+def add_envelope_requirements(envelope_id, document_id, signer_id):
+    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/requirements"
+    
+    payloads = [
+        {
+            "data": {
+                "type": "requirements",
+                "attributes": {
+                    "action": "agree",
+                    "role": "contractor"
+                },
+                "relationships": {
+                    "document": {
+                        "data": { "type": "documents", "id": document_id }
+                    },
+                    "signer": {
+                        "data": { "type": "signers", "id": signer_id }
+                    }
+                }
+            }
+        },
+        {
+            "data": {
+                "type": "requirements",
+                "attributes": {
+                    "action": "provide_evidence",
+                    "auth": "facial_biometrics"
+                },
+                "relationships": {
+                    "document": {
+                        "data": { "type": "documents", "id": document_id }
+                    },
+                    "signer": {
+                        "data": { "type": "signers", "id": signer_id }
+                    }
+                }
+            }
+        }
+    ]
+
+    headers = {
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
+    }
+
+    results = []
+    for payload in payloads:
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+
+            if response.status_code == 201:
+                results.append({"status": "success", "message": "Requisito adicionado com sucesso."})
+            else:
+                logger.error("Erro ao adicionar o requisito: %s", response.content)
+                results.append({
+                    "status": "error",
+                    "message": "Failed to add requirement.",
+                    "response": response.content,
+                })
+        except requests.exceptions.RequestException as e:
+            logger.error("Erro na requisição: %s", e)
+            results.append({"status": "error", "message": f"RequestException: {str(e)}"})
+
+    return results
+
+def activate_envelope(envelope_id):
+    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/"
 
     payload = {
-        "list": {
-            "document_key": key_number,
-            "signer_key": signer_key,
-            "sign_as": "contractor"
+        "data": {
+            "id": envelope_id,
+	        "type": "envelopes",
+            "attributes": {
+                "status": "running"
+            }
         }
     }
 
     headers = {
-        "Content-Type": "application/json",
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
+    }
+
+    try:
+        response = requests.patch(url, headers=headers, json=payload)
+        response.raise_for_status()
+
+        if response.status_code == 200:
+            logger.info("Envelope ativado com sucesso!")
+            return {"status": "success", "message": "Envelope ativado com sucesso."}
+        else:
+            logger.error("Erro ao ativar o envelope: %s", response.content)
+            return {
+                "status": "error",
+                "message": "Failed to activate envelope.",
+                "response": response.content,
+            }
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+def send_notification(envelope_id, message="Olá! O contrato está disponível para assinatura. Acesse o link para assinar."):
+    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/notifications"
+
+    payload = {
+        "data": {
+            "type": "notifications",
+            "attributes": {
+                "message": message
+            }
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
     }
 
     try:
@@ -186,67 +351,19 @@ def create_document_signer(key_number, signer_key, sale):
         response.raise_for_status()
 
         if response.status_code == 201:
-            list_data = response.json()
-            doc_signer = list_data["list"]
-
-            # Criação da instância de ContractSubmission
-            submission = ContractSubmission.objects.create(
-                sale=sale,
-                key_number=key_number,
-                request_signature_key=doc_signer["request_signature_key"],
-                status="P",
-                submit_datetime=datetime.now(tz=timezone.utc),
-                due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
-                link=doc_signer['url'],
-            )
-
-            return submission
-
-        return {
-            "status": "error",
-            "message": "Falha ao associar signatário ao documento.",
-            "response": response.content,
-        }
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Erro ao associar signatário: {e}")
-        return {"status": "error", "message": f"RequestException: {str(e)}"}
-
-def send_notification(submission):
-    url_email = f"{API_URL}/api/v1/notifications?access_token={ACCESS_TOKEN}"
-    url_whatsapp = f"{API_URL}/api/v1/notify_by_whatsapp?access_token={ACCESS_TOKEN}"
-    
-    payload_email = {
-        "request_signature_key": submission.request_signature_key,
-        "url": submission.link,
-        "message": "Olá! O contrato está disponível para assinatura. Acesse o link para assinar.",
-    }
-    
-    payload_whatsapp = {
-        "request_signature_key": submission.request_signature_key
-    }
-    
-    headers = {
-        "Content-Type": "application/json",
-    }
-    
-    try:
-        # Send WhatsApp notification
-        response_whatsapp = requests.post(url_whatsapp, headers=headers, json=payload_whatsapp)
-        response_whatsapp.raise_for_status()
-        
-        # Send email notification
-        response_email = requests.post(url_email, headers=headers, json=payload_email)
-        response_email.raise_for_status()
-        
-        if response_email.status_code == 201 and response_whatsapp.status_code == 201:
-            return {"status": "success", "message": "Notifications sent successfully."}
+            return {"status": "success", "message": "Notificação enviada com sucesso."}
         else:
             return {
                 "status": "error",
-                "message": "Failed to send one or more notifications.",
-                "response_email": response_email.content,
-                "response_whatsapp": response_whatsapp.content,
+                "message": "Failed to send notification.",
+                "response": response.content,
             }
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
     except requests.exceptions.RequestException as e:
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}

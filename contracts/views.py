@@ -62,7 +62,6 @@ class ReciveContractInfomation(APIView):
     def handle_contract_submission(self, document_key, signature_date, status):
         try:
             contract = ContractSubmission.objects.get(key_number=document_key)
-            print('Contrato: ',contract)
             if status == 'closed':
                 contract.status = 'A'
             elif status == 'canceled':
