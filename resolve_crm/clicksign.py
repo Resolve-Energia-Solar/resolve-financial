@@ -250,7 +250,24 @@ def add_envelope_requirements(envelope_id, document_id, signer_id):
                 "type": "requirements",
                 "attributes": {
                     "action": "provide_evidence",
-                    "auth": "facial_biometrics"
+                    "auth": "selfie"
+                },
+                "relationships": {
+                    "document": {
+                        "data": { "type": "documents", "id": document_id }
+                    },
+                    "signer": {
+                        "data": { "type": "signers", "id": signer_id }
+                    }
+                }
+            }
+        },
+        {
+            "data": {
+                "type": "requirements",
+                "attributes": {
+                    "action": "provide_evidence",
+                    "auth": "official_document"
                 },
                 "relationships": {
                     "document": {
