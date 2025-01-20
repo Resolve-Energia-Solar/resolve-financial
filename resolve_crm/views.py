@@ -96,7 +96,9 @@ class SaleViewSet(BaseModelViewSet):
             canceled_total_value=Sum('total_value', filter=Q(status="C")),
             
             terminated_count=Count('id', filter=Q(status="D")),
-            terminated_total_value=Sum('total_value', filter=Q(status="D"))
+            terminated_total_value=Sum('total_value', filter=Q(status="D")),
+            
+            total_value_sum=Sum('total_value')
         )
 
         indicators = {
@@ -119,7 +121,9 @@ class SaleViewSet(BaseModelViewSet):
             "terminated": {
                 "count": raw_indicators["terminated_count"],
                 "total_value": raw_indicators["terminated_total_value"],
-            }
+            },
+            
+            "total_value_sum": raw_indicators["total_value_sum"]
         }
         
         # Paginação (se habilitada)
