@@ -381,7 +381,7 @@ class Sale(models.Model):
     
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
-    # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
+    is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
     # Logs
