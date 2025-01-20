@@ -81,6 +81,13 @@ class SaleViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        
+        is_signed = request.query_params.get('is_signed')
+        if is_signed=='true':
+            queryset = queryset.filter(signature_date__isnull=False)
+        elif is_signed=='false':
+            queryset = queryset.filter(signature_date__isnull=True)
+        
 
         raw_indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
