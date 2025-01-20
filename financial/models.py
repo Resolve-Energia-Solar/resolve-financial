@@ -38,6 +38,7 @@ class Payment(models.Model):
         ("PI", "Parcelamento interno"),
         ("P", "Pix"),
         ("T", "Transferência Bancária"),
+        ("DI", "Dinheiro"),
     ]
 
     INVOICE_STATUS_CHOICES = [
