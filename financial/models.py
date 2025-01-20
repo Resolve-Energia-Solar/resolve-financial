@@ -70,12 +70,14 @@ class Payment(models.Model):
         null=True,
     )
     due_date = models.DateField("Data de Vencimento")
+    observation = models.TextField("Observação", null=True, blank=True)
     invoice_status = models.CharField(
         "Status da Nota Fiscal",
         max_length=1,
         choices=INVOICE_STATUS_CHOICES,
         default="P",
     )
+    
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 

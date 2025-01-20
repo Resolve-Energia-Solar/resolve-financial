@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from simple_history.models import HistoricalRecords
 
@@ -115,6 +116,7 @@ class Schedule(models.Model):
         ("Reprovado", "Reprovado"),
     ]
 
+    protocol = models.CharField("Protocolo", max_length=50, unique=True, null=True, blank=True)
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
@@ -141,10 +143,17 @@ class Schedule(models.Model):
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
+    def save(self, *args, **kwargs):
+        now = datetime.datetime.now()
+        if not self.protocol:
+            self.protocol = f"{now.strftime('%Y%m%d%H%M%S')}"
+        super(Schedule, self).save(*args, **kwargs)
+    
     class Meta:
         verbose_name = "Agendamento"
         verbose_name_plural = "Agendamentos"
         ordering = ["-created_at"]
+    
 
 class BlockTimeAgent(models.Model):
     agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
