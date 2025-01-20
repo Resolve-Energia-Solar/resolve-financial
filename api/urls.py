@@ -11,7 +11,7 @@ from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView
-from .views import ContratoView, GanttView
+from .views import ContratoView, GanttView, StatusView
 
 
 router = DefaultRouter()
@@ -62,4 +62,5 @@ urlpatterns = [
     path('generate-contract/', GenerateContractView.as_view(), name='generate_contract'),
     path('generate-custom-contract/', GenerateCustomContract.as_view(), name='generate_custom_contract'),
     path('recive-contract-infomation/', ReciveContractInfomation.as_view(), name='recive_contract_infomation'),
+    path('status/', StatusView.as_view(), name='status'),
 ]
