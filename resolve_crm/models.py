@@ -11,6 +11,7 @@ from accounts.models import Branch
 from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
+from django.core.exceptions import ValidationError
 
 
 class Origin(models.Model):
@@ -381,7 +382,7 @@ class Sale(models.Model):
     
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
-    # is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
+    is_completed_financial = models.BooleanField("Financeiro Completo", default=False)
     financial_completion_date = models.DateTimeField("Data de Conclusão do Financeiro", null=True, blank=True)
 
     # Logs
@@ -450,7 +451,23 @@ class Sale(models.Model):
             return missing_documents
         return None
     
-    def save(self, current_user=None, *args, **kwargs):
+    def clean(self):
+        if self.pk is not None:
+            original = Sale.objects.get(pk=self.pk)
+            if not original.is_pre_sale:
+                # Impede a alteração do campo is_pre_sale de volta para True
+                if self.is_pre_sale:
+                    raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
+                # Lista de campos permitidos para edição
+                allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
+                # Verifica se algum campo não permitido foi alterado
+                for field in self._meta.fields:
+                    if field.name not in allowed_fields:
+                        if getattr(self, field.name) != getattr(original, field.name):
+                            raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
+        super().clean()
+
+    def save(self, *args, **kwargs):
         if not self.contract_number:
             last_sale = Sale.objects.all().order_by('id').last()
             if last_sale:
@@ -460,7 +477,7 @@ class Sale(models.Model):
                 self.contract_number = 'RESOL01'
 
         super().save(*args, **kwargs)
-
+    
     class Meta:
         verbose_name = "Venda"
         verbose_name_plural = "Vendas"
