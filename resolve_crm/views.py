@@ -59,6 +59,11 @@ class SaleViewSet(BaseModelViewSet):
     def get_queryset(self):
         user = self.request.user
         
+        is_signed = self.request.query_params.get('is_signed')
+        
+        if is_signed == 'true':
+            self.queryset = self.queryset.filter(signature_date__isnull=False)
+        
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
             # Retorna todas as vendas para superusuários e usuários com permissão
             return self.queryset
