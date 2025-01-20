@@ -82,21 +82,49 @@ class SaleViewSet(BaseModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Indicadores
-        indicators = queryset.aggregate(
+        raw_indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
-            finalized_count=Count('id', filter=Q(status="F")),
-            in_progress_count=Count('id', filter=Q(status="EA")),
-            canceled_count=Count('id', filter=Q(status="C")),
-            terminated_count=Count('id', filter=Q(status="D")),
+            pending_total_value=Sum('total_value', filter=Q(status="P")),
             
-            total_value_sum=Sum('total_value'),
-            total_value_pending=Sum('total_value', filter=Q(status="P")),
-            total_value_finalized=Sum('total_value', filter=Q(status="F")),
-            total_value_in_progress=Sum('total_value', filter=Q(status="EA")),
-            total_value_canceled=Sum('total_value', filter=Q(status="C")),
-            total_value_terminated=Sum('total_value', filter=Q(status="D")),
+            finalized_count=Count('id', filter=Q(status="F")),
+            finalized_total_value=Sum('total_value', filter=Q(status="F")),
+            
+            in_progress_count=Count('id', filter=Q(status="EA")),
+            in_progress_total_value=Sum('total_value', filter=Q(status="EA")),
+            
+            canceled_count=Count('id', filter=Q(status="C")),
+            canceled_total_value=Sum('total_value', filter=Q(status="C")),
+            
+            terminated_count=Count('id', filter=Q(status="D")),
+            terminated_total_value=Sum('total_value', filter=Q(status="D")),
+            
+            total_value_sum=Sum('total_value')
         )
+
+        indicators = {
+            "pending": {
+                "count": raw_indicators["pending_count"],
+                "total_value": raw_indicators["pending_total_value"],
+            },
+            "finalized": {
+                "count": raw_indicators["finalized_count"],
+                "total_value": raw_indicators["finalized_total_value"],
+            },
+            "in_progress": {
+                "count": raw_indicators["in_progress_count"],
+                "total_value": raw_indicators["in_progress_total_value"],
+            },
+            "canceled": {
+                "count": raw_indicators["canceled_count"],
+                "total_value": raw_indicators["canceled_total_value"],
+            },
+            "terminated": {
+                "count": raw_indicators["terminated_count"],
+                "total_value": raw_indicators["terminated_total_value"],
+            },
+            
+            "total_value_sum": raw_indicators["total_value_sum"]
+        }
         
         # Paginação (se habilitada)
         page = self.paginate_queryset(queryset)
@@ -136,8 +164,7 @@ class ProjectViewSet(BaseModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Indicadores
-        indicators = queryset.aggregate(
+        raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
             designer_in_progress_count=Count('id', filter=Q(designer_status="EA")),
             designer_complete_count=Count('id', filter=Q(designer_status="CO")),
@@ -150,6 +177,23 @@ class ProjectViewSet(BaseModelViewSet):
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
         )
+
+        indicators = {
+            "designer": {
+                "pending": raw_indicators["designer_pending_count"],
+                "in_progress": raw_indicators["designer_in_progress_count"],
+                "complete": raw_indicators["designer_complete_count"],
+                "canceled": raw_indicators["designer_canceled_count"],
+                "termination": raw_indicators["designer_termination_count"],
+            },
+            "general": {
+                "pending": raw_indicators["pending_count"],
+                "in_progress": raw_indicators["in_progress_count"],
+                "complete": raw_indicators["complete_count"],
+                "canceled": raw_indicators["canceled_count"],
+                "termination": raw_indicators["termination_count"],
+            }
+        }
         
         # Paginação (se habilitada)
         page = self.paginate_queryset(queryset)
