@@ -44,7 +44,7 @@ class CustomerLoginView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(first_document=first_document, birth_date=birth_date)
+            user = User.objects.filter(first_document=first_document, birth_date=birth_date).order_by('-last_login').first()
         except User.DoesNotExist:
             return Response({
                 'message': 'Usuário com esse documento e data de nascimento não encontrado.'

@@ -12,6 +12,7 @@ from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.core.exceptions import ValidationError
+from django.db import transaction, models
 
 
 class Origin(models.Model):
@@ -469,12 +470,20 @@ class Sale(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.contract_number:
-            last_sale = Sale.objects.all().order_by('id').last()
-            if last_sale:
-                last_number = int(last_sale.contract_number.replace('RESOL', '')) if last_sale.contract_number else 0
-                self.contract_number = f'RESOL{last_number + 1:02}'
-            else:
-                self.contract_number = 'RESOL01'
+            with transaction.atomic():
+                last_sale = Sale.objects.select_for_update().order_by('-contract_number').first()
+                last_number = 0
+                
+                if last_sale and last_sale.contract_number:
+                    last_number = int(last_sale.contract_number.replace('RESOL', ''))
+
+                while True:
+                    last_number += 1
+                    new_contract_number = f'RESOL{last_number:02}'
+                    
+                    if not Sale.objects.filter(contract_number=new_contract_number).exists():
+                        self.contract_number = new_contract_number
+                        break
 
         super().save(*args, **kwargs)
     
