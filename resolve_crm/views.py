@@ -591,6 +591,11 @@ class GenerateContractView(APIView):
         if isinstance(sale, Response):
             return sale
 
+        # Valida se campos obrigatórios estão preenchidos
+        missing_fields_response = self._validate_sale_data(sale)
+        if missing_fields_response:
+            return missing_fields_response
+
         if not sale.payments.exists():
             return Response({'message': 'Venda não possui pagamentos associados.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -607,6 +612,9 @@ class GenerateContractView(APIView):
             return Response({'message': 'Template de contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
         customer_data = self._get_customer_data(sale.customer)
+        if isinstance(customer_data, Response):
+            return customer_data
+
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
         projects_data = self._get_projects_data(sale)
@@ -628,7 +636,7 @@ class GenerateContractView(APIView):
         if request.query_params.get('preview') == 'true':
             return self._preview_pdf(pdf)
 
-        # Início do fluxo atualizado com as novas funções do Clicksign
+        # ---- Fluxo com Clicksign ----
         envelope_response = self._create_envelope(sale)
         if isinstance(envelope_response, Response):
             return envelope_response
@@ -638,15 +646,15 @@ class GenerateContractView(APIView):
             return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         document_response = self._add_document_to_envelope(sale, envelope_id, pdf)
-        document_key = document_response.get('document_key')
         if isinstance(document_response, Response):
             return document_response
-        
+        document_key = document_response.get('document_key')
+
         signer_response = self._create_signer(envelope_id, sale.customer)
         if isinstance(signer_response, Response):
             return signer_response
         signer_key = signer_response.get('signer_key')
-        
+
         add_reqs_response = self._add_envelope_requirements(envelope_id, document_key, signer_key)
         if isinstance(add_reqs_response, Response):
             return add_reqs_response
@@ -659,7 +667,6 @@ class GenerateContractView(APIView):
         if isinstance(notification_response, Response):
             return notification_response
 
-        # Registro do ContractSubmission
         submission = self._create_contract_submission(sale, document_key, signer_key)
         if isinstance(submission, Response):
             return submission
@@ -668,6 +675,31 @@ class GenerateContractView(APIView):
             'message': 'Contrato gerado com sucesso.',
             'contract_submission_id': submission.id
         }, status=status.HTTP_200_OK)
+
+    def _validate_sale_data(self, sale):
+        """
+        Verifica campos obrigatórios da venda e do cliente.
+        Retorna um Response(400) se algo estiver ausente, senão retorna None.
+        """
+        missing = []
+
+        if not sale.branch or not sale.branch.energy_company:
+            missing.append('Empresa de energia (branch)')
+
+        if not sale.customer:
+            missing.append('Dados do cliente')
+        else:
+            if not sale.customer.complete_name:
+                missing.append('Nome do cliente')
+            if not sale.customer.first_document:
+                missing.append('Documento (CPF/CNPJ) do cliente')
+
+        if missing:
+            return Response(
+                {'message': f'Campos obrigatórios ausentes: {", ".join(missing)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return None
 
     def _get_sale(self, sale_id):
         try:
@@ -683,10 +715,9 @@ class GenerateContractView(APIView):
     def _get_customer_data(self, customer):
         address = customer.addresses.first()
         if not address:
-            logger.error("Endereço do cliente não encontrado.")
             return Response({'message': 'Endereço do cliente não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        customer_data = {
+        return {
             'customer_name': customer.complete_name,
             'customer_first_document': customer.first_document,
             'customer_second_document': customer.second_document,
@@ -699,7 +730,6 @@ class GenerateContractView(APIView):
             'customer_country': address.country,
             'customer_complement': address.complement,
         }
-        return customer_data
 
     def _get_projects_data(self, sale):
         projects = sale.projects.all()
