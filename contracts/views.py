@@ -109,7 +109,7 @@ class ReciveContractInfomation(APIView):
                 signature_date = datetime.strptime(
                     signature_date.split('.')[0].replace('T', ' '), 
                     '%Y-%m-%d %H:%M:%S'
-                ).date()
+                )
                 
                 if not all([signature_date, document_key, document_file]):
                     return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
