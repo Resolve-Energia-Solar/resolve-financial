@@ -103,6 +103,9 @@ class ReciveContractInfomation(APIView):
     def post(self, request):
         with transaction.atomic():
             data = request.data
+            
+            logger.info(f"Payload ClickSign: {data}")
+            
             try:
                 signature_date, document_key, document_file, document_status = self.get_signature_data(data)
                 
