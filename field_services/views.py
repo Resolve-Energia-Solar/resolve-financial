@@ -66,7 +66,9 @@ class ScheduleViewSet(BaseModelViewSet):
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
         
-        if not user.is_superuser or not user.has_perm('field_services.view_all_schedule'):
+        if user.is_superuser or user.has_perm('field_services.view_all_schedule'):
+            pass
+        else:
             queryset = queryset.filter(
                 Q(schedule_agent=user) |
                 Q(project__sale__seller=user))
