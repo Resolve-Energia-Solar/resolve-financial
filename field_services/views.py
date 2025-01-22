@@ -84,8 +84,11 @@ class ScheduleViewSet(BaseModelViewSet):
         if (user.is_superuser or user.has_perm('field_services.view_all_schedule')):
           return self.queryset
             
-        if user.employee.related_branches.exists():
-            branch_ids = user.employee.related_branches.values_list('id', flat=True)
+        if user.employee.related_branches.exists() or user.branch_owners.exists():
+            related_branches_ids = user.employee.related_branches.values_list('id', flat=True)
+            branch_owner_ids = user.branch_owners.values_list('id', flat=True)
+            branch_ids = related_branches_ids | branch_owner_ids
+            
             branch_schedule = self.queryset.filter(
                 Q(schedule_creator__employee__branch_id__in=branch_ids) |
                 Q(project__sale__branch_id__in=branch_ids)
