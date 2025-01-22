@@ -105,7 +105,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
         for agent in agents:
             agent_schedules = schedules.filter(schedule_agent=agent)
-            agent_serializer = UserSerializer(User.objects.get(id=agent))
+            agent_serializer = RelatedUserSerializer(User.objects.get(id=agent))
             agent_data = {
                 'agent': agent_serializer.data,
                 'schedules': []
