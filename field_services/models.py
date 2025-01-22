@@ -153,6 +153,9 @@ class Schedule(models.Model):
         verbose_name = "Agendamento"
         verbose_name_plural = "Agendamentos"
         ordering = ["-created_at"]
+        permissions = [
+            ("view_all_schedule", "Can view all schedule"),
+        ]
     
 
 class BlockTimeAgent(models.Model):

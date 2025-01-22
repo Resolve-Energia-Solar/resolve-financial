@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from django.utils.dateparse import parse_datetime
 from datetime import datetime
 from .consumers import LocationConsumer
+from django.db.models import Q
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -60,9 +61,15 @@ class ScheduleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
         project = self.request.query_params.get('project_confirmed')
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
+        
+        if not user.is_superuser or not user.has_perm('field_services.view_all_schedule'):
+            queryset = queryset.filter(
+                Q(schedule_agent=user) |
+                Q(project__sale__seller=user))
 
         if project:
             queryset = queryset.filter(project__id=project).filter(status='Confirmado')

@@ -177,7 +177,7 @@ class UserViewSet(BaseModelViewSet):
                     schedule_agent_id__isnull=False  
                 ).values_list('schedule_agent_id', flat=True)
 
-                queryset = queryset.exclude(id__in=overlapping_schedules)    
+                queryset = queryset.exclude(id__in=overlapping_schedules) 
 
                 #logica para ordenar os agentes por distancia e contagem de agendamentos
                 if latitude and longitude:
@@ -211,12 +211,12 @@ class UserViewSet(BaseModelViewSet):
                         distance=Case(
                             *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
                             default=Value(None),  
-                            output_field=FloatField()  
+                            output_field=FloatField()
                         ),
                         daily_schedules_count=Case(
                             *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
                             default=Value(0),
-                            output_field=IntegerField()  
+                            output_field=IntegerField()
                         )
                     ).order_by(
                         Case(
