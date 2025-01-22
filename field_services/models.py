@@ -143,6 +143,9 @@ class Schedule(models.Model):
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
+    def __str__(self):
+        return f"{self.protocol} - {self.schedule_creator.get_full_name()} - {self.schedule_date}"
+    
     def save(self, *args, **kwargs):
         now = datetime.datetime.now()
         if not self.protocol:
