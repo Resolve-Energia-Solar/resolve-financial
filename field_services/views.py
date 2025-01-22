@@ -66,9 +66,7 @@ class ScheduleViewSet(BaseModelViewSet):
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
         
-        if user.is_superuser or user.has_perm('field_services.view_all_schedule'):
-            pass
-        else:
+        if not (user.is_superuser or user.has_perm('field_services.view_all_schedule')) and not user.employee.related_branches.exists():
             queryset = queryset.filter(
                 Q(schedule_agent=user) |
                 Q(project__sale__seller=user))
@@ -85,7 +83,10 @@ class ScheduleViewSet(BaseModelViewSet):
             
         if user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list('id', flat=True)
-            branch_schedule = self.queryset.filter(schedule_creator__employee__branch_id__in=branch_ids)
+            branch_schedule = self.queryset.filter(
+                Q(schedule_creator__employee__branch_id__in=branch_ids) |
+                Q(project__sale__branch_id__in=branch_ids)
+                )
         else:
             branch_schedule = self.queryset.none()
 
