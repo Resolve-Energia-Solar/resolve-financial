@@ -71,7 +71,10 @@ class ScheduleViewSet(BaseModelViewSet):
         else:
             queryset = queryset.filter(
                 Q(schedule_agent=user) |
-                Q(project__sale__seller=user))
+                Q(project__sale__seller=user) |
+                Q(schedule_creator=user)
+            )
+
 
         if project:
             queryset = queryset.filter(project__id=project).filter(status='Confirmado')
