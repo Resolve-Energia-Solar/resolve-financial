@@ -667,7 +667,7 @@ class GenerateContractView(APIView):
         if isinstance(notification_response, Response):
             return notification_response
 
-        submission = self._create_contract_submission(sale, document_key, signer_key)
+        submission = self._create_contract_submission(sale, document_key, signer_key, envelope_id)
         if isinstance(submission, Response):
             return submission
 
@@ -897,12 +897,13 @@ class GenerateContractView(APIView):
             logger.error(f"Erro ao enviar notificações: {e}")
             return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _create_contract_submission(self, sale, envelope_id, document_key):
+    def _create_contract_submission(self, sale, document_key, signer_key, envelope_id):
         try:
             submission = ContractSubmission.objects.create(
                 sale=sale,
-                request_signature_key=envelope_id,
+                request_signature_key=signer_key,
                 key_number=document_key,
+                envelope_id=envelope_id,
                 status="P",
                 submit_datetime=datetime.now(tz=timezone.utc),
                 due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
