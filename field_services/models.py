@@ -121,7 +121,7 @@ class Schedule(models.Model):
         (2, "Em Viagem"),
         (3, "Viagem Concluída"),
         (4, "Em Serviço"),
-        (3, "Serviço Concluído"),
+        (5, "Serviço Concluído"),
     ]
 
     protocol = models.CharField("Protocolo", max_length=50, unique=True, null=True, blank=True)
