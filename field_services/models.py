@@ -115,6 +115,14 @@ class Schedule(models.Model):
         ("Aprovado", "Aprovado"),
         ("Reprovado", "Reprovado"),
     ]
+    
+    STEP_CHOICES = [
+        (1, "Não Iniciado"),
+        (2, "Em Viagem"),
+        (3, "Viagem Concluída"),
+        (4, "Em Serviço"),
+        (5, "Serviço Concluído"),
+    ]
 
     protocol = models.CharField("Protocolo", max_length=50, unique=True, null=True, blank=True)
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.CASCADE, related_name='schedule_creator')
@@ -140,6 +148,8 @@ class Schedule(models.Model):
     service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.CASCADE, blank=True, null=True)
     final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.CASCADE, related_name='final_service_opinion', blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
+    step = models.IntegerField("Etapa", default=1)
+    arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
