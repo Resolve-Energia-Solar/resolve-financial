@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from api.serializers import BaseSerializer
 from accounts.models import *
 from rest_framework import serializers
+from validate_docbr import CPF, CNPJ
 
 
 class DepartmentSerializer(BaseSerializer):
@@ -167,6 +168,26 @@ class UserSerializer(BaseSerializer):
     class Meta:
         model = User
         exclude = ['password']
+        
+    def validate(self, attrs):
+        if 'first_document' in attrs:
+            attrs['first_document'] = self.validate_first_document(attrs['first_document'])
+        
+        return super().validate(attrs)
+        
+    def validate_first_document(self, value):
+        value = value.replace('.', '').replace('-', '').replace('/', '')
+        
+        if len(value) == 11:  # CPF
+            if not CPF().validate(value):
+                raise serializers.ValidationError("CPF inválido.")
+        elif len(value) == 14:  # CNPJ
+            if not CNPJ().validate(value):
+                raise serializers.ValidationError("CNPJ inválido.")
+        else:
+            raise serializers.ValidationError("Número inválido. Insira um CPF ou CNPJ válido.")
+
+        return value
         
     def get_employee(self, obj):
         try:
