@@ -365,7 +365,7 @@ class Sale(models.Model):
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
     payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P")
-    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
+    contract_number = models.CharField("Número do Contrato", max_length=20, unique=True, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
