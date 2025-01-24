@@ -83,6 +83,14 @@ class SaleViewSet(BaseModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         payment_status = request.query_params.get('payment_status')
         is_signed = request.query_params.get('is_signed')
+        borrower = request.query_params.get('borrower')
+        homologator = request.query_params.get('homologator')
+        
+        if borrower:
+            queryset = queryset.filter(payments__borrower__id=borrower)
+        
+        if homologator:
+            queryset = queryset.filter(projects__homologator__id=homologator)
         
         if is_signed=='true':
             queryset = queryset.filter(signature_date__isnull=False)
@@ -174,6 +182,23 @@ class ProjectViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.annotate(
+            annotated_is_released_to_engineering=(
+                Q(is_documentation_completed=True) &
+                Q(sale__payment_status__in=['PG', 'PA']) &
+                Q(inspection__status='A')
+            )
+        )
+        customer = request.query_params.get('customer')
+        is_released_to_engineering = request.query_params.get('is_released_to_engineering')
+        
+        if is_released_to_engineering=='true':
+            queryset = queryset.filter(annotated_is_released_to_engineering=True)
+        elif is_released_to_engineering=='false':
+            queryset = queryset.filter(annotated_is_released_to_engineering=False)
+            
+        if customer:
+            queryset = queryset.filter(sale__customer__id=customer)
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
