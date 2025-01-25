@@ -183,6 +183,9 @@ STORAGES = {
     }
 }
 
+SIMPLE_HISTORY_HISTORY_ID_USE_UUID = False
+SIMPLE_HISTORY_ENABLED = True
+
 
 # User model
 AUTH_USER_MODEL = "accounts.User"

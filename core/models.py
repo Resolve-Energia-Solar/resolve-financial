@@ -139,7 +139,7 @@ class Column(models.Model):
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição", blank=True, null=True)
     column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=True, null=True, default='')
-    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.PROTECT, verbose_name="Quadro")
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
     color = models.CharField("Cor", max_length=7, blank=True, null=True)
@@ -169,6 +169,7 @@ class Column(models.Model):
             self.position = (max_position or 0) + 1
 
         super(Column, self).save(*args, **kwargs)
+
 
     class Meta:
         verbose_name = 'Coluna'
