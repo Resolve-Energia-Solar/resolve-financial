@@ -169,6 +169,12 @@ class Column(models.Model):
             self.position = (max_position or 0) + 1
 
         super(Column, self).save(*args, **kwargs)
+        
+    def delete(self, *args, **kwargs):
+        if not self.column_type:
+            self.column_type = ''
+        
+        super(Column, self).delete(*args, **kwargs)
 
 
     class Meta:
