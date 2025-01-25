@@ -1,4 +1,4 @@
-from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField
+from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField, ChoiceField
 
 from accounts.models import Branch, User
 from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
@@ -126,10 +126,18 @@ class ColumnSerializer(BaseSerializer):
     leads = ReadLeadSerializer(many=True, read_only=True)
     task = TaskSerializer(many=True, read_only=True)
     proposals_value = SerializerMethodField()
+    board = SerializerMethodField()
+    # Para escrita: usar apenas ID
+    board_id = PrimaryKeyRelatedField(queryset=Board.objects.all(), write_only=True, source='board')
+    column_type = ChoiceField(choices=Column.COLUMN_TYPES, required=False, allow_null=True, allow_blank=True)
+
 
     class Meta:
         model = Column
         fields = '__all__'
+        
+    def get_board(self, obj):
+        return obj.board.id if obj.board else None
 
     def get_proposals_value(self, obj):
         return obj.proposals_value

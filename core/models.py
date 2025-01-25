@@ -135,9 +135,9 @@ class Column(models.Model):
     )
     
     name = models.CharField("Nome", max_length=200)
-    position = models.PositiveSmallIntegerField("Posição", blank=False, null=False)
-    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
+    position = models.PositiveSmallIntegerField("Posição", blank=True, null=True)
     column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=True, null=True)
+    board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
     color = models.CharField("Cor", max_length=7, blank=True, null=True)
@@ -153,11 +153,24 @@ class Column(models.Model):
     
     def __str__(self):
         return f'{self.name} | {self.board}'
+    
+    def save(self, *args, **kwargs):
+        if self.column_type == 'D':
+            self.finished = True
+        
+        if not self.position:
+            existing_positions = Column.objects.filter(board=self.board).values_list('position', flat=True)
+            if existing_positions:
+                self.position = max(existing_positions) + 1
+            else:
+                self.position = 1
+            
+        super(Column, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Coluna'
         verbose_name_plural = 'Colunas'
-        ordering = ['position']
+        ordering = ['board', 'name','position']
 
 
 class Task(models.Model):
