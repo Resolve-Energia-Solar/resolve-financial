@@ -313,8 +313,9 @@ class ContractSubmission(models.Model):
     submit_datetime = models.DateTimeField("Data e hora do envio")
     status = models.CharField("Status do envio", max_length=1, choices=[("P", "Pendente"), ("A", "Aceito"), ("R", "Recusado")])
     due_date = models.DateField("Prazo para assinatura", auto_now=False, auto_now_add=False)
-    key_number = models.CharField("Número da Chave", max_length=50, null=True, blank=True)
-    request_signature_key = models.CharField("Chave de solicitação de assinatura", max_length=50, null=True, blank=True)
+    key_number = models.CharField("Chave do Documento", max_length=50, null=True, blank=True)
+    request_signature_key = models.CharField("Chave do Signatário", max_length=50, null=True, blank=True)
+    envelope_id = models.CharField("Chave do Envelope", max_length=50, null=True, blank=True)
     link = models.URLField("Link para assinatura")
     finished_at = models.DateTimeField("Finalizado em", null=True, blank=True)
     
@@ -364,7 +365,7 @@ class Sale(models.Model):
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
     payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P")
-    contract_number = models.CharField("Número do Contrato", max_length=20, editable=False, null=True, blank=True)
+    contract_number = models.CharField("Número do Contrato", max_length=20, unique=True, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
     marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)

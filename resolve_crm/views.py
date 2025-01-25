@@ -81,13 +81,25 @@ class SaleViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        
+        payment_status = request.query_params.get('payment_status')
         is_signed = request.query_params.get('is_signed')
+        borrower = request.query_params.get('borrower')
+        homologator = request.query_params.get('homologator')
+        
+        if borrower:
+            queryset = queryset.filter(payments__borrower__id=borrower)
+        
+        if homologator:
+            queryset = queryset.filter(projects__homologator__id=homologator)
+        
         if is_signed=='true':
             queryset = queryset.filter(signature_date__isnull=False)
         elif is_signed=='false':
             queryset = queryset.filter(signature_date__isnull=True)
-        
+            
+        if payment_status:
+            payment_status_list = payment_status.split(',')
+            queryset = queryset.filter(payments__invoice_status__in=payment_status_list)
 
         raw_indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
@@ -170,6 +182,23 @@ class ProjectViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.annotate(
+            annotated_is_released_to_engineering=(
+                Q(is_documentation_completed=True) &
+                Q(sale__payment_status__in=['PG', 'PA']) &
+                Q(inspection__status='A')
+            )
+        )
+        customer = request.query_params.get('customer')
+        is_released_to_engineering = request.query_params.get('is_released_to_engineering')
+        
+        if is_released_to_engineering=='true':
+            queryset = queryset.filter(annotated_is_released_to_engineering=True)
+        elif is_released_to_engineering=='false':
+            queryset = queryset.filter(annotated_is_released_to_engineering=False)
+            
+        if customer:
+            queryset = queryset.filter(sale__customer__id=customer)
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
@@ -667,7 +696,7 @@ class GenerateContractView(APIView):
         if isinstance(notification_response, Response):
             return notification_response
 
-        submission = self._create_contract_submission(sale, document_key, signer_key)
+        submission = self._create_contract_submission(sale, document_key, signer_key, envelope_id)
         if isinstance(submission, Response):
             return submission
 
@@ -897,12 +926,13 @@ class GenerateContractView(APIView):
             logger.error(f"Erro ao enviar notificações: {e}")
             return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def _create_contract_submission(self, sale, envelope_id, document_key):
+    def _create_contract_submission(self, sale, document_key, signer_key, envelope_id):
         try:
             submission = ContractSubmission.objects.create(
                 sale=sale,
-                request_signature_key=envelope_id,
+                request_signature_key=signer_key,
                 key_number=document_key,
+                envelope_id=envelope_id,
                 status="P",
                 submit_datetime=datetime.now(tz=timezone.utc),
                 due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),

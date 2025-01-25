@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from django.utils.dateparse import parse_datetime
 from datetime import datetime
 from .consumers import LocationConsumer
+from django.db.models import Q
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -60,9 +61,18 @@ class ScheduleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
         project = self.request.query_params.get('project_confirmed')
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
+        
+        if not (user.is_superuser or user.has_perm('field_services.view_all_schedule')) and not user.employee.related_branches.exists():
+            queryset = queryset.filter(
+                Q(schedule_agent=user) |
+                Q(project__sale__seller=user) |
+                Q(schedule_creator=user)
+            )
+
 
         if project:
             queryset = queryset.filter(project__id=project).filter(status='Confirmado')
@@ -70,8 +80,26 @@ class ScheduleViewSet(BaseModelViewSet):
             queryset = queryset.filter(service__id=service)
         if schedule_agent:
             queryset = queryset.filter(schedule_agent__id=schedule_agent)
+        
+        if (user.is_superuser or user.has_perm('field_services.view_all_schedule')):
+          return self.queryset
+            
+        if user.employee.related_branches.exists() or user.branch_owners.exists():
+            related_branches_ids = user.employee.related_branches.values_list('id', flat=True)
+            branch_owner_ids = user.branch_owners.values_list('id', flat=True)
+            branch_ids = related_branches_ids | branch_owner_ids
+            
+            branch_schedule = self.queryset.filter(
+                Q(schedule_creator__employee__branch_id__in=branch_ids) |
+                Q(project__sale__branch_id__in=branch_ids)
+                )
+        else:
+            branch_schedule = self.queryset.none()
 
-        return queryset
+        
+        stakeholder_schedule = self.queryset.filter(Q(schedule_creator=user) | Q(schedule_agent=user))
+        
+        return branch_schedule | stakeholder_schedule
 
     # listar agendamentos por pessoa para timeline
     @action(detail=False, methods=['get'])
@@ -105,7 +133,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
         for agent in agents:
             agent_schedules = schedules.filter(schedule_agent=agent)
-            agent_serializer = UserSerializer(User.objects.get(id=agent))
+            agent_serializer = RelatedUserSerializer(User.objects.get(id=agent))
             agent_data = {
                 'agent': agent_serializer.data,
                 'schedules': []

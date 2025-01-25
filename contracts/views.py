@@ -73,7 +73,7 @@ class ReciveContractInfomation(APIView):
             contract.save()
             return contract
         except ContractSubmission.DoesNotExist:
-            raise ValueError("Contrato não encontrado.")
+            raise ValueError(f"Contrato {document_key} não encontrado.")
 
     def save_signature_date(self, sale, signature_date):
         sale.signature_date = signature_date
@@ -103,13 +103,16 @@ class ReciveContractInfomation(APIView):
     def post(self, request):
         with transaction.atomic():
             data = request.data
+            
+            logger.info(f"Payload ClickSign: {data}")
+            
             try:
                 signature_date, document_key, document_file, document_status = self.get_signature_data(data)
                 
                 signature_date = datetime.strptime(
                     signature_date.split('.')[0].replace('T', ' '), 
                     '%Y-%m-%d %H:%M:%S'
-                ).date()
+                )
                 
                 if not all([signature_date, document_key, document_file]):
                     return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
