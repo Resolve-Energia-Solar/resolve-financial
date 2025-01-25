@@ -156,73 +156,76 @@ class UserViewSet(BaseModelViewSet):
         if category:
             queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
 
-            if date and start_time and end_time:
-                #verificar bloqueio de horario 
-                #verificar se a data do agendamento esta entre o inicio e o fim do bloqueio
-                blocked_agents = BlockTimeAgent.objects.filter(start_date__lte=date, end_date__gte=date, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time)).values_list('agent', flat=True)
-                queryset = queryset.exclude(id__in=blocked_agents)
+        if date and start_time and end_time:
+            blocked_agents = BlockTimeAgent.objects.filter(
+                start_date__lte=date,
+                end_date__gte=date,
+                start_time__lt=parse_time(end_time),
+                end_time__gt=parse_time(start_time)
+            ).values_list('agent', flat=True)
+            queryset = queryset.exclude(id__in=blocked_agents)
 
-                #verificar horarios livres
-                day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
+            # Verificar horários livres
+            day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
+            for user in queryset:
+                free_time = FreeTimeAgent.objects.filter(agent=user, day_of_week=day_of_week, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time))
+                if not free_time.exists():
+                    queryset = queryset.exclude(id=user.id)
+
+            # Verificar agendamentos existentes
+            overlapping_schedules = Schedule.objects.filter(
+                schedule_date=date,
+                schedule_start_time__lt=parse_time(end_time),
+                schedule_end_time__gt=parse_time(start_time),
+                schedule_agent_id__isnull=False  
+            ).values_list('schedule_agent_id', flat=True)
+
+            queryset = queryset.exclude(id__in=overlapping_schedules) 
+
+            #logica para ordenar os agentes por distancia e contagem de agendamentos
+            if latitude and longitude:
+                latitude = float(latitude)
+                longitude = float(longitude)
+
+                users_distance = []
                 for user in queryset:
-                    free_time = FreeTimeAgent.objects.filter(agent=user, day_of_week=day_of_week, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time))
-                    if not free_time.exists():
-                        queryset = queryset.exclude(id=user.id)
+                    last_schedule = Schedule.objects.filter(
+                        schedule_agent=user,
+                        schedule_date=date
+                    ).order_by('-schedule_end_time').first()
 
-                #verificar agendamentos existentes
-                overlapping_schedules = Schedule.objects.filter(
-                    schedule_date=date,
-                    schedule_start_time__lt=parse_time(end_time),
-                    schedule_end_time__gt=parse_time(start_time),
-                    schedule_agent_id__isnull=False  
-                ).values_list('schedule_agent_id', flat=True)
-
-                queryset = queryset.exclude(id__in=overlapping_schedules) 
-
-                #logica para ordenar os agentes por distancia e contagem de agendamentos
-                if latitude and longitude:
-                    latitude = float(latitude)
-                    longitude = float(longitude)
-
-                    users_distance = []
-                    for user in queryset:
-                        last_schedule = Schedule.objects.filter(
-                            schedule_agent=user,
-                            schedule_date=date
-                        ).order_by('-schedule_end_time').first()
-
-                        user.distance = (
-                            calculate_distance(latitude, longitude, last_schedule.latitude, last_schedule.longitude)
-                            if last_schedule else None
-                        )
-
-                        users_distance.append((user, user.distance))
-
-                        daily_schedules_count = Schedule.objects.filter(
-                            schedule_agent=user,
-                            schedule_date=date
-                        ).count()
-                        user.daily_schedules_count = daily_schedules_count
-
-                    ordered_users = sorted(users_distance, key=lambda x: (x[1] is None, x[1]))
-                    ordered_ids = [user[0].id for user in ordered_users]
-
-                    queryset = queryset.filter(id__in=ordered_ids).annotate(
-                        distance=Case(
-                            *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
-                            default=Value(None),  
-                            output_field=FloatField()
-                        ),
-                        daily_schedules_count=Case(
-                            *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
-                            default=Value(0),
-                            output_field=IntegerField()
-                        )
-                    ).order_by(
-                        Case(
-                            *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
-                        )
+                    user.distance = (
+                        calculate_distance(latitude, longitude, last_schedule.latitude, last_schedule.longitude)
+                        if last_schedule else None
                     )
+
+                    users_distance.append((user, user.distance))
+
+                    daily_schedules_count = Schedule.objects.filter(
+                        schedule_agent=user,
+                        schedule_date=date
+                    ).count()
+                    user.daily_schedules_count = daily_schedules_count
+
+                ordered_users = sorted(users_distance, key=lambda x: (x[1] is None, x[1]))
+                ordered_ids = [user[0].id for user in ordered_users]
+
+                queryset = queryset.filter(id__in=ordered_ids).annotate(
+                    distance=Case(
+                        *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
+                        default=Value(None),  
+                        output_field=FloatField()
+                    ),
+                    daily_schedules_count=Case(
+                        *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
+                        default=Value(0),
+                        output_field=IntegerField()
+                    )
+                ).order_by(
+                    Case(
+                        *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
+                    )
+                )
         return queryset
     
     
