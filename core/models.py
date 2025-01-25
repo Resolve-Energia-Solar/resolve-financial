@@ -4,6 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.db.models import Max
+
 
 
 class DocumentType(models.Model):
@@ -136,7 +138,7 @@ class Column(models.Model):
     
     name = models.CharField("Nome", max_length=200)
     position = models.PositiveSmallIntegerField("Posição", blank=True, null=True)
-    column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=True, null=True)
+    column_type = models.CharField("Tipo", max_length=1, choices=COLUMN_TYPES, blank=True, null=True, default='')
     board = models.ForeignKey('core.Board', related_name='columns', on_delete=models.CASCADE, verbose_name="Quadro")
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
     finished = models.BooleanField("Finalizado", default=False)
@@ -155,16 +157,17 @@ class Column(models.Model):
         return f'{self.name} | {self.board}'
     
     def save(self, *args, **kwargs):
+        if self.column_type is None:
+            self.column_type = ''
+
         if self.column_type == 'D':
             self.finished = True
-        
+
         if not self.position:
-            existing_positions = Column.objects.filter(board=self.board).values_list('position', flat=True)
-            if existing_positions:
-                self.position = max(existing_positions) + 1
-            else:
-                self.position = 1
+            max_position = Column.objects.filter(board=self.board).aggregate(Max('position'))['position__max']
             
+            self.position = (max_position or 0) + 1
+
         super(Column, self).save(*args, **kwargs)
 
     class Meta:
