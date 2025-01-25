@@ -42,14 +42,19 @@ class CustomerLoginView(APIView):
             return Response({
                 'message': 'Documento e data de nascimento são obrigatórios.'
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = User.objects.filter(first_document=first_document, birth_date=birth_date).order_by('-last_login').first()
-        except User.DoesNotExist:
+        elif first_document and len(first_document) != 11:
             return Response({
-                'message': 'Usuário com esse documento e data de nascimento não encontrado.'
-            }, status=status.HTTP_404_NOT_FOUND)
+                'message': 'Documento (CPF) deve ter 11 dígitos.'       
+            }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
+        user = User.objects.filter(first_document=first_document, birth_date=birth_date).order_by('-last_login').first()
+
+        if not user:
+            # Não informar se o usuário não existe
+            return Response({
+                'message': 'Verifique as informações inseridas.'
+            }, status=status.HTTP_403_FORBIDDEN)
+    
         # Verificar se o usuário está ativo
         if not user.is_active:
             return Response({
