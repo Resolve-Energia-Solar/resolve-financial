@@ -149,7 +149,7 @@ class BoardSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
 
     # Para escrita: usar apenas IDs
-    columns_ids = PrimaryKeyRelatedField(queryset=Column.objects.all(), many=True, write_only=True, source='columns')
+    columns_ids = PrimaryKeyRelatedField(queryset=Column.objects.all(), many=True, write_only=True, source='columns', required=False, allow_null=True)
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
 
     class Meta:
