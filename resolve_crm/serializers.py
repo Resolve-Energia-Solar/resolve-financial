@@ -3,6 +3,7 @@ from accounts.models import Address, User
 from core.models import Column
 from core.serializers import AttachmentSerializer
 from engineering.models import Units
+from field_services.models import Schedule
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
 from accounts.serializers import RelatedUserSerializer, AddressSerializer, BranchSerializer
@@ -329,7 +330,7 @@ class ProjectSerializer(BaseSerializer):
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
     units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
     designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
-    # Lista de materiais com detalhes
+    inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False)
     materials_data = ListField(
         child= DictField(),
         write_only=True,

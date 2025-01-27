@@ -520,7 +520,6 @@ class Project(models.Model):
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
-    
     inspection = models.ForeignKey('field_services.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_field_services")
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
@@ -546,7 +545,7 @@ class Project(models.Model):
         pagamento completo ou parcial
         e a vistoria estiver aprovada
         """
-        return self.is_documentation_completed and self.sale.payment_status in ['PG', 'PA'] and self.inspection.status == 'A'
+        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection.status == 'A'
 
     
     def access_opinion(self):
