@@ -205,7 +205,7 @@ class ProjectViewSet(BaseModelViewSet):
             )
         
         if inspection_status:
-            queryset = queryset.filter(inspection__status=inspection_status)
+            queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
             
         if signature_date:
             date_range = signature_date.split(',')
@@ -238,6 +238,8 @@ class ProjectViewSet(BaseModelViewSet):
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
+            
+            is_released_to_engineering_count=Count('id', filter=Q(annotated_is_released_to_engineering=True))
         )
 
         indicators = {
@@ -254,7 +256,9 @@ class ProjectViewSet(BaseModelViewSet):
                 "complete": raw_indicators["complete_count"],
                 "canceled": raw_indicators["canceled_count"],
                 "termination": raw_indicators["termination_count"],
-            }
+            },
+            
+            "is_released_to_engineering": raw_indicators["is_released_to_engineering_count"]
         }
         
         # Paginação (se habilitada)
