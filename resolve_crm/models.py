@@ -355,6 +355,7 @@ class Sale(models.Model):
         ("P", "Pendente"),
         ("L", "Liberado"),
         ("C", "Concluído"),
+        ("CA", "Cancelado"),
     ]
     
     # Stakeholders
