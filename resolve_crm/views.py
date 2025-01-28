@@ -208,7 +208,12 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(inspection__status=inspection_status)
             
         if signature_date:
-            queryset = queryset.filter(sale__signature_date=signature_date)
+            date_range = signature_date.split(',')
+            if len(date_range) == 2:
+                start_date, end_date = date_range
+                queryset = queryset.filter(sale__signature_date__range=[start_date, end_date])
+            else:
+                queryset = queryset.filter(sale__signature_date=signature_date)
         
         if product_kwp:
             queryset = queryset.filter(product__params=product_kwp)    
