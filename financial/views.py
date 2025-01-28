@@ -1,8 +1,12 @@
+import os
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
 from datetime import datetime
 from django.utils import timezone
+from rest_framework.response import Response
+from rest_framework.views import APIView
+import requests
 
 
 class FinancierViewSet(BaseModelViewSet):
@@ -69,3 +73,107 @@ class FranchiseInstallmentViewSet(BaseModelViewSet):
 class FinancialRecordViewSet(BaseModelViewSet):
     queryset = FinancialRecord.objects.all()
     serializer_class = FinancialRecordSerializer
+
+
+class OmieIntegrationView(APIView):
+    
+    OMIE_API_URL = os.environ.get('OMIE_API_URL')
+    OMIE_ACESSKEY = os.environ.get('OMIE_ACESSKEY')
+    OMIE_ACESSTOKEN = os.environ.get('OMIE_ACESSTOKEN')
+    
+    def post(self, request):
+        print("OmieIntegrationView GET request received")
+        if not self.OMIE_API_URL or not self.OMIE_ACESSKEY or not self.OMIE_ACESSTOKEN:
+            print("Environment variables not set")
+            return Response({"error": "API URL, AcessKey and AccessToken not set in environment variables"}, status=500)
+        
+        omie_call = request.data.get('call', None)
+        print(f"Received omie_call: {omie_call}")
+        
+        if omie_call == 'ListarDepartamentos':
+            url = f"{self.OMIE_API_URL}/geral/departamentos/"
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            data = {
+                "call": "ListarDepartamentos",
+                "app_key": self.OMIE_ACESSKEY,
+                "app_secret": self.OMIE_ACESSTOKEN,
+                "param": [{"pagina": 1, "registros_por_pagina": 999}]
+            }
+            print(f"Making request to Omie API at {url} with data: {data}")
+            response = requests.post(url, headers=headers, json=data)
+            print(f"Received response with status code: {response.status_code}")
+            if response.status_code == 200:
+                print("Request successful: fetching active departments")
+                departments = response.json().get('departamentos', [])
+                active_departments = [dept for dept in departments if dept.get('inativo') == 'N']
+                return Response(active_departments)
+            else:
+                print("Failed to fetch data from Omie API")
+                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+            
+        if omie_call == 'ListarCategorias':
+            url = f"{self.OMIE_API_URL}/geral/categorias/"
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            data = {
+                "call": "ListarCategorias",
+                "app_key": self.OMIE_ACESSKEY,
+                "app_secret": self.OMIE_ACESSTOKEN,
+                "param": [{"pagina": 1, "registros_por_pagina": 999}]
+            }
+            print(f"Making request to Omie API at {url} with data: {data}")
+            response = requests.post(url, headers=headers, json=data)
+            print(f"Received response with status code: {response.status_code}")
+            if response.status_code == 200:
+                print("Request successful: fetching active categories")
+                categories = response.json().get('categoria_cadastro', [])
+                active_categories = [cat for cat in categories if cat.get('totalizadora') == 'N' and cat.get('conta_inativa') == 'N']
+                return Response(active_categories)
+            else:
+                print("Failed to fetch data from Omie API")
+                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+            
+        if omie_call == 'ListarClientesResumido':
+            
+            filter = request.data.get('filter', None)
+            
+            if not filter:
+                return Response({"error": "No filter parameter received"}, status=400)
+            
+            if filter.isdigit():
+                filter = {
+                    "cnpj_cpf": filter,
+                    "inativo": "N"
+                }
+            else:
+                filter = {
+                    "razao_social": filter,
+                    "inativo": "N"
+                }
+            
+            url = f"{self.OMIE_API_URL}/geral/clientes/"
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            data = {
+                "call": "ListarClientesResumido",
+                "app_key": self.OMIE_ACESSKEY,
+                "app_secret": self.OMIE_ACESSTOKEN,
+                "param": [{"clientesFiltro": [filter]}]
+            }
+            print(f"Making request to Omie API at {url} with data: {data}")
+            response = requests.post(url, headers=headers, json=data)
+            print(f"Received response with status code: {response.status_code}")
+            if response.status_code == 200:
+                print("Request successful: fetching active clients")
+                clients = response.json().get('clientes_cadastro_resumido', [])
+                return Response(clients)
+            else:
+                print("Failed to fetch data from Omie API")
+                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+        
+        print("Invalid call parameter")
+        return Response({"error": "Invalid call parameter"}, status=400)
