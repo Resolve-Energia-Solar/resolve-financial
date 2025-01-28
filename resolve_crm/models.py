@@ -392,35 +392,35 @@ class Sale(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
-    @property
-    def can_generate_contract(self):
-        customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)
-        value = 0
-        all_payments_have_borrower = True
+    # @property
+    # def can_generate_contract(self):
+    #     customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)
+    #     value = 0
+    #     all_payments_have_borrower = True
 
-        for payment in self.payments.all():
-            value += payment.value
-            if not payment.borrower:
-                all_payments_have_borrower = False
+    #     for payment in self.payments.all():
+    #         value += payment.value
+    #         if not payment.borrower:
+    #             all_payments_have_borrower = False
 
-        payment_data = value >= self.total_value and all_payments_have_borrower
-        have_units = all(project.units.exists() for project in self.projects.all())
+    #     payment_data = value >= self.total_value and all_payments_have_borrower
+    #     have_units = all(project.units.exists() for project in self.projects.all())
 
-        result = customer_data and payment_data and have_units and all_payments_have_borrower
+    #     result = customer_data and payment_data and have_units and all_payments_have_borrower
 
-        # Filtrar somente as dependências que estão False
-        dependencies = {
-            "customer_data": customer_data,
-            "payment_data": payment_data,
-            "have_units": have_units,
-            "all_payments_have_borrower": all_payments_have_borrower,
-        }
-        failed_dependencies = {key: value for key, value in dependencies.items() if not value}
+    #     # Filtrar somente as dependências que estão False
+    #     dependencies = {
+    #         "customer_data": customer_data,
+    #         "payment_data": payment_data,
+    #         "have_units": have_units,
+    #         "all_payments_have_borrower": all_payments_have_borrower,
+    #     }
+    #     failed_dependencies = {key: value for key, value in dependencies.items() if not value}
 
-        return {
-            "is_valid": result,
-            "failed_dependencies": failed_dependencies
-        }
+    #     return {
+    #         "is_valid": result,
+    #         "failed_dependencies": failed_dependencies
+    #     }
         
     @property
     def total_paid(self):
@@ -486,6 +486,14 @@ class Sale(models.Model):
                     if not Sale.objects.filter(contract_number=new_contract_number).exists():
                         self.contract_number = new_contract_number
                         break
+        
+        if (self.payment_status == 'C' or self.payment_status == 'L') and not self.financial_completion_date:
+            self.financial_completion_date = now()
+            self.is_completed_financial = True
+            
+        if (self.payment_status == 'P' or self.payment_status == 'CA') and self.financial_completion_date:
+            self.financial_completion_date = None
+            self.is_completed_financial = False
 
         super().save(*args, **kwargs)
     
@@ -546,7 +554,7 @@ class Project(models.Model):
         pagamento completo ou parcial
         e a vistoria estiver aprovada
         """
-        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection.status == 'A'
+        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection.schedule_end_date
 
     
     def access_opinion(self):
@@ -616,6 +624,10 @@ class Project(models.Model):
                 self.project_number = f'PROJ{last_number + 1:02}'
             else:
                 self.project_number = 'PROJ01'
+        
+        if self.is_documentation_completed and not self.documention_completion_date:
+            self.documention_completion_date = now()
+        
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
             self.create_deadlines()
