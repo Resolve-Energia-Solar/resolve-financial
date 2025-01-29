@@ -191,6 +191,32 @@ class ProjectViewSet(BaseModelViewSet):
         )
         customer = request.query_params.get('customer')
         is_released_to_engineering = request.query_params.get('is_released_to_engineering')
+        inspection_status = request.query_params.get('inspection_status')
+        signature_date = request.query_params.get('signature_date')
+        product_kwp = request.query_params.get('product_kwp')
+        was_released_at = request.query_params.get('was_released_at')
+        
+        
+        if was_released_at:
+            queryset = queryset.annotate(
+                contract_date = sale__signature_date,
+                inspection_date = inspection__schedule_end_date,
+                financial_date = sale__financial_date,
+            )
+        
+        if inspection_status:
+            queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
+            
+        if signature_date:
+            date_range = signature_date.split(',')
+            if len(date_range) == 2:
+                start_date, end_date = date_range
+                queryset = queryset.filter(sale__signature_date__range=[start_date, end_date])
+            else:
+                queryset = queryset.filter(sale__signature_date=signature_date)
+        
+        if product_kwp:
+            queryset = queryset.filter(product__params=product_kwp)    
         
         if is_released_to_engineering=='true':
             queryset = queryset.filter(annotated_is_released_to_engineering=True)
@@ -212,6 +238,8 @@ class ProjectViewSet(BaseModelViewSet):
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
+            
+            is_released_to_engineering_count=Count('id', filter=Q(annotated_is_released_to_engineering=True))
         )
 
         indicators = {
@@ -228,7 +256,9 @@ class ProjectViewSet(BaseModelViewSet):
                 "complete": raw_indicators["complete_count"],
                 "canceled": raw_indicators["canceled_count"],
                 "termination": raw_indicators["termination_count"],
-            }
+            },
+            
+            "is_released_to_engineering": raw_indicators["is_released_to_engineering_count"]
         }
         
         # Paginação (se habilitada)

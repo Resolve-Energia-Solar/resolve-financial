@@ -23,18 +23,14 @@ class OriginSerializer(BaseSerializer):
         
 class ReadSalesSerializer(BaseSerializer):
     missing_documents = SerializerMethodField()
-    can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
 
     class Meta:
         model = Sale
-        fields = ['id', 'total_value', 'status', 'total_paid', 'missing_documents', 'can_generate_contract']
+        fields = ['id', 'total_value', 'status', 'total_paid', 'missing_documents',]
 
     def get_missing_documents(self, obj):
         return obj.missing_documents()
-    
-    def get_can_generate_contract(self, obj):
-        return "true" if obj.can_generate_contract else "false"
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -134,7 +130,6 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     missing_documents = SerializerMethodField()
     sale_products = SaleProductSerializer(many=True, read_only=True)
-    can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
@@ -282,9 +277,6 @@ class SaleSerializer(BaseSerializer):
     
     def get_missing_documents(self, obj):
         return obj.missing_documents()
-    
-    def get_can_generate_contract(self, obj):
-        return obj.can_generate_contract
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -292,7 +284,6 @@ class SaleSerializer(BaseSerializer):
 
 class ReadSaleSerializer(BaseSerializer):
     customer = RelatedUserSerializer(read_only=True)
-    can_generate_contract = SerializerMethodField()
     total_paid = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
@@ -301,9 +292,6 @@ class ReadSaleSerializer(BaseSerializer):
         model = Sale
         fields = '__all__'
         depth = 1
-
-    def get_can_generate_contract(self, obj):
-        return obj.can_generate_contract
 
     def get_total_paid(self, obj):
         return obj.total_paid

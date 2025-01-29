@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.db import models
+from django.forms import ValidationError
 from simple_history.models import HistoricalRecords
 from django.urls import reverse_lazy
 
@@ -86,9 +87,34 @@ class User(AbstractUser):
 
     # Logs
     history = HistoricalRecords()
+    
+    def check_if_exist_first_document(number):
+        return User.objects.filter(first_document=number).exists()
+    
+    def check_if_first_documento_changed(self):
+        original = User.objects.filter(pk=self.pk).values('first_document').first()
+        if original and original['first_document'] != self.first_document:
+            return True
+        return False
 
     def save(self, current_user=None, *args, **kwargs):
+        print("Salvando usuário")
+
+        # Se o objeto já existir no banco de dados
+        if self.pk:
+            # Verifica se o documento foi alterado e se já existe no banco
+            if self.check_if_first_documento_changed():
+                print("Verificando se o documento já existe (alterado)")
+                if User.check_if_exist_first_document(self.first_document):
+                    raise ValidationError({"first_document": "CPF/CNPJ já cadastrado."})
+        else:
+            # Verificação para um novo objeto
+            print("Verificando se o documento já existe (novo)")
+            if User.check_if_exist_first_document(self.first_document):
+                raise ValidationError({"first_document": "CPF/CNPJ já cadastrado."})
+        
         name_parts = self.get_full_name().split(" ")
+        
         if not self.first_name or not self.last_name and self.get_full_name():
             self.first_name = name_parts[0]
             self.last_name = name_parts[-1]
@@ -101,6 +127,7 @@ class User(AbstractUser):
                 counter += 1
             self.username = username
         super().save(*args, **kwargs)
+        
 
     def __str__(self):
         return self.complete_name if self.complete_name else self.email

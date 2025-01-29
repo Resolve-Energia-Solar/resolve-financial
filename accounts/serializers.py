@@ -251,7 +251,8 @@ class UserSerializer(BaseSerializer):
         
     def validate_first_document(self, value):
         value = value.replace('.', '').replace('-', '').replace('/', '')
-        
+
+        # Verifica se é um CPF ou CNPJ válido
         if len(value) == 11:  # CPF
             if not CPF().validate(value):
                 raise serializers.ValidationError("CPF inválido.")
@@ -260,6 +261,19 @@ class UserSerializer(BaseSerializer):
                 raise serializers.ValidationError("CNPJ inválido.")
         else:
             raise serializers.ValidationError("Número inválido. Insira um CPF ou CNPJ válido.")
+
+        # Verifica se está criando um novo usuário ou alterando o CPF/CNPJ
+        if self.instance:
+            # Se for edição, verifica se o CPF/CNPJ foi alterado
+            if self.instance.first_document != value:
+                user_exists = User.objects.filter(first_document=value).exists()
+                if user_exists:
+                    raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
+        else:
+            # Caso seja criação de um novo usuário
+            user_exists = User.objects.filter(first_document=value).exists()
+            if user_exists:
+                raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
 
         return value
         
@@ -271,7 +285,7 @@ class UserSerializer(BaseSerializer):
     
     def get_daily_schedules_count(self, obj):
         return getattr(obj, 'daily_schedules_count', None)
-
+    
 
 class SquadSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos

@@ -111,11 +111,6 @@ class Schedule(models.Model):
         ("Cancelado", "Cancelado"),
     ]
     
-    FINAL_SERVICE_CHOICES = [
-        ("Aprovado", "Aprovado"),
-        ("Reprovado", "Reprovado"),
-    ]
-    
     STEP_CHOICES = [
         (1, "Não Iniciado"),
         (2, "Em Viagem"),
