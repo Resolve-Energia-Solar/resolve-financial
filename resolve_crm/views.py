@@ -20,6 +20,7 @@ from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
+from rest_framework.decorators import action
 
 
 
@@ -85,6 +86,11 @@ class SaleViewSet(BaseModelViewSet):
         is_signed = request.query_params.get('is_signed')
         borrower = request.query_params.get('borrower')
         homologator = request.query_params.get('homologator')
+        final_service_options = request.query_params.get('final_service_options')
+        
+        if final_service_options:
+            final_service_opinion_list = final_service_options.split(',')
+            queryset = queryset.filter(projects__inspection__final_service_opinion__id__in=final_service_opinion_list)
         
         if borrower:
             queryset = queryset.filter(payments__borrower__id=borrower)
@@ -182,31 +188,24 @@ class ProjectViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.annotate(
-            annotated_is_released_to_engineering=(
-                Q(is_documentation_completed=True) &
-                Q(sale__payment_status__in=['PG', 'PA']) &
-                Q(inspection__status='A')
-            )
-        )
+        
         customer = request.query_params.get('customer')
         is_released_to_engineering = request.query_params.get('is_released_to_engineering')
         inspection_status = request.query_params.get('inspection_status')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
         was_released_at = request.query_params.get('was_released_at')
-        
-        
+
         if was_released_at:
             queryset = queryset.annotate(
-                contract_date = sale__signature_date,
-                inspection_date = inspection__schedule_end_date,
-                financial_date = sale__financial_date,
+                contract_date=F('sale__signature_date'),
+                inspection_date=F('inspection__schedule_end_date'),
+                financial_date=F('sale__financial_date'),
             )
-        
+
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
-            
+
         if signature_date:
             date_range = signature_date.split(',')
             if len(date_range) == 2:
@@ -214,17 +213,38 @@ class ProjectViewSet(BaseModelViewSet):
                 queryset = queryset.filter(sale__signature_date__range=[start_date, end_date])
             else:
                 queryset = queryset.filter(sale__signature_date=signature_date)
-        
+
         if product_kwp:
-            queryset = queryset.filter(product__params=product_kwp)    
-        
-        if is_released_to_engineering=='true':
-            queryset = queryset.filter(annotated_is_released_to_engineering=True)
-        elif is_released_to_engineering=='false':
-            queryset = queryset.filter(annotated_is_released_to_engineering=False)
-            
+            queryset = queryset.filter(product__params=product_kwp)
+
+        if is_released_to_engineering == 'true':
+            queryset = queryset.filter(
+                is_documentation_completed=True,
+                sale__payment_status__in=['PG', 'PA'],
+                inspection__status='A'
+            )
+        elif is_released_to_engineering == 'false':
+            queryset = queryset.filter(
+                Q(is_documentation_completed=False) |
+                Q(sale__payment_status__in=['PE', 'CA']) |
+                Q(inspection__status='C')
+            )
+
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
+
+        # Paginação
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({'results': serialized_data})
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({'results': serialized_data})
+
+    @action(detail=False, methods=['get'])
+    def indicators(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
@@ -232,14 +252,35 @@ class ProjectViewSet(BaseModelViewSet):
             designer_complete_count=Count('id', filter=Q(designer_status="CO")),
             designer_canceled_count=Count('id', filter=Q(designer_status="C")),
             designer_termination_count=Count('id', filter=Q(designer_status="D")),
-            
+
             pending_count=Count('id', filter=Q(status="P")),
             in_progress_count=Count('id', filter=Q(status="EA")),
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
-            
-            is_released_to_engineering_count=Count('id', filter=Q(annotated_is_released_to_engineering=True))
+
+            is_released_to_engineering_count=Count('id', filter=Q(
+                is_documentation_completed=True,
+                sale__payment_status__in=['PG', 'PA'],
+                inspection__status='A'
+            )),
+            pending_material_list=Count('id', filter=Q(
+                is_documentation_completed=True,
+                sale__payment_status__in=['PG', 'PA'],
+                inspection__status='A',
+                materials__isnull=True
+            )),
+            blocked_to_engineering=Count('id', filter=Q(
+                is_documentation_completed=False
+            ) | Q(
+                sale__payment_status__in=['PE', 'CA']
+            ) | Q(
+                inspection__status='C'
+            ) | ~Q(
+                is_documentation_completed=True,
+                sale__payment_status__in=['PG', 'PA'],
+                inspection__status='A'
+            ))
         )
 
         indicators = {
@@ -257,26 +298,14 @@ class ProjectViewSet(BaseModelViewSet):
                 "canceled": raw_indicators["canceled_count"],
                 "termination": raw_indicators["termination_count"],
             },
-            
-            "is_released_to_engineering": raw_indicators["is_released_to_engineering_count"]
+            "is_released_to_engineering": raw_indicators["is_released_to_engineering_count"],
+            "pending_material_list": raw_indicators["pending_material_list"],
+            "blocked_to_engineering": raw_indicators["blocked_to_engineering"]
         }
+
+        return Response({"indicators": indicators})
         
-        # Paginação (se habilitada)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serialized_data = self.get_serializer(page, many=True).data
-            return self.get_paginated_response({
-                'results': serialized_data,
-                'indicators': indicators
-            })
-
-        serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({
-            'results': serialized_data,
-            'indicators': indicators
-        })
-
-
+        
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
     serializer_class = ContractSubmissionSerializer

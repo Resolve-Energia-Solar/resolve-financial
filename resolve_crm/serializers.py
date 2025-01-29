@@ -131,6 +131,7 @@ class SaleSerializer(BaseSerializer):
     missing_documents = SerializerMethodField()
     sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
+    final_service_options = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
 
@@ -147,6 +148,10 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        
+    
+    def get_final_service_options(self, obj):
+        return obj.final_service_options
         
     def validate(self, data):
         if self.instance is None:
