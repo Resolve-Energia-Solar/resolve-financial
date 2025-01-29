@@ -86,6 +86,10 @@ class SaleViewSet(BaseModelViewSet):
         is_signed = request.query_params.get('is_signed')
         borrower = request.query_params.get('borrower')
         homologator = request.query_params.get('homologator')
+        final_service_opinion = request.query_params.get('final_service_opinion')
+        
+        if final_service_opinion:
+            queryset = queryset.filter(projects__inspection__final_service_opinion__id=final_service_opinion)
         
         if borrower:
             queryset = queryset.filter(payments__borrower__id=borrower)

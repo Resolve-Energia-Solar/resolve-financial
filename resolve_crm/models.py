@@ -392,6 +392,9 @@ class Sale(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
+    def get_final_service_option(self):
+        return self.services.filter(is_final=True).first()
+    
     # @property
     # def can_generate_contract(self):
     #     customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)
