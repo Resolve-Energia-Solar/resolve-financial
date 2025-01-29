@@ -225,7 +225,8 @@ class EmployeeSerializer(BaseSerializer):
     department = DepartmentSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
-
+    manager = SerializerMethodField()
+    
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
     department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
@@ -235,6 +236,12 @@ class EmployeeSerializer(BaseSerializer):
     class Meta:
         model = Employee
         fields = '__all__'
+        
+    def get_manager(self, obj):
+        try:
+            return RelatedUserSerializer(obj.user_manager).data
+        except:
+            return None
         
     def create(self, validated_data):
         user_data = validated_data.pop('user', None)
