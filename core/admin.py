@@ -107,3 +107,13 @@ class SessionAdmin(admin.ModelAdmin):
     ordering = ("-expire_date",)
     list_per_page = 10
     list_max_show_all = 100
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("author", "content_type", "object_id", "text", "created_at")
+    search_fields = ("author", "content_type", "object_id", "text")
+    list_filter = ("created_at",)
+    ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
