@@ -350,7 +350,7 @@ class FinancialRecord(models.Model):
         help_text="True para contas a receber, False para contas a pagar.",
     )
     status = models.CharField(
-        "Status", max_length=1, choices=STATUS_CHOICES, default="P"
+        "Status", max_length=1, choices=STATUS_CHOICES, default="S"
     )
     value = models.DecimalField("Valor", max_digits=20, decimal_places=2, default=0.00)
     due_date = models.DateField("Data de Vencimento")
