@@ -1,13 +1,16 @@
 import logging
 import os
+from datetime import datetime
+
+import requests
+from django.utils import timezone
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
-from datetime import datetime
-from django.utils import timezone
-from rest_framework.response import Response
-from rest_framework.views import APIView
-import requests
 
 
 logger = logging.getLogger(__name__)
@@ -208,3 +211,16 @@ class OmieIntegrationView(APIView):
         else:
             logger.error(f"Failed to create financial record in Omie: {response.json()}")
         return Response(response.json(), status=response.status_code)
+
+
+class FinancialRecordApprovalView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        financial_record_id = request.data.get('financial_record_id', None)
+        financial_record = FinancialRecord.objects.get(id=financial_record_id)
+        financial_record.status = 'E'
+        financial_record.responsible_status = 'A' if request.data.get('manager_status') == 'Aprovado' else 'R'
+        financial_record.responsible_response_date = timezone.now()
+        financial_record.save()
+        return Response({"message": "Financial record approved"})

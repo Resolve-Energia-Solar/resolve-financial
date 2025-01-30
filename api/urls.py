@@ -10,7 +10,7 @@ from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, U
 from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
-from financial.views import OmieIntegrationView
+from financial.views import FinancialRecordApprovalView, OmieIntegrationView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView
 from .views import ContratoView, GanttView, StatusView
 
@@ -65,4 +65,5 @@ urlpatterns = [
     path('recive-contract-infomation/', ReciveContractInfomation.as_view(), name='recive_contract_infomation'),
     path('status/', StatusView.as_view(), name='status'),
     path('financial/omie/', OmieIntegrationView.as_view(), name='omie_integration'),
+    path('financial/approve-financial-record/', FinancialRecordApprovalView.as_view(), name='approve_financial_record'),
 ]
