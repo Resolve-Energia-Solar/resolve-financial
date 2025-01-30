@@ -131,7 +131,7 @@ class SaleSerializer(BaseSerializer):
     missing_documents = SerializerMethodField()
     sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
-    final_service_options = SerializerMethodField()
+    final_service_opinion = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
 
@@ -150,8 +150,12 @@ class SaleSerializer(BaseSerializer):
         fields = '__all__'
         
     
-    def get_final_service_options(self, obj):
-        return obj.final_service_options
+    def get_final_service_opinion(self, obj):
+        final_opinions = obj.final_service_opinion()
+        # Se for None, retorna lista vazia ou None, você decide
+        if not final_opinions:
+            return []
+        return [opinion.name for opinion in final_opinions]
         
     def validate(self, data):
         if self.instance is None:
