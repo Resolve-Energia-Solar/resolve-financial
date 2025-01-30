@@ -74,6 +74,17 @@ class FinancialRecordViewSet(BaseModelViewSet):
     queryset = FinancialRecord.objects.all()
     serializer_class = FinancialRecordSerializer
 
+    def create(self, request, *args, **kwargs):
+        
+        # Capture the user from the session
+        user = request.user
+        employee = user.employee
+        
+        request.data['requester_id'] = user.id
+        request.data['responsible_id'] = employee.user_manager.id
+        
+        return super().create(request, *args, **kwargs)
+
 
 class OmieIntegrationView(APIView):
     
