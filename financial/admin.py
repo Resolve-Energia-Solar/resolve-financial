@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Financier, FranchiseInstallment, Payment, PaymentInstallment
+from .models import FinancialRecord
 
 
 @admin.register(Financier)
@@ -77,4 +78,11 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
             installment.save()
         self.message_user(request, "Parcelas selecionadas foram marcadas como pagas.")
     mark_as_paid.short_description = "Marcar parcelas selecionadas como pagas"
-    
+
+
+    @admin.register(FinancialRecord)
+    class FinancialRecordAdmin(admin.ModelAdmin):
+        list_display = ('integration_code', 'protocol', 'is_receivable', 'status', 'value', 'due_date', 'service_date', 'requesting_department', 'department_code', 'category_code', 'client_supplier_code', 'invoice_number', 'requester', 'responsible', 'approved_at', 'paid_at', 'created_at')
+        search_fields = ('integration_code', 'protocol', 'requesting_department__name', 'department_code', 'category_code', 'client_supplier_code', 'invoice_number', 'requester__username', 'responsible__username')
+        list_filter = ('is_receivable', 'status', 'due_date', 'service_date', 'created_at', 'approved_at', 'paid_at')
+        ordering = ('-created_at',)
