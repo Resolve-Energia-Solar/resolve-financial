@@ -562,7 +562,7 @@ class Project(models.Model):
         pagamento completo ou parcial
         e a vistoria estiver aprovada
         """
-        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection.schedule_end_date
+        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection
 
     
     def access_opinion(self):
