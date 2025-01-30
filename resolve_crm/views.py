@@ -86,10 +86,10 @@ class SaleViewSet(BaseModelViewSet):
         is_signed = request.query_params.get('is_signed')
         borrower = request.query_params.get('borrower')
         homologator = request.query_params.get('homologator')
-        final_service_options = request.query_params.get('final_service_options')
+        final_service_opinions = request.query_params.get('final_service_options')
         
-        if final_service_options:
-            final_service_opinion_list = final_service_options.split(',')
+        if final_service_opinions:
+            final_service_opinion_list = final_service_opinions.split(',')
             queryset = queryset.filter(projects__inspection__final_service_opinion__id__in=final_service_opinion_list)
         
         if borrower:
