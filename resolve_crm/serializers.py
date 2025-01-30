@@ -155,7 +155,7 @@ class SaleSerializer(BaseSerializer):
         # Se for None, retorna lista vazia ou None, você decide
         if not final_opinions:
             return []
-        return [opinion.name for opinion in final_opinions if opinion is not None]
+        return [opinion.name for opinion in final_opinions if opinion is not None and opinion.name]
         
     def validate(self, data):
         if self.instance is None:
