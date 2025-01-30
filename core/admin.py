@@ -1,6 +1,7 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
+from django.contrib.sessions.models import Session
 from .models import *
 
 
@@ -96,3 +97,13 @@ class TaggedItemAdmin(admin.ModelAdmin):
     list_display = ("tag", "content_type", "object_id")
     search_fields = ("tag", "content_type", "object_id")
     list_filter = ("tag", "content_type", "object_id")
+    
+
+@admin.register(Session)
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ("session_key", "session_data", "expire_date")
+    search_fields = ("session_key", "session_data")
+    list_filter = ("expire_date",)
+    ordering = ("-expire_date",)
+    list_per_page = 10
+    list_max_show_all = 100

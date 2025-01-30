@@ -147,14 +147,86 @@ class CustomFieldSerializer(BaseSerializer):
         return obj.user.id if obj.user else None
 
 
+class UserSerializer(BaseSerializer):
+    # Para leitura: usar serializadores completos
+    addresses = AddressSerializer(many=True, read_only=True)
+    user_types = UserTypeSerializer(many=True, read_only=True)
+    groups = GroupSerializer(many=True, read_only=True)
+    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    employee = SerializerMethodField()
+
+    # Para escrita: usar apenas IDs
+    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
+    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
+    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
+    phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True, required=False)
+
+    user_permissions = SerializerMethodField()
+    distance = SerializerMethodField()
+    daily_schedules_count = SerializerMethodField()
+
+    class Meta:
+        model = User
+        exclude = ['password']
+        
+    def validate(self, attrs):
+        if 'first_document' in attrs:
+            attrs['first_document'] = self.validate_first_document(attrs['first_document'])
+        
+        return super().validate(attrs)
+        
+    def validate_first_document(self, value):
+        value = value.replace('.', '').replace('-', '').replace('/', '')
+
+        # Verifica se é um CPF ou CNPJ válido
+        if len(value) == 11:  # CPF
+            if not CPF().validate(value):
+                raise serializers.ValidationError("CPF inválido.")
+        elif len(value) == 14:  # CNPJ
+            if not CNPJ().validate(value):
+                raise serializers.ValidationError("CNPJ inválido.")
+        else:
+            raise serializers.ValidationError("Número inválido. Insira um CPF ou CNPJ válido.")
+
+        # Verifica se está criando um novo usuário ou alterando o CPF/CNPJ
+        if self.instance:
+            # Se for edição, verifica se o CPF/CNPJ foi alterado
+            if self.instance.first_document != value:
+                user_exists = User.objects.filter(first_document=value).exists()
+                if user_exists:
+                    raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
+        else:
+            # Caso seja criação de um novo usuário
+            user_exists = User.objects.filter(first_document=value).exists()
+            if user_exists:
+                raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
+
+        return value
+        
+    def get_employee(self, obj):
+        try:
+            return EmployeeSerializer(obj.employee).data
+        except:
+            return None
+        
+    def get_user_permissions(self, obj):
+        return obj.get_all_permissions()
+    
+    def get_distance(self, obj):
+        return getattr(obj, 'distance', None)
+    
+    def get_daily_schedules_count(self, obj):
+        return getattr(obj, 'daily_schedules_count', None)
+    
+
 class EmployeeSerializer(BaseSerializer):
 
     user = RelatedUserSerializer(read_only=True)
-    # user_manager = RelatedUserSerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
-
+    manager = SerializerMethodField()
+    
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
     department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
@@ -164,6 +236,12 @@ class EmployeeSerializer(BaseSerializer):
     class Meta:
         model = Employee
         fields = '__all__'
+        
+    def get_manager(self, obj):
+        try:
+            return RelatedUserSerializer(obj.user_manager).data
+        except:
+            return None
         
     def create(self, validated_data):
         user_data = validated_data.pop('user', None)
@@ -220,73 +298,6 @@ class EmployeeSerializer(BaseSerializer):
         instance.save()
         return instance
 
-
-class UserSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    addresses = AddressSerializer(many=True, read_only=True)
-    user_types = UserTypeSerializer(many=True, read_only=True)
-    groups = GroupSerializer(many=True, read_only=True)
-    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
-    # employee = EmployeeSerializer(read_only=True)
-
-    # Para escrita: usar apenas IDs
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
-    user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
-    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
-    phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True, required=False)
-    employee_id = PrimaryKeyRelatedField(queryset=Employee.objects.all(), write_only=True, source='employee', required=False)
-
-    user_permissions = SerializerMethodField()
-    distance = SerializerMethodField()
-    daily_schedules_count = SerializerMethodField()
-
-    class Meta:
-        model = User
-        exclude = ['password']
-        
-    def validate(self, attrs):
-        if 'first_document' in attrs:
-            attrs['first_document'] = self.validate_first_document(attrs['first_document'])
-        
-        return super().validate(attrs)
-        
-    def validate_first_document(self, value):
-        value = value.replace('.', '').replace('-', '').replace('/', '')
-
-        # Verifica se é um CPF ou CNPJ válido
-        if len(value) == 11:  # CPF
-            if not CPF().validate(value):
-                raise serializers.ValidationError("CPF inválido.")
-        elif len(value) == 14:  # CNPJ
-            if not CNPJ().validate(value):
-                raise serializers.ValidationError("CNPJ inválido.")
-        else:
-            raise serializers.ValidationError("Número inválido. Insira um CPF ou CNPJ válido.")
-
-        # Verifica se está criando um novo usuário ou alterando o CPF/CNPJ
-        if self.instance:
-            # Se for edição, verifica se o CPF/CNPJ foi alterado
-            if self.instance.first_document != value:
-                user_exists = User.objects.filter(first_document=value).exists()
-                if user_exists:
-                    raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
-        else:
-            # Caso seja criação de um novo usuário
-            user_exists = User.objects.filter(first_document=value).exists()
-            if user_exists:
-                raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
-
-        return value
-        
-    def get_user_permissions(self, obj):
-        return obj.get_all_permissions()
-    
-    def get_distance(self, obj):
-        return getattr(obj, 'distance', None)
-    
-    def get_daily_schedules_count(self, obj):
-        return getattr(obj, 'daily_schedules_count', None)
-    
 
 class SquadSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
