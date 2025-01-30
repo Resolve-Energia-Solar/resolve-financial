@@ -380,8 +380,22 @@ class FinancialRecord(models.Model):
         verbose_name="Responsável",
         related_name="responsible_financial_records",
     )
-    approved_at = models.DateField("Data de Aprovação", null=True, blank=True)
-    paid_at = models.DateField("Data de Pagamento", null=True, blank=True)
+    responsible_status = models.CharField(
+        "Status do Responsável",
+        max_length=1,
+        choices=[("A", "Aprovado"), ("R", "Reprovado"), ("P", "Pendente")],
+        default="P",
+    )
+    responsible_response_date = models.DateTimeField("Data da Resposta do Gestor", null=True, blank=True)
+    responsible_notes = models.TextField("Notas do Responsável", null=True, blank=True)
+    
+    payment_status = models.CharField(
+        "Status do Pagamento",
+        max_length=1,
+        choices=[("P", "Pago"), ("P", "Pendente"), ("C", "Cancelado")],
+        default="P"
+    )
+    paid_at = models.DateTimeField("Data de Pagamento", null=True, blank=True)
 
     history = HistoricalRecords()
 
