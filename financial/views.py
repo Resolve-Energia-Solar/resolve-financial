@@ -1,3 +1,4 @@
+import logging
 import os
 from api.views import BaseModelViewSet
 from .models import *
@@ -7,6 +8,9 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import requests
+
+
+logger = logging.getLogger(__name__)
 
 
 class FinancierViewSet(BaseModelViewSet):
@@ -57,18 +61,6 @@ class FranchiseInstallmentViewSet(BaseModelViewSet):
     queryset = FranchiseInstallment.objects.all()
     serializer_class = FranchiseInstallmentSerializer
 
-    # def perform_create(self, serializer):
-    #     sale = serializer.validated_data['sale']
-    #     # repass_percentage = serializer.validated_data['repass_percentage']
-    #     remaining_percentage = FranchiseInstallment.remaining_percentage(sale)
-
-    #     if repass_percentage > remaining_percentage:
-    #         raise ValidationError(
-    #             {"repass_percentage": f"Percentual restante para esta venda é {remaining_percentage}%. "
-    #                                   f"Não é possível adicionar {repass_percentage}%."}
-    #         )
-    #     serializer.save()
-
 
 class FinancialRecordViewSet(BaseModelViewSet):
     queryset = FinancialRecord.objects.all()
@@ -76,13 +68,12 @@ class FinancialRecordViewSet(BaseModelViewSet):
 
     def create(self, request, *args, **kwargs):
         
-        # Capture the user from the session
         user = request.user
         employee = user.employee
         
         request.data['requester_id'] = user.id
         request.data['responsible_id'] = employee.user_manager.id
-        
+                
         return super().create(request, *args, **kwargs)
 
 
@@ -93,98 +84,127 @@ class OmieIntegrationView(APIView):
     OMIE_ACESSTOKEN = os.environ.get('OMIE_ACESSTOKEN')
     
     def post(self, request):
-        print("OmieIntegrationView GET request received")
         if not self.OMIE_API_URL or not self.OMIE_ACESSKEY or not self.OMIE_ACESSTOKEN:
-            print("Environment variables not set")
             return Response({"error": "API URL, AcessKey and AccessToken not set in environment variables"}, status=500)
         
         omie_call = request.data.get('call', None)
-        print(f"Received omie_call: {omie_call}")
         
         if omie_call == 'ListarDepartamentos':
-            url = f"{self.OMIE_API_URL}/geral/departamentos/"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                "call": "ListarDepartamentos",
-                "app_key": self.OMIE_ACESSKEY,
-                "app_secret": self.OMIE_ACESSTOKEN,
-                "param": [{"pagina": 1, "registros_por_pagina": 999}]
-            }
-            print(f"Making request to Omie API at {url} with data: {data}")
-            response = requests.post(url, headers=headers, json=data)
-            print(f"Received response with status code: {response.status_code}")
-            if response.status_code == 200:
-                print("Request successful: fetching active departments")
-                departments = response.json().get('departamentos', [])
-                active_departments = [dept for dept in departments if dept.get('inativo') == 'N']
-                return Response(active_departments)
-            else:
-                print("Failed to fetch data from Omie API")
-                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+            return self.list_departments()
             
         if omie_call == 'ListarCategorias':
-            url = f"{self.OMIE_API_URL}/geral/categorias/"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                "call": "ListarCategorias",
-                "app_key": self.OMIE_ACESSKEY,
-                "app_secret": self.OMIE_ACESSTOKEN,
-                "param": [{"pagina": 1, "registros_por_pagina": 999}]
-            }
-            print(f"Making request to Omie API at {url} with data: {data}")
-            response = requests.post(url, headers=headers, json=data)
-            print(f"Received response with status code: {response.status_code}")
-            if response.status_code == 200:
-                print("Request successful: fetching active categories")
-                categories = response.json().get('categoria_cadastro', [])
-                active_categories = [cat for cat in categories if cat.get('totalizadora') == 'N' and cat.get('conta_inativa') == 'N']
-                return Response(active_categories)
-            else:
-                print("Failed to fetch data from Omie API")
-                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+            return self.list_categories()
             
         if omie_call == 'ListarClientesResumido':
-            
             filter = request.data.get('filter', None)
-            
-            if not filter:
-                return Response({"error": "No filter parameter received"}, status=400)
-            
-            if filter.isdigit():
-                filter = {
-                    "cnpj_cpf": filter,
-                    "inativo": "N"
-                }
-            else:
-                filter = {
-                    "razao_social": filter,
-                    "inativo": "N"
-                }
-            
-            url = f"{self.OMIE_API_URL}/geral/clientes/"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                "call": "ListarClientesResumido",
-                "app_key": self.OMIE_ACESSKEY,
-                "app_secret": self.OMIE_ACESSTOKEN,
-                "param": [{"clientesFiltro": [filter]}]
-            }
-            print(f"Making request to Omie API at {url} with data: {data}")
-            response = requests.post(url, headers=headers, json=data)
-            print(f"Received response with status code: {response.status_code}")
-            if response.status_code == 200:
-                print("Request successful: fetching active clients")
-                clients = response.json().get('clientes_cadastro_resumido', [])
-                return Response(clients)
-            else:
-                print("Failed to fetch data from Omie API")
-                return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+            return self.list_customers(filter)
         
-        print("Invalid call parameter")
         return Response({"error": "Invalid call parameter"}, status=400)
+    
+    def list_departments(self):
+        url = f"{self.OMIE_API_URL}/geral/departamentos/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "call": "ListarDepartamentos",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [{"pagina": 1, "registros_por_pagina": 999}]
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            departments = response.json().get('departamentos', [])
+            active_departments = [dept for dept in departments if dept.get('inativo') == 'N']
+            return Response(active_departments)
+        else:
+            return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+    
+    def list_categories(self):
+        url = f"{self.OMIE_API_URL}/geral/categorias/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "call": "ListarCategorias",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [{"pagina": 1, "registros_por_pagina": 999}]
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            categories = response.json().get('categoria_cadastro', [])
+            active_categories = [cat for cat in categories if cat.get('totalizadora') == 'N' and cat.get('conta_inativa') == 'N']
+            return Response(active_categories)
+        else:
+            return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+    
+    def list_customers(self, filter):
+        if not filter:
+            return Response({"error": "No filter parameter received"}, status=400)
+        
+        if filter.isdigit():
+            filter = {
+                "cnpj_cpf": filter,
+                "inativo": "N"
+            }
+        else:
+            filter = {
+                "razao_social": filter,
+                "inativo": "N"
+            }
+        
+        url = f"{self.OMIE_API_URL}/geral/clientes/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "call": "ListarClientesResumido",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [{"clientesFiltro": [filter]}]
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            clients = response.json().get('clientes_cadastro_resumido', [])
+            return Response(clients)
+        else:
+            return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+
+    def create_payment_request(self, financial_record):
+        url = f"{self.OMIE_API_URL}/financas/contapagar/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "call": "IncluirContaPagar",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [
+                {
+                    "codigo_lancamento_integracao": financial_record.id,
+                    "codigo_cliente_fornecedor": financial_record.client_supplier_code,
+                    "data_vencimento": financial_record.due_date.strftime('%d/%m/%Y'),
+                    "valor_documento": financial_record.value,
+                    "codigo_categoria": financial_record.category_code,
+                    "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
+                    "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
+                    "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
+                    "observacao": financial_record.notes,
+                    "distribuicao": [
+                        {
+                            "cCodDep": financial_record.department_code,
+                            "nPerDep": "100",
+                            "nValDep": financial_record.value
+                        }
+                    ]
+                }
+            ]
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            financial_record.integration_code = response.json().get('codigo_lancamento_omie', None)
+            financial_record.save()
+        else:
+            logger.error(f"Failed to create financial record in Omie: {response.json()}")
+        return Response(response.json(), status=response.status_code)
