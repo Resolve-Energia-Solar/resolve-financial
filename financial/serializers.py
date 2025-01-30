@@ -2,11 +2,11 @@ import os
 from django.forms import ValidationError
 import requests
 from dotenv import load_dotenv
-from accounts.models import Address, User
+from accounts.models import Address, Department, User
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
 from resolve_crm.serializers import SaleSerializer
 from financial.models import FinancialRecord, FranchiseInstallment, Payment, PaymentInstallment, Financier
-from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 from rest_framework.serializers import SerializerMethodField
 from resolve_crm.models import Sale
 from django.db import transaction
@@ -169,10 +169,12 @@ class FinancialRecordSerializer(BaseSerializer):
     requester = RelatedUserSerializer(read_only=True)
     responsible = RelatedUserSerializer(read_only=True)
     client_supplier_name = SerializerMethodField()
+    requesting_department = StringRelatedField(read_only=True)
 
     # Campos para escrita
     requester_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requester')
     responsible_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='responsible')
+    requesting_department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='requesting_department')
 
     class Meta:
         model = FinancialRecord
