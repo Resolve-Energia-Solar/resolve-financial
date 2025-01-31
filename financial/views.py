@@ -242,7 +242,7 @@ class FinancialRecordApprovalView(APIView):
             financial_record.status = 'E'
             financial_record.responsible_status = 'A' if manager_status == 'Aprovado' else 'R'
             financial_record.responsible_response_date = timezone.now()
-            financial_record.manager_note = manager_note
+            financial_record.responsible_notes = manager_note
             financial_record.save()
         
         return Response({"message": "Financial record(s) approved"})
