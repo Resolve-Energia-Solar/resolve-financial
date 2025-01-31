@@ -244,5 +244,10 @@ class FinancialRecordApprovalView(APIView):
             financial_record.responsible_response_date = timezone.now()
             financial_record.responsible_notes = manager_note
             financial_record.save()
+            
+            try:
+                OmieIntegrationView().create_payment_request(financial_record)
+            except Exception as e:
+                logger.error(f"Failed to create payment request in Omie: {e}")
         
         return Response({"message": "Financial record(s) approved"})
