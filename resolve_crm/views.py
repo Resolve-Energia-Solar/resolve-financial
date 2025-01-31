@@ -860,7 +860,7 @@ class GenerateContractView(APIView):
         return payments_html
 
     def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city):
-        now = datetime.now()
+        now = datetime.datetime.now()
         day = now.day
         month = formats.date_format(now, 'F')
         year = now.year
