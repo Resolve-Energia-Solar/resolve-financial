@@ -96,22 +96,22 @@ class User(AbstractUser):
         if original and original['first_document'] != self.first_document:
             return True
         return False
-
-    def save(self, current_user=None, *args, **kwargs):
-        print("Salvando usuário")
-
-        # Se o objeto já existir no banco de dados
+    
+    def clean(self):
         if self.pk:
             # Verifica se o documento foi alterado e se já existe no banco
             if self.check_if_first_documento_changed():
                 print("Verificando se o documento já existe (alterado)")
                 if User.check_if_exist_first_document(self.first_document):
-                    raise ValidationError({"first_document": "CPF/CNPJ já cadastrado."})
+                    raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         else:
             # Verificação para um novo objeto
             print("Verificando se o documento já existe (novo)")
             if User.check_if_exist_first_document(self.first_document):
-                raise ValidationError({"first_document": "CPF/CNPJ já cadastrado."})
+                raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
+        return super().clean()
+
+    def save(self, current_user=None, *args, **kwargs):
         
         name_parts = self.get_full_name().split(" ")
         

@@ -64,7 +64,7 @@ class UserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('complete_name', 'email'),
+            'fields': ('user_types', 'complete_name', 'first_document', 'gender', 'birth_date', 'email', 'person_type'),
         }),
     )
 
