@@ -384,7 +384,7 @@ class Sale(models.Model):
     supplier = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
-    billing_month = models.IntegerField("Mês de Faturamento", choices=MONTHS_CHOICES, default=get_current_month(), null=True, blank=True)
+    billing_date = models.DateField("Data de competência", auto_now=False, auto_now_add=False, null=True, blank=True)
     
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
@@ -507,8 +507,8 @@ class Sale(models.Model):
                         self.contract_number = new_contract_number
                         break
                     
-        if not self.billing_month:
-            self.billing_month = get_current_month()
+        if not self.billing_date and self.signature_date:
+            self.billing_date = self.signature_date
         
         if (self.payment_status == 'C' or self.payment_status == 'L') and not self.financial_completion_date:
             self.financial_completion_date = now()
@@ -525,7 +525,7 @@ class Sale(models.Model):
         verbose_name_plural = "Vendas"
         ordering = ['-created_at']
         permissions = [
-            ('can_change_billing_month', 'Can change billing month'),
+            ('can_change_billing_date', 'Can change billing month'),
         ]
     
     def __str__(self):

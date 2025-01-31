@@ -29,7 +29,7 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("customer" ,"contract_number", "total_value", "total_paid","signature_date", "billing_month", "created_at")
+    list_display = ("customer" ,"contract_number", "total_value", "total_paid","signature_date", "billing_date", "created_at")
     inlines = [SaleProductInline, PaymentInline]
     search_fields = ("contract_number", "customer__username", "seller__username")
     list_filter = ("payment_status", "status", "created_at")
