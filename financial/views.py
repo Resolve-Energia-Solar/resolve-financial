@@ -4,7 +4,9 @@ from datetime import datetime
 
 import requests
 from django.utils import timezone
+from core.models import Comment
 from rest_framework.permissions import AllowAny
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -255,3 +257,59 @@ class FinancialRecordApprovalView(APIView):
                 logger.error(f"Failed to create payment request in Omie: {e}")
         
         return Response({"message": "Financial record(s) approved"})
+
+
+class UpdateFinancialRecordPaymentStatus(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        logger.debug(f"Request data: {request.data}")
+        
+        if request.data == {'ping': 'omie'}:
+            logger.debug("Received ping from Omie, responding with pong")
+            return Response({"message": "pong"})
+        
+        event = request.data.get('event', {})
+        financial_record_id = None
+        
+        if isinstance(event, dict):
+            financial_record_id = event.get('codigo_lancamento_integracao', None)
+        elif isinstance(event, list) and len(event) > 0:
+            conta_a_pagar = event[0].get('conta_a_pagar', [])
+            if len(conta_a_pagar) > 0:
+                financial_record_id = conta_a_pagar[0].get('codigo_lancamento_integracao', None)
+        
+        topic = request.data.get('topic', None)
+        
+        if not financial_record_id:
+            logger.error("Missing codigo_lancamento_integracao")
+            return Response({"error": "Missing financial_record_id"}, status=400)
+        
+        try:
+            financial_record = FinancialRecord.objects.get(id=financial_record_id)
+        except FinancialRecord.DoesNotExist:
+            return Response({"error": f"FinancialRecord with id {financial_record_id} does not exist"}, status=404)
+        
+        if topic == 'Financas.ContaPagar.BaixaRealizada':
+            financial_record.payment_status = 'P'
+        elif topic in ['Financas.ContaPagar.Excluido', 'Financas.ContaPagar.BaixaCancelada']:
+            financial_record.payment_status = 'C'
+            author_email = request.data.get('author', {}).get('email', None)
+            if author_email:
+                try:
+                    author = User.objects.get(email=author_email)
+                except User.DoesNotExist:
+                    author = None
+                if author:
+                    Comment.objects.create(
+                        author=author,
+                        content_type=ContentType.objects.get_for_model(FinancialRecord),
+                        object_id=financial_record_id,
+                        text=f"A solicitação de pagamento {financial_record.protocol} foi {'cancelada' if 'BaixaCancelada' in topic else 'excluída'} no Omie por {author.complete_name}.",
+                        is_system_generated=True
+                    )
+        
+        financial_record.paid_at = timezone.now()
+        financial_record.save()
+        
+        return Response({"message": "Financial record payment status updated"})
