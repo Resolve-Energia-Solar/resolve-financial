@@ -13,6 +13,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.db import transaction, models
+import datetime
+
+def get_current_month():
+    print(datetime.date.today().month)
+    return datetime.date.today().month
 
 
 class Origin(models.Model):
@@ -358,6 +363,13 @@ class Sale(models.Model):
         ("CA", "Cancelado"),
     ]
     
+    MONTHS_CHOICES = [
+        (1, "Janeiro"), (2, "Fevereiro"), (3, "Março"),
+        (4, "Abril"), (5, "Maio"), (6, "Junho"),
+        (7, "Julho"), (8, "Agosto"), (9, "Setembro"),
+        (10, "Outubro"), (11, "Novembro"), (12, "Dezembro"),
+    ]
+    
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
@@ -373,6 +385,7 @@ class Sale(models.Model):
     supplier = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
+    billing_month = models.IntegerField("Mês de Faturamento", choices=MONTHS_CHOICES, default=get_current_month(), null=True, blank=True)
     
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
@@ -494,6 +507,9 @@ class Sale(models.Model):
                     if not Sale.objects.filter(contract_number=new_contract_number).exists():
                         self.contract_number = new_contract_number
                         break
+                    
+        if not self.billing_month:
+            self.billing_month = get_current_month()
         
         if (self.payment_status == 'C' or self.payment_status == 'L') and not self.financial_completion_date:
             self.financial_completion_date = now()
