@@ -174,7 +174,7 @@ class OmieIntegrationView(APIView):
         else:
             return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
 
-    def create_payment_request(self, financial_record):
+    def create_payment_request(self, financial_record, manager_status="Aprovado", manager_note=None):
         url = f"{self.OMIE_API_URL}/financas/contapagar/"
         headers = {
             'Content-Type': 'application/json',
@@ -210,6 +210,13 @@ class OmieIntegrationView(APIView):
             financial_record.save()
         else:
             logger.error(f"Failed to create financial record in Omie: {response.json()}")
+        
+        financial_record.status = 'E'
+        financial_record.responsible_status = 'A' if manager_status == 'Aprovado' else 'R'
+        financial_record.responsible_response_date = timezone.now()
+        financial_record.responsible_notes = manager_note
+        financial_record.save()
+        
         return Response(response.json(), status=response.status_code)
 
 
@@ -239,14 +246,8 @@ class FinancialRecordApprovalView(APIView):
             if financial_record.responsible_status != 'P':
                 return Response({"error": f"FinancialRecord with id {financial_record_id} is not pending approval"}, status=400)
             
-            financial_record.status = 'E'
-            financial_record.responsible_status = 'A' if manager_status == 'Aprovado' else 'R'
-            financial_record.responsible_response_date = timezone.now()
-            financial_record.responsible_notes = manager_note
-            financial_record.save()
-            
             try:
-                response = OmieIntegrationView().create_payment_request(financial_record)
+                response = OmieIntegrationView().create_payment_request(financial_record, manager_status, manager_note)
                 if response.status_code == 200:
                     financial_record.integration_code = response.data.get('codigo_lancamento_omie', None)
                     financial_record.save()
