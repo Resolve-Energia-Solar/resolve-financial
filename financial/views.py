@@ -236,7 +236,7 @@ class FinancialRecordApprovalView(APIView):
             except FinancialRecord.DoesNotExist:
                 return Response({"error": f"FinancialRecord with id {financial_record_id} does not exist"}, status=404)
             
-            if financial_record.status != 'P':
+            if financial_record.responsible_status != 'P':
                 return Response({"error": f"FinancialRecord with id {financial_record_id} is not pending approval"}, status=400)
             
             financial_record.status = 'E'
