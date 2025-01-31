@@ -177,41 +177,42 @@ class OmieIntegrationView(APIView):
             return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
 
     def create_payment_request(self, financial_record, manager_status="Aprovado", manager_note=None):
-        url = f"{self.OMIE_API_URL}/financas/contapagar/"
-        headers = {
-            'Content-Type': 'application/json',
-        }
-        data = {
-            "call": "IncluirContaPagar",
-            "app_key": self.OMIE_ACESSKEY,
-            "app_secret": self.OMIE_ACESSTOKEN,
-            "param": [
-                {
-                    "codigo_lancamento_integracao": financial_record.id,
-                    "codigo_cliente_fornecedor": financial_record.client_supplier_code,
-                    "data_vencimento": financial_record.due_date.strftime('%d/%m/%Y'),
-                    "valor_documento": financial_record.value,
-                    "codigo_categoria": financial_record.category_code,
-                    "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
-                    "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
-                    "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
-                    "observacao": financial_record.notes,
-                    "distribuicao": [
-                        {
-                            "cCodDep": financial_record.department_code,
-                            "nPerDep": "100",
-                            "nValDep": financial_record.value
-                        }
-                    ]
-                }
-            ]
-        }
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            financial_record.integration_code = response.json().get('codigo_lancamento_omie', None)
-            financial_record.save()
-        else:
-            logger.error(f"Failed to create financial record in Omie: {response.json()}")
+        if manager_status == "Aprovado":
+            url = f"{self.OMIE_API_URL}/financas/contapagar/"
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            data = {
+                "call": "IncluirContaPagar",
+                "app_key": self.OMIE_ACESSKEY,
+                "app_secret": self.OMIE_ACESSTOKEN,
+                "param": [
+                    {
+                        "codigo_lancamento_integracao": financial_record.id,
+                        "codigo_cliente_fornecedor": financial_record.client_supplier_code,
+                        "data_vencimento": financial_record.due_date.strftime('%d/%m/%Y'),
+                        "valor_documento": financial_record.value,
+                        "codigo_categoria": financial_record.category_code,
+                        "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
+                        "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
+                        "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
+                        "observacao": financial_record.notes,
+                        "distribuicao": [
+                            {
+                                "cCodDep": financial_record.department_code,
+                                "nPerDep": "100",
+                                "nValDep": financial_record.value
+                            }
+                        ]
+                    }
+                ]
+            }
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                financial_record.integration_code = response.json().get('codigo_lancamento_omie', None)
+                financial_record.save()
+            else:
+                logger.error(f"Failed to create financial record in Omie: {response.json()}")
         
         financial_record.status = 'E'
         financial_record.responsible_status = 'A' if manager_status == 'Aprovado' else 'R'
@@ -219,7 +220,10 @@ class OmieIntegrationView(APIView):
         financial_record.responsible_notes = manager_note
         financial_record.save()
         
-        return Response(response.json(), status=response.status_code)
+        if manager_status == "Aprovado":
+            return Response(response.json(), status=response.status_code)
+        else:
+            return Response({"message": "Financial record updated without sending to Omie"}, status=200)
 
 
 class FinancialRecordApprovalView(APIView):
