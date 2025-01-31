@@ -246,7 +246,10 @@ class FinancialRecordApprovalView(APIView):
             financial_record.save()
             
             try:
-                OmieIntegrationView().create_payment_request(financial_record)
+                response = OmieIntegrationView().create_payment_request(financial_record)
+                if response.status_code == 200:
+                    financial_record.integration_code = response.data.get('codigo_lancamento_omie', None)
+                    financial_record.save()
             except Exception as e:
                 logger.error(f"Failed to create payment request in Omie: {e}")
         
