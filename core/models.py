@@ -92,6 +92,7 @@ class Comment(models.Model):
     text = models.TextField("Comentário")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_system_generated = models.BooleanField("Gerado pelo Sistema", default=False)
     history = HistoricalRecords()
     
     def __str__(self):
