@@ -42,6 +42,7 @@ jobs:
           echo "DB1_PASSWORD=${{ vars.DB1_PASSWORD }}" >> .env
           echo "DB1_HOST=${{ vars.DB1_HOST }}" >> .env
           echo "DB1_PORT=${{ vars.DB1_PORT }}" >> .env
+          echo "FINANCIAL_RECORD_APPROVAL_URL=${{ vars.FINANCIAL_RECORD_APPROVAL_URL }}" >> .env
           echo "ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}" >> .env
           echo "CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}" >> .env
           echo "CORS_ALLOW_ALL_ORIGINS=${{ vars.CORS_ALLOW_ALL_ORIGINS }}" >> .env
