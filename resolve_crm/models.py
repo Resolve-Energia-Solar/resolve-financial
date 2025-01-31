@@ -525,7 +525,7 @@ class Sale(models.Model):
         verbose_name_plural = "Vendas"
         ordering = ['-created_at']
         permissions = [
-            ('can_change_billing_date', 'Can change billing month'),
+            ('can_change_billing_date', 'Can change billing date'),
         ]
     
     def __str__(self):

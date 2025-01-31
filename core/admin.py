@@ -80,8 +80,8 @@ class ContentTypeAdmin(admin.ModelAdmin):
 @admin.register(Permission)
 class PermissionAdmin(admin.ModelAdmin):
     list_display = ("name", "content_type", "codename")
-    list_display_links = ("name", "content_type", "codename")
-    search_fields = ("name", "content_type", "codename")
+    list_display_links = ("name", "codename")
+    search_fields = ("name", "codename")
     list_filter = ("content_type",)
     list_per_page = 10
     list_max_show_all = 100
