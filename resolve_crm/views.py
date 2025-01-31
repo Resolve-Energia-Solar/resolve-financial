@@ -993,8 +993,8 @@ class GenerateContractView(APIView):
                 key_number=document_key,
                 envelope_id=envelope_id,
                 status="P",
-                submit_datetime=datetime.now(tz=timezone.utc),
-                due_date=datetime.now(tz=timezone.utc) + timedelta(days=7),
+                submit_datetime=datetime.datetime.now(tz=timezone.utc),
+                due_date=datetime.datetime.now(tz=timezone.utc) + timedelta(days=7),
                 link=f"https://app.clicksign.com/envelopes/{envelope_id}"
             )
             logger.info(f"ContractSubmission criado com ID: {submission.id}")
