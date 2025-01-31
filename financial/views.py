@@ -217,10 +217,32 @@ class FinancialRecordApprovalView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        financial_record_id = request.data.get('financial_record_id', None)
-        financial_record = FinancialRecord.objects.get(id=financial_record_id)
-        financial_record.status = 'E'
-        financial_record.responsible_status = 'A' if request.data.get('manager_status') == 'Aprovado' else 'R'
-        financial_record.responsible_response_date = timezone.now()
-        financial_record.save()
-        return Response({"message": "Financial record approved"})
+        action = request.data.get('Action', None)
+        rows = request.data.get('Rows', [])
+        
+        if action != 'Edit' or not rows:
+            return Response({"error": "Invalid request format"}, status=400)
+        
+        for row in rows:
+            financial_record_id = row.get('financial_record_id', None)
+            manager_status = row.get('manager_status', None)
+            manager_note = row.get('manager_note', None)
+            
+            if not financial_record_id or not manager_status:
+                return Response({"error": "Missing financial_record_id or manager_status"}, status=400)
+            
+            try:
+                financial_record = FinancialRecord.objects.get(id=financial_record_id)
+            except FinancialRecord.DoesNotExist:
+                return Response({"error": f"FinancialRecord with id {financial_record_id} does not exist"}, status=404)
+            
+            if financial_record.status != 'P':
+                return Response({"error": f"FinancialRecord with id {financial_record_id} is not pending approval"}, status=400)
+            
+            financial_record.status = 'E'
+            financial_record.responsible_status = 'A' if manager_status == 'Aprovado' else 'R'
+            financial_record.responsible_response_date = timezone.now()
+            financial_record.manager_note = manager_note
+            financial_record.save()
+        
+        return Response({"message": "Financial record(s) approved"})
