@@ -16,7 +16,6 @@ from django.db import transaction, models
 import datetime
 
 def get_current_month():
-    print(datetime.date.today().month)
     return datetime.date.today().month
 
 
@@ -525,6 +524,9 @@ class Sale(models.Model):
         verbose_name = "Venda"
         verbose_name_plural = "Vendas"
         ordering = ['-created_at']
+        permissions = [
+            ('can_change_billing_month', 'Can change billing month'),
+        ]
     
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
