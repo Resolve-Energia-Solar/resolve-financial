@@ -222,9 +222,9 @@ class FranchiseInstallment(models.Model):
 
     
     def reference_value(self):
-        return sum(
-            self.sale.sale_products.all().values_list("reference_value", flat=True)
-        )
+        reference_values = self.sale.sale_products.all().values_list("reference_value", flat=True)
+        valid_values = [value for value in reference_values if value is not None]
+        return sum(valid_values)
 
 
     @property
