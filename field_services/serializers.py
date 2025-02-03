@@ -1,4 +1,5 @@
 from accounts.models import Address, User
+from core.models import Attachment
 from field_services.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
@@ -69,7 +70,7 @@ class ScheduleSerializer(BaseSerializer):
     attachments = SerializerMethodField()
     
     # Para escrita: usar apenas ID
-    attachments_id = PrimaryKeyRelatedField(queryset=FormFile.objects.all(), write_only=True, source='attachments', many=True, required=False)
+    attachments_id = PrimaryKeyRelatedField(queryset=Attachment.objects.all(), write_only=True, source='attachments', many=True, required=False)
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     parent_schedules_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='parent_schedules', many=True, required=False)
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False, allow_null=True)
