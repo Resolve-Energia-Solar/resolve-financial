@@ -418,12 +418,13 @@ class Sale(models.Model):
             if self.contract_submissions.exists():
                 if self.contract_submissions.filter(status='P').exists() and not self.contract_submissions.filter(status='A').exists():
                     return 'Enviado'
-                elif self.contract_submissions.filter(status='A').exists() or self.signature_date:
+                elif self.contract_submissions.filter(status='A').exists():
                     return 'Assinado'
                 elif self.contract_submissions.filter(status='R').exists():
                     return 'Recusado'
             else:
                 return 'Pendente'
+        return 'Assinado'
     
     # @property
     # def can_generate_contract(self):
