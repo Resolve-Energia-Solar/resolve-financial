@@ -77,6 +77,8 @@ class ReciveContractInfomation(APIView):
 
     def save_signature_date(self, sale, signature_date):
         sale.signature_date = signature_date
+        if not sale.billing_date:
+            sale.billing_date = signature_date
         sale.save()
 
     def save_attachment(self, sale_id, file_content, document_type):
