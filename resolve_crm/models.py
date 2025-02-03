@@ -412,6 +412,19 @@ class Sale(models.Model):
                 final_service_opinions.append(project.inspection.final_service_opinion)
         return final_service_opinions if final_service_opinions else None
     
+
+    def signature_status(self):
+        if not self.signature_date:
+            if self.contract_submissions.exists():
+                if self.contract_submissions.filter(status='P').exists() and not self.contract_submissions.filter(status='A').exists():
+                    return 'Enviado'
+                elif self.contract_submissions.filter(status='A').exists() or self.signature_date:
+                    return 'Assinado'
+                elif self.contract_submissions.filter(status='R').exists():
+                    return 'Recusado'
+            else:
+                return 'Pendente'
+    
     # @property
     # def can_generate_contract(self):
     #     customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)

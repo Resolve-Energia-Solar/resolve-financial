@@ -132,6 +132,7 @@ class SaleSerializer(BaseSerializer):
     sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
+    signature_status = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
 
@@ -148,7 +149,9 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        
+    
+    def get_signature_status(self, obj):
+        return obj.signature_status()    
     
     def get_final_service_opinion(self, obj):
         final_opinions = obj.final_service_opinion()
