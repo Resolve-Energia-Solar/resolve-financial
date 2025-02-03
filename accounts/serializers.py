@@ -50,10 +50,15 @@ class PhoneNumberSerializer(BaseSerializer):
 
 class RelatedUserSerializer(BaseSerializer):
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    employee = SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'profile_picture', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers']
+        fields = ['id', 'profile_picture', 'complete_name', 'birth_date', 'first_document', 'email', 'phone_numbers', 'employee']
+        
+    def get_employee(self, obj):
+        employee = getattr(obj, 'employee', None)
+        return EmployeeSerializer(employee).data if employee else None
 
 
 class AddressSerializer(BaseSerializer):
