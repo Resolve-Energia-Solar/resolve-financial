@@ -39,6 +39,8 @@ class Payment(models.Model):
         ("P", "Pix"),
         ("T", "Transferência Bancária"),
         ("DI", "Dinheiro"),
+        ("PA", "Poste auxiliar"),
+        ("RO", "Repasse de Obra"),
     ]
 
     INVOICE_STATUS_CHOICES = [
