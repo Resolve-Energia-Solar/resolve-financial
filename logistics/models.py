@@ -89,6 +89,7 @@ class ProjectMaterials(models.Model):
     project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material")
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0)
+    material_class = models.CharField("Classe do Material", max_length=2, choices=[("K", "Kit"), ("P", "Padrão")], null=True, blank=True)
     is_exit = models.BooleanField("Saída", default=False)
     serial_number = models.CharField("Número de Série", max_length=50, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
