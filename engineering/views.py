@@ -63,7 +63,7 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
 
             # Skip the header row
             header = next(csv_reader)
-            expected_headers = ['material_class', 'id_project', 'id_material', 'amount']
+            expected_headers = ['material_class', 'id_material', 'amount']
             if header != expected_headers:
                 return Response(
                     {"error": f"Invalid headers. Expected: {expected_headers}, Got: {header}"},
@@ -72,10 +72,13 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
 
             # Iterate through rows and save data
             for row in csv_reader:
-                material_class, id_project, id_material, amount = row
+                material_class, id_material, amount = row
+                
+                material_class = "P" if material_class == "MAT.PADRAO" else "K"
 
                 # Prepare the data for serialization
                 data = {
+                    "material_class": material_class,
                     "material_id": id_material,
                     "amount": amount,
                     "project_id": project_id
