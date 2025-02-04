@@ -55,6 +55,26 @@ class PaymentViewSet(BaseModelViewSet):
                 due_date=payment.due_date + timezone.timedelta(days=30 * i),
                 installment_number=i + 1
             )
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        sale_status = request.query_params.get('sale_status', None)
+        sale_customer = request.query_params.get('sale_customer', None)
+        sale_payment_status = request.query_params.get('sale_payment_status', None)
+        
+        if sale_payment_status:
+            sale_payment_status_list = sale_payment_status.split(',')
+            queryset = queryset.filter(sale__payment_status__in=sale_payment_status_list)
+        
+        if sale_customer:
+            queryset = queryset.filter(sale__customer__id=sale_customer)
+        
+        if sale_status:
+            sale_status_list = sale_status.split(',')
+            queryset = queryset.filter(sale__status__in=sale_status_list)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class PaymentInstallmentViewSet(BaseModelViewSet):
