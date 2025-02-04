@@ -82,7 +82,7 @@ class SaleViewSet(BaseModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        payment_status = request.query_params.get('payment_status')
+        payment_status = request.query_params.get('invoice_status')
         is_signed = request.query_params.get('is_signed')
         borrower = request.query_params.get('borrower')
         homologator = request.query_params.get('homologator')
