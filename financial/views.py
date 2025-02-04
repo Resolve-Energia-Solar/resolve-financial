@@ -72,9 +72,18 @@ class PaymentViewSet(BaseModelViewSet):
         if sale_status:
             sale_status_list = sale_status.split(',')
             queryset = queryset.filter(sale__status__in=sale_status_list)
+            
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({
+                'results': serialized_data,
+            })
         
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response(serialized_data)
+
 
 
 class PaymentInstallmentViewSet(BaseModelViewSet):
