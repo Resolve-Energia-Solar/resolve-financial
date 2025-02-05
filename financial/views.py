@@ -61,6 +61,24 @@ class PaymentViewSet(BaseModelViewSet):
         sale_status = request.query_params.get('sale_status', None)
         sale_customer = request.query_params.get('sale_customer', None)
         sale_payment_status = request.query_params.get('sale_payment_status', None)
+        sale_marketing_campaign = request.query_params.get('sale_marketing_campaign', None)
+        sale_branch = request.query_params.get('sale_branch', None)
+        principal_final_service_opinion = request.query_params.get('principal_final_service_opinion__in', None)
+        final_service_opinions = request.query_params.get('final_service_opinions__in', None)
+        
+        if principal_final_service_opinion:
+            principal_final_service_opinion = principal_final_service_opinion.split(',')
+            queryset = queryset.filter(sale__projects__inspection__final_service_opinion__id__in=principal_final_service_opinion)
+            
+        if final_service_opinions:
+            final_service_opinions = final_service_opinions.split(',')
+            queryset = queryset.filter(sale__projects__field_services__final_service_opinion__id__in=final_service_opinions)
+        
+        if sale_branch:
+            queryset = queryset.filter(sale__branch__id=sale_branch)
+        
+        if sale_marketing_campaign:
+            queryset = queryset.filter(sale__marketing_campaign__id__in=sale_marketing_campaign)
         
         if sale_payment_status:
             sale_payment_status_list = sale_payment_status.split(',')

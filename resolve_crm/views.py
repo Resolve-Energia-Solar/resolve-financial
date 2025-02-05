@@ -215,19 +215,26 @@ class ProjectViewSet(BaseModelViewSet):
                 queryset = queryset.filter(sale__signature_date=signature_date)
 
         if product_kwp:
-            queryset = queryset.filter(product__params=product_kwp)
+            try:
+                product_kwp_value = float(product_kwp)
+                lower_bound = product_kwp_value - 2.5
+                upper_bound = product_kwp_value + 2.5
+                print(lower_bound, upper_bound)
+                queryset = queryset.filter(product__params__gte=lower_bound, product__params__lte=upper_bound)
+            except ValueError:
+                return Response({'message': 'Valor inválido para product_kwp.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_released_to_engineering == 'true':
             queryset = queryset.filter(
                 is_documentation_completed=True,
-                sale__payment_status__in=['PG', 'PA'],
-                inspection__status='A'
+                sale__payment_status__in=['L', 'C'],
+                inspection__status='Confirmado'
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(
                 Q(is_documentation_completed=False) |
-                Q(sale__payment_status__in=['PE', 'CA']) |
-                Q(inspection__status='C')
+                Q(sale__payment_status__in=['P', 'CA']) |
+                Q(inspection__status__in=['Pendente', 'Cancelado'])
             )
 
         if customer:
@@ -261,25 +268,25 @@ class ProjectViewSet(BaseModelViewSet):
 
             is_released_to_engineering_count=Count('id', filter=Q(
                 is_documentation_completed=True,
-                sale__payment_status__in=['PG', 'PA'],
-                inspection__status='A'
+                sale__payment_status__in=['L', 'C'],
+                inspection__status='Confirmado'
             )),
             pending_material_list=Count('id', filter=Q(
                 is_documentation_completed=True,
-                sale__payment_status__in=['PG', 'PA'],
-                inspection__status='A',
+                sale__payment_status__in=['L', 'C'],
+                inspection__status='Confirmado',
                 materials__isnull=True
             )),
             blocked_to_engineering=Count('id', filter=Q(
                 is_documentation_completed=False
             ) | Q(
-                sale__payment_status__in=['PE', 'CA']
+                sale__payment_status__in=['P', 'CA']
             ) | Q(
-                inspection__status='C'
+                inspection__status='Pendente'
             ) | ~Q(
                 is_documentation_completed=True,
-                sale__payment_status__in=['PG', 'PA'],
-                inspection__status='A'
+                sale__payment_status__in=['L', 'C'],
+                inspection__status='Confirmado'
             ))
         )
 
