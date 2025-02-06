@@ -2,6 +2,7 @@ import base64
 from datetime import datetime, timezone
 from io import BytesIO
 import logging
+import os
 import qrcode
 import re
 
@@ -223,7 +224,6 @@ class ProjectViewSet(BaseModelViewSet):
                 product_kwp_value = float(product_kwp)
                 lower_bound = product_kwp_value - 2.5
                 upper_bound = product_kwp_value + 2.5
-                print(lower_bound, upper_bound)
                 queryset = queryset.filter(product__params__gte=lower_bound, product__params__lte=upper_bound)
             except ValueError:
                 return Response({'message': 'Valor inválido para product_kwp.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -689,9 +689,8 @@ class ValidateContractView(APIView):
         if not envelope_id:
             return Response({'message': 'envelope_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            contract_submission = ContractSubmission.objects.get(envelope_id=envelope_id)
-        except ContractSubmission.DoesNotExist:
+        contract_submission = ContractSubmission.objects.filter(envelope_id=envelope_id).first()
+        if contract_submission is None:
             return Response({'message': 'Contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         
         return Response({
@@ -747,8 +746,7 @@ class GenerateContractView(APIView):
             if not envelope_id:
                 return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            qr_code = self._generate_validation_qr_code(envelope_id, preview)
-            print(qr_code)
+            qr_code = self._generate_validation_qr_code(envelope_id)
 
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
@@ -922,7 +920,6 @@ class GenerateContractView(APIView):
     def _generate_pdf(self, content):
         try:
             rendered_html = render_to_string('contract_base.html', {'content': content})
-            print(rendered_html)
             return HTML(string=rendered_html).write_pdf()
         except Exception as e:
             logger.error(f'Erro ao gerar o PDF: {e}')
@@ -947,16 +944,13 @@ class GenerateContractView(APIView):
             logger.error(f"Erro ao criar envelope: {e}")
             return Response({'message': f'Erro ao criar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def _generate_validation_qr_code(self, envelope_id, preview):
-        if preview:
-            return None
-        else:
-            validation_url = f"https://api.example.com/api/validate_contract?envelope_id={envelope_id}"
-            qr = qrcode.make(validation_url)
-            buffer = BytesIO()
-            qr.save(buffer, format="PNG")
-            qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-            return f"data:image/png;base64,{qr_base64}"        
+    def _generate_validation_qr_code(self, envelope_id):
+        validation_url = f"{os.environ.getenv('FRONTEND_URL')}/auth/contract-validation/?envelope_id={envelope_id}"
+        qr = qrcode.make(validation_url)
+        buffer = BytesIO()
+        qr.save(buffer, format="PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return f"data:image/png;base64,{qr_base64}"        
 
     def _add_document_to_envelope(self, sale, envelope_id, pdf):
         try:

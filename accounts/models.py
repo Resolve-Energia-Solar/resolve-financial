@@ -101,12 +101,10 @@ class User(AbstractUser):
         if self.pk:
             # Verifica se o documento foi alterado e se já existe no banco
             if self.check_if_first_documento_changed():
-                print("Verificando se o documento já existe (alterado)")
                 if User.check_if_exist_first_document(self.first_document):
                     raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         else:
             # Verificação para um novo objeto
-            print("Verificando se o documento já existe (novo)")
             if User.check_if_exist_first_document(self.first_document):
                 raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         return super().clean()
