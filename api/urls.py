@@ -11,7 +11,7 @@ from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus
-from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView
+from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
 from .views import ContratoView, GanttView, StatusView
 
 
@@ -56,7 +56,8 @@ urlpatterns = [
     path('', include(router.urls)),
     re_path(r'^swagger/$', api_schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/$', api_schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('send-contract/', ContratoView.as_view(), name='send_contract'),  
+    path('send-contract/', ContratoView.as_view(), name='send_contract'), 
+    path('validate-contract/', ValidateContractView.as_view(), name='validate_contract'),
     path('gantt/', GanttView.as_view(), name='gantt'),
     path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),

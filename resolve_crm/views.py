@@ -21,6 +21,7 @@ from .serializers import *
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 
 
 
@@ -673,6 +674,27 @@ class GeneratePreSaleView(APIView):
 class ContractTemplateViewSet(BaseModelViewSet):
     queryset = ContractTemplate.objects.all()
     serializer_class = ContractTemplateSerializer
+    
+    
+class ValidateContractView(APIView):
+    http_method_names = ['get']
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        envelope_id = request.query_params.get('envelope_id')
+        
+        if not envelope_id:
+            return Response({'message': 'envelope_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            contract_submission = ContractSubmission.objects.get(envelope_id=envelope_id)
+        except ContractSubmission.DoesNotExist:
+            return Response({'message': 'Contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({
+            'message': f'Contrato validado com sucesso. Cliente: {contract_submission.sale.customer.complete_name}',
+            'contract_submission': ContractSubmissionSerializer(contract_submission).data
+        }, status=status.HTTP_200_OK)
 
 
 class GenerateContractView(APIView):
