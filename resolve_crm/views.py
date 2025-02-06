@@ -1,5 +1,8 @@
+import base64
 from datetime import datetime, timezone
+from io import BytesIO
 import logging
+import qrcode
 import re
 
 from django.db import transaction
@@ -703,6 +706,7 @@ class GenerateContractView(APIView):
     @transaction.atomic
     def post(self, request):
         sale_id = request.data.get('sale_id')
+        qr_code = ""
 
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
@@ -732,6 +736,20 @@ class GenerateContractView(APIView):
         if isinstance(customer_data, Response):
             return customer_data
 
+        preview = request.query_params.get('preview') == 'true'
+
+        if not preview:
+            envelope_response = self._create_envelope(sale)
+            if isinstance(envelope_response, Response):
+                return envelope_response
+            
+            envelope_id = envelope_response.get('envelope_id')
+            if not envelope_id:
+                return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            qr_code = self._generate_validation_qr_code(envelope_id, preview)
+            print(qr_code)
+
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
         projects_data = self._get_projects_data(sale)
@@ -743,7 +761,8 @@ class GenerateContractView(APIView):
             materials_list,
             payments_list,
             projects_data,
-            sale.branch.address.city
+            sale.branch.address.city,
+            qr_code=qr_code
         )
 
         pdf = self._generate_pdf(contract_content)
@@ -752,15 +771,6 @@ class GenerateContractView(APIView):
 
         if request.query_params.get('preview') == 'true':
             return self._preview_pdf(pdf)
-
-        # ---- Fluxo com Clicksign ----
-        envelope_response = self._create_envelope(sale)
-        if isinstance(envelope_response, Response):
-            return envelope_response
-
-        envelope_id = envelope_response.get('envelope_id')
-        if not envelope_id:
-            return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         document_response = self._add_document_to_envelope(sale, envelope_id, pdf)
         if isinstance(document_response, Response):
@@ -888,7 +898,7 @@ class GenerateContractView(APIView):
         payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
         return payments_html
 
-    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city):
+    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city, qr_code):
         now = datetime.datetime.now()
         day = now.day
         month = formats.date_format(now, 'F')
@@ -902,7 +912,8 @@ class GenerateContractView(APIView):
             **projects_data,
             **customer_data,
             'today': today_formatted,
-            'city': city
+            'city': city,
+            'qr_code': qr_code
         })
         for key, value in variables.items():
             content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
@@ -911,6 +922,7 @@ class GenerateContractView(APIView):
     def _generate_pdf(self, content):
         try:
             rendered_html = render_to_string('contract_base.html', {'content': content})
+            print(rendered_html)
             return HTML(string=rendered_html).write_pdf()
         except Exception as e:
             logger.error(f'Erro ao gerar o PDF: {e}')
@@ -934,6 +946,17 @@ class GenerateContractView(APIView):
         except Exception as e:
             logger.error(f"Erro ao criar envelope: {e}")
             return Response({'message': f'Erro ao criar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def _generate_validation_qr_code(self, envelope_id, preview):
+        if preview:
+            return None
+        else:
+            validation_url = f"https://api.example.com/api/validate_contract?envelope_id={envelope_id}"
+            qr = qrcode.make(validation_url)
+            buffer = BytesIO()
+            qr.save(buffer, format="PNG")
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            return f"data:image/png;base64,{qr_base64}"        
 
     def _add_document_to_envelope(self, sale, envelope_id, pdf):
         try:
