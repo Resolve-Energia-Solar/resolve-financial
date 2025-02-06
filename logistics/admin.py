@@ -12,6 +12,7 @@ class MaterialAttributesInline(admin.TabularInline):
 class MaterialsAdmin(admin.ModelAdmin):
     list_display = ('id','name', 'is_deleted', 'created_at')
     list_filter = ('is_deleted', 'created_at')
+    search_fields = ('name',)
     inlines = [MaterialAttributesInline]
 
 
