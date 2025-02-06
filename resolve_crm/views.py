@@ -945,7 +945,7 @@ class GenerateContractView(APIView):
             return Response({'message': f'Erro ao criar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def _generate_validation_qr_code(self, envelope_id):
-        validation_url = f"{os.environ.getenv('FRONTEND_URL')}/auth/contract-validation/?envelope_id={envelope_id}"
+        validation_url = f"{os.getenv('FRONTEND_URL')}/auth/contract-validation/?envelope_id={envelope_id}"
         qr = qrcode.make(validation_url)
         buffer = BytesIO()
         qr.save(buffer, format="PNG")
