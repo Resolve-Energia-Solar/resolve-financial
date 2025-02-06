@@ -88,6 +88,23 @@ class User(AbstractUser):
     # Logs
     history = HistoricalRecords()
     
+    
+    def employee_data(self):
+        try:
+            employee = self.employee
+            return {
+            'contract_type': employee.contract_type,
+            'branch': employee.branch.name if employee.branch else None,
+            'department': employee.department.name if employee.department else None,
+            'role': employee.role.name if employee.role else None,
+            'user_manager': employee.user_manager.username if employee.user_manager else None,
+            'hire_date': employee.hire_date,
+            'resignation_date': employee.resignation_date,
+            'related_branches': [branch.name for branch in employee.related_branches.all()],
+            }
+        except Employee.DoesNotExist:
+            return None
+    
     def check_if_exist_first_document(number):
         return User.objects.filter(first_document=number).exists()
     
