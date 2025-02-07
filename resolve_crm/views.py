@@ -693,9 +693,29 @@ class ValidateContractView(APIView):
         if contract_submission is None:
             return Response({'message': 'Contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         
+        customer_name = contract_submission.sale.customer.complete_name
+        masked_email = re.sub(r'(?<=.{2}).(?=.*@)', '*', contract_submission.sale.customer.email)
+        masked_phone = re.sub(r'(?<=.{2}).(?=.{2})', '*', contract_submission.sale.customer.phone_numbers.first().phone_number)
+        masked_first_document = re.sub(r'(?<=.{3}).', '*', contract_submission.sale.customer.first_document)
+        
         return Response({
-            'message': f'Contrato validado com sucesso. Cliente: {contract_submission.sale.customer.complete_name}',
-            'contract_submission': ContractSubmissionSerializer(contract_submission).data
+            'message': f'Contrato validado com sucesso. Cliente: {customer_name}',
+            'contract_submission': {
+                'sale': {
+                    'customer': {
+                        'complete_name': customer_name,
+                        'email': masked_email,
+                        'phone_number': masked_phone,
+                        'first_document': masked_first_document,
+                    },
+                    'seller': {
+                        "complete_name": contract_submission.sale.seller.complete_name
+                    }
+                },
+                'status': contract_submission.status,
+                'submit_datetime': contract_submission.submit_datetime,
+                'due_date': contract_submission.due_date,
+            }
         }, status=status.HTTP_200_OK)
 
 
