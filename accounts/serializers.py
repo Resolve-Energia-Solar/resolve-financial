@@ -240,6 +240,7 @@ class UserSerializer(BaseSerializer):
     groups = GroupSerializer(many=True, read_only=True)
     phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
     employee = EmployeeSerializer(read_only=True)
+    employee_data = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
@@ -288,6 +289,9 @@ class UserSerializer(BaseSerializer):
                 raise serializers.ValidationError("CPF/CNPJ já cadastrado.")
 
         return value
+    
+    def get_employee_data(self, obj):
+        return obj.employee_data() if hasattr(obj, 'employee') else None
         
     def get_user_permissions(self, obj):
         return obj.get_all_permissions()
