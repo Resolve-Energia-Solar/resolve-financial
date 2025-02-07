@@ -73,7 +73,13 @@ class ScheduleViewSet(BaseModelViewSet):
                 Q(schedule_creator=user)
             )
 
+        final_service_is_null = self.request.query_params.get('final_service_is_null')
 
+        if final_service_is_null == 'true':
+            queryset = queryset.filter(final_service_opinion__isnull=True)
+        else:
+            queryset = queryset.filter(final_service_opinion__isnull=False)
+                
         if project:
             queryset = queryset.filter(project__id=project).filter(status='Confirmado')
         if service:
