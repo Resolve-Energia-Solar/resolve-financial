@@ -163,6 +163,7 @@ class Schedule(models.Model):
         ordering = ["-created_at"]
         permissions = [
             ("view_all_schedule", "Can view all schedule"),
+            ("view_agent_info", "Can view agent info"),
         ]
     
 
