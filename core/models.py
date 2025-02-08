@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from django.utils.timezone import now
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -6,6 +7,18 @@ from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db.models import Max
 
+
+class SystemConfig(models.Model):
+    configs = models.JSONField(default=dict)
+    history = HistoricalRecords()
+
+    def save(self, *args, **kwargs):
+        if SystemConfig.objects.exists() and not self.pk:
+            raise ValidationError('Apenas uma instância de "Configuração Sistêmica" é permitida.')
+        super(SystemConfig, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return "Configurações do Sistema"
 
 
 class DocumentType(models.Model):

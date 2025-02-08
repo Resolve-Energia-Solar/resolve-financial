@@ -8,6 +8,13 @@ from resolve_crm.models import Lead, Origin
 from notifications.models import Notification
 
 
+class SystemConfigSerializer(BaseSerializer):
+
+    class Meta:
+        model = SystemConfig
+        fields = ['configs']
+
+
 class DocumentSubTypeSerializer(BaseSerializer):
     
     class Meta:

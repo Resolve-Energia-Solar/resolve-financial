@@ -10,11 +10,36 @@ from django.apps import apps
 
 from api.views import BaseModelViewSet
 from notifications.models import Notification
-from resolve_crm.models import Project, Sale
+from resolve_crm.models import Sale
 
 from .models import *
 from .pagination import AttachmentPagination
 from .serializers import *
+
+
+class SystemConfigView(APIView):
+    
+    http_method_names = ['get', 'post']
+    
+    def get(self, request):
+        config = SystemConfig.objects.first()
+        if config:
+            serializer = SystemConfigSerializer(config)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Nenhuma configuração."}, status=status.HTTP_404_NOT_FOUND)
+    
+    def post(self, request):
+        if 'configs' not in request.data:
+            return Response({'detail': 'Atributo "configs" não especificado'}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        
+        config, _ = SystemConfig.objects.get_or_create(id=1)
+        serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DocumentTypeViewSet(BaseModelViewSet):
