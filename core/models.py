@@ -11,6 +11,10 @@ from django.db.models import Max
 class SystemConfig(models.Model):
     configs = models.JSONField(default=dict)
     history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Configuração Sistêmica"
+        verbose_name_plural = "Configurações Sistêmicas"
 
     def save(self, *args, **kwargs):
         if SystemConfig.objects.exists() and not self.pk:

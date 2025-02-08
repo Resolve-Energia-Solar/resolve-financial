@@ -5,6 +5,12 @@ from django.contrib.sessions.models import Session
 from .models import *
 
 
+@admin.register(SystemConfig)
+class SystemConfigAdmin(admin.ModelAdmin):
+    list_display = ("__str__",)
+    ordering = ("-id",)
+
+
 @admin.register(DocumentType)
 class DocumentTypeAdmin(admin.ModelAdmin):
     list_display = ('name', 'reusable', 'required')
