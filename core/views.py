@@ -3,6 +3,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils.text import capfirst
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import ForeignKey, OneToOneField
@@ -19,7 +20,9 @@ from .serializers import *
 
 class SystemConfigView(APIView):
     
+    permission_classes = [AllowAny]
     http_method_names = ['get', 'post']
+    
     
     def get(self, request):
         config = SystemConfig.objects.first()
