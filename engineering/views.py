@@ -36,6 +36,24 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     queryset = RequestsEnergyCompany.objects.all()
     serializer_class = RequestsEnergyCompanySerializer
     
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        project_client = request.query_params.get('project_client', None)
+        project_homologation = request.query_params.get('project_homologation', None)
+        
+        if project_client:
+            queryset = queryset.filter(project__sale__customer__id=project_client)
+        if project_homologation:
+            queryset = queryset.filter(project__homologator__id=project_homologation)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response({'results': serialized_data})
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({'results': serialized_data})
+    
 
 class UnitsViewSet(BaseModelViewSet):
     queryset = Units.objects.all()
