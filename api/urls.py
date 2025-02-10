@@ -8,7 +8,7 @@ from rest_framework import permissions
 
 from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
-from core.views import CreateTasksFromSaleView, HistoryView
+from core.views import CreateTasksFromSaleView, HistoryView, SystemConfigView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
@@ -48,6 +48,7 @@ urlpatterns = [
     path('login/', UserLoginView.as_view(), name='login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('generate-pre-sale/', GeneratePreSaleView.as_view(), name='generate_pre_sale'),
+    path('system-config/', SystemConfigView.as_view(), name='system-config'),
     path('history/', HistoryView.as_view(), name='history'),
     path('fatura/', InformacaoFaturaAPIView.as_view(), name='invoice_information'),
     path('generate-projects/', GenerateSalesProjectsView.as_view(), name='generate_projects'),
@@ -67,5 +68,5 @@ urlpatterns = [
     path('status/', StatusView.as_view(), name='status'),
     path('financial/omie/', OmieIntegrationView.as_view(), name='omie_integration'),
     path('financial/approve-financial-record/', FinancialRecordApprovalView.as_view(), name='approve_financial_record'),
-    path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
+    path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status')
 ]

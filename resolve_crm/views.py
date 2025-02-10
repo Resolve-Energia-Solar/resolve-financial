@@ -693,9 +693,29 @@ class ValidateContractView(APIView):
         if contract_submission is None:
             return Response({'message': 'Contrato não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         
+        customer_name = contract_submission.sale.customer.complete_name
+        masked_email = re.sub(r'(?<=.{2}).(?=.*@)', '*', contract_submission.sale.customer.email)
+        masked_phone = re.sub(r'(?<=.{2}).(?=.{2})', '*', contract_submission.sale.customer.phone_numbers.first().phone_number)
+        masked_first_document = re.sub(r'(?<=.{3}).', '*', contract_submission.sale.customer.first_document)
+        
         return Response({
-            'message': f'Contrato validado com sucesso. Cliente: {contract_submission.sale.customer.complete_name}',
-            'contract_submission': ContractSubmissionSerializer(contract_submission).data
+            'message': f'Contrato validado com sucesso. Cliente: {customer_name}',
+            'contract_submission': {
+                'sale': {
+                    'customer': {
+                        'complete_name': customer_name,
+                        'email': masked_email,
+                        'phone_number': masked_phone,
+                        'first_document': masked_first_document,
+                    },
+                    'seller': {
+                        "complete_name": contract_submission.sale.seller.complete_name
+                    }
+                },
+                'status': contract_submission.status,
+                'submit_datetime': contract_submission.submit_datetime,
+                'due_date': contract_submission.due_date,
+            }
         }, status=status.HTTP_200_OK)
 
 
@@ -706,6 +726,7 @@ class GenerateContractView(APIView):
     def post(self, request):
         sale_id = request.data.get('sale_id')
         qr_code = ""
+        validation_url = ""
 
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
@@ -746,7 +767,7 @@ class GenerateContractView(APIView):
             if not envelope_id:
                 return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            qr_code = self._generate_validation_qr_code(envelope_id)
+            qr_code, validation_url = self._generate_validation_qr_code(envelope_id)
 
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
@@ -760,7 +781,8 @@ class GenerateContractView(APIView):
             payments_list,
             projects_data,
             sale.branch.address.city,
-            qr_code=qr_code
+            qr_code=qr_code,
+            validation_url=validation_url
         )
 
         pdf = self._generate_pdf(contract_content)
@@ -896,7 +918,7 @@ class GenerateContractView(APIView):
         payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
         return payments_html
 
-    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city, qr_code):
+    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city, qr_code, validation_url):
         now = datetime.datetime.now()
         day = now.day
         month = formats.date_format(now, 'F')
@@ -911,7 +933,8 @@ class GenerateContractView(APIView):
             **customer_data,
             'today': today_formatted,
             'city': city,
-            'qr_code': qr_code
+            'qr_code': qr_code,
+            'validation_url': validation_url
         })
         for key, value in variables.items():
             content = re.sub(fr"{{{{\s*{key}\s*}}}}", str(value), content)
@@ -950,7 +973,7 @@ class GenerateContractView(APIView):
         buffer = BytesIO()
         qr.save(buffer, format="PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        return f"data:image/png;base64,{qr_base64}"        
+        return f"data:image/png;base64,{qr_base64}", validation_url      
 
     def _add_document_to_envelope(self, sale, envelope_id, pdf):
         try:
