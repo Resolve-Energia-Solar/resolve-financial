@@ -342,7 +342,7 @@ class UpdateFinancialRecordPaymentStatus(APIView):
             return Response({"error": f"FinancialRecord with id {financial_record_id} does not exist"}, status=404)
         
         if topic == 'Financas.ContaPagar.BaixaRealizada':
-            financial_record.payment_status = 'P'
+            financial_record.payment_status = 'PG'
         elif topic in ['Financas.ContaPagar.Excluido', 'Financas.ContaPagar.BaixaCancelada']:
             financial_record.payment_status = 'C'
             author_email = request.data.get('author', {}).get('email', None)

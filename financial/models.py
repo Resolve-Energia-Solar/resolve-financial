@@ -393,8 +393,8 @@ class FinancialRecord(models.Model):
     
     payment_status = models.CharField(
         "Status do Pagamento",
-        max_length=1,
-        choices=[("P", "Pago"), ("P", "Pendente"), ("C", "Cancelado")],
+        max_length=2,
+        choices=[("PG", "Pago"), ("P", "Pendente"), ("C", "Cancelado")],
         default="P"
     )
     paid_at = models.DateTimeField("Data de Pagamento", null=True, blank=True)
