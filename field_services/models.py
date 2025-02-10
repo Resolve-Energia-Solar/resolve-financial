@@ -111,6 +111,13 @@ class Schedule(models.Model):
         ("Cancelado", "Cancelado"),
     ]
     
+    AGENT_STATUS_CHOICES = [
+        ("P", "Pendente"),
+        ("EA", "Em Andamento"),
+        ("C", "Concluído"),
+        ("CA", "Cancelado"),
+    ]
+    
     STEP_CHOICES = [
         (1, "Não Iniciado"),
         (2, "Em Viagem"),
@@ -140,6 +147,7 @@ class Schedule(models.Model):
     execution_finished_at = models.DateTimeField("Execução Finalizada em", blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     status = models.CharField("Status", max_length=50, choices=status_choices, default="Pendente")
+    agent_status = models.CharField("Status do Agente", max_length=50, choices=AGENT_STATUS_CHOICES, default="P")
     service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.CASCADE, blank=True, null=True)
     final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.SET_NULL, related_name='final_service_opinion', blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
