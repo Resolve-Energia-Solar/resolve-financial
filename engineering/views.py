@@ -37,7 +37,7 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     serializer_class = RequestsEnergyCompanySerializer
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         project_client = request.query_params.get('project_client', None)
         project_homologation = request.query_params.get('project_homologation', None)
         
