@@ -567,7 +567,7 @@ class Project(models.Model):
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     plant_integration = models.CharField("ID da Usina", max_length=20, null=True, blank=True)
     designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
-    designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True)
+    designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=True, blank=True, default="P")
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
     inspection = models.ForeignKey('field_services.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_field_services")
     # ajustar quando a data de início e término for definida
