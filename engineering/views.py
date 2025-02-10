@@ -40,7 +40,11 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         project_client = request.query_params.get('project_client', None)
         project_homologation = request.query_params.get('project_homologation', None)
+        situation_id__in = request.query_params.get('situation_id__in', None)
         
+        if situation_id__in:
+            situation_id__in = situation_id__in.split(',')
+            queryset = queryset.filter(situation__id__in=situation_id__in)
         if project_client:
             queryset = queryset.filter(project__sale__customer__id=project_client)
         if project_homologation:
