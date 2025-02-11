@@ -270,29 +270,37 @@ class ProjectViewSet(BaseModelViewSet):
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
 
-            is_released_to_engineering_count=Count('id', filter=Q(
-                is_documentation_completed=True,
-                sale__payment_status__in=['L', 'C'],
-                inspection__status='Confirmado'
-            )),
-            pending_material_list=Count('id', filter=Q(
-                is_documentation_completed=True,
-                sale__payment_status__in=['L', 'C'],
-                inspection__status='Confirmado',
-                materials__isnull=True
-            )),
-            blocked_to_engineering=Count('id', filter=Q(
-                is_documentation_completed=False
-            ) | Q(
-                sale__payment_status__in=['P', 'CA']
-            ) | Q(
-                inspection__status='Pendente'
-            ) | ~Q(
-                is_documentation_completed=True,
-                sale__payment_status__in=['L', 'C'],
-                inspection__status='Confirmado'
-            ))
+            is_released_to_engineering_count=Count(
+                'id',
+                filter=Q(
+                    Q(is_documentation_completed=True) | Q(sale__status='F'),
+                    sale__payment_status__in=['L', 'C'],
+                    inspection__final_service_opinion__name__icontains='aprovado'
+                )
+            ),
+
+            pending_material_list=Count(
+                'id',
+                filter=Q(
+                    # Verifica se o projeto está liberado para engenharia
+                    Q(
+                        Q(is_documentation_completed=True) | Q(sale__status='F'),
+                        sale__payment_status__in=['L', 'C'],
+                        inspection__final_service_opinion__name__icontains='aprovado'
+                    ) & Q(materials__isnull=True)  # Garante que não há materiais
+                )
+            ),
+
+            blocked_to_engineering=Count(
+                'id',
+                filter=Q(
+                    Q(is_documentation_completed=False) | ~Q (sale__status='F') |
+                    Q(sale__payment_status__in=['P', 'CA']) |
+                    ~Q(inspection__final_service_opinion__name__icontains='aprovado')
+                )
+            )
         )
+
 
         indicators = {
             "designer": {

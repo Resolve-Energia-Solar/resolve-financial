@@ -603,6 +603,10 @@ class Project(models.Model):
             final_service_opinion_contains_approved = False
         
         return (self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved
+    
+    
+    def pending_material_list(self):
+        return (self.is_released_to_engineering and not self.materials.exists())    
 
     
     def access_opinion(self):
