@@ -295,7 +295,7 @@ class UserSerializer(BaseSerializer):
     
     def get_distance(self, obj):
         return getattr(obj, 'distance', None)
-    
+
     def get_daily_schedules_count(self, obj):
         return getattr(obj, 'daily_schedules_count', None)
     

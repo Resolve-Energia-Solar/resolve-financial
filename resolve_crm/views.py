@@ -226,14 +226,15 @@ class ProjectViewSet(BaseModelViewSet):
                 upper_bound = product_kwp_value + 2.5
                 queryset = queryset.filter(product__params__gte=lower_bound, product__params__lte=upper_bound)
             except ValueError:
-                return Response({'message': 'Valor inválido para product_kwp.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_released_to_engineering == 'true':
-            queryset = queryset.filter(
+            queryset = queryset.filter(Q(
                 # is_documentation_completed=True,
                 sale__status__in=['F'],
                 sale__payment_status__in=['L', 'C'],
                 inspection__final_service_opinion__name__icontains='aprovado',
+            ) & ~Q(status__in=['CO']) & ~Q(designer_status__in=['CO'])
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(

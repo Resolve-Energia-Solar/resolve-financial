@@ -154,9 +154,12 @@ class UserViewSet(BaseModelViewSet):
         if second_document:
             queryset = queryset.filter(second_document__icontains=second_document)
         if category:
-            queryset = queryset.filter(id__in=Category.objects.get(id=category).members.values_list('id', flat=True))
+            queryset = queryset.filter(
+                id__in=Category.objects.get(id=category).members.values_list('id', flat=True)
+            )
 
         if date and start_time and end_time:
+            # Filtrar agentes bloqueados
             blocked_agents = BlockTimeAgent.objects.filter(
                 start_date__lte=date,
                 end_date__gte=date,
@@ -165,70 +168,73 @@ class UserViewSet(BaseModelViewSet):
             ).values_list('agent', flat=True)
             queryset = queryset.exclude(id__in=blocked_agents)
 
-            # Verificar horários livres
+            # Filtrar agentes com horários livres
             day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
-            for user in queryset:
-                free_time = FreeTimeAgent.objects.filter(agent=user, day_of_week=day_of_week, start_time__lt=parse_time(end_time), end_time__gt=parse_time(start_time))
-                if not free_time.exists():
-                    queryset = queryset.exclude(id=user.id)
+            free_agents_ids = FreeTimeAgent.objects.filter(
+                day_of_week=day_of_week,
+                start_time__lt=parse_time(end_time),
+                end_time__gt=parse_time(start_time)
+            ).values_list('agent_id', flat=True).distinct()
+            queryset = queryset.filter(id__in=free_agents_ids)
 
-            # Verificar agendamentos existentes
+            # Excluir agentes com agendamentos sobrepostos
             overlapping_schedules = Schedule.objects.filter(
                 schedule_date=date,
                 schedule_start_time__lt=parse_time(end_time),
                 schedule_end_time__gt=parse_time(start_time),
                 schedule_agent_id__isnull=False  
             ).values_list('schedule_agent_id', flat=True)
+            queryset = queryset.exclude(id__in=overlapping_schedules)
 
-            queryset = queryset.exclude(id__in=overlapping_schedules) 
+            # Sempre anota a quantidade de agendamentos, independentemente da latitude/longitude
+            from django.db.models import OuterRef, Subquery, Count, Value
+            from django.db.models.functions import Coalesce
 
-            #logica para ordenar os agentes por distancia e contagem de agendamentos
+            daily_schedules_subquery = Schedule.objects.filter(
+                schedule_agent=OuterRef('pk'),
+                schedule_date=date
+            ).values('schedule_agent').annotate(cnt=Count('id')).values('cnt')[:1]
+
+            queryset = queryset.annotate(
+                daily_schedules_count=Coalesce(Subquery(daily_schedules_subquery), Value(0))
+            )
+
+            # Se houver latitude e longitude, calcula também a distância
             if latitude and longitude:
                 latitude = float(latitude)
                 longitude = float(longitude)
 
-                users_distance = []
-                for user in queryset:
-                    last_schedule = Schedule.objects.filter(
-                        schedule_agent=user,
-                        schedule_date=date
-                    ).order_by('-schedule_end_time').first()
+                # Anotar dados do último agendamento para cálculo de distância
+                last_schedule_qs = Schedule.objects.filter(
+                    schedule_agent=OuterRef('pk'),
+                    schedule_date=date
+                ).order_by('-schedule_end_time')
 
-                    user.distance = (
-                        calculate_distance(latitude, longitude, last_schedule.latitude, last_schedule.longitude)
-                        if last_schedule else None
-                    )
-
-                    users_distance.append((user, user.distance))
-
-                    daily_schedules_count = Schedule.objects.filter(
-                        schedule_agent=user,
-                        schedule_date=date
-                    ).count()
-                    user.daily_schedules_count = daily_schedules_count
-
-                ordered_users = sorted(users_distance, key=lambda x: (x[1] is None, x[1]))
-                ordered_ids = [user[0].id for user in ordered_users]
-
-                queryset = queryset.filter(id__in=ordered_ids).annotate(
-                    distance=Case(
-                        *[When(id=user.id, then=Value(user.distance)) for user, _ in users_distance],
-                        default=Value(None),  
-                        output_field=FloatField()
-                    ),
-                    daily_schedules_count=Case(
-                        *[When(id=user.id, then=Value(user.daily_schedules_count)) for user in queryset],
-                        default=Value(0),
-                        output_field=IntegerField()
-                    )
-                ).order_by(
-                    Case(
-                        *[When(id=user_id, then=pos) for pos, user_id in enumerate(ordered_ids)]
-                    )
+                queryset = queryset.annotate(
+                    last_schedule_latitude=Subquery(last_schedule_qs.values('latitude')[:1]),
+                    last_schedule_longitude=Subquery(last_schedule_qs.values('longitude')[:1])
                 )
+
+                # Converter o queryset para lista para calcular a distância em Python
+                agents = list(queryset)
+                for agent in agents:
+                    if agent.last_schedule_latitude is not None and agent.last_schedule_longitude is not None:
+                        agent.distance = calculate_distance(
+                            latitude,
+                            longitude,
+                            agent.last_schedule_latitude,
+                            agent.last_schedule_longitude
+                        )
+                    else:
+                        agent.distance = None
+
+                # Ordenar os agentes pela distância (colocando os que não têm distância no final)
+                agents.sort(key=lambda a: (a.distance is None, a.distance))
+                return agents
+
         return queryset
-    
-    
+
+
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
