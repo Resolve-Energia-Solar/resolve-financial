@@ -594,7 +594,15 @@ class Project(models.Model):
         pagamento completo ou parcial
         e a vistoria estiver aprovada
         """
-        return self.is_documentation_completed and self.sale.payment_status in ['L', 'C'] and self.inspection
+        # print('Status do pagamento:',self.sale.payment_status in ['L', 'C'])
+        # print('status da venda:', self.sale.status in ['F'])
+        final_service_opinion = self.inspection.final_service_opinion.name if self.inspection and self.inspection.final_service_opinion else None
+        if final_service_opinion is not None:
+            final_service_opinion_contains_approved = 'aprovado' in final_service_opinion.lower()
+        else:
+            final_service_opinion_contains_approved = False
+        
+        return (self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved
 
     
     def access_opinion(self):

@@ -311,15 +311,11 @@ class ReadSaleSerializer(BaseSerializer):
 
 class ProjectSerializer(BaseSerializer):
     # Para leitura
-    # sale = ReadSaleSerializer(read_only=True)
-    # designer = RelatedUserSerializer(read_only=True)
-    # homologator = RelatedUserSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
     attachments = AttachmentSerializer(many=True, read_only=True)
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
-    field_services = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
     access_opinion = SerializerMethodField()
     address = SerializerMethodField()
@@ -341,6 +337,9 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         depth = 1
+        
+    def get_is_released_to_engineering(self, obj):
+        return obj.is_released_to_engineering()
     
     def get_address(self, obj):
         if obj.address:
@@ -349,17 +348,10 @@ class ProjectSerializer(BaseSerializer):
     
     def get_access_opinion(self, obj):
         return obj.access_opinion()    
-        
-    def get_is_released_to_engineering(self, obj):
-        return obj.is_released_to_engineering()
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()
         return AttachmentSerializer(documents, many=True).data
-    
-    def get_field_services(self, obj):
-        field_services = obj.field_services.values_list('id', flat=True)
-        return list(field_services)
     
     def get_requests_energy_company(self, obj):
         from engineering.serializers import ReadRequestsEnergyCompanySerializer
