@@ -199,14 +199,14 @@ class ProjectViewSet(BaseModelViewSet):
         inspection_status = request.query_params.get('inspection_status')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
-        was_released_at = request.query_params.get('was_released_at')
+        # was_released_at = request.query_params.get('was_released_at')
 
-        if was_released_at:
-            queryset = queryset.annotate(
-                contract_date=F('sale__signature_date'),
-                inspection_date=F('inspection__schedule_end_date'),
-                financial_date=F('sale__financial_date'),
-            )
+        # if was_released_at:
+        #     queryset = queryset.annotate(
+        #         contract_date=F('sale__signature_date'),
+        #         inspection_date=F('inspection__schedule_end_date'),
+        #         financial_date=F('sale__financial_date'),
+        #     )
 
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
