@@ -172,6 +172,8 @@ class Schedule(models.Model):
         permissions = [
             ("view_all_schedule", "Can view all schedule"),
             ("view_agent_info", "Can view agent info"),
+            ("view_service_opinion", "Can view service opinion"),
+            ("can_change_service", "Can change service"),
         ]
     
 
