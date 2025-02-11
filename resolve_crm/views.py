@@ -273,9 +273,12 @@ class ProjectViewSet(BaseModelViewSet):
             is_released_to_engineering_count=Count(
                 'id',
                 filter=Q(
-                    Q(is_documentation_completed=True) | Q(sale__status='F'),
-                    sale__payment_status__in=['L', 'C'],
-                    inspection__final_service_opinion__name__icontains='aprovado'
+                    # Q(is_documentation_completed=True) &
+                    Q(sale__status='F') &
+                    Q(sale__payment_status__in=['L', 'C']) & 
+                    Q(inspection__final_service_opinion__name__icontains='aprovado') &
+                    ~Q(status__in=['CO']) &
+                    ~Q(designer_status__in=['CO'])
                 )
             ),
 
@@ -284,18 +287,20 @@ class ProjectViewSet(BaseModelViewSet):
                 filter=Q(
                     # Verifica se o projeto está liberado para engenharia
                     Q(
-                        Q(is_documentation_completed=True) | Q(sale__status='F'),
-                        sale__payment_status__in=['L', 'C'],
-                        inspection__final_service_opinion__name__icontains='aprovado'
-                    ) & Q(materials__isnull=True)  # Garante que não há materiais
+                        # Q(is_documentation_completed=True) &
+                        Q(sale__status='F') &
+                        Q(sale__payment_status__in=['L', 'C']) &
+                        Q(inspection__final_service_opinion__name__icontains='aprovado')
+                    ) & Q(materials__isnull=True)
                 )
             ),
 
             blocked_to_engineering=Count(
                 'id',
                 filter=Q(
-                    Q(is_documentation_completed=False) | ~Q (sale__status='F') |
+                    # Q(is_documentation_completed=False) |
                     Q(sale__payment_status__in=['P', 'CA']) |
+                    ~Q (sale__status='F') |
                     ~Q(inspection__final_service_opinion__name__icontains='aprovado')
                 )
             )

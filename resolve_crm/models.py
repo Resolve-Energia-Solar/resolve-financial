@@ -589,20 +589,13 @@ class Project(models.Model):
         return main_unit.address if main_unit else None
     
     def is_released_to_engineering(self):
-        """
-        Está liberado para engenharia se o projeto estiver com documentação concluída,
-        pagamento completo ou parcial
-        e a vistoria estiver aprovada
-        """
-        # print('Status do pagamento:',self.sale.payment_status in ['L', 'C'])
-        # print('status da venda:', self.sale.status in ['F'])
         final_service_opinion = self.inspection.final_service_opinion.name if self.inspection and self.inspection.final_service_opinion else None
         if final_service_opinion is not None:
             final_service_opinion_contains_approved = 'aprovado' in final_service_opinion.lower()
         else:
             final_service_opinion_contains_approved = False
         
-        return (self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved
+        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] or self.designer_status in ['CO'])
     
     
     def pending_material_list(self):
@@ -610,12 +603,6 @@ class Project(models.Model):
 
     
     def access_opinion(self):
-        """
-        O parecer de acesso é liberado se:
-        - O projeto tiver pelo menos um documento TRT/ART com status 'C'.
-        - Todas as unidades tiverem um número de contrato (não forem nova UC).
-        """
-        # Verifica se existe algum documento TRT/ART com status 'C'
         has_valid_document = self.attachments.filter(
             object_id=self.id,
             content_type=ContentType.objects.get_for_model(self),
