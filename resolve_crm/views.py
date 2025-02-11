@@ -230,15 +230,17 @@ class ProjectViewSet(BaseModelViewSet):
 
         if is_released_to_engineering == 'true':
             queryset = queryset.filter(
-                is_documentation_completed=True,
+                # is_documentation_completed=True,
+                sale__status__in=['F'],
                 sale__payment_status__in=['L', 'C'],
-                inspection__status='Confirmado'
+                inspection__final_service_opinion__name__icontains='aprovado',
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(
-                Q(is_documentation_completed=False) |
+                # Q(is_documentation_completed=False) |
+                ~Q(sale__status__in=['F']) |
                 Q(sale__payment_status__in=['P', 'CA']) |
-                Q(inspection__status__in=['Pendente', 'Cancelado'])
+                ~Q(inspection__final_service_opinion__name__icontains='aprovado')
             )
 
         if customer:
