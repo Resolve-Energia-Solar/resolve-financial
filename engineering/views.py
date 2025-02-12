@@ -65,16 +65,50 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
             'total_rejected': raw_indicators.aggregate(Sum('total_rejected'))['total_rejected__sum'],
         }
         
+        raw_indicators_by_type = (
+            queryset
+            .values('type__id', 'type__name')
+            .annotate(
+                total=Count('id'),
+                total_requested=Count('id', filter=Q(status='S')),
+                total_granted=Count('id', filter=Q(status='D')),
+                total_rejected=Count('id', filter=Q(status='I')),
+            )
+        )
+
+        # Montar estrutura como "indicators_nome_do_tipo"
+        indicators_by_type = []
+        for row in raw_indicators_by_type:
+            # slugify simples: remover espaços, deixar minúsculo etc.
+            slug = row['type__name'].lower().replace(' ', '_')
+            # constrói um objeto com a chave dinâmica
+            indicators_by_type.append({
+                f"indicators_{slug}": {
+                    "type__id": row["type__id"],
+                    "type__name": row["type__name"],
+                    "total": row["total"],
+                    "total_requested": row["total_requested"],
+                    "total_granted": row["total_granted"],
+                    "total_rejected": row["total_rejected"],
+                }
+            })
+
+        # Paginação normal e retorno final
         page = self.paginate_queryset(queryset)
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
             return self.get_paginated_response({
-                'results': serialized_data,
-                'indicators': indicators
-                })
-
+                "results": serialized_data,
+                "indicators": indicators,
+                "indicators_by_type": indicators_by_type,
+            })
+        
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data, 'indicators': indicators})
+        return Response({
+            "results": serialized_data,
+            "indicators": indicators,
+            "indicators_by_type": indicators_by_type,
+        })
     
 
 class UnitsViewSet(BaseModelViewSet):
