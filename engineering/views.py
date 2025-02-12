@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Count, Q, Sum
 
 
 class SupplyAdequanceViewSet(BaseModelViewSet):
@@ -50,13 +51,30 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
         if project_homologation:
             queryset = queryset.filter(project__homologator__id=project_homologation)
         
+        raw_indicators = queryset.annotate(
+            total=Count('id'),
+            total_requested=Count('id', filter=Q(status='S')),
+            total_granted=Count('id', filter=Q(status='D')),
+            total_rejected=Count('id', filter=Q(status='I')),
+        )
+        
+        indicators = {
+            'total': raw_indicators.aggregate(Sum('total'))['total__sum'],
+            'total_requested': raw_indicators.aggregate(Sum('total_requested'))['total_requested__sum'],
+            'total_granted': raw_indicators.aggregate(Sum('total_granted'))['total_granted__sum'],
+            'total_rejected': raw_indicators.aggregate(Sum('total_rejected'))['total_rejected__sum'],
+        }
+        
         page = self.paginate_queryset(queryset)
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
-            return self.get_paginated_response({'results': serialized_data})
+            return self.get_paginated_response({
+                'results': serialized_data,
+                'indicators': indicators
+                })
 
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data})
+        return Response({'results': serialized_data, 'indicators': indicators})
     
 
 class UnitsViewSet(BaseModelViewSet):
