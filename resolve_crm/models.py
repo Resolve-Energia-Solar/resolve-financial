@@ -361,14 +361,7 @@ class Sale(models.Model):
         ("C", "Concluído"),
         ("CA", "Cancelado"),
     ]
-    
-    MONTHS_CHOICES = [
-        (1, "Janeiro"), (2, "Fevereiro"), (3, "Março"),
-        (4, "Abril"), (5, "Maio"), (6, "Junho"),
-        (7, "Julho"), (8, "Agosto"), (9, "Setembro"),
-        (10, "Outubro"), (11, "Novembro"), (12, "Dezembro"),
-    ]
-    
+
     # Stakeholders
     customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
     seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
