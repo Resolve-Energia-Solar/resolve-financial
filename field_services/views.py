@@ -65,6 +65,11 @@ class ScheduleViewSet(BaseModelViewSet):
         project = self.request.query_params.get('project_confirmed')
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
+        final_services_opnions = self.request.query_params.get('final_services_opnions')
+        
+        if final_services_opnions:
+            final_services_opnions = final_services_opnions.split(',')
+            queryset = queryset.filter(final_service_opinion__id__in=final_services_opnions)
         
         if not (user.is_superuser or user.has_perm('field_services.view_all_schedule')) and not user.employee.related_branches.exists():
             queryset = queryset.filter(
