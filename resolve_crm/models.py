@@ -651,6 +651,9 @@ class Project(models.Model):
         verbose_name = "Projeto"
         verbose_name_plural = "Projetos"
         ordering = ['-created_at']
+        permissions = [
+            ('can_change_unready_project', 'Can change unready project'),
+        ]
     
     def __str__(self):
         return self.project_number
