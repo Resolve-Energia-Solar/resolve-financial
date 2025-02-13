@@ -294,7 +294,7 @@ class ProjectViewSet(BaseModelViewSet):
                         Q(sale__status='F') &
                         Q(sale__payment_status__in=['L', 'C']) &
                         Q(inspection__final_service_opinion__name__icontains='aprovado')
-                    ) & Q(materials__isnull=True)
+                    ) & Q(material_list_is_completed=False)
                 )
             ),
 
@@ -327,7 +327,7 @@ class ProjectViewSet(BaseModelViewSet):
             },
             "is_released_to_engineering": raw_indicators["is_released_to_engineering_count"],
             "pending_material_list": raw_indicators["pending_material_list"],
-            "blocked_to_engineering": raw_indicators["blocked_to_engineering"]
+            "blocked_to_engineering": raw_indicators["blocked_to_engineering"],
         }
 
         return Response({"indicators": indicators})
