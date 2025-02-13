@@ -90,5 +90,5 @@ jobs:
       # 7. Atualizar Deployment no AKS
       - name: Update Deployment on AKS
         run: |
-          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-dev="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
+          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api-dev="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
           kubectl rollout status deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"
