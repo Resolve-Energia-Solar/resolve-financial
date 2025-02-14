@@ -280,7 +280,8 @@ class ProjectViewSet(BaseModelViewSet):
                     Q(sale__status='F') &
                     Q(sale__payment_status__in=['L', 'C']) & 
                     Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                    ~Q(status__in=['CO'])
+                    ~Q(status__in=['CO']) &
+                    Q(sale__is_pre_sale=False)
                 )
             ),
 
@@ -292,7 +293,8 @@ class ProjectViewSet(BaseModelViewSet):
                         # Q(is_documentation_completed=True) &
                         Q(sale__status='F') &
                         Q(sale__payment_status__in=['L', 'C']) &
-                        Q(inspection__final_service_opinion__name__icontains='aprovado')
+                        Q(inspection__final_service_opinion__name__icontains='aprovado') &
+                        Q(sale__is_pre_sale=False)
                     ) & Q(material_list_is_completed=False)
                 )
             ),
@@ -303,7 +305,8 @@ class ProjectViewSet(BaseModelViewSet):
                     # Q(is_documentation_completed=False) |
                     Q(sale__payment_status__in=['P', 'CA']) |
                     ~Q (sale__status='F') |
-                    ~Q(inspection__final_service_opinion__name__icontains='aprovado')
+                    ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                    Q(sale__is_pre_sale=True)
                 )
             )
         )
