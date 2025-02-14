@@ -202,19 +202,10 @@ class ProjectViewSet(BaseModelViewSet):
         trt_pending = request.query_params.get('trt_pending')
         access_opnion = request.query_params.get('access_opnion')
         
-        
         if access_opnion == 'liberado':
             queryset = queryset.filter(
                 Q(attachments__document_type__name__icontains='ART', attachments__status='A') &
                 Q(units__account_number__isnull=False)
-            ).distinct()
-        elif access_opnion == 'em_andamento':
-            queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
-            ).distinct()
-        elif access_opnion == 'reprovada':
-            queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
             ).distinct()
         elif access_opnion == 'bloqueado':
             queryset = queryset.exclude(
