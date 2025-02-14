@@ -187,6 +187,9 @@ class HistoryView(APIView):
 class NotificationViewSet(BaseModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+    
+    def get_queryset(self):
+        return self.request.user.notifications.all()
 
 
 class CreateTasksFromSaleView(APIView):

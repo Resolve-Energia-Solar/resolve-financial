@@ -1,7 +1,17 @@
-from rest_framework.serializers import SerializerMethodField, PrimaryKeyRelatedField, ChoiceField
+from rest_framework.serializers import (
+    SerializerMethodField, 
+    PrimaryKeyRelatedField, 
+    ChoiceField, 
+    RelatedField, 
+    BooleanField
+)
 
 from accounts.models import Branch, User
-from accounts.serializers import BranchSerializer, RelatedUserSerializer, ContentTypeSerializer
+from accounts.serializers import (
+    BranchSerializer, 
+    RelatedUserSerializer, 
+    ContentTypeSerializer
+)
 from api.serializers import BaseSerializer
 from core.models import *
 from resolve_crm.models import Lead, Origin
@@ -178,17 +188,26 @@ class TaskTemplatesSerializer(BaseSerializer):
         return TaskTemplatesSerializer(obj.depends_on, many=True).data
 
 
-class NotificationSerializer(BaseSerializer):
-    user = RelatedUserSerializer(read_only=True)
-    task = TaskSerializer(read_only=True)
-    read = SerializerMethodField()
+class GenericNotificationRelatedField(RelatedField):
+    def to_representation(self, value):
+        return str(value)
 
-    user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
-    task_id = PrimaryKeyRelatedField(queryset=Task.objects.all(), write_only=True, source='task')
+
+class NotificationSerializer(BaseSerializer):
+    recipient = RelatedUserSerializer(User)
+    unread = BooleanField()
+    target = GenericNotificationRelatedField(read_only=True)
+    actor = GenericNotificationRelatedField(read_only=True)
+    action_object = GenericNotificationRelatedField(read_only=True)
+    timesince = SerializerMethodField()
+    
+    target_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='target', required=False)
+    actor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='actor', required=False)
+    action_object_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='action_object', required=False)
 
     class Meta:
         model = Notification
         fields = '__all__'
-    
-    def get_read(self, obj):
-        return obj.read
+
+    def get_timesince(self, obj):
+        return obj.timesince()

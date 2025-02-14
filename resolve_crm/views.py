@@ -759,6 +759,8 @@ class GenerateContractView(APIView):
         if total_payments_value != sale.total_value:
             return Response({'message': 'A soma dos valores dos pagamentos é diferente do valor total da venda.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        total_payments_value_formatted = formats.number_format(total_payments_value, 2)
+        
         variables = self._validate_variables(request.data.get('contract_data', {}))
         if isinstance(variables, Response):
             return variables
@@ -793,6 +795,7 @@ class GenerateContractView(APIView):
             customer_data,
             sale.branch.energy_company.name,
             materials_list,
+            total_payments_value_formatted,
             payments_list,
             projects_data,
             sale.branch.address.city,
@@ -933,7 +936,7 @@ class GenerateContractView(APIView):
         payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
         return payments_html
 
-    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, payments_list, projects_data, city, qr_code, validation_url):
+    def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, total_value, payments_list, projects_data, city, qr_code, validation_url):
         now = datetime.datetime.now()
         day = now.day
         month = formats.date_format(now, 'F')
@@ -948,6 +951,7 @@ class GenerateContractView(APIView):
             **customer_data,
             'today': today_formatted,
             'city': city,
+            'total_value': total_value,
             'qr_code': qr_code,
             'validation_url': validation_url
         })
