@@ -578,10 +578,6 @@ class Project(models.Model):
         
         if has_valid_document.filter(status='A').exists() and all_units_have_contract:
             return 'Liberado'
-        if has_valid_document.filter(status='EA').exists():
-            return 'Em Andamento'
-        if has_valid_document.filter(status='R').exists():
-            return 'Reprovada'
     
         return 'Bloqueado'
 
