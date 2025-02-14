@@ -418,36 +418,6 @@ class Sale(models.Model):
             else:
                 return 'Pendente'
         return 'Assinado'
-    
-    # @property
-    # def can_generate_contract(self):
-    #     customer_data = bool(self.customer.first_name and self.customer.last_name and self.customer.email and self.customer.first_document)
-    #     value = 0
-    #     all_payments_have_borrower = True
-
-    #     for payment in self.payments.all():
-    #         value += payment.value
-    #         if not payment.borrower:
-    #             all_payments_have_borrower = False
-
-    #     payment_data = value >= self.total_value and all_payments_have_borrower
-    #     have_units = all(project.units.exists() for project in self.projects.all())
-
-    #     result = customer_data and payment_data and have_units and all_payments_have_borrower
-
-    #     # Filtrar somente as dependências que estão False
-    #     dependencies = {
-    #         "customer_data": customer_data,
-    #         "payment_data": payment_data,
-    #         "have_units": have_units,
-    #         "all_payments_have_borrower": all_payments_have_borrower,
-    #     }
-    #     failed_dependencies = {key: value for key, value in dependencies.items() if not value}
-
-    #     return {
-    #         "is_valid": result,
-    #         "failed_dependencies": failed_dependencies
-    #     }
         
     @property
     def total_paid(self):
@@ -589,7 +559,7 @@ class Project(models.Model):
         else:
             final_service_opinion_contains_approved = False
         
-        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] or self.designer_status in ['CO'])
+        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved) and not (self.status in ['CO'])
     
     
     def pending_material_list(self):
