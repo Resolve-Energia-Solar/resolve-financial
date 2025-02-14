@@ -234,7 +234,7 @@ class ProjectViewSet(BaseModelViewSet):
                 sale__status__in=['F'],
                 sale__payment_status__in=['L', 'C'],
                 inspection__final_service_opinion__name__icontains='aprovado',
-            ) & ~Q(status__in=['CO']) & ~Q(designer_status__in=['CO'])
+            ) & ~Q(status__in=['CO'])
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(
@@ -280,8 +280,7 @@ class ProjectViewSet(BaseModelViewSet):
                     Q(sale__status='F') &
                     Q(sale__payment_status__in=['L', 'C']) & 
                     Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                    ~Q(status__in=['CO']) &
-                    ~Q(designer_status__in=['CO'])
+                    ~Q(status__in=['CO'])
                 )
             ),
 
