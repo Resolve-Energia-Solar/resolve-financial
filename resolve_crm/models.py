@@ -601,7 +601,7 @@ class Project(models.Model):
             status='A'
         ).exists()
 
-        return not (trt_exists or art_exists)
+        return trt_exists or art_exists
 
     
     def trt_status(self):
@@ -614,8 +614,9 @@ class Project(models.Model):
             return trt_attachments.first().status
         return [status for status in trt_attachments.values_list('status', flat=True)]
     
+    
     def peding_request(self):
-        return not self.requests_energy_company.exists()
+        return self.requests_energy_company.exists()
     
     @property
     def attachments(self):
