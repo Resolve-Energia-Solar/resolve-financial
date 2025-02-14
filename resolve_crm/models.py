@@ -13,6 +13,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.db import transaction, models
+from django.db.models import Q
 import datetime
 
 def get_current_month():
@@ -570,15 +571,51 @@ class Project(models.Model):
         has_valid_document = self.attachments.filter(
             object_id=self.id,
             content_type=ContentType.objects.get_for_model(self),
-            document_type__name='TRT/ART',
+            document_type__name__icontains='TRT',
+            status='A'
+        ).exists() or self.attachments.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            document_type__name__icontains='ART',
             status='A'
         ).exists()
         
         # Verifica se todas as unidades têm número de contrato
         all_units_have_contract = all(unit.new_contract_number for unit in self.units.all())
         
-        return has_valid_document and all_units_have_contract
+        return has_valid_document and (not all_units_have_contract)
 
+
+    def trt_pending(self):
+        trt_exists = self.attachments.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            document_type__name__icontains='TRT',
+            status='A'
+        ).exists()
+
+        art_exists = self.attachments.filter(
+            object_id=self.id,
+            content_type=ContentType.objects.get_for_model(self),
+            document_type__name__icontains='ART',
+            status='A'
+        ).exists()
+
+        return not (trt_exists or art_exists)
+
+    
+    def trt_status(self):
+        trt_attachments = self.attachments.filter(
+            Q(document_type__name__icontains='TRT') | 
+            Q(document_type__name__icontains='ART') &
+            Q(object_id=self.id, content_type=ContentType.objects.get_for_model(self))
+            )
+        if trt_attachments.exists() and trt_attachments.first().status and trt_attachments.count() > 1:
+            return trt_attachments.first().status
+        return [status for status in trt_attachments.values_list('status', flat=True)]
+    
+    def peding_request(self):
+        return not self.requests_energy_company.exists()
     
     @property
     def attachments(self):

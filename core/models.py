@@ -72,7 +72,7 @@ class Attachment(models.Model):
     status = models.CharField("Status", max_length=50, null=True, blank=True)
     document_type = models.ForeignKey("core.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
     document_subtype = models.ForeignKey("core.DocumentSubType", on_delete=models.CASCADE, verbose_name="Subtipo de Documento", null=True, blank=True)
-    description = models.TextField("Descrição")
+    description = models.TextField("Descrição", null=True, blank=True)
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()

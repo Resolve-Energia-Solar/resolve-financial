@@ -318,6 +318,9 @@ class ProjectSerializer(BaseSerializer):
     documents_under_analysis = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
     access_opinion = SerializerMethodField()
+    trt_pending = SerializerMethodField()
+    trt_status = SerializerMethodField()
+    peding_request = SerializerMethodField()
     address = SerializerMethodField()
 
     # Para escrita
@@ -338,8 +341,17 @@ class ProjectSerializer(BaseSerializer):
         fields = '__all__'
         depth = 1
         
+    def get_peding_request(self, obj):
+        return obj.peding_request()
+    
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
+    
+    def get_trt_pending(self, obj):
+        return obj.trt_pending()
+    
+    def get_trt_status(self, obj):
+        return obj.trt_status()
     
     def get_address(self, obj):
         if obj.address:
