@@ -567,43 +567,43 @@ class Project(models.Model):
         return (self.is_released_to_engineering and not self.material_list_is_completed == True)
 
     
-    def access_opinion(self):
+    def access_opinion(self):        
         has_valid_document = self.attachments.filter(
             object_id=self.id,
             content_type=ContentType.objects.get_for_model(self),
-            document_type__name__icontains='TRT',
-            status='A'
-        ).exists() or self.attachments.filter(
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self),
             document_type__name__icontains='ART',
-            status='A'
-        ).exists()
+        )
         
-        # Verifica se todas as unidades têm número de contrato
-        all_units_have_contract = all(unit.new_contract_number for unit in self.units.all())
+        all_units_have_contract = not(all(unit.account_number for unit in self.units.all()))
         
-        return has_valid_document and (not all_units_have_contract)
+        if has_valid_document.filter(status='A').exists() and all_units_have_contract:
+            return 'Liberado'
+        if has_valid_document.filter(status='EA').exists():
+            return 'Em Andamento'
+        if has_valid_document.filter(status='R').exists():
+            return 'Reprovada'
+    
+        return 'Bloqueado'
 
 
     def trt_pending(self):
-        trt_exists = self.attachments.filter(
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self),
-            document_type__name__icontains='TRT',
-            status='A'
-        ).exists()
+        trt_attachments = self.attachments.filter(
+            Q(document_type__name__icontains='TRT') | 
+            Q(document_type__name__icontains='ART'),
+            object_id=self.id, 
+            content_type=ContentType.objects.get_for_model(self)
+        )
 
-        art_exists = self.attachments.filter(
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self),
-            document_type__name__icontains='ART',
-            status='A'
-        ).exists()
+        if trt_attachments.filter(status='R').exists():
+            return 'Reprovada'
+        if trt_attachments.filter(status='EA').exists():
+            return 'Em Andamento'
+        if trt_attachments.filter(status='A').exists():
+            return 'Concluída'
+        
+        return 'Pendente'
 
-        return trt_exists or art_exists
 
-    
     def trt_status(self):
         trt_attachments = self.attachments.filter(
             Q(document_type__name__icontains='TRT') | 
@@ -615,7 +615,7 @@ class Project(models.Model):
         return [status for status in trt_attachments.values_list('status', flat=True)]
     
     
-    def peding_request(self):
+    def request_requested(self):
         return self.requests_energy_company.exists()
     
     @property

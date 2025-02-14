@@ -200,21 +200,57 @@ class ProjectViewSet(BaseModelViewSet):
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
         trt_pending = request.query_params.get('trt_pending')
+        access_opnion = request.query_params.get('access_opnion')
         
-        if trt_pending == 'true':
+        
+        if access_opnion == 'liberado':
+            queryset = queryset.filter(
+                Q(attachments__document_type__name__icontains='ART', attachments__status='A') &
+                Q(units__account_number__isnull=False)
+            ).distinct()
+        elif access_opnion == 'em_andamento':
+            queryset = queryset.filter(
+                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
+            ).distinct()
+        elif access_opnion == 'reprovada':
+            queryset = queryset.filter(
+                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
+            ).distinct()
+        elif access_opnion == 'bloqueado':
+            queryset = queryset.exclude(
+                Q(attachments__document_type__name__icontains='ART', attachments__status='A') &
+                Q(units__account_number__isnull=False) |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='EA') |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
+            ).distinct()
+            
+        
+        if trt_pending == 'concluido':
             queryset = queryset.filter(
                 Q(attachments__document_type__name__icontains='TRT', attachments__status='A') |
                 Q(attachments__document_type__name__icontains='ART', attachments__status='A')
             ).distinct()
-        elif trt_pending == 'false':
+        elif trt_pending == 'reprovada':
+            queryset = queryset.filter(
+                Q(attachments__document_type__name__icontains='TRT', attachments__status='R') |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
+            ).distinct()
+        elif trt_pending == 'em_andamento':
+            queryset = queryset.filter(
+                Q(attachments__document_type__name__icontains='TRT', attachments__status='EA') |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
+            ).distinct()
+        elif trt_pending == 'pendente':
             queryset = queryset.exclude(
                 Q(attachments__document_type__name__icontains='TRT', attachments__status='A') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='A')
+                Q(attachments__document_type__name__icontains='ART', attachments__status='A') |
+                Q(attachments__document_type__name__icontains='TRT', attachments__status='R') |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='R') |
+                Q(attachments__document_type__name__icontains='TRT', attachments__status='EA') |
+                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
             ).distinct()
             
-        
-        
-        
+            
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
 

@@ -320,7 +320,7 @@ class ProjectSerializer(BaseSerializer):
     access_opinion = SerializerMethodField()
     trt_pending = SerializerMethodField()
     trt_status = SerializerMethodField()
-    peding_request = SerializerMethodField()
+    request_requested = SerializerMethodField()
     address = SerializerMethodField()
 
     # Para escrita
@@ -341,8 +341,8 @@ class ProjectSerializer(BaseSerializer):
         fields = '__all__'
         depth = 1
         
-    def get_peding_request(self, obj):
-        return obj.peding_request()
+    def get_request_requested(self, obj):
+        return obj.request_requested()
     
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
