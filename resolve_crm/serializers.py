@@ -54,6 +54,7 @@ class LeadSerializer(BaseSerializer):
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
     origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
+    inspections_ids = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True, write_only=True, source='inspections', required=False)
 
 
     class Meta:
