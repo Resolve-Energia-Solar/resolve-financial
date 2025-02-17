@@ -203,7 +203,18 @@ class ProjectViewSet(BaseModelViewSet):
         product_kwp = request.query_params.get('product_kwp')
         access_opnion = request.query_params.get('access_opnion')
         trt_status = request.query_params.get('trt_status')
-        
+        new_contract_number = request.query_params.get('new_contract_number')
+        supply_adquance = request.query_params.get('supply_adquance')
+
+        if new_contract_number == 'true':
+            queryset = queryset.filter(units__new_contract_number=True)
+        elif new_contract_number == 'false':
+            queryset = queryset.filter(units__new_contract_number=False)
+            
+        if supply_adquance:
+            supply_adquance = supply_adquance.split(',')
+            queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance)
+            
         if access_opnion == 'liberado':
             queryset = queryset.filter(
                 Q(attachments__document_type__name__icontains='ART') &
@@ -263,7 +274,7 @@ class ProjectViewSet(BaseModelViewSet):
                 Q(sale__payment_status__in=['P', 'CA']) |
                 ~Q(inspection__final_service_opinion__name__icontains='aprovado')
             )
-    
+
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
 
