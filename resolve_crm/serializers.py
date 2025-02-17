@@ -317,7 +317,7 @@ class ProjectSerializer(BaseSerializer):
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
     requests_energy_company = SerializerMethodField()
-    access_opinion = SerializerMethodField()
+    access_opnion = SerializerMethodField()
     trt_pending = SerializerMethodField()
     trt_status = SerializerMethodField()
     request_requested = SerializerMethodField()
@@ -358,8 +358,8 @@ class ProjectSerializer(BaseSerializer):
             return AddressSerializer(obj.address).data
         return None
     
-    def get_access_opinion(self, obj):
-        return obj.access_opinion()    
+    def get_access_opnion(self, obj):
+        return obj.access_opnion()    
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()

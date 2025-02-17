@@ -23,6 +23,7 @@ from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, 
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
+from django.db.models import Exists, OuterRef, Q, Value, Case, When, CharField, Prefetch
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -190,7 +191,8 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    
+
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         
@@ -199,12 +201,14 @@ class ProjectViewSet(BaseModelViewSet):
         inspection_status = request.query_params.get('inspection_status')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
-        trt_pending = request.query_params.get('trt_pending')
         access_opnion = request.query_params.get('access_opnion')
+        trt_status = request.query_params.get('trt_status')
         
         if access_opnion == 'liberado':
             queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='ART', attachments__status='A') &
+                Q(attachments__document_type__name__icontains='ART') &
+                Q(attachments__document_type__name__icontains='TRT') &
+                Q(attachments__status__in=['A']) &
                 Q(units__account_number__isnull=False)
             ).distinct()
         elif access_opnion == 'bloqueado':
@@ -215,31 +219,13 @@ class ProjectViewSet(BaseModelViewSet):
                 Q(attachments__document_type__name__icontains='ART', attachments__status='R')
             ).distinct()
             
-        
-        if trt_pending == 'concluido':
+        if trt_status:
+            trt_status = trt_status.split(',')
             queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='A') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='A')
-            ).distinct()
-        elif trt_pending == 'reprovada':
-            queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='R') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
-            ).distinct()
-        elif trt_pending == 'em_andamento':
-            queryset = queryset.filter(
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='EA') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
-            ).distinct()
-        elif trt_pending == 'pendente':
-            queryset = queryset.exclude(
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='A') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='A') |
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='R') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='R') |
-                Q(attachments__document_type__name__icontains='TRT', attachments__status='EA') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='EA')
-            ).distinct()
+                Q(attachments__document_type__name__icontains='ART') &
+                Q(attachments__document_type__name__icontains='TRT') &
+                Q(attachments__status__in=trt_status)
+                )
             
             
         if inspection_status:
@@ -266,18 +252,18 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(Q(
                 # is_documentation_completed=True,
                 sale__status__in=['F'],
-                sale__payment_status__in=['L', 'C'],
+                sale__payment_status__in=['L', 'C', 'CO'],
                 inspection__final_service_opinion__name__icontains='aprovado',
             ) & ~Q(status__in=['CO'])
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(
                 # Q(is_documentation_completed=False) |
-                ~Q(sale__status__in=['F']) |
+                ~Q(sale__status__in=['F', 'CO']) |
                 Q(sale__payment_status__in=['P', 'CA']) |
                 ~Q(inspection__final_service_opinion__name__icontains='aprovado')
             )
-
+    
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
 
@@ -312,7 +298,7 @@ class ProjectViewSet(BaseModelViewSet):
                 filter=Q(
                     # Q(is_documentation_completed=True) &
                     Q(sale__status='F') &
-                    Q(sale__payment_status__in=['L', 'C']) & 
+                    Q(sale__payment_status__in=['L', 'C', 'CO']) & 
                     Q(inspection__final_service_opinion__name__icontains='aprovado') &
                     ~Q(status__in=['CO']) &
                     Q(sale__is_pre_sale=False)

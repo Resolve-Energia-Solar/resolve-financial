@@ -69,6 +69,7 @@ class Attachment(models.Model):
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
+    content_object = GenericForeignKey('content_type', 'object_id')
     status = models.CharField("Status", max_length=50, null=True, blank=True)
     document_type = models.ForeignKey("core.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
     document_subtype = models.ForeignKey("core.DocumentSubType", on_delete=models.CASCADE, verbose_name="Subtipo de Documento", null=True, blank=True)

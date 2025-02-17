@@ -1,6 +1,7 @@
 from decimal import Decimal
 from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse_lazy
 from django.utils.timezone import now
@@ -539,6 +540,7 @@ class Project(models.Model):
     end_date = models.DateField("Data de Término", null=True, blank=True)
     is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
     status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
+    attachments = GenericRelation(Attachment, related_query_name='project_attachments')
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
@@ -560,23 +562,24 @@ class Project(models.Model):
         else:
             final_service_opinion_contains_approved = False
         
-        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
+        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
     
     
     def pending_material_list(self):
         return (self.is_released_to_engineering and not self.material_list_is_completed == True)
 
     
-    def access_opinion(self):        
-        has_valid_document = self.attachments.filter(
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self),
-            document_type__name__icontains='ART',
+    def access_opnion(self):        
+        trt_attachments = self.attachments.filter(
+            Q(document_type__name__icontains='TRT') | 
+            Q(document_type__name__icontains='ART'),
+            object_id=self.id, 
+            content_type=ContentType.objects.get_for_model(self)
         )
+
+        new_uc_exists = self.units.filter(new_contract_number=True).exists()
         
-        all_units_have_contract = not(all(unit.account_number for unit in self.units.all()))
-        
-        if has_valid_document.filter(status='A').exists() and all_units_have_contract:
+        if trt_attachments.filter(status='A').exists() and not new_uc_exists:
             return 'Liberado'
     
         return 'Bloqueado'
@@ -614,12 +617,12 @@ class Project(models.Model):
     def request_requested(self):
         return self.requests_energy_company.exists()
     
-    @property
-    def attachments(self):
-        return Attachment.objects.filter(
-            object_id=self.id, 
-            content_type=ContentType.objects.get_for_model(self)
-        )
+    # @property
+    # def attachments(self):
+    #     return Attachment.objects.filter(
+    #         object_id=self.id, 
+    #         content_type=ContentType.objects.get_for_model(self)
+    #     )
 
     @property
     def missing_documents(self):
