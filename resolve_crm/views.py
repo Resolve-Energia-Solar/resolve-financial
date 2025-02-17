@@ -201,6 +201,7 @@ class ProjectViewSet(BaseModelViewSet):
         inspection_status = request.query_params.get('inspection_status')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
+        
         access_opnion = request.query_params.get('access_opnion')
         trt_status = request.query_params.get('trt_status')
         new_contract_number = request.query_params.get('new_contract_number')
@@ -216,9 +217,10 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance)
 
         if access_opnion == 'liberado':
-            queryset = queryset.filter(
+            queryset = queryset.filter(Q(
                 Q(attachments__document_type__name__icontains='ART') |
-                Q(attachments__document_type__name__icontains='TRT') &
+                Q(attachments__document_type__name__icontains='TRT')
+            ) &
                 Q(attachments__status__in=['A']) &
                 Q(units__account_number__isnull=False)
             ).distinct()
@@ -243,10 +245,12 @@ class ProjectViewSet(BaseModelViewSet):
             )
         elif trt_status:
             trt_status_list = trt_status.split(',')
-            queryset = queryset.filter(
-            Q(attachments__document_type__name__icontains='ART') |
-            Q(attachments__document_type__name__icontains='TRT') &
-            Q(attachments__status__in=trt_status_list)
+            print(trt_status_list)
+            queryset = queryset.filter(Q(
+                Q(attachments__document_type__name__icontains='ART') |
+                Q(attachments__document_type__name__icontains='TRT')
+            ) &
+                Q(attachments__status__in=trt_status_list)
             )
             
             
