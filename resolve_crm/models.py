@@ -97,6 +97,12 @@ class Lead(models.Model):
         blank=True, 
         null=True
     )
+    inspections = models.ManyToManyField(
+        "field_services.Schedule", 
+        verbose_name="Vistorias", 
+        related_name="lead_inspections",
+        blank=True
+    )
     # Lead
     contact_email = models.EmailField(
         verbose_name="E-mail", 
