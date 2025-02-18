@@ -280,6 +280,7 @@ class ProjectViewSet(BaseModelViewSet):
                 sale__status__in=['F'],
                 sale__payment_status__in=['L', 'C', 'CO'],
                 inspection__final_service_opinion__name__icontains='aprovado',
+                sale__is_pre_sale=False
             ) & ~Q(status__in=['CO'])
             )
         elif is_released_to_engineering == 'false':
