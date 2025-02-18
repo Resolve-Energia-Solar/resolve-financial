@@ -585,7 +585,7 @@ class Project(models.Model):
 
         new_uc_exists = self.units.filter(new_contract_number=True).exists()
         
-        if trt_attachments.filter(status='A').exists() and not new_uc_exists:
+        if trt_attachments.filter(status='A').exists() and not new_uc_exists and self.is_released_to_engineering():
             return 'Liberado'
     
         return 'Bloqueado'
@@ -598,15 +598,16 @@ class Project(models.Model):
             object_id=self.id, 
             content_type=ContentType.objects.get_for_model(self)
         )
-
-        if trt_attachments.filter(status='R').exists() and not trt_attachments.filter(status='A').exists():
-            return 'Reprovada'
-        if trt_attachments.filter(status='EA').exists() and not trt_attachments.filter(status='A').exists():
-            return 'Em Andamento'
-        if trt_attachments.filter(status='A').exists():
-            return 'Concluída'
-        
-        return 'Pendente'
+        if self.is_released_to_engineering():    
+            if trt_attachments.filter(status='R').exists() and not trt_attachments.filter(status='A').exists():
+                return 'Reprovada'
+            if trt_attachments.filter(status='EA').exists() and not trt_attachments.filter(status='A').exists():
+                return 'Em Andamento'
+            if trt_attachments.filter(status='A').exists():
+                return 'Concluída'
+            
+            return 'Pendente'
+        return 'Bloqueado'
 
 
     def trt_status(self):

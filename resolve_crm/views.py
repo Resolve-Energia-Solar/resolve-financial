@@ -217,19 +217,32 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance)
 
         if access_opnion == 'liberado':
-            queryset = queryset.filter(Q(
-                Q(attachments__document_type__name__icontains='ART') |
-                Q(attachments__document_type__name__icontains='TRT')
-            ) &
+            queryset = queryset.filter(Q
+                (Q(attachments__document_type__name__icontains='ART') |
+                 
+                Q(attachments__document_type__name__icontains='TRT')) &
+                
+                (Q(sale__status__in=['F'],
+                sale__payment_status__in=['L', 'C', 'CO'],
+                inspection__final_service_opinion__name__icontains='aprovado',
+                sale__is_pre_sale=False) & ~Q(status__in=['CO'])) &
+
                 Q(attachments__status__in=['A']) &
                 Q(units__account_number__isnull=False)
             ).distinct()
         elif access_opnion == 'bloqueado':
-            queryset = queryset.exclude(
-                Q(attachments__document_type__name__icontains='ART', attachments__status='A') &
-                Q(units__account_number__isnull=False) |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='EA') |
-                Q(attachments__document_type__name__icontains='ART', attachments__status='R')
+            queryset = queryset.exclude(Q
+                (Q(attachments__document_type__name__icontains='ART') |
+                 
+                Q(attachments__document_type__name__icontains='TRT')) &
+                
+                (Q(sale__status__in=['F'],
+                sale__payment_status__in=['L', 'C', 'CO'],
+                inspection__final_service_opinion__name__icontains='aprovado',
+                sale__is_pre_sale=False) & ~Q(status__in=['CO'])) &
+
+                Q(attachments__status__in=['A']) &
+                Q(units__account_number__isnull=False)
             ).distinct()
             
         if trt_status == 'P':
@@ -242,17 +255,15 @@ class ProjectViewSet(BaseModelViewSet):
                 Q(attachments__document_type__name__icontains='ART') &
                 Q(attachments__status__in=['A', 'EA', 'R'])
             ) 
-            )
+        )
         elif trt_status:
             trt_status_list = trt_status.split(',')
-            print(trt_status_list)
             queryset = queryset.filter(Q(
                 Q(attachments__document_type__name__icontains='ART') |
                 Q(attachments__document_type__name__icontains='TRT')
             ) &
                 Q(attachments__status__in=trt_status_list)
             )
-            
             
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
@@ -288,7 +299,8 @@ class ProjectViewSet(BaseModelViewSet):
                 # Q(is_documentation_completed=False) |
                 ~Q(sale__status__in=['F', 'CO']) |
                 Q(sale__payment_status__in=['P', 'CA']) |
-                ~Q(inspection__final_service_opinion__name__icontains='aprovado')
+                ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                Q(sale__is_pre_sale=True)
             )
 
         if customer:
