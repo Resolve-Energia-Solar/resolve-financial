@@ -1,16 +1,17 @@
 import logging
 import os
+import workdays
 from datetime import datetime
 
 import requests
 from django.utils import timezone
-from core.models import Comment
-from rest_framework.permissions import AllowAny
 from django.contrib.contenttypes.models import ContentType
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.views import BaseModelViewSet
+from core.models import Comment
 from .models import *
 from .serializers import *
 
@@ -277,6 +278,7 @@ class FinancialRecordApprovalView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+
         action = request.data.get('Action', None)
         rows = request.data.get('Rows', [])
         
@@ -300,9 +302,20 @@ class FinancialRecordApprovalView(APIView):
                 return Response({"error": f"FinancialRecord with id {financial_record_id} is not pending approval"}, status=400)
             
             try:
+                # Atualiza a data de vencimento caso a data atual seja maior ou igual a data de hoje
+                now = timezone.localtime(timezone.now()).date()
+                if financial_record.due_date >= now:
+                    financial_record.due_date = workdays.workday(now, 2)
+                    financial_record.save()
+                    logger.info(f"Due date for financial record {financial_record.protocol} updated to {financial_record.due_date}")
+            except Exception as e:
+                logger.error(f"Failed to update due date for financial record {financial_record_id}: {e}")
+                
+            try:
                 response = OmieIntegrationView().create_payment_request(financial_record, manager_status, manager_note)
                 if response.status_code == 200:
                     financial_record.integration_code = response.data.get('codigo_lancamento_omie', None)
+                    
                     financial_record.save()
             except Exception as e:
                 logger.error(f"Failed to create payment request in Omie: {e}")
