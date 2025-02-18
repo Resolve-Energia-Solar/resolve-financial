@@ -599,9 +599,9 @@ class Project(models.Model):
             content_type=ContentType.objects.get_for_model(self)
         )
 
-        if trt_attachments.filter(status='R').exists():
+        if trt_attachments.filter(status='R').exists() and not trt_attachments.filter(status='A').exists():
             return 'Reprovada'
-        if trt_attachments.filter(status='EA').exists():
+        if trt_attachments.filter(status='EA').exists() and not trt_attachments.filter(status='A').exists():
             return 'Em Andamento'
         if trt_attachments.filter(status='A').exists():
             return 'Concluída'
