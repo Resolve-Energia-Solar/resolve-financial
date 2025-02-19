@@ -26,12 +26,21 @@ class PhoneNumberInline(admin.TabularInline):
     fields = ("country_code", "area_code", "phone_number", "is_main")
 
 
-class EmployeeInline(admin.TabularInline):
+class EmployeeInline(admin.StackedInline):
     model = Employee
     extra = 1
     verbose_name = "Funcionário"
     verbose_name_plural = "Funcionários"
-    fields = ("role", "department", "branch")
+    fields = (
+        'contract_type',
+        'branch',
+        'department',
+        'role',
+        'user_manager',
+        'hire_date',
+        'resignation_date',
+        'related_branches'
+    )
     autocomplete_fields = ["role", "department", "branch"]
     fk_name = "user"    
 
