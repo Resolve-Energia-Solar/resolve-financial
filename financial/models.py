@@ -390,7 +390,7 @@ class FinancialRecord(models.Model):
     )
     responsible_response_date = models.DateTimeField("Data da Resposta do Gestor", null=True, blank=True)
     responsible_notes = models.TextField("Notas do Responsável", null=True, blank=True)
-    
+    payment_method = models.CharField("Método de Pagamento", max_length=1, choices=[("B", "Boleto"), ("T", "Transferência Bancária"), ("D", "Dinheiro"), ("C", "Cartão"), ("P", "Pix")])
     payment_status = models.CharField(
         "Status do Pagamento",
         max_length=2,
