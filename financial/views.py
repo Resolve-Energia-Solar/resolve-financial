@@ -152,6 +152,9 @@ class OmieIntegrationView(APIView):
             filter = request.data.get('filter', None)
             return self.list_customers(filter)
         
+        if omie_call == 'IncluirCliente':
+            return self.create_customer(request.data.get('customer', None))
+        
         return Response({"error": "Invalid call parameter"}, status=400)
     
     def list_departments(self):
@@ -223,6 +226,41 @@ class OmieIntegrationView(APIView):
             return Response(clients)
         else:
             return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
+        
+    def create_customer(self, customer):
+        url = f"{self.OMIE_API_URL}/geral/clientes/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        
+        cnpj_cpf = customer.get('cnpj_cpf', None)
+        name = customer.get('name', None)
+        
+        data = {
+            "call": "IncluirCliente",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [
+                {
+                    "codigo_cliente_integracao": cnpj_cpf,
+                    "cnpj_cpf": cnpj_cpf,
+                    "razao_social": name,
+                    "nome_fantasia": name,
+                    "pessoa_fisica": "N" if len(cnpj_cpf) == 14 else "S",
+                    "tags": [
+                        {
+                            "tag": "Fornecedor"
+                        }
+                    ]
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            return Response(response.json())
+        else:
+            return Response({"error": "Failed to create customer in Omie", "details": response.json()}, status=response.status_code)
 
     def create_payment_request(self, financial_record, manager_status="Aprovado", manager_note=None):
         if manager_status == "Aprovado":
