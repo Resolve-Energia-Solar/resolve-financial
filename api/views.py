@@ -71,14 +71,13 @@ class BaseModelViewSet(ModelViewSet):
         supported_lookups = [
             'CharField', 'TextField', 'ForeignKey', 'DateField',
             'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField',
-            'DecimalField', 'ManyToManyField', 'BooleanField'
+            'DecimalField', 'ManyToManyField', 'BooleanField', 'BigIntegerField'
         ]
 
         filter_fields = {}
         for field in model._meta.fields + model._meta.many_to_many:
             if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
-                if field.get_internal_type() in ['ForeignKey', 'BooleanField']:
-                    # Adiciona o lookup 'in' para permitir múltiplos valores
+                if field.get_internal_type() in ['ForeignKey', 'BooleanField', 'BigIntegerField', 'ManyToManyField']:
                     filter_fields[field.name] = ['exact', 'in']
                 elif field.get_internal_type() in ['CharField', 'TextField']:
                     filter_fields[field.name] = ['icontains', 'in']
@@ -86,8 +85,6 @@ class BaseModelViewSet(ModelViewSet):
                     filter_fields[field.name] = ['range']
                 elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField']:
                     filter_fields[field.name] = ['exact', 'gte', 'lte']
-                elif field.get_internal_type() == 'ManyToManyField':
-                    filter_fields[field.name] = ['exact', 'in']
         return filter_fields
 
 
