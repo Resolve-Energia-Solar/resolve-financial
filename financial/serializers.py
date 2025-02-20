@@ -168,7 +168,6 @@ class FinancialRecordSerializer(BaseSerializer):
     # Campos para leitura
     requester = RelatedUserSerializer(read_only=True)
     responsible = RelatedUserSerializer(read_only=True)
-    client_supplier_name = SerializerMethodField()
     requesting_department = StringRelatedField(read_only=True)
 
     # Campos para escrita
@@ -179,21 +178,3 @@ class FinancialRecordSerializer(BaseSerializer):
     class Meta:
         model = FinancialRecord
         fields = '__all__'
-
-    def get_client_supplier_name(self, obj):
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        body = {
-            "call": "ConsultarCliente",
-            "app_key": os.environ.get('OMIE_ACESSKEY'),
-            "app_secret": os.environ.get('OMIE_ACESSTOKEN'),
-            "param": [
-                {
-                    "codigo_cliente_omie": obj.client_supplier_code,
-                    "codigo_cliente_integracao": ""
-                }
-            ]
-        }
-        response = requests.post(f"{os.environ.get('OMIE_API_URL')}/geral/clientes/", headers=headers, json=body)
-        return response.json().get('nome_fantasia') if response.status_code == 200 else None

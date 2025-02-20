@@ -359,11 +359,13 @@ class FinancialRecord(models.Model):
     service_date = models.DateField(
         "Data de Prestação do Serviço", null=True, blank=True
     )
-
     requesting_department = models.ForeignKey("accounts.Department", verbose_name="Departamento Solicitante", on_delete=models.DO_NOTHING, null=True, blank=True)
-    department_code = models.CharField("Código do Departamento", max_length=50, null=True, blank=True)
-    category_code = models.CharField("Código da Categoria", max_length=20, null=True, blank=True)
+    department_code = models.CharField("Código do Departamento Causador", max_length=50, null=True, blank=True)
+    department_name = models.CharField("Nome do Departamento Causador", max_length=255, null=True, blank=True)
+    category_code = models.CharField("Código da Categoria", max_length=20)
+    category_name = models.CharField("Nome da Categoria", max_length=255)
     client_supplier_code = models.BigIntegerField("Código do Cliente/Fornecedor")
+    client_supplier_name = models.CharField("Nome do Cliente/Fornecedor", max_length=255)
     invoice_number = models.CharField(
         "Número do Documento", max_length=20, null=True, blank=True
     )
