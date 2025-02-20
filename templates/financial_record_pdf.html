@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Pagamento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            width: 100vw;
+            margin: .5rem;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .logo {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            margin: .5rem;
+        }
+        .logo img {
+            width: 100px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.6em;
+            color: #333;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 1em;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-weight: bold;
+            border-bottom: 2px solid #FDC600;
+            padding-bottom: 5px;
+            font-size: 1.1em;
+            color: #FDC600;
+            margin-bottom: 15px;
+        }
+        .field {
+            margin-bottom: 8px;
+            display: flex;
+        }
+        .field-label {
+            font-weight: bold;
+            width: 150px;
+            color: #555;
+        }
+        .field-value {
+            flex: 1;
+            color: #333;
+            margin-left: .4rem;
+        }
+        .description-field {
+            margin-bottom: 8px;
+        }
+        .description-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .description-value {
+            color: #333;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+            max-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <img src="{% static 'images/Resolve.svg' %}" alt="Logo da Resolve Energia Solar">
+            </div>
+            <h1>Solicitação de Pagamento</h1>
+            <h2>Protocolo: {{ object.protocol }}</h2>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Informações do Solicitante</div>
+            <div class="field">
+                <span class="field-label">Solicitante:</span>
+                <span class="field-value">{{ object.requester }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Gerente:</span>
+                <span class="field-value">{{ object.responsible }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Departamento:</span>
+                <span class="field-value">{{ object.requesting_department }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Departamento Causador:</span>
+                <span class="field-value">{{ object.department_name }}</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Fornecedor e Pagamento</div>
+            <div class="field">
+                <span class="field-label">Fornecedor:</span>
+                <span class="field-value">{{ object.client_supplier_name|default:'-' }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Valor:</span>
+                <span class="field-value">R$ {{ object.value|floatformat:'2' }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Data do Serviço:</span>
+                <span class="field-value">{{ object.service_date|default:'-' }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Data de Vencimento:</span>
+                <span class="field-value">{{ object.due_date }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Forma de Pagamento:</span>
+                <span class="field-value">{{ object.get_payment_method_display }}</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Detalhes da Solicitação</div>
+            <div class="description-field">
+                <span class="description-label">Descrição:</span>
+                <div class="description-value">{{ object.notes|linebreaks }}</div>
+            </div>
+            <div class="field">
+                <span class="field-label">Categoria:</span>
+                <span class="field-value">{{ object.category_name|default:'-' }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Nota Fiscal:</span>
+                <span class="field-value">{{ object.invoice_number|default:'-' }}</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Status da Solicitação</div>
+            <div class="field">
+                <span class="field-label">Status do Solicitante:</span>
+                <span class="field-value">{{ object.get_status_display }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Status do Gerente:</span>
+                <span class="field-value">{{ object.get_responsible_status_display }}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Status Financeiro:</span>
+                <span class="field-value">{{ object.get_payment_status_display }}</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

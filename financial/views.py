@@ -1,15 +1,18 @@
 import logging
 import os
-import workdays
 from datetime import datetime
 
 import requests
-from django.utils import timezone
+import workdays
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from weasyprint import HTML
 
 from api.views import BaseModelViewSet
 from core.models import Comment
@@ -173,6 +176,29 @@ class FinancialRecordViewSet(BaseModelViewSet):
         request.data['responsible_id'] = employee.user_manager.id
                 
         return super().create(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        generate_pdf = request.query_params.get('generate_pdf', 'false').lower() == 'true'
+        
+        if generate_pdf:
+            template_path = 'financial_record_pdf.html'
+            context = {'object': instance}
+
+            # Renderiza o template para HTML
+            template = get_template(template_path)
+            html = template.render(context)
+
+            # Converte o HTML para PDF usando WeasyPrint com suporte a arquivos estáticos
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="solicitacao_{instance.protocol}.pdf"'
+
+            # Usa WeasyPrint para converter HTML em PDF e garantir que as URLs estáticas sejam resolvidas
+            HTML(string=html, base_url=request.build_absolute_uri()).write_pdf(response)
+            return response
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class OmieIntegrationView(APIView):
