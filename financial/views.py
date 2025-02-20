@@ -6,6 +6,7 @@ from datetime import datetime
 import requests
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -118,6 +119,50 @@ class FranchiseInstallmentViewSet(BaseModelViewSet):
 class FinancialRecordViewSet(BaseModelViewSet):
     queryset = FinancialRecord.objects.all()
     serializer_class = FinancialRecordSerializer
+    
+    def get_queryset(self):
+        query = super().get_queryset()
+
+        user = self.request.user
+        employee = user.employee
+        employee_department = employee.department
+
+        # Definindo os conjuntos de departamentos
+        DEPT_SET_1_IDS = [6, 2, 17]  # Financeiro, Tecnologia, Contabilidade
+        DEPT_SET_2_IDS = [18, 7]  # Pós-Venda, Sucesso do Cliente
+        DEPT_SET_3_IDS = [3, 12, 13, 20]  # Vistoria, Financeiro do CO, Obras, Instalação
+
+        # Verificando se o usuário atual está em DEPT_SET_1 ou DEPT_SET_2
+        condition_a = user.has_perm('financial.view_all_payable_financial_records')
+        condition_b = employee_department.id in DEPT_SET_1_IDS
+        condition_c = employee_department.id in DEPT_SET_2_IDS
+        condition_d = user.has_perm('financial.view_all_department_payable_financial_records')
+        condition_e = employee_department.id == 12  # Financeiro do CO
+        
+        print(f"Conditions: {condition_a}, {condition_b}, {condition_c}, {condition_d}, {condition_e}")
+
+        # Todos os usuários podem ver solicitações onde são o responsável ou solicitante
+        include_q = Q(responsible=user) | Q(requester=user)
+
+        if condition_a or condition_b:
+            if self.request.GET.get('bug'):
+                return query.filter(responsible_status='A', payment_status='P', integration_code__isnull=True)
+            # Usuários do DEPT_SET_1 podem ver todas as solicitações sem filtros
+            return query  # Retorna todas as solicitações sem aplicar nenhum filtro
+        elif condition_e:
+            include_q |= Q(requesting_department__in=DEPT_SET_3_IDS)
+        elif condition_d:
+            # Usuários com a permissão podem ver todos os pagamentos do seu departamento
+            include_q |= Q(requesting_department=employee_department)
+        elif condition_c:
+            # Usuários do DEPT_SET_2 podem ver todas as solicitações desses departamentos
+            include_q |= Q(requesting_department__in=DEPT_SET_2_IDS)
+        # Caso contrário, include_q permanece como está (responsável ou solicitante)
+
+        # Aplica o filtro ao queryset
+        query = query.filter(include_q)
+
+        return query
 
     def create(self, request, *args, **kwargs):
         

@@ -418,3 +418,7 @@ class FinancialRecord(models.Model):
         verbose_name = "Conta a Pagar/Receber"
         verbose_name_plural = "Contas a Pagar/Receber"
         ordering = ["-created_at"]
+        permissions = [
+            ("view_all_payable_financial_records", "Can view all payable financial records"),
+            ("view_all_department_payable_financial_records", "Can view all payable financial_records from the department")
+        ]
