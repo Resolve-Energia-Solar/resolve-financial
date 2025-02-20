@@ -394,6 +394,7 @@ class UpdateFinancialRecordPaymentStatus(APIView):
         
         if topic == 'Financas.ContaPagar.BaixaRealizada':
             financial_record.payment_status = 'PG'
+            financial_record.status = 'C'
         elif topic in ['Financas.ContaPagar.Excluido', 'Financas.ContaPagar.BaixaCancelada']:
             financial_record.payment_status = 'C'
             author_email = request.data.get('author', {}).get('email', None)
@@ -402,14 +403,14 @@ class UpdateFinancialRecordPaymentStatus(APIView):
                     author = User.objects.get(email=author_email)
                 except User.DoesNotExist:
                     author = None
-                if author:
-                    Comment.objects.create(
-                        author=author,
-                        content_type=ContentType.objects.get_for_model(FinancialRecord),
-                        object_id=financial_record_id,
-                        text=f"A solicitação de pagamento {financial_record.protocol} foi {'cancelada' if 'BaixaCancelada' in topic else 'excluída'} no Omie por {author.complete_name}.",
-                        is_system_generated=True
-                    )
+                    
+                Comment.objects.create(
+                    author=author,
+                    content_type=ContentType.objects.get_for_model(FinancialRecord),
+                    object_id=financial_record_id,
+                    text=f"A solicitação de pagamento {financial_record.protocol} foi {'cancelada' if 'BaixaCancelada' in topic else 'excluída'} no Omie por {author.complete_name if author else 'Desconhecido'}.",
+                    is_system_generated=True
+                )
         
         financial_record.paid_at = timezone.now()
         financial_record.save()

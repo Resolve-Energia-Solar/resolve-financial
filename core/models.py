@@ -104,9 +104,9 @@ class Attachment(models.Model):
 
 
 class Comment(models.Model):
-    object_id = models.PositiveSmallIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='comments')
+    object_id = models.PositiveSmallIntegerField('ID do Objeto')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo")
+    author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='comments', verbose_name="Autor", blank=True, null=True)
     text = models.TextField("Comentário")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
