@@ -668,7 +668,7 @@ class Project(models.Model):
     def save(self, current_user=None, *args, **kwargs):
         if not self.project_number:
             with transaction.atomic():
-                last_project = Project.objects.select_for_update().order_by('-project_number').first()
+                last_project = Project.objects.select_for_update().order_by('-project_number').exclude(project_number__icontains='ProjMig').first()
                 last_number = 0
                 
                 if last_project and last_project.project_number:
