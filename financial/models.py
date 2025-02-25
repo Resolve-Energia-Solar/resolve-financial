@@ -354,6 +354,13 @@ class FinancialRecord(models.Model):
     status = models.CharField(
         "Status", max_length=1, choices=STATUS_CHOICES, default="S"
     )
+    project = models.ForeignKey(
+        "resolve_crm.Project",
+        on_delete=models.DO_NOTHING,
+        verbose_name="Projeto",
+        null=True,
+        blank=True
+    )
     value = models.DecimalField("Valor", max_digits=20, decimal_places=2, default=0.00)
     due_date = models.DateField("Data de Vencimento")
     service_date = models.DateField(
