@@ -361,6 +361,9 @@ class FinancialRecord(models.Model):
         null=True,
         blank=True
     )
+    project_integration_code = models.CharField(
+        "Código de Integração do Projeto", max_length=8, null=True, blank=True
+    )
     value = models.DecimalField("Valor", max_digits=20, decimal_places=2, default=0.00)
     due_date = models.DateField("Data de Vencimento")
     service_date = models.DateField(
@@ -399,7 +402,18 @@ class FinancialRecord(models.Model):
     )
     responsible_response_date = models.DateTimeField("Data da Resposta do Gestor", null=True, blank=True)
     responsible_notes = models.TextField("Notas do Responsável", null=True, blank=True)
-    payment_method = models.CharField("Método de Pagamento", max_length=1, choices=[("B", "Boleto"), ("T", "Transferência Bancária"), ("D", "Dinheiro"), ("C", "Cartão"), ("P", "Pix")])
+    payment_method = models.CharField(
+        "Método de Pagamento",
+        max_length=1,
+        choices=[
+            ("B", "Boleto"),
+            ("T", "Transferência Bancária"),
+            ("E", "Dinheiro em Espécie"),
+            ("D", "Cartão de Débito"),
+            ("C", "Cartão de Crédito"),
+            ("P", "Pix"),
+        ],
+    )
     payment_status = models.CharField(
         "Status do Pagamento",
         max_length=2,
