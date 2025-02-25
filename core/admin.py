@@ -95,7 +95,7 @@ class PermissionAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ("name", "color")
+    list_display = ("tag", "color")
     
 
 @admin.register(Session)
