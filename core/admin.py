@@ -93,9 +93,9 @@ class PermissionAdmin(admin.ModelAdmin):
     list_max_show_all = 100
 
 
-# @admin.register(Tag)
-# class TagAdmin(admin.ModelAdmin):
-#     list_display = ("name", "color")
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name", "color")
     
 
 @admin.register(Session)
