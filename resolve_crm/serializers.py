@@ -153,7 +153,7 @@ class SaleSerializer(BaseSerializer):
         fields = '__all__'
         
     def get_is_released_to_engineering(self, obj):
-        return obj.projects.exists()
+        return obj.is_released_to_engineering()
     
     def get_signature_status(self, obj):
         return obj.signature_status()    
