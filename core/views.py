@@ -247,3 +247,9 @@ class CreateTasksFromSaleView(APIView):
             {"message": "Tasks created successfully", "tasks": [t.title for t in template_task_map.values()]},
             status=status.HTTP_201_CREATED
         )
+
+
+class TagViewSet(BaseModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    

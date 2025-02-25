@@ -386,6 +386,8 @@ class Sale(models.Model):
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     billing_date = models.DateField("Data de competência", auto_now=False, auto_now_add=False, null=True, blank=True)
+    attachments = GenericRelation(Attachment, related_query_name='sale_attachments')
+    tags = GenericRelation('core.Tag', related_query_name='sale_tags')
     
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
@@ -404,6 +406,10 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    
+    def is_released_to_engineering(self):
+        return all(project.is_released_to_engineering() for project in self.projects.all())
     
     
     def final_service_opinion(self):
@@ -435,12 +441,12 @@ class Sale(models.Model):
             total_paid += installment.installment_value
         return total_paid
 
-    @property
-    def attachments(self):
-        return Attachment.objects.filter(
-            object_id=self.id, 
-            content_type=ContentType.objects.get_for_model(self)
-        )
+    # @property
+    # def attachments(self):
+    #     return Attachment.objects.filter(
+    #         object_id=self.id, 
+    #         content_type=ContentType.objects.get_for_model(self)
+    #     )
 
     @property
     def franchise_installments_generated(self):

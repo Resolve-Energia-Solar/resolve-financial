@@ -310,20 +310,8 @@ class Webhook(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=50)
-    color = models.CharField(max_length=7, blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Tag'
-        verbose_name_plural = 'Tags'
-        ordering = ['name']
-
-
-class TaggedItem(models.Model):
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="tagged_items")
+    tag = models.CharField('Tag', max_length=100)
+    color = models.CharField('Cor', max_length=7)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')

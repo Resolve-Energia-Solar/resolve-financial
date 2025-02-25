@@ -64,6 +64,17 @@ class AttachmentSerializer(BaseSerializer):
         data = super().to_representation(instance)
         data['file'] = instance.file.url
         return data
+    
+
+class TagSerializer(BaseSerializer):
+    
+    content_type = ContentTypeSerializer(read_only=True)
+    
+    content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
+    
+    class Meta:
+        model = Tag
+        fields = '__all__'
 
 
 class CommentSerializer(BaseSerializer):

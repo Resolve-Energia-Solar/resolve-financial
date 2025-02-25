@@ -134,6 +134,7 @@ class SaleSerializer(BaseSerializer):
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
+    is_released_to_engineering = SerializerMethodField()
     
     projects = ReadProjectSerializer(many=True, read_only=True)
 
@@ -150,6 +151,9 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        
+    def get_is_released_to_engineering(self, obj):
+        return obj.projects.exists()
     
     def get_signature_status(self, obj):
         return obj.signature_status()    
@@ -341,6 +345,7 @@ class ProjectSerializer(BaseSerializer):
         model = Project
         fields = '__all__'
         depth = 1
+        
         
     def get_request_requested(self, obj):
         return obj.request_requested()
