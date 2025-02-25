@@ -667,16 +667,26 @@ class Project(models.Model):
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.project_number:
-            last_sale = Project.objects.all().order_by('id').last()
-            if last_sale:
-                last_number_str = last_sale.project_number.replace('PROJ', '')
-                last_number = int(last_number_str) if last_number_str.isdigit() else 0
-                self.project_number = f'PROJ{last_number + 1:02}'
-            else:
-                self.project_number = 'PROJ01'
+            with transaction.atomic():
+                last_project = Project.objects.select_for_update().order_by('-project_number').first()
+                last_number = 0
+                
+                if last_project and last_project.project_number:
+                    last_number = int(last_project.project_number.replace('PROJ', ''))
+
+                while True:
+                    last_number += 1
+                    new_project_number = f'PROJ{last_number:02}'
+                    
+                    if not Project.objects.filter(project_number=new_project_number).exists():
+                        self.project_number = new_project_number
+                        break
         
         if self.is_documentation_completed and not self.documention_completion_date:
             self.documention_completion_date = now()
+            
+        if not self.designer_coclusion_date and self.designer_status == 'CO':
+            self.designer_coclusion_date = now()
         
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
