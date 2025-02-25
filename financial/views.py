@@ -148,7 +148,7 @@ class FinancialRecordViewSet(BaseModelViewSet):
         include_q = Q(responsible=user) | Q(requester=user)
 
         if condition_a or condition_b:
-            if self.request.GET.get('bug'):
+            if self.request.GET.get('bug') == 'true':
                 return query.filter(responsible_status='A', payment_status='P', integration_code__isnull=True)
             # Usuários do DEPT_SET_1 podem ver todas as solicitações sem filtros
             return query  # Retorna todas as solicitações sem aplicar nenhum filtro
