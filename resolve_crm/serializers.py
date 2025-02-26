@@ -135,6 +135,7 @@ class SaleSerializer(BaseSerializer):
     branch = BranchSerializer(read_only=True)
     marketing_campaign = MarketingCampaignSerializer(read_only=True)
     missing_documents = SerializerMethodField()
+    documents_under_analysis = SerializerMethodField()
     sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
@@ -156,7 +157,11 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        
+    
+    def get_documents_under_analysis(self, obj):
+        documents = obj.documents_under_analysis.all()
+        return AttachmentSerializer(documents, many=True).data
+    
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
     
