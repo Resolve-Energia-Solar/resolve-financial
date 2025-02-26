@@ -1,6 +1,9 @@
+import os
 from django.contrib import admin
-from .models import Financier, FranchiseInstallment, Payment, PaymentInstallment
-from .models import FinancialRecord
+import requests
+
+from .models import Financier, FranchiseInstallment, Payment, PaymentInstallment, FinancialRecord
+from .task import send_to_omie_task, resend_approval_request_to_responsible_task
 
 
 @admin.register(Financier)
@@ -80,9 +83,29 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
     mark_as_paid.short_description = "Marcar parcelas selecionadas como pagas"
 
 
+
 @admin.register(FinancialRecord)
 class FinancialRecordAdmin(admin.ModelAdmin):
     list_display = ('protocol', 'integration_code', 'status', 'responsible_status', 'payment_status', 'value', 'due_date', 'created_at')
-    search_fields = ('integration_code', 'protocol', 'requesting_department__name', 'department_code', 'category_code', 'client_supplier_code', 'invoice_number', 'requester__username', 'responsible__username')
-    list_filter = ('is_receivable', 'status', 'due_date', 'service_date', 'created_at', 'responsible_response_date', 'paid_at', 'responsible_status', 'payment_status')
+    search_fields = ('integration_code', 'protocol', ...)
+    list_filter = ('status', 'responsible_status', 'payment_status', 'due_date', 'created_at')
     ordering = ('-created_at',)
+    actions = ['send_to_omie', 'resend_approval_request_to_responsible']
+
+    def send_to_omie(self, request, queryset):
+        for record in queryset:
+            if record.integration_code is not None and record.responsible_status == 'A' and record.payment_status == 'P':
+                send_to_omie_task.delay(record.id)
+                self.message_user(request, f"Tarefa para enviar o registro {record.protocol} agendada.", level='info')
+            else:
+                self.message_user(request, f"O registro {record.protocol} não atende aos critérios para envio.", level='warning')
+    send_to_omie.short_description = "Enviar registros selecionados para o Omie"
+
+    def resend_approval_request_to_responsible(self, request, queryset):
+        for record in queryset:
+            if record.responsible_status == 'P':
+                resend_approval_request_to_responsible_task.delay(record.id)
+                self.message_user(request, f"Tarefa para reenviar o convite para o registro {record.protocol} agendada.", level='info')
+            else:
+                self.message_user(request, f"O registro {record.protocol} não está com o status do responsável pendente.", level='warning')
+    resend_approval_request_to_responsible.short_description = "Reenviar solicitação ao responsável"
