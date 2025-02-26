@@ -98,16 +98,22 @@ def attachment_changed(sender, instance, **kwargs):
     ):
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
-            check_projects_and_update_sale_tag.delay(sale.id)
+            logger.info(f"📌 Signal: Anexo salvo - Sale ID: {sale.id}")
+            logger.info(f"📌 Signal: sale status - Sale ID: {sale.status}")
+            check_projects_and_update_sale_tag.delay(sale.id, sale.status)
 
 
 @receiver(post_save, sender=Sale)
 def sale_changed(sender, instance, **kwargs):
-    check_projects_and_update_sale_tag.delay(instance.id)
+    logger.info(f"📌 Signal: Venda salva - Sale ID: {instance.id}")
+    logger.info(f"📌 Signal: sale status - Sale ID: {instance.status}")
+    check_projects_and_update_sale_tag.delay(instance.id, instance.status)
 
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
     sale = instance.sale
+    logger.info(f"📌 Signal: Projeto salvo - Sale ID: {sale.id}")
+    logger.info(f"📌 Signal: sale status - Sale ID: {sale.status}")
     if instance.is_released_to_engineering():
-        update_or_create_sale_tag.delay(sale.id)
+        update_or_create_sale_tag.delay(sale.id, sale.status)
