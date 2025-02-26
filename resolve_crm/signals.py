@@ -47,6 +47,7 @@ def get_model_data(instance):
     
     return data
 
+
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     # Ignora o sinal durante as migrações
@@ -90,25 +91,23 @@ def send_webhook_on_delete(sender, instance, **kwargs):
             send_webhook_request(webhook.url, data, webhook.secret)
 
 
-
 @receiver(post_save, sender=Attachment)
 def attachment_changed(sender, instance, **kwargs):
-    print('Attachment changed')
     if instance.document_type and any(
-        key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato']
+        key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato', 'CNH']
     ):
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
             check_projects_and_update_sale_tag.delay(sale.id)
 
+
 @receiver(post_save, sender=Sale)
 def sale_changed(sender, instance, **kwargs):
-    print('Sale changed')
     check_projects_and_update_sale_tag.delay(instance.id)
+
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
-    print('Project changed')
     sale = instance.sale
     if instance.is_released_to_engineering():
         update_or_create_sale_tag.delay(sale.id)
