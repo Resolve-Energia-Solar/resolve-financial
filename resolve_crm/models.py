@@ -671,7 +671,8 @@ class Project(models.Model):
     
     @property
     def documents_under_analysis(self):
-        return self.attachments.filter(document_type__app_label='contracts', status='Em análise')
+        sale_content_type = ContentType.objects.get_for_model(Sale)
+        return self.attachments.filter(content_type=sale_content_type, status='EA')
     
     def create_deadlines(self):
         steps = Step.objects.all()
