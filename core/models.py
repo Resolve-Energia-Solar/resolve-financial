@@ -326,3 +326,4 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Taggeado'
         verbose_name_plural = 'Taggeados'
+        ordering = ['tag']
