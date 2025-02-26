@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage
 from accounts.forms import CustomUserCreationForm
 
 from .models import *
+from .task import send_invitation_email
 
 
 admin.site.site_header = "Administração do CRM"
@@ -87,33 +88,9 @@ class UserAdmin(UserAdmin):
     actions = ["send_invitation"]
 
     def send_invitation(self, request, queryset):
-
-        token_generator = PasswordResetTokenGenerator()
-
         for user in queryset:
-            
-            token = token_generator.make_token(user)
-            reset_url = os.environ.get('FRONTEND_RESET_PASSWORD_URL')
-            reset_url_with_token = f"{reset_url}?token={token}&uid={user.pk}"
-
-            context = {
-                'user': user,
-                'invitation_link': reset_url_with_token
-            }
-
-            subject = 'Você foi convidado para o sistema'
-            html_content = render_to_string('invitation-email.html', context)
-            
-            # Configura o e-mail como HTML
-            email = EmailMessage(
-                subject=subject,
-                body=html_content,
-                to=[user.email]
-            )
-            email.content_subtype = "html"
-            email.send()
-        
-        self.message_user(request, "Convite(s) enviado(s) com sucesso.")
+            send_invitation_email.delay(user.id)
+        self.message_user(request, "Convite(s) enfileirado(s) com sucesso.")
 
     send_invitation.short_description = "Enviar convite"
 

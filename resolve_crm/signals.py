@@ -4,6 +4,8 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 import requests
+
+from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Lead, Project, Sale, Task
 from core.models import Attachment, Tag, Webhook
 import logging
@@ -89,47 +91,24 @@ def send_webhook_on_delete(sender, instance, **kwargs):
 
 
 
-def update_or_create_sale_tag(sale):
-    sale_ct = ContentType.objects.get_for_model(sale)
-    if sale.status == "F":
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-        if tag_qs.exists():
-            Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial").delete()
-    else:
-        new_tag = "documentação parcial"
-        color = "#FF0000" 
-
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-        if not tag_qs.exists():
-            Tag.objects.create(
-                content_type=sale_ct,
-                object_id=sale.id,
-                tag=new_tag,
-                color=color
-            )
-
-def check_projects_and_update_sale_tag(sale):
-    for project in sale.projects.all():
-        if project.is_released_to_engineering():
-            update_or_create_sale_tag(sale)
-            break
-
 @receiver(post_save, sender=Attachment)
 def attachment_changed(sender, instance, **kwargs):
-    # print(f"attachment_changed called with attachment id: {instance.id}")
+    print('Attachment changed')
     if instance.document_type and any(
         key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato']
     ):
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
-            check_projects_and_update_sale_tag(sale)
+            check_projects_and_update_sale_tag.delay(sale.id)
 
 @receiver(post_save, sender=Sale)
 def sale_changed(sender, instance, **kwargs):
-    check_projects_and_update_sale_tag(instance)
+    print('Sale changed')
+    check_projects_and_update_sale_tag.delay(instance.id)
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
+    print('Project changed')
     sale = instance.sale
     if instance.is_released_to_engineering():
-        update_or_create_sale_tag(sale)
+        update_or_create_sale_tag.delay(sale.id)

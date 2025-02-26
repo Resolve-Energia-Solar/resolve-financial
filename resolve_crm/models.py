@@ -582,7 +582,8 @@ class Project(models.Model):
         #Adicionar lógica para pegar os documentos CPF e RG estão com status aprovado
         attachments_rg = self.sale.attachments.filter(document_type__name__icontains='RG', status='A')
         attachments_contract = self.sale.attachments.filter(document_type__name__icontains='Contrato', status='A')
-        attachments = attachments_rg.exists() and attachments_contract.exists()
+        attachments_cnh = self.sale.attachments.filter(document_type__name__icontains='CNH', status='A')
+        attachments = (attachments_rg.exists() or attachments_cnh.exists()) and attachments_contract.exists()
         # print('Cliente: ', self.sale.customer.complete_name)
         # print('attachments', attachments)
         # print('final_service_opinion_contains_approved', final_service_opinion_contains_approved)
