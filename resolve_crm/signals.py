@@ -93,29 +93,23 @@ def update_or_create_sale_tag(sale):
     # print(f"update_or_create_sale_tag called with sale id: {sale.id}, status: {sale.status}")
     sale_ct = ContentType.objects.get_for_model(sale)
     if sale.status == "F":
-        new_tag = "apto"
-        color = "#00FF00"  # exemplo de cor para Apto
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
+        if not tag_qs.exists():
+            Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial").delete()
     else:
-        new_tag = "inapto"
+        new_tag = "Documentação Parcial"
         color = "#FF0000"  # exemplo de cor para Inapto
 
-    # Filtra apenas as tags que são do tipo que controlamos (apto ou inapto)
-    tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag__in=["apto", "inapto"])
-    if tag_qs.exists():
-        tag_obj = tag_qs.first()
-        if tag_obj.tag != new_tag:
-            # print(f"Updating tag from {tag_obj.tag} to {new_tag} for sale id: {sale.id}")
-            tag_obj.tag = new_tag
-            tag_obj.color = color
-            tag_obj.save()
-    else:
-        # print(f"Creating new tag {new_tag} for sale id: {sale.id}")
-        Tag.objects.create(
-            content_type=sale_ct,
-            object_id=sale.id,
-            tag=new_tag,
-            color=color
-        )
+        # Filtra apenas as tags que são do tipo que controlamos (apto ou inapto)
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
+        if not tag_qs.exists():
+            # print(f"Creating new tag {new_tag} for sale id: {sale.id}")
+            Tag.objects.create(
+                content_type=sale_ct,
+                object_id=sale.id,
+                tag=new_tag,
+                color=color
+            )
 
 def check_projects_and_update_sale_tag(sale):
     # print(f"check_projects_and_update_sale_tag called with sale id: {sale.id}")
