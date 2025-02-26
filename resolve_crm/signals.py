@@ -93,7 +93,8 @@ def update_or_create_sale_tag(sale):
     sale_ct = ContentType.objects.get_for_model(sale)
     if sale.status == "F":
         tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-        if not tag_qs.exists():
+        print(f"tag_qs: {tag_qs}")
+        if tag_qs.exists():
             Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial").delete()
     else:
         new_tag = "documentação parcial"
