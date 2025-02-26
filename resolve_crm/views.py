@@ -93,6 +93,10 @@ class SaleViewSet(BaseModelViewSet):
         borrower = request.query_params.get('borrower')
         homologator = request.query_params.get('homologator')
         final_service_opinions = request.query_params.get('final_service_options')
+        tag_name = request.query_params.get('tag_name__exact')
+        
+        if tag_name:
+            queryset = queryset.filter(tags__tag__exact=tag_name)
         
         if final_service_opinions:
             final_service_opinion_list = final_service_opinions.split(',')

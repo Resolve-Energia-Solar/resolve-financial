@@ -83,7 +83,7 @@ class BaseModelViewSet(ModelViewSet):
                     filter_fields[field.name] = ['icontains', 'in']
                 elif field.get_internal_type() in ['DateField', 'DateTimeField']:
                     filter_fields[field.name] = ['range']
-                elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField']:
+                elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField', 'PositiveIntegerField']:
                     filter_fields[field.name] = ['exact', 'gte', 'lte']
         return filter_fields
 

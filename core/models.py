@@ -319,7 +319,10 @@ class Tag(models.Model):
     def save(self, *args, **kwargs):
         self.tag = self.tag.lower()
         super(Tag, self).save(*args, **kwargs)
-
+        
+    def __str__(self):
+        return self.tag
+    
     class Meta:
-        verbose_name = 'Item Taggeado'
-        verbose_name_plural = 'Itens Taggeados'
+        verbose_name = 'Taggeado'
+        verbose_name_plural = 'Taggeados'
