@@ -510,6 +510,11 @@ class Sale(models.Model):
             self.is_completed_financial = False
 
         super().save(*args, **kwargs)
+        
+    @property
+    def documents_under_analysis(self):
+        sale_content_type = ContentType.objects.get_for_model(Sale)
+        return self.attachments.filter(content_type=sale_content_type, status='EA')
     
     class Meta:
         verbose_name = "Venda"
@@ -671,8 +676,8 @@ class Project(models.Model):
     
     @property
     def documents_under_analysis(self):
-        sale_content_type = ContentType.objects.get_for_model(Sale)
-        return self.attachments.filter(content_type=sale_content_type, status='EA')
+        project_content_type = ContentType.objects.get_for_model(Project)
+        return self.attachments.filter(content_type=project_content_type, status='EA')
     
     def create_deadlines(self):
         steps = Step.objects.all()
