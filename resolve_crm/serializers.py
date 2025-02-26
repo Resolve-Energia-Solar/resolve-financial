@@ -109,10 +109,11 @@ class ReadProjectSerializer(BaseSerializer):
     product = ProductSerializer(read_only=True)
     materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
     requests_energy_company = SerializerMethodField()
+    documents_under_analysis = SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company']
+        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company', 'documents_under_analysis']
         depth = 1
 
     def get_requests_energy_company(self, obj):
@@ -120,6 +121,10 @@ class ReadProjectSerializer(BaseSerializer):
         requests = obj.requests_energy_company.all()
         return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
+    def get_documents_under_analysis(self, obj):
+        documents = obj.documents_under_analysis.all()
+        return AttachmentSerializer(documents, many=True).data
+
 
 class SaleSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
