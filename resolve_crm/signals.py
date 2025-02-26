@@ -96,10 +96,10 @@ def update_or_create_sale_tag(sale):
         if not tag_qs.exists():
             Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial").delete()
     else:
-        new_tag = "Documentação Parcial"
+        new_tag = "documentação parcial"
         color = "#FF0000" 
 
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
         if not tag_qs.exists():
             Tag.objects.create(
                 content_type=sale_ct,
