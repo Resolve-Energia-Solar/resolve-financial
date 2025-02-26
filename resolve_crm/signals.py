@@ -90,7 +90,6 @@ def send_webhook_on_delete(sender, instance, **kwargs):
 
 
 def update_or_create_sale_tag(sale):
-    # print(f"update_or_create_sale_tag called with sale id: {sale.id}, status: {sale.status}")
     sale_ct = ContentType.objects.get_for_model(sale)
     if sale.status == "F":
         tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
@@ -98,12 +97,10 @@ def update_or_create_sale_tag(sale):
             Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial").delete()
     else:
         new_tag = "Documentação Parcial"
-        color = "#FF0000"  # exemplo de cor para Inapto
+        color = "#FF0000" 
 
-        # Filtra apenas as tags que são do tipo que controlamos (apto ou inapto)
         tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
         if not tag_qs.exists():
-            # print(f"Creating new tag {new_tag} for sale id: {sale.id}")
             Tag.objects.create(
                 content_type=sale_ct,
                 object_id=sale.id,
@@ -112,11 +109,8 @@ def update_or_create_sale_tag(sale):
             )
 
 def check_projects_and_update_sale_tag(sale):
-    # print(f"check_projects_and_update_sale_tag called with sale id: {sale.id}")
     for project in sale.projects.all():
-        # print(f"Checking project id: {project.id} for sale id: {sale.id}")
         if project.is_released_to_engineering():
-            # print(f"Project id: {project.id} is released to engineering for sale id: {sale.id}")
             update_or_create_sale_tag(sale)
             break
 
@@ -126,29 +120,16 @@ def attachment_changed(sender, instance, **kwargs):
     if instance.document_type and any(
         key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato']
     ):
-        # print(f"Attachment id: {instance.id} has relevant document type: {instance.document_type.name}")
-        # Verifica se o anexo está ligado a uma venda por meio de GenericRelation
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
             check_projects_and_update_sale_tag(sale)
 
 @receiver(post_save, sender=Sale)
 def sale_changed(sender, instance, **kwargs):
-    """
-    Sempre que a venda for salva (por exemplo, alteração no payment_status ou status),
-    reavalia os projetos associados para atualizar a tag.
-    """
-    # print(f"sale_changed called with sale id: {instance.id}")
     check_projects_and_update_sale_tag(instance)
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
-    """
-    Quando um projeto for salvo (seja por atualização de campos que influenciam a liberação,
-    ou por outro motivo), reavalia a condição e atualiza a tag na venda.
-    """
-    # print(f"project_changed called with project id: {instance.id}")
     sale = instance.sale
     if instance.is_released_to_engineering():
-        # print(f"Project id: {instance.id} is released to engineering for sale id: {sale.id}")
         update_or_create_sale_tag(sale)
