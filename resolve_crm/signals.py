@@ -92,14 +92,14 @@ def send_webhook_on_delete(sender, instance, **kwargs):
 def update_or_create_sale_tag(sale):
     sale_ct = ContentType.objects.get_for_model(sale)
     if sale.status == "F":
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Pendente")
         if not tag_qs.exists():
-            Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial").delete()
+            Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Pendente").delete()
     else:
-        new_tag = "Documentação Parcial"
+        new_tag = "Documentação Pendente"
         color = "#FF0000" 
 
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Parcial")
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="Documentação Pendente")
         if not tag_qs.exists():
             Tag.objects.create(
                 content_type=sale_ct,
