@@ -573,8 +573,26 @@ class Project(models.Model):
             final_service_opinion_contains_approved = 'aprovado' in final_service_opinion.lower()
         else:
             final_service_opinion_contains_approved = False
+            
+        #Adicionar lógica para pegar os documentos CPF e RG estão com status aprovado
+        attachments_rg = self.sale.attachments.filter(document_type__name__icontains='RG', status='A')
+        attachments_contract = self.sale.attachments.filter(document_type__name__icontains='Contrato', status='A')
+        attachments = attachments_rg.exists() and attachments_contract.exists()
+        # print('Cliente: ', self.sale.customer.complete_name)
+        # print('attachments', attachments)
+        # print('final_service_opinion_contains_approved', final_service_opinion_contains_approved)
+        # print('self.sale.payment_status', self.sale.payment_status)
+        # print('self.status', self.status)
+        # print('self.sale.is_pre_sale', self.sale.is_pre_sale)
         
-        return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
+        # print('Resultado final: ', attachments and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved and self.sale.is_pre_sale == False and not self.status in ['CO', 'D'])
+        
+        # print(attachments and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
+        
+        #Lógica anterior    
+        # return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
+    
+        return (attachments and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved and self.sale.is_pre_sale == False and not self.status in ['CO', 'D']) or ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not self.status in ['CO', 'D'] and self.sale.is_pre_sale == False
     
     
     def pending_material_list(self):

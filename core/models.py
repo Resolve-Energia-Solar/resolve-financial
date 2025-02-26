@@ -315,6 +315,10 @@ class Tag(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+    
+    def save(self, *args, **kwargs):
+        self.tag = self.tag.lower()
+        super(Tag, self).save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Item Taggeado'

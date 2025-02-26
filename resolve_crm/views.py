@@ -286,22 +286,42 @@ class ProjectViewSet(BaseModelViewSet):
                 return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_released_to_engineering == 'true':
-            queryset = queryset.filter(Q(
-                # is_documentation_completed=True,
-                sale__status__in=['F'],
-                sale__payment_status__in=['L', 'C', 'CO'],
-                inspection__final_service_opinion__name__icontains='aprovado',
-                sale__is_pre_sale=False
-            ) & ~Q(status__in=['CO'])
+            queryset = queryset.filter(
+                Q(sale__payment_status__in=['L', 'C', 'CO']) &
+                Q(sale__is_pre_sale=False) &
+                Q(inspection__final_service_opinion__name__icontains='aprovado') &
+                Q(~Q(status__in=['CO', 'D'])) &
+                Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
+                Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
             )
         elif is_released_to_engineering == 'false':
             queryset = queryset.filter(
-                # Q(is_documentation_completed=False) |
-                ~Q(sale__status__in=['F', 'CO']) |
-                Q(sale__payment_status__in=['P', 'CA']) |
-                ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                Q(sale__is_pre_sale=True)
+                Q(
+                    ~Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') |
+                    ~Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A') |
+                    ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
+                    ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                    Q(sale__is_pre_sale=True)
+                ) | Q(status__in=['CO', 'D'])
             )
+
+        # if is_released_to_engineering == 'true':
+        #     queryset = queryset.filter(Q(
+        #         # is_documentation_completed=True,
+        #         sale__status__in=['F'],
+        #         sale__payment_status__in=['L', 'C', 'CO'],
+        #         inspection__final_service_opinion__name__icontains='aprovado',
+        #         sale__is_pre_sale=False
+        #     ) & ~Q(status__in=['CO'])
+        #     )
+        # elif is_released_to_engineering == 'false':
+        #     queryset = queryset.filter(
+        #         # Q(is_documentation_completed=False) |
+        #         ~Q(sale__status__in=['F', 'CO']) |
+        #         Q(sale__payment_status__in=['P', 'CA']) |
+        #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+        #         Q(sale__is_pre_sale=True)
+        #     )
 
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
@@ -332,17 +352,29 @@ class ProjectViewSet(BaseModelViewSet):
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
 
-            is_released_to_engineering_count=Count(
+            is_released_to_engineering_count = Count(
                 'id',
-                filter=Q(
-                    # Q(is_documentation_completed=True) &
-                    Q(sale__status='F') &
-                    Q(sale__payment_status__in=['L', 'C', 'CO']) & 
+                filter=(
+                    Q(sale__payment_status__in=['L', 'C', 'CO']) &
+                    Q(sale__is_pre_sale=False) &
                     Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                    ~Q(status__in=['CO']) &
-                    Q(sale__is_pre_sale=False)
+                    ~Q(status__in=['CO', 'D']) &
+                    Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
+                    Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
                 )
             ),
+            
+            # is_released_to_engineering_count=Count(
+            #     'id',
+            #     filter=Q(
+            #         # Q(is_documentation_completed=True) &
+            #         Q(sale__status='F') &
+            #         Q(sale__payment_status__in=['L', 'C', 'CO']) & 
+            #         Q(inspection__final_service_opinion__name__icontains='aprovado') &
+            #         ~Q(status__in=['CO']) &
+            #         Q(sale__is_pre_sale=False)
+            #     )
+            # ),
 
             pending_material_list=Count(
                 'id',
