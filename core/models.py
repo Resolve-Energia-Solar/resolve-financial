@@ -313,7 +313,7 @@ class Tag(models.Model):
     tag = models.CharField('Tag', max_length=100)
     color = models.CharField('Cor', max_length=7)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveSmallIntegerField("ID do Objeto")
     content_object = GenericForeignKey('content_type', 'object_id')
     
     def save(self, *args, **kwargs):
