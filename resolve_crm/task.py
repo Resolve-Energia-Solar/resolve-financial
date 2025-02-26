@@ -24,14 +24,14 @@ def update_or_create_sale_tag(sale_id, sale_status):
 
     try:
         sale = Sale.objects.get(id=sale_id)
-        logger.info(f"[update_or_create_sale_tag] Sale {sale.id} status: {sale_status}")
+        logger.info(f"📌 Task: Atualizando tag para sale {sale.contract_number} com status {sale_status}")
         sale_ct = ContentType.objects.get_for_model(Sale)
         
         if sale_status == "F":
             tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
             if tag_qs.exists():
                 tag_qs.delete()
-                logger.info(f"[update_or_create_sale_tag] Tag removida para sale {sale.id}")
+                logger.info(f"📌 Tag removida para sale {sale.id}")
         else:
             new_tag = "documentação parcial"
             color = "#FF0000"
@@ -43,11 +43,12 @@ def update_or_create_sale_tag(sale_id, sale_status):
                     tag=new_tag,
                     color=color
                 )
-                logger.info(f"[update_or_create_sale_tag] Tag criada para sale {sale.id}")
+                logger.info(f"📌 Tag criada para sale {sale.id}")
             else:
-                logger.info(f"[update_or_create_sale_tag] Tag já existe para sale {sale.id}")
+                logger.info(f"📌 Tag já existe para sale {sale.id}")
     except Sale.DoesNotExist:
-        logger.error(f"[update_or_create_sale_tag] Sale com ID {sale_id} não encontrada.")
+        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        return
 
 
 @shared_task
@@ -57,6 +58,7 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
         logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
         for project in sale.projects.all():
             if project.is_released_to_engineering():
+                logger.info(f"📌 Task: Projeto {project.id} liberado para engenharia.")
                 update_or_create_sale_tag.delay(sale.id, sale_status)
                 break
     except Sale.DoesNotExist:
