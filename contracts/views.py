@@ -100,6 +100,7 @@ class ReciveContractInfomation(APIView):
             object_id=sale_id,
             file=content_file,
             document_type=document_type,
+            status='EA'
         )
 
     def post(self, request):
