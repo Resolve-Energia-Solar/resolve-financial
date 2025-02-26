@@ -4,6 +4,8 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 import requests
+
+from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Lead, Project, Sale, Task
 from core.models import Attachment, Tag, Webhook
 import logging
@@ -89,64 +91,24 @@ def send_webhook_on_delete(sender, instance, **kwargs):
 
 
 
-def update_or_create_sale_tag(sale):
-    sale_ct = ContentType.objects.get_for_model(sale)
-    if sale.status == "F":
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-        if not tag_qs.exists():
-            Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial").delete()
-    else:
-        new_tag = "documentação parcial"
-        color = "#FF0000"
-
-        # Filtra apenas as tags que são do tipo que controlamos ("documentação parcial")
-        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-        if not tag_qs.exists():
-            Tag.objects.create(
-                content_type=sale_ct,
-                object_id=sale.id,
-                tag=new_tag,
-                color=color
-            )
-
-def check_projects_and_update_sale_tag(sale):
-    # print(f"check_projects_and_update_sale_tag called with sale id: {sale.id}")
-    for project in sale.projects.all():
-        # print(f"Checking project id: {project.id} for sale id: {sale.id}")
-        if project.is_released_to_engineering():
-            # print(f"Project id: {project.id} is released to engineering for sale id: {sale.id}")
-            update_or_create_sale_tag(sale)
-            break
-
 @receiver(post_save, sender=Attachment)
 def attachment_changed(sender, instance, **kwargs):
-    # print(f"attachment_changed called with attachment id: {instance.id}")
+    print('Attachment changed')
     if instance.document_type and any(
         key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato']
     ):
-        # print(f"Attachment id: {instance.id} has relevant document type: {instance.document_type.name}")
-        # Verifica se o anexo está ligado a uma venda por meio de GenericRelation
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
-            check_projects_and_update_sale_tag(sale)
+            check_projects_and_update_sale_tag.delay(sale.id)
 
 @receiver(post_save, sender=Sale)
 def sale_changed(sender, instance, **kwargs):
-    """
-    Sempre que a venda for salva (por exemplo, alteração no payment_status ou status),
-    reavalia os projetos associados para atualizar a tag.
-    """
-    # print(f"sale_changed called with sale id: {instance.id}")
-    check_projects_and_update_sale_tag(instance)
+    print('Sale changed')
+    check_projects_and_update_sale_tag.delay(instance.id)
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
-    """
-    Quando um projeto for salvo (seja por atualização de campos que influenciam a liberação,
-    ou por outro motivo), reavalia a condição e atualiza a tag na venda.
-    """
-    # print(f"project_changed called with project id: {instance.id}")
+    print('Project changed')
     sale = instance.sale
     if instance.is_released_to_engineering():
-        # print(f"Project id: {instance.id} is released to engineering for sale id: {sale.id}")
-        update_or_create_sale_tag(sale)
+        update_or_create_sale_tag.delay(sale.id)

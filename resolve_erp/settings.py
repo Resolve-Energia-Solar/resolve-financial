@@ -55,6 +55,11 @@ INSTALLED_APPS = [
     'channels',
 ]
 
+CELERY_BROKER_URL = "redis://redis:6379/0"  # Alterado de localhost para redis
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Adicionando retry na inicialização
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
 ASGI_APPLICATION = 'resolve_erp.asgi.application'
 CHANNEL_LAYERS = {
     'default': {
