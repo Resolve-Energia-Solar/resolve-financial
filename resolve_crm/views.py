@@ -431,16 +431,27 @@ class ProjectViewSet(BaseModelViewSet):
             pending_material_list=Count(
                 'id',
                 filter=Q(
-                    # Verifica se o projeto está liberado para engenharia
-                    Q(
-                        # Q(is_documentation_completed=True) &
-                        Q(sale__status='F') &
-                        Q(sale__payment_status__in=['L', 'C']) &
-                        Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                        Q(sale__is_pre_sale=False)
-                    ) & Q(material_list_is_completed=False) & Q(status='CO')
-                )
+                    sale__payment_status__in=['L', 'C', 'CO'],
+                    inspection__final_service_opinion__name__icontains='aprovado',
+                    sale__is_pre_sale=False,
+                    has_contract=True,
+                    has_rg_or_cnh=True
+                ) & Q(status__in=['CO']) & Q(material_list_is_completed=False)
             ),
+            
+            # pending_material_list=Count(
+            #     'id',
+            #     filter=Q(
+            #         # Verifica se o projeto está liberado para engenharia
+            #         Q(
+            #             # Q(is_documentation_completed=True) &
+            #             Q(sale__status='F') &
+            #             Q(sale__payment_status__in=['L', 'C']) &
+            #             Q(inspection__final_service_opinion__name__icontains='aprovado') &
+            #             Q(sale__is_pre_sale=False)
+            #         ) & Q(material_list_is_completed=False) & Q(status='CO')
+            #     )
+            # ),
 
             blocked_to_engineering=Count(
                 'id',
