@@ -35,5 +35,12 @@ RUN pip install --break-system-packages -r requirements.txt
 # Copiar o restante do código
 COPY . .
 
+# Instalar o Celery (caso não esteja no requirements.txt)
+RUN pip install celery
+
+
 # Expor a porta
 EXPOSE 8001
+
+# Adicionar o comando para iniciar o Celery junto com o Django
+CMD ["sh", "-c", "celery -A resolve_erp worker --loglevel=info"]
