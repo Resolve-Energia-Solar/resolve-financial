@@ -289,43 +289,67 @@ class ProjectViewSet(BaseModelViewSet):
             except ValueError:
                 return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if is_released_to_engineering == 'true':
-            queryset = queryset.filter(
-                Q(sale__payment_status__in=['L', 'C', 'CO']) &
-                Q(sale__is_pre_sale=False) &
-                Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                Q(~Q(status__in=['CO', 'D'])) &
-                Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
-                Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
-            )
-        elif is_released_to_engineering == 'false':
-            queryset = queryset.filter(
-                Q(
-                    ~Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') |
-                    ~Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A') |
-                    ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
-                    ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                    Q(sale__is_pre_sale=True)
-                ) | Q(status__in=['CO', 'D'])
+        if is_released_to_engineering in ['true', 'false']:
+            print(is_released_to_engineering)
+            sale_content_type = ContentType.objects.get_for_model(Sale)
+            queryset = queryset.annotate(
+                has_contract=Exists(
+                    Attachment.objects.filter(
+                        content_type=sale_content_type,
+                        object_id=OuterRef('sale_id'),
+                        document_type__name__icontains='Contrato',
+                        status='A'
+                    )
+                ),
+                has_rg_or_cnh=Exists(
+                    Attachment.objects.filter(
+                        content_type=sale_content_type,
+                        object_id=OuterRef('sale_id'),
+                        status='A'
+                    ).filter(
+                        Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
+                    )
+                )
             )
 
-        # if is_released_to_engineering == 'true':
-        #     queryset = queryset.filter(Q(
-        #         # is_documentation_completed=True,
-        #         sale__status__in=['F'],
-        #         sale__payment_status__in=['L', 'C', 'CO'],
-        #         inspection__final_service_opinion__name__icontains='aprovado',
-        #         sale__is_pre_sale=False
-        #     ) & ~Q(status__in=['CO'])
-        #     )
-        # elif is_released_to_engineering == 'false':
-        #     queryset = queryset.filter(
-        #         # Q(is_documentation_completed=False) |
-        #         ~Q(sale__status__in=['F', 'CO']) |
-        #         Q(sale__payment_status__in=['P', 'CA']) |
-        #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-        #         Q(sale__is_pre_sale=True)
-        #     )
+            if is_released_to_engineering == 'true':
+                queryset = queryset.filter(Q(
+                    sale__payment_status__in=['L', 'C', 'CO'],
+                    sale__is_pre_sale=False,
+                    inspection__final_service_opinion__name__icontains='aprovado',
+                    has_contract=True,
+                    has_rg_or_cnh=True
+                ) &
+                    ~Q(status__in=['CO', 'D']),
+                )
+            elif is_released_to_engineering == 'false':
+                queryset = queryset.filter(
+                    Q(
+                        ~Q(has_contract=True) |
+                        ~Q(has_rg_or_cnh=True) |
+                        ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
+                        ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                        Q(sale__is_pre_sale=True)
+                    ) | Q(status__in=['CO', 'D'])
+                )
+
+                # if is_released_to_engineering == 'true':
+                #     queryset = queryset.filter(Q(
+                #         # is_documentation_completed=True,
+                #         sale__status__in=['F'],
+                #         sale__payment_status__in=['L', 'C', 'CO'],
+                #         inspection__final_service_opinion__name__icontains='aprovado',
+                #         sale__is_pre_sale=False
+                #     ) & ~Q(status__in=['CO'])
+                #     )
+                # elif is_released_to_engineering == 'false':
+                #     queryset = queryset.filter(
+                #         # Q(is_documentation_completed=False) |
+                #         ~Q(sale__status__in=['F', 'CO']) |
+                #         Q(sale__payment_status__in=['P', 'CA']) |
+                #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                #         Q(sale__is_pre_sale=True)
+                #     )
 
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
@@ -339,9 +363,34 @@ class ProjectViewSet(BaseModelViewSet):
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data})
 
+
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        
+        sale_content_type = ContentType.objects.get_for_model(Sale)
+        
+        contract_subquery = Attachment.objects.filter(
+            content_type=sale_content_type,
+            object_id=OuterRef('sale_id'),
+            document_type__name__icontains='Contrato',
+            status='A'
+        )
+
+        # Subquery para verificar se existe attachment do tipo "RG" ou "CNH"
+        rg_or_cnh_subquery = Attachment.objects.filter(
+            content_type=sale_content_type,
+            object_id=OuterRef('sale_id'),
+            status='A'
+        ).filter(
+            Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
+        )
+        
+        queryset = queryset.annotate(
+            has_contract=Exists(contract_subquery),
+            has_rg_or_cnh=Exists(rg_or_cnh_subquery)
+        )
+
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
@@ -355,18 +404,6 @@ class ProjectViewSet(BaseModelViewSet):
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
-
-            is_released_to_engineering_count = Count(
-                'id',
-                filter=(
-                    Q(sale__payment_status__in=['L', 'C', 'CO']) &
-                    Q(sale__is_pre_sale=False) &
-                    Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                    ~Q(status__in=['CO', 'D']) &
-                    Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
-                    Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
-                )
-            ),
             
             # is_released_to_engineering_count=Count(
             #     'id',
@@ -379,20 +416,42 @@ class ProjectViewSet(BaseModelViewSet):
             #         Q(sale__is_pre_sale=False)
             #     )
             # ),
+            
+            is_released_to_engineering_count=Count(
+                'id',
+                filter=Q(
+                    sale__payment_status__in=['L', 'C', 'CO'],
+                    inspection__final_service_opinion__name__icontains='aprovado',
+                    sale__is_pre_sale=False,
+                    has_contract=True,
+                    has_rg_or_cnh=True
+                ) & ~Q(status__in=['CO', 'D']),
+            ),
 
             pending_material_list=Count(
                 'id',
                 filter=Q(
-                    # Verifica se o projeto está liberado para engenharia
-                    Q(
-                        # Q(is_documentation_completed=True) &
-                        Q(sale__status='F') &
-                        Q(sale__payment_status__in=['L', 'C']) &
-                        Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                        Q(sale__is_pre_sale=False)
-                    ) & Q(material_list_is_completed=False)
-                )
+                    sale__payment_status__in=['L', 'C', 'CO'],
+                    inspection__final_service_opinion__name__icontains='aprovado',
+                    sale__is_pre_sale=False,
+                    has_contract=True,
+                    has_rg_or_cnh=True
+                ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False)
             ),
+            
+            # pending_material_list=Count(
+            #     'id',
+            #     filter=Q(
+            #         # Verifica se o projeto está liberado para engenharia
+            #         Q(
+            #             # Q(is_documentation_completed=True) &
+            #             Q(sale__status='F') &
+            #             Q(sale__payment_status__in=['L', 'C']) &
+            #             Q(inspection__final_service_opinion__name__icontains='aprovado') &
+            #             Q(sale__is_pre_sale=False)
+            #         ) & Q(material_list_is_completed=False) & Q(status='CO')
+            #     )
+            # ),
 
             blocked_to_engineering=Count(
                 'id',
@@ -429,7 +488,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         return Response({"indicators": indicators})
         
-        
+
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
     serializer_class = ContractSubmissionSerializer
