@@ -6,6 +6,7 @@ from notifications import urls as notifications_urls
 
 
 urlpatterns = [
+    path('prometheus/', include('django_prometheus.urls')),
     path('api/', include('api.urls'), name='api'),
     path('api/mobile/', include('mobile_app.urls'), name='api_mobile'),
     path('', admin.site.urls),

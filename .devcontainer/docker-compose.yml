@@ -4,12 +4,18 @@ services:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
-
     volumes:
       - ..:/workspaces:cached
       - ~/.ssh:/root/.ssh:cached
       - ~/.vscode-server:/root/.vscode-server:cached
-
     command: /bin/zsh -c "while sleep 1000; do :; done"
     ports:
       - "8060:8060"
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"

@@ -68,6 +68,7 @@ CHANNEL_LAYERS = {
 DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -79,6 +80,7 @@ MIDDLEWARE = [
     'simple_history.middleware.HistoryRequestMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 REST_FLEX_FIELDS = {
@@ -95,6 +97,16 @@ REST_FLEX_FIELDS = {
         'api.serializers',
     ],
 }
+
+
+CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672//"
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+CELERY_RESULT_BACKEND = "rpc://"
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
 # CORS
 
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS') == 'True'

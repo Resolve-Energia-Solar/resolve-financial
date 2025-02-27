@@ -897,14 +897,11 @@ class GenerateContractView(APIView):
     @transaction.atomic
     def post(self, request):
         sale_id = request.data.get('sale_id')
-        qr_code = ""
-        validation_url = ""
-
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
             return sale
 
-        # Valida se campos obrigatórios estão preenchidos
+        # Valida campos obrigatórios da venda e do cliente
         missing_fields_response = self._validate_sale_data(sale)
         if missing_fields_response:
             return missing_fields_response
@@ -917,7 +914,7 @@ class GenerateContractView(APIView):
             return Response({'message': 'A soma dos valores dos pagamentos é diferente do valor total da venda.'}, status=status.HTTP_400_BAD_REQUEST)
 
         total_payments_value_formatted = formats.number_format(total_payments_value, 2)
-        
+
         variables = self._validate_variables(request.data.get('contract_data', {}))
         if isinstance(variables, Response):
             return variables
@@ -930,22 +927,14 @@ class GenerateContractView(APIView):
         if isinstance(customer_data, Response):
             return customer_data
 
+        # Verifica se é modo preview; se for, gera o PDF e retorna a pré-visualização
         preview = request.query_params.get('preview') == 'true'
-
-        if not preview:
-            envelope_response = self._create_envelope(sale)
-            if isinstance(envelope_response, Response):
-                return envelope_response
-            
-            envelope_id = envelope_response.get('envelope_id')
-            if not envelope_id:
-                return Response({'message': 'Falha ao obter envelope_id.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            qr_code, validation_url = self._generate_validation_qr_code(envelope_id)
 
         materials_list = self._generate_materials_list(sale)
         payments_list = self._generate_payments_list(sale)
         projects_data = self._get_projects_data(sale)
+        # Como o envio para o Clicksign será processado de forma assíncrona,
+        # não geramos QR code ou URL de validação nesta etapa.
         contract_content = self._replace_variables(
             contract_template.content,
             variables,
@@ -956,58 +945,29 @@ class GenerateContractView(APIView):
             payments_list,
             projects_data,
             sale.branch.address.city,
-            qr_code=qr_code,
-            validation_url=validation_url
+            qr_code="",
+            validation_url=""
         )
 
         pdf = self._generate_pdf(contract_content)
         if isinstance(pdf, Response):
             return pdf
 
-        if request.query_params.get('preview') == 'true':
+        if preview:
             return self._preview_pdf(pdf)
 
-        document_response = self._add_document_to_envelope(sale, envelope_id, pdf)
-        if isinstance(document_response, Response):
-            return document_response
-        document_key = document_response.get('document_key')
-
-        signer_response = self._create_signer(envelope_id, sale.customer)
-        if isinstance(signer_response, Response):
-            return signer_response
-        signer_key = signer_response.get('signer_key')
-
-        add_reqs_response = self._add_envelope_requirements(envelope_id, document_key, signer_key)
-        if isinstance(add_reqs_response, Response):
-            return add_reqs_response
-
-        activate_response = self._activate_envelope(envelope_id)
-        if isinstance(activate_response, Response):
-            return activate_response
-
-        notification_response = self._send_notifications(envelope_id)
-        if isinstance(notification_response, Response):
-            return notification_response
-
-        submission = self._create_contract_submission(sale, document_key, signer_key, envelope_id)
-        if isinstance(submission, Response):
-            return submission
+        # Enfileira o envio do contrato para o Clicksign via Celery.
+        from resolve_crm.task import send_contract_to_clicksign
+        send_contract_to_clicksign.delay(sale.id, pdf)
 
         return Response({
-            'message': 'Contrato gerado com sucesso.',
-            'contract_submission_id': submission.id
+            'message': 'Contrato enfileirado com sucesso para envio ao Clicksign.'
         }, status=status.HTTP_200_OK)
 
     def _validate_sale_data(self, sale):
-        """
-        Verifica campos obrigatórios da venda e do cliente.
-        Retorna um Response(400) se algo estiver ausente, senão retorna None.
-        """
         missing = []
-
         if not sale.branch or not sale.branch.energy_company:
             missing.append('Empresa de energia (branch)')
-
         if not sale.customer:
             missing.append('Dados do cliente')
         else:
@@ -1015,7 +975,6 @@ class GenerateContractView(APIView):
                 missing.append('Nome do cliente')
             if not sale.customer.first_document:
                 missing.append('Documento (CPF/CNPJ) do cliente')
-
         if missing:
             return Response(
                 {'message': f'Campos obrigatórios ausentes: {", ".join(missing)}'},
@@ -1062,12 +1021,11 @@ class GenerateContractView(APIView):
             watt_peak = watt_peaks[0]
         else:
             watt_peak = ''
-        projects_data = {
+        return {
             'project_count': len(projects),
             'project_plural': "s" if len(projects) > 1 else "",
             'watt_peak': watt_peak
         }
-        return projects_data
 
     def _generate_materials_list(self, sale):
         materials = []
@@ -1078,8 +1036,7 @@ class GenerateContractView(APIView):
                     'amount': round(pm.amount, 2),
                     'price': pm.material.price
                 })
-        materials_html = "".join(f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials)
-        return materials_html
+        return "".join(f"<li>{m['name']} - Quantidade: {m['amount']:.2f}</li>" for m in materials)
 
     def _generate_payments_list(self, sale):
         payments = [
@@ -1090,8 +1047,7 @@ class GenerateContractView(APIView):
             }
             for payment in sale.payments.all()
         ]
-        payments_html = "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
-        return payments_html
+        return "".join(f"<li>Tipo: {p['type']}{p['financier']} - Valor: R$ {p['value']}</li>" for p in payments)
 
     def _replace_variables(self, content, variables, customer_data, energy_company, materials_list, total_value, payments_list, projects_data, city, qr_code, validation_url):
         now = datetime.datetime.now()
@@ -1128,125 +1084,6 @@ class GenerateContractView(APIView):
         response = HttpResponse(pdf, content_type='application/pdf')
         response['Content-Disposition'] = 'inline; filename="preview_contract.pdf"'
         return response
-
-    def _create_envelope(self, sale):
-        try:
-            response = create_clicksign_envelope(sale.contract_number, sale.customer.complete_name)
-            if response.get('status') == 'success':
-                envelope_id = response.get('envelope_id')
-                logger.info(f"Envelope criado com ID: {envelope_id}")
-                return {'envelope_id': envelope_id}
-            else:
-                logger.error(f"Erro ao criar envelope: {response.get('message')}")
-                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao criar envelope: {e}")
-            return Response({'message': f'Erro ao criar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    def _generate_validation_qr_code(self, envelope_id):
-        validation_url = f"{os.getenv('FRONTEND_URL')}/auth/contract-validation/?envelope_id={envelope_id}"
-        qr = qrcode.make(validation_url)
-        buffer = BytesIO()
-        qr.save(buffer, format="PNG")
-        qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        return f"data:image/png;base64,{qr_base64}", validation_url      
-
-    def _add_document_to_envelope(self, sale, envelope_id, pdf):
-        try:
-            response = create_clicksign_document(envelope_id, sale.contract_number, sale.customer.complete_name, pdf)
-            if isinstance(response, dict) and 'data' in response:
-                document_data = response['data']
-                document_key = document_data['id']
-                logger.info(f"Document data: {document_data}")
-                if not document_key:
-                    logger.error("Chave do documento ausente no retorno do Clicksign.")
-                    return Response({'message': 'Chave do documento ausente no retorno do Clicksign.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                logger.info(f"Documento adicionado com chave: {document_key}")
-                return {'document_key': document_key}
-            elif isinstance(response, dict) and response.get("status") == "error":
-                logger.error(f"Erro ao adicionar documento: {response.get('message')}")
-                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                logger.error("Formato inesperado na resposta de `create_clicksign_document`.")
-                return Response({'message': 'Formato inesperado na resposta de `create_clicksign_document`.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao adicionar documento ao envelope: {e}")
-            return Response({'message': f'Erro ao adicionar documento ao envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _create_signer(self, envelope_id, customer):
-        try:
-            response = create_signer(envelope_id, customer)
-            if response.get('status') == 'success':
-                signer_key = response.get('signer_key')
-                logger.info(f"Signer criado com chave: {signer_key}")
-                return {'signer_key': signer_key}
-            else:
-                logger.error(f"Erro ao criar signer: {response.get('message')}")
-                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao criar signer: {e}")
-            return Response({'message': f'Erro ao criar signer: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    def _add_envelope_requirements(self, envelope_id, document_key, signer_key):
-        try:
-            response = add_envelope_requirements(envelope_id, document_key, signer_key)
-            if isinstance(response, list):
-                for item in response:
-                    if item.get('status') != 'success':
-                        logger.error(f"Erro ao adicionar requisitos ao envelope: {item.get('message')}")
-                        return Response({'message': item.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                logger.info("Requisitos do envelope adicionados com sucesso.")
-                return {'status': 'success'}
-            else:
-                logger.error(f"Formato inesperado na resposta de `add_envelope_requirements`: {response}")
-                return Response({'message': f'Formato inesperado na resposta de `add_envelope_requirements`: {response}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao adicionar requisitos ao envelope: {e}")
-            return Response({'message': f'Erro ao adicionar requisitos ao envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _activate_envelope(self, envelope_id):
-        try:
-            response = activate_envelope(envelope_id)
-            if response.get('status') == 'success':
-                logger.info("Envelope ativado com sucesso.")
-                return {'status': 'success'}
-            else:
-                logger.error(f"Erro ao ativar envelope: {response.get('message')}")
-                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao ativar envelope: {e}")
-            return Response({'message': f'Erro ao ativar envelope: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _send_notifications(self, envelope_id):
-        try:
-            response = send_notification(envelope_id)
-            if response.get('status') == 'success':
-                logger.info("Notificações enviadas com sucesso.")
-                return {'status': 'success'}
-            else:
-                logger.error(f"Erro ao enviar notificações: {response.get('message')}")
-                return Response({'message': response.get('message')}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            logger.error(f"Erro ao enviar notificações: {e}")
-            return Response({'message': f'Erro ao enviar notificações: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def _create_contract_submission(self, sale, document_key, signer_key, envelope_id):
-        try:
-            submission = ContractSubmission.objects.create(
-                sale=sale,
-                request_signature_key=signer_key,
-                key_number=document_key,
-                envelope_id=envelope_id,
-                status="P",
-                submit_datetime=datetime.datetime.now(tz=timezone.utc),
-                due_date=datetime.datetime.now(tz=timezone.utc) + timedelta(days=7),
-                link=f"https://app.clicksign.com/envelopes/{envelope_id}"
-            )
-            logger.info(f"ContractSubmission criado com ID: {submission.id}")
-            return submission
-        except Exception as e:
-            logger.error(f"Erro ao criar ContractSubmission: {e}")
-            return Response({'message': f'Erro ao criar ContractSubmission: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GenerateCustomContract(APIView):

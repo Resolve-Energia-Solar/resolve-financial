@@ -332,6 +332,28 @@ class OmieIntegrationView(APIView):
             return Response(response.json())
         else:
             return Response({"error": "Failed to create customer in Omie", "details": response.json()}, status=response.status_code)
+        
+    def get_supplier(self, codigo_cliente_omie):
+        url = f"{self.OMIE_API_URL}/geral/clientes/"
+        data = {
+            "call": "ConsultarCliente",
+            "app_key": os.getenv('OMIE_ACESSKEY'),
+            "app_secret": os.getenv('OMIE_ACESSTOKEN'),
+            "param": [{"codigo_cliente_omie": codigo_cliente_omie}]
+        }
+        headers = {'Content-Type': 'application/json'}
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            if "razao_social" in result and "cnpj_cpf" in result:
+                return {"razao_social": result.get("razao_social"), "cnpj_cpf": result.get("cnpj_cpf")}
+            else:
+                logger.error(f"Fornecedor sem documento ou nome: {result}")
+                return Response({"error": "Supplier without document or name"}, status=500)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch supplier from Omie: {e}")
+            return Response({"error": "Failed to fetch supplier from Omie", "details": str(e)}, status=500)
 
     def create_payment_request(self, financial_record, manager_status="Aprovado", manager_note=None):
         if manager_status == "Aprovado":
