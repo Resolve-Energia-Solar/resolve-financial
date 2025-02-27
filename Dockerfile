@@ -36,7 +36,7 @@ RUN pip install --break-system-packages -r requirements.txt
 COPY . .
 
 # Instalar o Celery (caso não esteja no requirements.txt)
-RUN pip install celery
+#RUN pip install celery
 
 
 # Expor a porta
