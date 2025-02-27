@@ -436,7 +436,7 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__is_pre_sale=False,
                     has_contract=True,
                     has_rg_or_cnh=True
-                ) & Q(status__in=['CO']) & Q(material_list_is_completed=False)
+                ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False)
             ),
             
             # pending_material_list=Count(
