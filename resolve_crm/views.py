@@ -295,6 +295,7 @@ class ProjectViewSet(BaseModelViewSet):
                 Q(sale__is_pre_sale=False) &
                 Q(inspection__final_service_opinion__name__icontains='aprovado') &
                 Q(~Q(status__in=['CO', 'D'])) &
+                Q(sale__attachments__document_type__name__icontains='CNH', sale__attachments__status='A') &
                 Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
                 Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
             )
@@ -363,6 +364,7 @@ class ProjectViewSet(BaseModelViewSet):
                     Q(sale__is_pre_sale=False) &
                     Q(inspection__final_service_opinion__name__icontains='aprovado') &
                     ~Q(status__in=['CO', 'D']) &
+                    Q(sale__attachments__document_type__name__icontains='CNH', sale__attachments__status='A') &
                     Q(sale__attachments__document_type__name__icontains='RG', sale__attachments__status='A') &
                     Q(sale__attachments__document_type__name__icontains='Contrato', sale__attachments__status='A')
                 )
@@ -389,7 +391,8 @@ class ProjectViewSet(BaseModelViewSet):
                         Q(sale__status='F') &
                         Q(sale__payment_status__in=['L', 'C']) &
                         Q(inspection__final_service_opinion__name__icontains='aprovado') &
-                        Q(sale__is_pre_sale=False)
+                        Q(sale__is_pre_sale=False) &
+                        Q(designer_status='CO')
                     ) & Q(material_list_is_completed=False)
                 )
             ),
