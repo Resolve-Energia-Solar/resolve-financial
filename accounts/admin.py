@@ -30,6 +30,7 @@ class PhoneNumberInline(admin.TabularInline):
 class EmployeeInline(admin.StackedInline):
     model = Employee
     extra = 1
+    autocomplete_fields = ["user", "user_manager", "branch", "department", "role"]
     verbose_name = "Funcionário"
     verbose_name_plural = "Funcionários"
     fields = (
@@ -42,7 +43,6 @@ class EmployeeInline(admin.StackedInline):
         'resignation_date',
         'related_branches'
     )
-    autocomplete_fields = ["role", "department", "branch"]
     fk_name = "user"    
 
 
@@ -50,6 +50,7 @@ class EmployeeInline(admin.StackedInline):
 class UserAdmin(UserAdmin):
     list_display = ("username", "complete_name", "email", "is_active", "is_staff", "is_superuser")
     search_fields = ("username", "complete_name", "email", "first_document")
+    autocomplete_fields = ["addresses"]
     readonly_fields = ("last_login", "date_joined")
     inlines = [PhoneNumberInline, EmployeeInline]
 

@@ -31,6 +31,7 @@ class DeadlineAdmin(admin.ModelAdmin):
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ("schedule_date", "project", "service")
+    search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name")
     readonly_fields = ("display_leads",)
 
     def display_leads(self, obj):
