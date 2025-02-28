@@ -70,7 +70,7 @@ class ScheduleViewSet(BaseModelViewSet):
         
         
         if customer_icontains:
-            queryset = queryset.filter(Q(customer__complete_name__icontains=customer_icontains)| Q(customer__cpf__icontains=customer_icontains))
+            queryset = queryset.filter(Q(customer__complete_name__icontains=customer_icontains)| Q(customer__first_document__icontains=customer_icontains))
             
         
         if final_services_opnions:
