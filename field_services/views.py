@@ -79,7 +79,8 @@ class ScheduleViewSet(BaseModelViewSet):
         final_service_is_null = self.request.query_params.get('final_service_is_null')
         if final_service_is_null == 'true':
             qs = qs.filter(final_service_opinion__isnull=True)
-        else:
+            
+        elif final_service_is_null == 'false':
             qs = qs.filter(final_service_opinion__isnull=False)
 
         project = self.request.query_params.get('project_confirmed')
@@ -89,6 +90,8 @@ class ScheduleViewSet(BaseModelViewSet):
         service = self.request.query_params.get('service')
         if service:
             qs = qs.filter(service__id=service)
+            
+        return qs
 
         # 2. Filtros Baseados em Permissão
         # Se o usuário tem a permissão para ver todos os schedules, retorne o queryset já filtrado
