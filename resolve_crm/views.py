@@ -97,6 +97,18 @@ class SaleViewSet(BaseModelViewSet):
         homologator = request.query_params.get('homologator')
         final_service_opinions = request.query_params.get('final_service_options')
         tag_name = request.query_params.get('tag_name__exact')
+        documents_under_analysis = request.query_params.get('documents_under_analysis')
+        
+        if documents_under_analysis == 'true':
+            queryset = queryset.filter(
+                attachments__document_type__required=True,
+                attachments__status='EA',
+            )
+        elif documents_under_analysis == 'false':
+            queryset = queryset.exclude(
+                attachments__document_type__required=True,
+                attachments__status='EA',
+            )
         
         if tag_name:
             queryset = queryset.filter(tags__tag__exact=tag_name)
