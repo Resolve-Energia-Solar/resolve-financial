@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 import logging
 import os
+from django.shortcuts import redirect
 import qrcode
 import re
 
@@ -20,10 +21,12 @@ from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
 from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
+from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
 from django.db.models import Exists, OuterRef, Q, Value, Case, When, CharField, Prefetch
+from django.contrib import messages
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -1128,3 +1131,10 @@ class GenerateCustomContract(APIView):
             return Response({'message': f'Erro ao salvar o arquivo: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response({'message': 'Contrato gerado com sucesso. Envio ao Clicksign efetuado.', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
+
+
+
+def save_all_sales_func(request):
+    save_all_sales.delay()
+    messages.success(request, 'Todas as vendas foram salvas com sucesso.')
+    return redirect('admin:index')

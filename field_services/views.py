@@ -60,65 +60,66 @@ class ScheduleViewSet(BaseModelViewSet):
     serializer_class = ScheduleSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         user = self.request.user
-        project = self.request.query_params.get('project_confirmed')
-        service = self.request.query_params.get('service')
-        schedule_agent = self.request.query_params.get('schedule_agent')
-        final_services_opnions = self.request.query_params.get('final_services_opnions')
+
+        # 1. Filtros Globais (Query Params)
         customer_icontains = self.request.query_params.get('customer_icontains')
-        
         if customer_icontains:
-            print(customer_icontains)
-            queryset = queryset.filter(
-                Q(customer__complete_name__icontains=customer_icontains) | 
+            qs = qs.filter(
+                Q(customer__complete_name__icontains=customer_icontains) |
                 Q(customer__first_document__icontains=customer_icontains)
             )
-        
+
+        final_services_opnions = self.request.query_params.get('final_services_opnions')
         if final_services_opnions:
-            final_services_opnions = final_services_opnions.split(',')
-            queryset = queryset.filter(final_service_opinion__id__in=final_services_opnions)
-        
-        if not (user.is_superuser or user.has_perm('field_services.view_all_schedule')) and not user.employee.related_branches.exists():
-            queryset = queryset.filter(
-                Q(schedule_agent=user) |
-                Q(project__sale__seller=user) |
-                Q(schedule_creator=user)
-            )
+            opinions = final_services_opnions.split(',')
+            qs = qs.filter(final_service_opinion__id__in=opinions)
 
         final_service_is_null = self.request.query_params.get('final_service_is_null')
         if final_service_is_null == 'true':
-            queryset = queryset.filter(final_service_opinion__isnull=True)
+            qs = qs.filter(final_service_opinion__isnull=True)
         else:
-            queryset = queryset.filter(final_service_opinion__isnull=False)
-                
+            qs = qs.filter(final_service_opinion__isnull=False)
+
+        project = self.request.query_params.get('project_confirmed')
         if project:
-            queryset = queryset.filter(project__id=project).filter(status='Confirmado')
+            qs = qs.filter(project__id=project, status='Confirmado')
+
+        service = self.request.query_params.get('service')
         if service:
-            queryset = queryset.filter(service__id=service)
-        if schedule_agent:
-            queryset = queryset.filter(schedule_agent__id=schedule_agent)
-        
-        # Ajuste: para superusuários ou usuários com a permissão, retorna o queryset filtrado,
-        # garantindo que os filtros (como customer_icontains) sejam aplicados.
-        if user.is_superuser or user.has_perm('field_services.view_all_schedule'):
-            return queryset
-        
+            qs = qs.filter(service__id=service)
+
+        # 2. Filtros Baseados em Permissão
+        # Se o usuário tem a permissão para ver todos os schedules, retorne o queryset já filtrado
+        if user.has_perm('field_services.view_all_schedule'):
+            return qs
+
+        # Caso o usuário NÃO tenha a permissão 'view_all_schedule':
+        # a) Filtragem por envolvimento direto (stakeholder):
+        stakeholder_qs = qs.filter(
+            Q(schedule_creator=user) |
+            Q(schedule_agent=user) |
+            Q(project__sale__seller=user)
+        )
+
+        # b) Filtragem baseada em associações com unidades (branches)
         if user.employee.related_branches.exists() or user.branch_owners.exists():
-            related_branches_ids = user.employee.related_branches.values_list('id', flat=True)
-            branch_owner_ids = user.branch_owners.values_list('id', flat=True)
-            branch_ids = list(related_branches_ids) + list(branch_owner_ids)
-            
-            branch_schedule = queryset.filter(
+            related_branch_ids = list(user.employee.related_branches.values_list('id', flat=True))
+            branch_owner_ids = list(user.branch_owners.values_list('id', flat=True))
+            branch_ids = related_branch_ids + branch_owner_ids
+
+            branch_qs = qs.filter(
                 Q(schedule_creator__employee__branch_id__in=branch_ids) |
                 Q(project__sale__branch_id__in=branch_ids)
             )
         else:
-            branch_schedule = queryset.none()
+            branch_qs = qs.none()
 
-        stakeholder_schedule = queryset.filter(Q(schedule_creator=user) | Q(schedule_agent=user))
-        
-        return branch_schedule | stakeholder_schedule
+        # 3. Combinação dos filtros de permissão sem sobreposição
+        # O usuário verá schedules onde ele está diretamente envolvido (stakeholder)
+        # OU aqueles vinculados à sua unidade, se houver.
+        return stakeholder_qs | branch_qs
 
 
     # listar agendamentos por pessoa para timeline

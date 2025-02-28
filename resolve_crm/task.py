@@ -122,3 +122,12 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         link=f"https://app.clicksign.com/envelopes/{envelope_id}"
     )
     return {"status": "success", "submission_id": submission.id}
+
+
+@shared_task
+def save_all_sales():
+    sales = Sale.objects.all()
+    logger.info(f"📌 Task: Salvando todas as vendas.")
+    for sale in sales:
+        sale.save()
+    return {"status": "success", "message": "Vendas salvas com sucesso."}

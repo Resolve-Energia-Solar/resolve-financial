@@ -51,6 +51,8 @@ JAZZMIN_SETTINGS = {
         
         {"name": "Redoc", "url": "api:schema-redoc", "new_window": True},
 
+        {"name": "Salvar todas as vendas", "url": "api:save_sales"},
+        
         # model admin to link to (Permissions checked against model)
         {"model": "auth.User"},
     ],

@@ -27,6 +27,9 @@ class ComercialProposalAdmin(admin.ModelAdmin):
     inlines = [SaleProductInline]
 
 
+
+
+
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     list_display = ("customer" ,"contract_number", "total_value", "total_paid","signature_date", "billing_date", "created_at")

@@ -13,6 +13,7 @@ from engineering.views import ProjectMaterialsCSVUploadAPIView
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
 from .views import ContratoView, GanttView, StatusView
+from resolve_crm.views import save_all_sales_func
 
 
 router = DefaultRouter()
@@ -68,5 +69,7 @@ urlpatterns = [
     path('status/', StatusView.as_view(), name='status'),
     path('financial/omie/', OmieIntegrationView.as_view(), name='omie_integration'),
     path('financial/approve-financial-record/', FinancialRecordApprovalView.as_view(), name='approve_financial_record'),
-    path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status')
+    path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
+    
+    path('save-sales/', save_all_sales_func , name='save_sales'),
 ]
