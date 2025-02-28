@@ -311,7 +311,16 @@ class ProjectViewSet(BaseModelViewSet):
                     ).filter(
                         Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
                     )
-                )
+                ),
+                homologator_rg_or_cnh=Exists(
+                    Attachment.objects.filter(
+                        content_type=sale_content_type,
+                        object_id=OuterRef('sale_id'),
+                        status='A'
+                    ).filter(Q(
+                        Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
+                    ) & Q(document_type__name__icontains='homologador'))
+                ),
             )
 
             if is_released_to_engineering == 'true':
@@ -320,7 +329,9 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__is_pre_sale=False,
                     inspection__final_service_opinion__name__icontains='aprovado',
                     has_contract=True,
-                    has_rg_or_cnh=True
+                    has_rg_or_cnh=True,
+                    homologator_rg_or_cnh=True,
+                    units__bill_file__isnull=False,
                 ) &
                     ~Q(status__in=['CO', 'D']),
                 )
@@ -329,8 +340,10 @@ class ProjectViewSet(BaseModelViewSet):
                     Q(
                         ~Q(has_contract=True) |
                         ~Q(has_rg_or_cnh=True) |
+                        ~Q(homologator_rg_or_cnh=True) |
                         ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
                         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+                        ~Q(units__bill_file__isnull=False) |
                         Q(sale__is_pre_sale=True)
                     ) | Q(status__in=['CO', 'D'])
                 )
@@ -388,9 +401,18 @@ class ProjectViewSet(BaseModelViewSet):
             Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
         )
         
+        homologator_rg_or_cnh_subquery = Attachment.objects.filter(
+            content_type=sale_content_type,
+            object_id=OuterRef('sale_id'),
+            status='A'
+        ).filter(Q(
+            Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
+        ) & Q(document_type__name__icontains='homologador'))
+        
         queryset = queryset.annotate(
             has_contract=Exists(contract_subquery),
-            has_rg_or_cnh=Exists(rg_or_cnh_subquery)
+            has_rg_or_cnh=Exists(rg_or_cnh_subquery),
+            homologator_rg_or_cnh=Exists(homologator_rg_or_cnh_subquery),
         )
 
 
@@ -426,7 +448,9 @@ class ProjectViewSet(BaseModelViewSet):
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
                     has_contract=True,
-                    has_rg_or_cnh=True
+                    has_rg_or_cnh=True,
+                    homologator_rg_or_cnh=True,
+                    units__bill_file__isnull=False,
                 ) & ~Q(status__in=['CO', 'D']),
             ),
 
@@ -437,7 +461,9 @@ class ProjectViewSet(BaseModelViewSet):
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
                     has_contract=True,
-                    has_rg_or_cnh=True
+                    has_rg_or_cnh=True,
+                    homologator_rg_or_cnh=True,
+                    units__bill_file__isnull=False,
                 ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False)
             ),
             
@@ -458,13 +484,25 @@ class ProjectViewSet(BaseModelViewSet):
             blocked_to_engineering=Count(
                 'id',
                 filter=Q(
-                    # Q(is_documentation_completed=False) |
                     Q(sale__payment_status__in=['P', 'CA']) |
-                    ~Q (sale__status='F') |
+                    Q(has_rg_or_cnh=False) |
+                    Q(homologator_rg_or_cnh=False) |
+                    Q(has_contract=False) |
+                    Q(units__bill_file__isnull=True) |
                     ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
                     Q(sale__is_pre_sale=True)
                 )
-            )
+            ),
+            # blocked_to_engineering=Count(
+            #     'id',
+            #     filter=Q(
+            #         # Q(is_documentation_completed=False) |
+            #         Q(sale__payment_status__in=['P', 'CA']) |
+            #         ~Q (sale__status='F') |
+            #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
+            #         Q(sale__is_pre_sale=True)
+            #     )
+            # )
         )
 
 
