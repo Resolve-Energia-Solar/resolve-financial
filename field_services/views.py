@@ -66,6 +66,12 @@ class ScheduleViewSet(BaseModelViewSet):
         service = self.request.query_params.get('service')
         schedule_agent = self.request.query_params.get('schedule_agent')
         final_services_opnions = self.request.query_params.get('final_services_opnions')
+        customer_icontains = self.request.query_params.get('customer_icontains')
+        
+        
+        if customer_icontains:
+            queryset = queryset.filter(Q(customer__complete_name__icontains=customer_icontains)| Q(customer__cpf__icontains=customer_icontains))
+            
         
         if final_services_opnions:
             final_services_opnions = final_services_opnions.split(',')
