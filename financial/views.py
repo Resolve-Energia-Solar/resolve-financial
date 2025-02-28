@@ -433,9 +433,9 @@ class FinancialRecordApprovalView(APIView):
                 return Response({"error": f"FinancialRecord with id {financial_record_id} is not pending approval"}, status=400)
             
             try:
-                # Atualiza a data de vencimento caso a data atual seja maior ou igual a data de hoje
+                # Atualiza a data de vencimento caso a data atual seja menor ou igual a data de hoje
                 now = timezone.localtime(timezone.now()).date()
-                if financial_record.due_date >= now:
+                if financial_record.due_date <= now:
                     financial_record.due_date = workdays.workday(now, 2)
                     financial_record.save()
                     logger.info(f"Due date for financial record {financial_record.protocol} updated to {financial_record.due_date}")
