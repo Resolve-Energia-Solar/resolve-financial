@@ -586,10 +586,10 @@ class Project(models.Model):
             Q(status='A') &
             Q(document_type__name__icontains='homologador')
         )
-        attachments_cnh = self.sale.attachments.filter(document_type__name__icontains='CNH', status='A')
-        attachments_rg = self.sale.attachments.filter(document_type__name__icontains='RG', status='A')
+        # attachments_cnh = self.sale.attachments.filter(document_type__name__icontains='CNH', status='A')
+        # attachments_rg = self.sale.attachments.filter(document_type__name__icontains='RG', status='A')
         attachments_contract = self.sale.attachments.filter(document_type__name__icontains='Contrato', status='A')
-        attachments = (attachments_rg.exists() or attachments_cnh.exists()) and attachments_contract.exists() and attachments_cnh_or_rg_homologator.exists()
+        attachments = attachments_contract.exists() and attachments_cnh_or_rg_homologator.exists()
         
         #Check Units bill file
         main_unit = self.units.filter(main_unit=True, bill_file__isnull=False)

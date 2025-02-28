@@ -340,8 +340,6 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__payment_status__in=['L', 'C', 'CO'],
                     sale__is_pre_sale=False,
                     inspection__final_service_opinion__name__icontains='aprovado',
-                    has_contract=True,
-                    has_rg_or_cnh=True,
                     homologator_rg_or_cnh=True,
                     units__bill_file__isnull=False,
                 ) &
@@ -350,8 +348,6 @@ class ProjectViewSet(BaseModelViewSet):
             elif is_released_to_engineering == 'false':
                 queryset = queryset.filter(
                     Q(
-                        ~Q(has_contract=True) |
-                        ~Q(has_rg_or_cnh=True) |
                         ~Q(homologator_rg_or_cnh=True) |
                         ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
                         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
@@ -459,8 +455,6 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__payment_status__in=['L', 'C', 'CO'],
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
-                    has_contract=True,
-                    has_rg_or_cnh=True,
                     homologator_rg_or_cnh=True,
                     units__bill_file__isnull=False,
                 ) & ~Q(status__in=['CO', 'D']),
@@ -472,8 +466,6 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__payment_status__in=['L', 'C', 'CO'],
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
-                    has_contract=True,
-                    has_rg_or_cnh=True,
                     homologator_rg_or_cnh=True,
                     units__bill_file__isnull=False,
                 ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False)
@@ -497,9 +489,7 @@ class ProjectViewSet(BaseModelViewSet):
                 'id',
                 filter=Q(
                     Q(sale__payment_status__in=['P', 'CA']) |
-                    Q(has_rg_or_cnh=False) |
                     Q(homologator_rg_or_cnh=False) |
-                    Q(has_contract=False) |
                     Q(units__bill_file__isnull=True) |
                     ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
                     Q(sale__is_pre_sale=True)
