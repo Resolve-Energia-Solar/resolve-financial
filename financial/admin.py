@@ -85,28 +85,69 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
 
 
 
+from django.contrib import admin
+from django.db.models import Q
+
+class ErrorRequestFilter(admin.SimpleListFilter):
+    title = 'Solicitações com Erro'
+    parameter_name = 'error_request'
+
+    def lookups(self, request, model_admin):
+        return (('erro', 'Com Erro'),)
+
+    def queryset(self, request, queryset):
+        if self.value() == 'erro':
+            return queryset.filter(
+                responsible_status='A',
+                payment_status='P'
+            ).filter(Q(integration_code__isnull=True) | Q(integration_code=''))
+        return queryset
+
 @admin.register(FinancialRecord)
 class FinancialRecordAdmin(admin.ModelAdmin):
-    list_display = ('protocol', 'integration_code', 'status', 'responsible_status', 'payment_status', 'value', 'due_date', 'created_at')
-    search_fields = ('integration_code', 'protocol', ...)
-    list_filter = ('status', 'responsible_status', 'payment_status', 'due_date', 'created_at')
+    list_display = (
+        'protocol', 'integration_code', 'responsible_status',
+        'payment_status', 'client_supplier_name', 'category_name',
+        'value', 'due_date', 'created_at'
+    )
+    search_fields = ('integration_code', 'protocol', 'client_supplier_name', 'category_name', 'department_name', 'value')
+    list_filter = (
+        'status', 'responsible_status', 'payment_status', 
+        'due_date', 'created_at', ErrorRequestFilter
+    )
     ordering = ('-created_at',)
     actions = ['send_to_omie', 'resend_approval_request_to_responsible']
 
     def send_to_omie(self, request, queryset):
         for record in queryset:
-            if record.integration_code is not None and record.responsible_status == 'A' and record.payment_status == 'P':
+            if record.integration_code is None and record.responsible_status == 'A' and record.payment_status == 'P':
                 send_to_omie_task.delay(record.id)
-                self.message_user(request, f"Tarefa para enviar o registro {record.protocol} agendada.", level='info')
+                self.message_user(
+                    request, 
+                    f"Tarefa para enviar o registro {record.protocol} agendada.", 
+                    level='info'
+                )
             else:
-                self.message_user(request, f"O registro {record.protocol} não atende aos critérios para envio.", level='warning')
+                self.message_user(
+                    request, 
+                    f"O registro {record.protocol} não atende aos critérios para envio.", 
+                    level='warning'
+                )
     send_to_omie.short_description = "Enviar registros selecionados para o Omie"
 
     def resend_approval_request_to_responsible(self, request, queryset):
         for record in queryset:
             if record.responsible_status == 'P':
                 resend_approval_request_to_responsible_task.delay(record.id)
-                self.message_user(request, f"Tarefa para reenviar o convite para o registro {record.protocol} agendada.", level='info')
+                self.message_user(
+                    request, 
+                    f"Tarefa para reenviar o convite para o registro {record.protocol} agendada.", 
+                    level='info'
+                )
             else:
-                self.message_user(request, f"O registro {record.protocol} não está com o status do responsável pendente.", level='warning')
+                self.message_user(
+                    request, 
+                    f"O registro {record.protocol} não está com o status do responsável pendente.", 
+                    level='warning'
+                )
     resend_approval_request_to_responsible.short_description = "Reenviar solicitação ao responsável"
