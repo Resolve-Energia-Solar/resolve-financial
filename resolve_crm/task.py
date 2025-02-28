@@ -32,7 +32,7 @@ def update_or_create_sale_tag(sale_id, sale_status):
             if tag_qs.exists():
                 tag_qs.delete()
                 logger.info(f"📌 Tag removida para sale {sale.id}")
-        else:
+        elif sale_status == "EA":
             new_tag = "documentação parcial"
             color = "#FF0000"
             tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag=new_tag)
@@ -46,6 +46,8 @@ def update_or_create_sale_tag(sale_id, sale_status):
                 logger.info(f"📌 Tag criada para sale {sale.id}")
             else:
                 logger.info(f"📌 Tag já existe para sale {sale.id}")
+        else:
+            logger.info(f"📌 Status {sale_status} não requer tag")
     except Sale.DoesNotExist:
         logger.error(f"📌Sale com ID {sale_id} não encontrada.")
         return

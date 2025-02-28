@@ -337,6 +337,7 @@ class ProjectViewSet(BaseModelViewSet):
 
             if is_released_to_engineering == 'true':
                 queryset = queryset.filter(Q(
+                    sale__status__in=['F', 'EA'],
                     sale__payment_status__in=['L', 'C', 'CO'],
                     sale__is_pre_sale=False,
                     inspection__final_service_opinion__name__icontains='aprovado',
@@ -348,6 +349,7 @@ class ProjectViewSet(BaseModelViewSet):
             elif is_released_to_engineering == 'false':
                 queryset = queryset.filter(
                     Q(
+                        ~Q(sale__status__in=['F', 'EA']) |
                         ~Q(homologator_rg_or_cnh=True) |
                         ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
                         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
@@ -452,6 +454,7 @@ class ProjectViewSet(BaseModelViewSet):
             is_released_to_engineering_count=Count(
                 'id',
                 filter=Q(
+                    sale__status__in=['F', 'EA'],
                     sale__payment_status__in=['L', 'C', 'CO'],
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
@@ -463,6 +466,7 @@ class ProjectViewSet(BaseModelViewSet):
             pending_material_list=Count(
                 'id',
                 filter=Q(
+                    sale__status__in=['F', 'EA'],
                     sale__payment_status__in=['L', 'C', 'CO'],
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
@@ -488,6 +492,7 @@ class ProjectViewSet(BaseModelViewSet):
             blocked_to_engineering=Count(
                 'id',
                 filter=Q(
+                    ~Q(sale__status__in=['F', 'EA']) &
                     Q(sale__payment_status__in=['P', 'CA']) |
                     Q(homologator_rg_or_cnh=False) |
                     Q(units__bill_file__isnull=True) |
