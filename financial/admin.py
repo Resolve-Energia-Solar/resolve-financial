@@ -46,6 +46,7 @@ class PaymentInstallmentAdmin(admin.ModelAdmin):
 
 class PaymentInline(admin.StackedInline):
     model = Payment
+    autocomplete_fields = ['borrower']
     extra = 1
 
     

@@ -24,18 +24,20 @@ class ProductMaterialsInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('id','name', 'roof_type', 'default', 'is_deleted', 'created_at')
-    search_fields = ('name', 'roof_type__name', 'params', 'branch')
+    search_fields = ('name', 'roof_type__name', 'params', 'branch__name')
     list_filter = ('default', 'is_deleted', 'created_at')
     inlines = [ProductMaterialsInline]
 
 
 class ProjectMaterialsInline(admin.TabularInline):
     model = ProjectMaterials
+    autocomplete_fields = ['material']
     extra = 1
     
     
 class SaleProductInline(admin.TabularInline):
     model = SaleProduct
+    autocomplete_fields = ['product', 'commercial_proposal']
     extra = 1
     
     

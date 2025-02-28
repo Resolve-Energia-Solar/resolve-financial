@@ -30,6 +30,7 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     list_display = ("customer" ,"contract_number", "total_value", "total_paid","signature_date", "billing_date", "created_at")
+    autocomplete_fields = ["customer", "seller", "sales_supervisor","sales_manager"]
     inlines = [SaleProductInline, PaymentInline]
     search_fields = ("contract_number", "customer__username", "seller__username")
     list_filter = ("payment_status", "status", "created_at")
@@ -44,6 +45,7 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("sale", "product", "created_at")
+    autocomplete_fields = ["sale", "product", "designer", "inspection", "homologator", "materials", "registered_circuit_breaker"]
     inlines = [ProjectMaterialsInline]
 
 
