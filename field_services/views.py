@@ -68,10 +68,12 @@ class ScheduleViewSet(BaseModelViewSet):
         final_services_opnions = self.request.query_params.get('final_services_opnions')
         customer_icontains = self.request.query_params.get('customer_icontains')
         
-        
         if customer_icontains:
-            queryset = queryset.filter(Q(customer__complete_name__icontains=customer_icontains)| Q(customer__first_document__icontains=customer_icontains))
-            
+            print(customer_icontains)
+            queryset = queryset.filter(
+                Q(customer__complete_name__icontains=customer_icontains) | 
+                Q(customer__first_document__icontains=customer_icontains)
+            )
         
         if final_services_opnions:
             final_services_opnions = final_services_opnions.split(',')
@@ -85,7 +87,6 @@ class ScheduleViewSet(BaseModelViewSet):
             )
 
         final_service_is_null = self.request.query_params.get('final_service_is_null')
-
         if final_service_is_null == 'true':
             queryset = queryset.filter(final_service_opinion__isnull=True)
         else:
@@ -98,25 +99,27 @@ class ScheduleViewSet(BaseModelViewSet):
         if schedule_agent:
             queryset = queryset.filter(schedule_agent__id=schedule_agent)
         
-        if (user.is_superuser or user.has_perm('field_services.view_all_schedule')):
-          return self.queryset
-            
+        # Ajuste: para superusuários ou usuários com a permissão, retorna o queryset filtrado,
+        # garantindo que os filtros (como customer_icontains) sejam aplicados.
+        if user.is_superuser or user.has_perm('field_services.view_all_schedule'):
+            return queryset
+        
         if user.employee.related_branches.exists() or user.branch_owners.exists():
             related_branches_ids = user.employee.related_branches.values_list('id', flat=True)
             branch_owner_ids = user.branch_owners.values_list('id', flat=True)
-            branch_ids = related_branches_ids | branch_owner_ids
+            branch_ids = list(related_branches_ids) + list(branch_owner_ids)
             
-            branch_schedule = self.queryset.filter(
+            branch_schedule = queryset.filter(
                 Q(schedule_creator__employee__branch_id__in=branch_ids) |
                 Q(project__sale__branch_id__in=branch_ids)
-                )
+            )
         else:
-            branch_schedule = self.queryset.none()
+            branch_schedule = queryset.none()
 
-        
-        stakeholder_schedule = self.queryset.filter(Q(schedule_creator=user) | Q(schedule_agent=user))
+        stakeholder_schedule = queryset.filter(Q(schedule_creator=user) | Q(schedule_agent=user))
         
         return branch_schedule | stakeholder_schedule
+
 
     # listar agendamentos por pessoa para timeline
     @action(detail=False, methods=['get'])
