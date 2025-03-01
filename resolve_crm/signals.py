@@ -94,7 +94,7 @@ def send_webhook_on_delete(sender, instance, **kwargs):
 @receiver(post_save, sender=Attachment)
 def attachment_changed(sender, instance, **kwargs):
     if instance.document_type and any(
-        key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato', 'CNH']
+        key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato', 'CNH', 'homologador']
     ):
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object

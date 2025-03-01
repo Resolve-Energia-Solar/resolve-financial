@@ -15,18 +15,16 @@ from resolve_crm.clicksign import (
 )
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 
 @shared_task
 def update_or_create_sale_tag(sale_id, sale_status):
-
+    logger.info(f"📌 Task: Atualizando tag para sale {sale_id} com status {sale_status}")
     try:
         sale = Sale.objects.get(id=sale_id)
-        logger.info(f"📌 Task: Atualizando tag para sale {sale.contract_number} com status {sale_status}")
         sale_ct = ContentType.objects.get_for_model(Sale)
-        
+
         if sale_status == "F":
             tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
             if tag_qs.exists():
@@ -51,10 +49,12 @@ def update_or_create_sale_tag(sale_id, sale_status):
             if tag_qs.exists():
                 tag_qs.delete()
                 logger.info(f"📌 Tag removida para sale {sale.id}")
-                
+
     except Sale.DoesNotExist:
-        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
-        return
+        logger.error(f"📌 Sale com ID {sale_id} não encontrada.")
+    except Exception as e:
+        logger.error(f"📌 Erro inesperado na função update_or_create_sale_tag: {str(e)}")
+
 
 
 @shared_task
