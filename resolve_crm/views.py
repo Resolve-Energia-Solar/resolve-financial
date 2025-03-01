@@ -304,7 +304,6 @@ class ProjectViewSet(BaseModelViewSet):
                 return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if is_released_to_engineering in ['true', 'false']:
-            print(is_released_to_engineering)
             sale_content_type = ContentType.objects.get_for_model(Sale)
             queryset = queryset.annotate(
                 has_contract=Exists(
@@ -342,9 +341,11 @@ class ProjectViewSet(BaseModelViewSet):
                     sale__is_pre_sale=False,
                     inspection__final_service_opinion__name__icontains='aprovado',
                     homologator_rg_or_cnh=True,
-                    units__bill_file__isnull=False,
                 ) &
-                    ~Q(status__in=['CO', 'D']),
+                    ~Q(status__in=['CO', 'D']) & Q(
+                        Q(units__bill_file__isnull=False) |
+                        Q(units__new_contract_number=True)
+                        )
                 )
             elif is_released_to_engineering == 'false':
                 queryset = queryset.filter(
@@ -353,9 +354,11 @@ class ProjectViewSet(BaseModelViewSet):
                         ~Q(homologator_rg_or_cnh=True) |
                         ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
                         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                        ~Q(units__bill_file__isnull=False) |
                         Q(sale__is_pre_sale=True)
-                    ) | Q(status__in=['CO', 'D'])
+                    ) | Q(status__in=['CO', 'D']) & Q(
+                        Q(units__bill_file__isnull=True) |
+                        Q(units__new_contract_number=False)
+                    )
                 )
 
                 # if is_released_to_engineering == 'true':
@@ -459,8 +462,10 @@ class ProjectViewSet(BaseModelViewSet):
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
                     homologator_rg_or_cnh=True,
-                    units__bill_file__isnull=False,
-                ) & ~Q(status__in=['CO', 'D']),
+                ) & ~Q(status__in=['CO', 'D']) & Q(
+                    Q(units__bill_file__isnull=False) |
+                    Q(units__new_contract_number=True)
+                )
             ),
 
             pending_material_list=Count(
@@ -471,8 +476,10 @@ class ProjectViewSet(BaseModelViewSet):
                     inspection__final_service_opinion__name__icontains='aprovado',
                     sale__is_pre_sale=False,
                     homologator_rg_or_cnh=True,
-                    units__bill_file__isnull=False,
-                ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False)
+                ) & Q(designer_status__in=['CO']) & Q(material_list_is_completed=False) & ~Q(status__in=['CO', 'D']) & Q(
+                    Q(units__bill_file__isnull=False) |
+                    Q(units__new_contract_number=True)
+                )
             ),
             
             # pending_material_list=Count(
@@ -495,9 +502,11 @@ class ProjectViewSet(BaseModelViewSet):
                     ~Q(sale__status__in=['F', 'EA']) &
                     Q(sale__payment_status__in=['P', 'CA']) |
                     Q(homologator_rg_or_cnh=False) |
-                    Q(units__bill_file__isnull=True) |
                     ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                    Q(sale__is_pre_sale=True)
+                    Q(sale__is_pre_sale=True) | Q(
+                        Q(units__bill_file__isnull=True) |
+                        Q(units__new_contract_number=False)
+                    )
                 )
             ),
             # blocked_to_engineering=Count(
