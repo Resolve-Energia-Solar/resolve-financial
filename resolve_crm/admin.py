@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from financial.admin import PaymentInline
-from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Step, Task, Project, Sale, Origin
+from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Reason, Step, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
 
@@ -25,9 +25,6 @@ class ComercialProposalAdmin(admin.ModelAdmin):
     search_fields = ("lead__name", "status", "created_by__username")
     list_filter = ("status", "due_date", "created_at")
     inlines = [SaleProductInline]
-
-
-
 
 
 @admin.register(Sale)
@@ -91,3 +88,9 @@ class MarketingCampaignAdmin(admin.ModelAdmin):
     list_filter = ("start_datetime", "end_datetime")
     ordering = ("-start_datetime",)
     
+
+@admin.register(Reason)
+class ReasonAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)

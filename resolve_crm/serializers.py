@@ -152,7 +152,7 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
     commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
-    cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), write_only=True, source='cancellation_reason', required=False)
+    cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
 
     class Meta:
         model = Sale
