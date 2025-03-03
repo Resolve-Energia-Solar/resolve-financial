@@ -3,7 +3,7 @@ from core.models import Attachment
 from field_services.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
-from resolve_crm.models import Project
+from resolve_crm.models import Lead, Project
 
 
 class RoofTypeSerializer(BaseSerializer):
@@ -76,9 +76,10 @@ class ScheduleSerializer(BaseSerializer):
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project', required=False, allow_null=True)
     schedule_agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='schedule_agent', required=False, allow_null=True)
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
+    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer', required=False, allow_null=True)
     service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False, allow_null=True)
     final_service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='final_service_opinion', required=False, allow_null=True)
+    leads_ids = PrimaryKeyRelatedField(queryset=Lead.objects.all(), many=True, required=False, write_only=True, source='leads')
 
     class Meta(BaseSerializer.Meta):
         model = Schedule

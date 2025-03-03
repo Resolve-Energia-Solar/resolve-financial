@@ -46,7 +46,7 @@ class LeadSerializer(BaseSerializer):
     origin = OriginSerializer(read_only=True)
     sales = SerializerMethodField()
     proposals = SerializerMethodField()
-    
+    schedules = PrimaryKeyRelatedField(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
