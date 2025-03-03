@@ -353,7 +353,22 @@ class ComercialProposal(models.Model):
         verbose_name = "Proposta Comercial"
         verbose_name_plural = "Propostas Comerciais"
         ordering = ['-created_at']
+        
 
+class Reason(models.Model):
+    name = models.CharField("Nome", max_length=50, unique=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Motivo"
+        verbose_name_plural = "Motivos"
+        ordering = ["name"]
+    
 
 class Sale(models.Model):
     
@@ -379,7 +394,7 @@ class Sale(models.Model):
     supplier = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
-    cancellation_reason = models.TextField("Motivo do Cancelamento", null=True, blank=True)
+    cancellation_reason = models.ManyToManyField(Reason, verbose_name="Motivo do Cancelamento", related_name="cancellation_reason_sales", blank=True)
     billing_date = models.DateField("Data de competência", auto_now=False, auto_now_add=False, null=True, blank=True)
     attachments = GenericRelation(Attachment, related_query_name='sale_attachments')
     tags = GenericRelation('core.Tag', related_query_name='sale_tags')
