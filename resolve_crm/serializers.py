@@ -196,10 +196,14 @@ class SaleSerializer(BaseSerializer):
 
     def update(self, instance, validated_data):
         # Atualizar os campos restantes
+        cancellation_reasons = validated_data.pop('cancellation_reasons', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
+
+        if cancellation_reasons is not None:
+            instance.cancellation_reasons.set(cancellation_reasons)
 
         return instance
 
