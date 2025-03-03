@@ -196,7 +196,7 @@ class SaleSerializer(BaseSerializer):
 
     def update(self, instance, validated_data):
         # Atualizar os campos restantes
-        cancellation_reasons = validated_data.pop('cancellation_reasons', None)
+        cancellation_reasons = validated_data.pop('cancellation_reasons_ids', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
