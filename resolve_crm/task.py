@@ -27,12 +27,7 @@ def update_or_create_sale_tag(sale_id, sale_status):
         logger.info(f"📌 Task: Atualizando tag para sale {sale.contract_number} com status {sale_status}")
         sale_ct = ContentType.objects.get_for_model(Sale)
         
-        if sale_status == "F":
-            tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-            if tag_qs.exists():
-                tag_qs.delete()
-                logger.info(f"📌 Tag removida para sale {sale.id}")
-        elif sale_status == "EA":
+        if sale_status == "EA":
             new_tag = "documentação parcial"
             color = "#FF0000"
             tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag=new_tag)
