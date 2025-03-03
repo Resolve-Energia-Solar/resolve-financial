@@ -68,7 +68,7 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
                 update_or_create_sale_tag.delay(sale.id, sale_status)
                 break
     except Sale.DoesNotExist:
-        print(f"Sale com ID {sale_id} não encontrada.")
+        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
 
 
 @shared_task

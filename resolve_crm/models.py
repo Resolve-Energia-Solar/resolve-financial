@@ -385,6 +385,7 @@ class Sale(models.Model):
     supplier = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
+    cancellation_reason = models.TextField("Motivo do Cancelamento", null=True, blank=True)
     billing_date = models.DateField("Data de competência", auto_now=False, auto_now_add=False, null=True, blank=True)
     attachments = GenericRelation(Attachment, related_query_name='sale_attachments')
     tags = GenericRelation('core.Tag', related_query_name='sale_tags')
