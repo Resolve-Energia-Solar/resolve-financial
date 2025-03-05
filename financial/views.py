@@ -142,7 +142,7 @@ class FinancialRecordViewSet(BaseModelViewSet):
         condition_d = user.has_perm('financial.view_all_department_payable_financial_records')
         condition_e = employee_department.id == 12  # Financeiro do CO
         
-        print(f"Conditions: {condition_a}, {condition_b}, {condition_c}, {condition_d}, {condition_e}")
+        # print(f"Conditions: {condition_a}, {condition_b}, {condition_c}, {condition_d}, {condition_e}")
 
         # Todos os usuários podem ver solicitações onde são o responsável ou solicitante
         include_q = Q(responsible=user) | Q(requester=user)

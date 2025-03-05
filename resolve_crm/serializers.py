@@ -46,7 +46,7 @@ class LeadSerializer(BaseSerializer):
     origin = OriginSerializer(read_only=True)
     sales = SerializerMethodField()
     proposals = SerializerMethodField()
-    
+    schedules = PrimaryKeyRelatedField(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
@@ -54,7 +54,6 @@ class LeadSerializer(BaseSerializer):
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
     origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
-    inspections_ids = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), many=True, write_only=True, source='inspections', required=False)
 
 
     class Meta:
@@ -153,6 +152,7 @@ class SaleSerializer(BaseSerializer):
     marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
     products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
     commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
+    cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
 
     class Meta:
         model = Sale
@@ -196,10 +196,14 @@ class SaleSerializer(BaseSerializer):
 
     def update(self, instance, validated_data):
         # Atualizar os campos restantes
+        cancellation_reasons = validated_data.pop('cancellation_reasons', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
+
+        if cancellation_reasons is not None:
+            instance.cancellation_reasons.set(cancellation_reasons)
 
         return instance
 
@@ -501,4 +505,11 @@ class ContractTemplateSerializer(BaseSerializer):
     
     class Meta:
         model = ContractTemplate
+        fields = '__all__'
+
+
+class ReasonSerializer(BaseSerializer):
+    
+    class Meta:
+        model = Reason
         fields = '__all__'

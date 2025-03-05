@@ -24,13 +24,8 @@ def update_or_create_sale_tag(sale_id, sale_status):
     try:
         sale = Sale.objects.get(id=sale_id)
         sale_ct = ContentType.objects.get_for_model(Sale)
-
-        if sale_status == "F":
-            tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag="documentação parcial")
-            if tag_qs.exists():
-                tag_qs.delete()
-                logger.info(f"📌 Tag removida para sale {sale.id}")
-        elif sale_status == "EA":
+        
+        if sale_status == "EA":
             new_tag = "documentação parcial"
             color = "#FF0000"
             tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag=new_tag)
@@ -51,10 +46,25 @@ def update_or_create_sale_tag(sale_id, sale_status):
                 logger.info(f"📌 Tag removida para sale {sale.id}")
 
     except Sale.DoesNotExist:
-        logger.error(f"📌 Sale com ID {sale_id} não encontrada.")
-    except Exception as e:
-        logger.error(f"📌 Erro inesperado na função update_or_create_sale_tag: {str(e)}")
+        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        return
+    
 
+@shared_task
+def remove_tag_from_sale(sale_id, tag_name):
+    try:
+        sale = Sale.objects.get(id=sale_id)
+        logger.info(f"📌 Task: Removendo tag {tag_name} da sale {sale.contract_number}")
+        sale_ct = ContentType.objects.get_for_model(Sale)
+        tag_qs = Tag.objects.filter(content_type=sale_ct, object_id=sale.id, tag=tag_name)
+        if tag_qs.exists():
+            tag_qs.delete()
+            logger.info(f"📌 Tag removida para sale {sale.id}")
+        else:
+            logger.info(f"📌 Tag não encontrada para sale {sale.id}")
+    except Sale.DoesNotExist:
+        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        return
 
 
 @shared_task
@@ -67,8 +77,12 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
                 logger.info(f"📌 Task: Projeto {project.id} liberado para engenharia.")
                 update_or_create_sale_tag.delay(sale.id, sale_status)
                 break
+            else:
+                logger.info(f"📌 Task: Projeto {project.id} não liberado para engenharia.")
+                remove_tag_from_sale.delay(sale.id, "documentação parcial")
+                
     except Sale.DoesNotExist:
-        print(f"Sale com ID {sale_id} não encontrada.")
+        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
 
 
 @shared_task

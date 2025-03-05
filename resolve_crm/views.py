@@ -1187,6 +1187,10 @@ class GenerateCustomContract(APIView):
         return Response({'message': 'Contrato gerado com sucesso. Envio ao Clicksign efetuado.', 'attachment_id': attachment.id}, status=status.HTTP_200_OK)
 
 
+class ReasonViewSet(BaseModelViewSet):
+    queryset = Reason.objects.all()
+    serializer_class = ReasonSerializer
+
 
 def save_all_sales_func(request):
     save_all_sales.delay()

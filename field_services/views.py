@@ -79,9 +79,15 @@ class ScheduleViewSet(BaseModelViewSet):
         final_service_is_null = self.request.query_params.get('final_service_is_null')
         if final_service_is_null == 'true':
             qs = qs.filter(final_service_opinion__isnull=True)
-            
+
         elif final_service_is_null == 'false':
             qs = qs.filter(final_service_opinion__isnull=False)
+            
+        service_opnion_is_null = self.request.query_params.get('service_opnion_is_null')
+        if service_opnion_is_null == 'true':
+            qs = qs.filter(service_opinion__isnull=True)
+        elif service_opnion_is_null == 'false':
+            qs = qs.filter(service_opinion__isnull=False)
 
         project = self.request.query_params.get('project_confirmed')
         if project:
