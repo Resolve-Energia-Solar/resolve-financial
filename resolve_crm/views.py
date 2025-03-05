@@ -31,6 +31,13 @@ from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
+from django.db import transaction
+from django.db.models import Count, Sum, Q
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from .models import Sale
+from .serializers import SaleSerializer, AttachmentSerializer
+
 
 
 logger = logging.getLogger(__name__)
@@ -62,35 +69,42 @@ class ComercialProposalViewSet(BaseModelViewSet):
     serializer_class = ComercialProposalSerializer
 
 
+from django.db import transaction
+from django.db.models import Count, Sum, Q
+from rest_framework.response import Response
+from .models import Sale
+from .serializers import SaleSerializer, AttachmentSerializer
+
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
 
     def get_queryset(self):
         user = self.request.user
-        
+
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
-            # Retorna todas as vendas para superusuários e usuários com permissão
-            return self.queryset
-        
-        if user.employee.related_branches:
-            # Filtra as vendas onde a filial do usuário é a mesma da venda
-            branch_sales = self.queryset.filter(branch__in=user.employee.related_branches.all())
-        else:
-            branch_sales = self.queryset.none()
-        
-        # Filtra as vendas onde o usuário é um dos stakeholders
-        stakeholder_sales = self.queryset.filter(
-            Q(customer=user) | 
-            Q(seller=user) | 
-            Q(sales_supervisor=user) | 
-            Q(sales_manager=user)
+            return Sale.objects.prefetch_related(
+                'sale_products'
+            ).select_related(
+                'customer', 'seller', 'sales_supervisor', 'sales_manager', 'branch'
+            )
+
+        branch_sales = Sale.objects.none()
+        if hasattr(user, 'employee') and user.employee.related_branches.exists():
+            branch_ids = user.employee.related_branches.values_list('id', flat=True)
+            branch_sales = Sale.objects.filter(branch__id__in=branch_ids)
+
+        stakeholder_sales = Sale.objects.filter(
+            Q(customer=user) | Q(seller=user) | 
+            Q(sales_supervisor=user) | Q(sales_manager=user)
         )
-        
-        return branch_sales | stakeholder_sales
-    
+
+        return (branch_sales | stakeholder_sales).distinct()
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+
+        # Filtragem com base nos parâmetros da URL
         payment_status = request.query_params.get('invoice_status')
         is_signed = request.query_params.get('is_signed')
         borrower = request.query_params.get('borrower')
@@ -98,7 +112,7 @@ class SaleViewSet(BaseModelViewSet):
         final_service_opinions = request.query_params.get('final_service_options')
         tag_name = request.query_params.get('tag_name__exact')
         documents_under_analysis = request.query_params.get('documents_under_analysis')
-        
+
         if documents_under_analysis == 'true':
             queryset = queryset.filter(
                 attachments__document_type__required=True,
@@ -109,94 +123,68 @@ class SaleViewSet(BaseModelViewSet):
                 attachments__document_type__required=True,
                 attachments__status='EA',
             )
-        
+
         if tag_name:
             queryset = queryset.filter(tags__tag__exact=tag_name)
-        
+
         if final_service_opinions:
             final_service_opinion_list = final_service_opinions.split(',')
             queryset = queryset.filter(projects__inspection__final_service_opinion__id__in=final_service_opinion_list)
-        
+
         if borrower:
             queryset = queryset.filter(payments__borrower__id=borrower)
-        
+
         if homologator:
             queryset = queryset.filter(projects__homologator__id=homologator)
-        
-        if is_signed=='true':
+
+        if is_signed == 'true':
             queryset = queryset.filter(signature_date__isnull=False)
-        elif is_signed=='false':
+        elif is_signed == 'false':
             queryset = queryset.filter(signature_date__isnull=True)
-            
+
         if payment_status:
             payment_status_list = payment_status.split(',')
             queryset = queryset.filter(payments__invoice_status__in=payment_status_list)
 
+        # Calcula os indicadores (agregações)
         raw_indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
             pending_total_value=Sum('total_value', filter=Q(status="P")),
-            
             finalized_count=Count('id', filter=Q(status="F")),
             finalized_total_value=Sum('total_value', filter=Q(status="F")),
-            
             in_progress_count=Count('id', filter=Q(status="EA")),
             in_progress_total_value=Sum('total_value', filter=Q(status="EA")),
-            
             canceled_count=Count('id', filter=Q(status="C")),
             canceled_total_value=Sum('total_value', filter=Q(status="C")),
-            
             terminated_count=Count('id', filter=Q(status="D")),
             terminated_total_value=Sum('total_value', filter=Q(status="D")),
-            
             total_value_sum=Sum('total_value')
         )
 
         indicators = {
-            "pending": {
-                "count": raw_indicators["pending_count"],
-                "total_value": raw_indicators["pending_total_value"],
-            },
-            "finalized": {
-                "count": raw_indicators["finalized_count"],
-                "total_value": raw_indicators["finalized_total_value"],
-            },
-            "in_progress": {
-                "count": raw_indicators["in_progress_count"],
-                "total_value": raw_indicators["in_progress_total_value"],
-            },
-            "canceled": {
-                "count": raw_indicators["canceled_count"],
-                "total_value": raw_indicators["canceled_total_value"],
-            },
-            "terminated": {
-                "count": raw_indicators["terminated_count"],
-                "total_value": raw_indicators["terminated_total_value"],
-            },
-            
+            "pending": {"count": raw_indicators["pending_count"], "total_value": raw_indicators["pending_total_value"]},
+            "finalized": {"count": raw_indicators["finalized_count"], "total_value": raw_indicators["finalized_total_value"]},
+            "in_progress": {"count": raw_indicators["in_progress_count"], "total_value": raw_indicators["in_progress_total_value"]},
+            "canceled": {"count": raw_indicators["canceled_count"], "total_value": raw_indicators["canceled_total_value"]},
+            "terminated": {"count": raw_indicators["terminated_count"], "total_value": raw_indicators["terminated_total_value"]},
             "total_value_sum": raw_indicators["total_value_sum"]
         }
-        
-        # Paginação (se habilitada)
+
+        # Paginação antes da serialização
         page = self.paginate_queryset(queryset)
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
-            return self.get_paginated_response({
-                'results': serialized_data,
-                'indicators': indicators
-            })
+            return self.get_paginated_response({'results': serialized_data, 'indicators': indicators})
 
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({
-            'results': serialized_data,
-            'indicators': indicators
-        })
+        return Response({'results': serialized_data, 'indicators': indicators})
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         sale = serializer.save()
-        return Response(self.get_serializer(sale).data, status=status.HTTP_201_CREATED)
+        return Response(self.get_serializer(sale).data, status=201)
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
@@ -204,7 +192,12 @@ class SaleViewSet(BaseModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         sale = serializer.save()
-        return Response(self.get_serializer(sale).data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(sale).data, status=200)
+
+    def get_documents_under_analysis(self, obj):
+        """Método otimizado para obter apenas os primeiros 10 documentos."""
+        documents = obj.documents_under_analysis[:10]  # ⚠️ Ajuste para evitar chamadas desnecessárias ao banco
+        return AttachmentSerializer(documents, many=True).data
 
 
 class ProjectViewSet(BaseModelViewSet):

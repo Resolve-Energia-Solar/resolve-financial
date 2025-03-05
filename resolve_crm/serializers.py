@@ -159,8 +159,9 @@ class SaleSerializer(BaseSerializer):
         fields = '__all__'
     
     def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()
+        documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
+
     
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
