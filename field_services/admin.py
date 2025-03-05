@@ -75,4 +75,4 @@ class FormFileAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceOpinion)
 class ServiceOpinionAdmin(admin.ModelAdmin):
-    list_display = ("name", "service")
+    list_display = ("name", "service", "is_final_opinion")

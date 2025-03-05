@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 class CustomLimitOffsetPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 10
     page_size_query_param = 'limit' 
     page_query_param = 'page' 
     max_page_size = 30
