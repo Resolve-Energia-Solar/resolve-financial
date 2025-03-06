@@ -110,7 +110,7 @@ class FinancialRecordAdmin(admin.ModelAdmin):
         'payment_status', 'client_supplier_name', 'category_name',
         'value', 'due_date', 'created_at'
     )
-    search_fields = ('integration_code', 'protocol', 'client_supplier_name', 'category_name', 'department_name', 'value')
+    search_fields = ('integration_code', 'protocol', 'client_supplier_name', 'category_name', 'department_name', 'value', 'responsible_name', 'requester_name')
     list_filter = (
         'status', 'responsible_status', 'payment_status', 
         'due_date', 'created_at', ErrorRequestFilter
