@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Sale
 from .serializers import SaleSerializer, AttachmentSerializer
+from django.core.cache import cache
 
 
 logger = logging.getLogger(__name__)
@@ -381,13 +382,19 @@ class ProjectViewSet(BaseModelViewSet):
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data})
 
-
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
+        cache_key = 'sale_indicators'
+        # Tenta recuperar indicadores do cache
+        indicators = cache.get(cache_key)
+        if indicators:
+            return Response({"indicators": indicators})
+        
         queryset = self.filter_queryset(self.get_queryset())
-        
+
         sale_content_type = ContentType.objects.get_for_model(Sale)
-        
+
+        # Subquery para verificar contrato
         contract_subquery = Attachment.objects.filter(
             content_type=sale_content_type,
             object_id=OuterRef('sale_id'),
@@ -403,47 +410,41 @@ class ProjectViewSet(BaseModelViewSet):
         ).filter(
             Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
         )
-        
+
+        # Subquery para homologador com RG ou CNH
         homologator_rg_or_cnh_subquery = Attachment.objects.filter(
             content_type=sale_content_type,
             object_id=OuterRef('sale_id'),
             status='A'
-        ).filter(Q(
-            Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
-        ) & Q(document_type__name__icontains='homologador'))
-        
+        ).filter(
+            Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH'),
+            document_type__name__icontains='homologador'
+        )
+
+        # Anota as flags necessárias
         queryset = queryset.annotate(
             has_contract=Exists(contract_subquery),
             has_rg_or_cnh=Exists(rg_or_cnh_subquery),
             homologator_rg_or_cnh=Exists(homologator_rg_or_cnh_subquery),
         )
 
-
+        # Agregações para os indicadores
         raw_indicators = queryset.aggregate(
+            # Indicadores para designer
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
             designer_in_progress_count=Count('id', filter=Q(designer_status="EA")),
             designer_complete_count=Count('id', filter=Q(designer_status="CO")),
             designer_canceled_count=Count('id', filter=Q(designer_status="C")),
             designer_termination_count=Count('id', filter=Q(designer_status="D")),
 
+            # Indicadores gerais
             pending_count=Count('id', filter=Q(status="P")),
             in_progress_count=Count('id', filter=Q(status="EA")),
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
             
-            # is_released_to_engineering_count=Count(
-            #     'id',
-            #     filter=Q(
-            #         # Q(is_documentation_completed=True) &
-            #         Q(sale__status='F') &
-            #         Q(sale__payment_status__in=['L', 'C', 'CO']) & 
-            #         Q(inspection__final_service_opinion__name__icontains='aprovado') &
-            #         ~Q(status__in=['CO']) &
-            #         Q(sale__is_pre_sale=False)
-            #     )
-            # ),
-            
+            # Indicador: Liberado para engenharia
             is_released_to_engineering_count=Count(
                 'id',
                 filter=Q(
@@ -458,6 +459,7 @@ class ProjectViewSet(BaseModelViewSet):
                 )
             ),
 
+            # Indicador: Lista de materiais pendentes
             pending_material_list=Count(
                 'id',
                 filter=Q(
@@ -471,21 +473,8 @@ class ProjectViewSet(BaseModelViewSet):
                     Q(units__new_contract_number=True)
                 )
             ),
-            
-            # pending_material_list=Count(
-            #     'id',
-            #     filter=Q(
-            #         # Verifica se o projeto está liberado para engenharia
-            #         Q(
-            #             # Q(is_documentation_completed=True) &
-            #             Q(sale__status='F') &
-            #             Q(sale__payment_status__in=['L', 'C']) &
-            #             Q(inspection__final_service_opinion__name__icontains='aprovado') &
-            #             Q(sale__is_pre_sale=False)
-            #         ) & Q(material_list_is_completed=False) & Q(status='CO')
-            #     )
-            # ),
 
+            # Indicador: Bloqueado para engenharia
             blocked_to_engineering=Count(
                 'id',
                 filter=Q(
@@ -499,18 +488,7 @@ class ProjectViewSet(BaseModelViewSet):
                     )
                 )
             ),
-            # blocked_to_engineering=Count(
-            #     'id',
-            #     filter=Q(
-            #         # Q(is_documentation_completed=False) |
-            #         Q(sale__payment_status__in=['P', 'CA']) |
-            #         ~Q (sale__status='F') |
-            #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-            #         Q(sale__is_pre_sale=True)
-            #     )
-            # )
         )
-
 
         indicators = {
             "designer": {
@@ -532,8 +510,10 @@ class ProjectViewSet(BaseModelViewSet):
             "blocked_to_engineering": raw_indicators["blocked_to_engineering"],
         }
 
+        # Armazena os indicadores no cache por 60 segundos (ajuste conforme necessário)
+        cache.set(cache_key, indicators, 60)
+
         return Response({"indicators": indicators})
-        
 
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
