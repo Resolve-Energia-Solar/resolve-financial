@@ -81,21 +81,26 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        qs = Sale.objects.all().select_related(
+            'customer', 'seller', 'sales_supervisor', 'sales_manager', 'branch'
+        ).prefetch_related(
+            'sale_products',
+            'attachments__document_type',
+            'tags',
+            'projects',
+            'contract_submissions'
+        )
 
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
-            return Sale.objects.prefetch_related(
-                'sale_products'
-            ).select_related(
-                'customer', 'seller', 'sales_supervisor', 'sales_manager', 'branch'
-            )
+            return qs
 
         branch_sales = Sale.objects.none()
         if hasattr(user, 'employee') and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list('id', flat=True)
-            branch_sales = Sale.objects.filter(branch__id__in=branch_ids)
+            branch_sales = qs.filter(branch__id__in=branch_ids)
 
-        stakeholder_sales = Sale.objects.filter(
-            Q(customer=user) | Q(seller=user) | 
+        stakeholder_sales = qs.filter(
+            Q(customer=user) | Q(seller=user) |
             Q(sales_supervisor=user) | Q(sales_manager=user)
         )
 
@@ -178,12 +183,6 @@ class SaleViewSet(BaseModelViewSet):
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data, 'indicators': indicators})
-    
-    def resumeList(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.filter(status='F')
-        serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data})
     
     @transaction.atomic
     def create(self, request, *args, **kwargs):

@@ -14,16 +14,12 @@ class RoofTypeSerializer(BaseSerializer):
 
 
 class CategorySerializer(BaseSerializer):
-
-    # Para leitura: usar serializador completo
-    # members = RelatedUserSerializer(read_only=True, many=True)
-
-    # Para escrita: usar apenas ID
     members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='members', many=True)
 
     class Meta:
         model = Category
         fields = '__all__'
+        depth = 1
 
 
 class DeadlineSerializer(BaseSerializer):
@@ -33,12 +29,9 @@ class DeadlineSerializer(BaseSerializer):
 
 
 class ServiceSerializer(BaseSerializer):  
-    
-    # Para leitura: usar serializador completo
     category = CategorySerializer(read_only=True, many=False)
     deadline = DeadlineSerializer(read_only=True, many=False)
-    
-    # Para escrita: usar apenas ID
+
     category_id = PrimaryKeyRelatedField(queryset=Category.objects.all(), write_only=True, source='category')
     deadline_id = PrimaryKeyRelatedField(queryset=Deadline.objects.all(), write_only=True, source='deadline')
 

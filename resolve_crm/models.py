@@ -16,6 +16,9 @@ from django.core.exceptions import ValidationError
 from django.db import transaction, models
 from django.db.models import Q
 import datetime
+from django.utils.functional import cached_property
+from django.db.models import Sum
+
 
 def get_current_month():
     return datetime.date.today().month
@@ -443,20 +446,13 @@ class Sale(models.Model):
                 return 'Pendente'
         return 'Assinado'
         
-    @property
+    @cached_property
     def total_paid(self):
-        total_paid = 0
-        installments = PaymentInstallment.objects.filter(payment__sale=self, is_paid=True)
-        for installment in installments:
-            total_paid += installment.installment_value
-        return total_paid
-
-    # @property
-    # def attachments(self):
-    #     return Attachment.objects.filter(
-    #         object_id=self.id, 
-    #         content_type=ContentType.objects.get_for_model(self)
-    #     )
+        total = PaymentInstallment.objects.filter(
+            payment__sale=self, 
+            is_paid=True
+        ).aggregate(total=Sum('installment_value'))['total']
+        return total or 0
 
     @property
     def franchise_installments_generated(self):
@@ -536,6 +532,7 @@ class Sale(models.Model):
     
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
+
 
 
 class Step(models.Model):
