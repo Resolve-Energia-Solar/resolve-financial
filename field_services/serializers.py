@@ -63,7 +63,7 @@ class ScheduleSerializer(BaseSerializer):
     # service = ServiceSerializer(read_only=True)
     # schedule_agent = RelatedUserSerializer(read_only=True)
     # address = AddressSerializer(read_only=True)
-    project = SerializerMethodField()
+    # project = SerializerMethodField()
     # customer = RelatedUserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
