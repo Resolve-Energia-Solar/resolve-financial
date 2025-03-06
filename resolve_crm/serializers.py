@@ -22,91 +22,59 @@ class OriginSerializer(BaseSerializer):
       
         
 class ReadSalesSerializer(BaseSerializer):
-    missing_documents = SerializerMethodField()
     total_paid = SerializerMethodField()
 
     class Meta:
         model = Sale
-        fields = ['id', 'total_value', 'status', 'total_paid', 'missing_documents',]
-
-    def get_missing_documents(self, obj):
-        return obj.missing_documents()
+        fields = ['id', 'total_value', 'status', 'total_paid',]
 
     def get_total_paid(self, obj):
         return obj.total_paid
 
  
 class LeadSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    customer = RelatedUserSerializer(read_only=True)
-    seller = RelatedUserSerializer(read_only=True, allow_null=True)
-    sdr = RelatedUserSerializer(read_only=True, allow_null=True)
-    addresses = AddressSerializer(many=True, read_only=True)
-    # column = ColumnSerializer(read_only=True)
-    origin = OriginSerializer(read_only=True)
-    sales = SerializerMethodField()
     proposals = SerializerMethodField()
+    
     schedules = PrimaryKeyRelatedField(many=True, read_only=True)
-
-    # Para escrita: usar apenas IDs
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
     sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
     origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
 
-
     class Meta:
         model = Lead
-        depth = 1
         fields = '__all__'
+        depth = 1
         
     def validate(self, data):
         phone = data.get('phone')
         if phone and len(re.sub(r'\D', '', phone)) != 11:
             raise ValidationError({'phone': 'Phone number must have exactly 11 digits.'})
         return data
-        
-    def get_sales(self, obj):
-        # Aqui, obtenha as vendas vinculadas ao usuário do lead (exemplo para seller)
-        if obj.customer:
-            sales = Sale.objects.filter(customer=obj.customer)
-            return ReadSalesSerializer(sales, many=True).data
-        return []
     
     def get_proposals(self, obj):
-        proposals = ComercialProposal.objects.filter(lead=obj)
-        return [proposal.id for proposal in proposals]
+        proposals = obj.comercialproposal_set.values_list('id', flat=True)
+        return list(proposals)
 
 
 class LeadTaskSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos  
-    members = RelatedUserSerializer(many=True, read_only=True)
-    # lead = LeadSerializer(read_only=True)
-    
-    # Para escrita: usar apenas IDs
     members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
-    # lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     
     class Meta:
         model = Task
         fields = '__all__'
+        depth = 1
 
 
 class MarketingCampaignSerializer(BaseSerializer):
-    
     class Meta:
         model = MarketingCampaign
         fields = '__all__'
         
         
 class ReadProjectSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    designer = RelatedUserSerializer(read_only=True)
-    homologator = RelatedUserSerializer(read_only=True)
-    product = ProductSerializer(read_only=True)
-    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
     requests_energy_company = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
 
@@ -126,22 +94,12 @@ class ReadProjectSerializer(BaseSerializer):
 
 
 class SaleSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    customer = RelatedUserSerializer(read_only=True)
-    seller = RelatedUserSerializer(read_only=True)
-    sales_supervisor = RelatedUserSerializer(read_only=True)
-    sales_manager = RelatedUserSerializer(read_only=True)
-    branch = BranchSerializer(read_only=True)
-    marketing_campaign = MarketingCampaignSerializer(read_only=True)
-    missing_documents = SerializerMethodField()
+    attachments = AttachmentSerializer(many=True, read_only=True)
     documents_under_analysis = SerializerMethodField()
-    sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
-    
-    projects = ReadProjectSerializer(many=True, read_only=True)
 
     # Para escrita: usar apenas IDs
     customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
@@ -157,6 +115,7 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        depth = 1
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
@@ -231,8 +190,8 @@ class SaleSerializer(BaseSerializer):
                 raise ValidationError({"detail": "Proposta comercial não encontrada."})
         else:
             products = self.validate_products_ids(products_ids)
-            for product in products:
-                sale_product = SaleProduct.objects.create(
+            sale_products = [
+                SaleProduct(
                     sale=sale,
                     product=product,
                     amount=1,
@@ -240,8 +199,10 @@ class SaleSerializer(BaseSerializer):
                     reference_value=product.reference_value,
                     cost_value=product.cost_value,
                 )
-                products_list.append(sale_product)
-                
+                for product in products
+            ]
+            SaleProduct.objects.bulk_create(sale_products)
+            products_list.extend(sale_products)
         self.create_projects(sale, products_list)
 
         # Recalcular valores da venda, se necessário
@@ -307,19 +268,15 @@ class SaleSerializer(BaseSerializer):
 
         return total_value
     
-    def get_missing_documents(self, obj):
-        return obj.missing_documents()
+    # def get_missing_documents(self, obj):
+        # return obj.missing_documents()
 
     def get_total_paid(self, obj):
         return obj.total_paid
 
 
 class ReadSaleSerializer(BaseSerializer):
-    customer = RelatedUserSerializer(read_only=True)
     total_paid = SerializerMethodField()
-    
-    projects = ReadProjectSerializer(many=True, read_only=True)
-
     class Meta:
         model = Sale
         fields = '__all__'
@@ -330,13 +287,8 @@ class ReadSaleSerializer(BaseSerializer):
 
 
 class ProjectSerializer(BaseSerializer):
-    # Para leitura
-    product = ProductSerializer(read_only=True)
-    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
-    attachments = AttachmentSerializer(many=True, read_only=True)
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
-    requests_energy_company = SerializerMethodField()
     access_opnion = SerializerMethodField()
     trt_pending = SerializerMethodField()
     trt_status = SerializerMethodField()
@@ -383,13 +335,8 @@ class ProjectSerializer(BaseSerializer):
         return obj.access_opnion()    
     
     def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()
+        documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
-    
-    def get_requests_energy_company(self, obj):
-        from engineering.serializers import ReadRequestsEnergyCompanySerializer
-        requests = obj.requests_energy_company.all()
-        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
     def update(self, instance, validated_data):
         # Extrair dados de materiais e endereços
@@ -432,10 +379,6 @@ class ProjectSerializer(BaseSerializer):
             
 
 class ComercialProposalSerializer(BaseSerializer):
-    lead = LeadSerializer(read_only=True)
-    created_by = RelatedUserSerializer(read_only=True)
-    commercial_products = SaleProductSerializer(many=True, read_only=True)
-
     lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
     commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
@@ -443,6 +386,7 @@ class ComercialProposalSerializer(BaseSerializer):
     class Meta:
         model = ComercialProposal
         fields = '__all__'
+        depth = 1
 
     def create(self, validated_data):
         # Extrair os dados relacionados aos produtos
@@ -485,10 +429,8 @@ class ComercialProposalSerializer(BaseSerializer):
 
 
 class ContractSubmissionSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
     sale = SaleSerializer(read_only=True)
 
-    # Para escrita: usar apenas IDs
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
@@ -497,11 +439,7 @@ class ContractSubmissionSerializer(BaseSerializer):
 
 
 class ContractTemplateSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos
     branches = BranchSerializer(many=True, read_only=True)
-    
-    # Para escrita: usar apenas IDs
     branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
     
     class Meta:
@@ -510,7 +448,6 @@ class ContractTemplateSerializer(BaseSerializer):
 
 
 class ReasonSerializer(BaseSerializer):
-    
     class Meta:
         model = Reason
         fields = '__all__'

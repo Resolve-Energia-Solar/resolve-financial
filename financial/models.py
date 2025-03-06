@@ -11,7 +11,7 @@ class Financier(models.Model):
     name = models.CharField("Nome", max_length=200, null=False, blank=False)
     cnpj = models.CharField("CNPJ", max_length=20, null=True, blank=True)
     address = models.ForeignKey(
-        "accounts.Address", on_delete=models.CASCADE, verbose_name="Endereço", blank=True, null=True
+        "accounts.Address", on_delete=models.PROTECT, verbose_name="Endereço", blank=True, null=True
     )
     phone = models.CharField("Telefone", max_length=20, null=True, blank=True)
     email = models.EmailField("E-mail", null=True, blank=True)
@@ -50,11 +50,11 @@ class Payment(models.Model):
         ("C", "Cancelada"),
     ]
     borrower = models.ForeignKey(
-        get_user_model(), on_delete=models.CASCADE, verbose_name="Tomador"
+        get_user_model(), on_delete=models.PROTECT, verbose_name="Tomador"
     )
     sale = models.ForeignKey(
         "resolve_crm.Sale",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Venda",
         related_name="payments",
     )
@@ -66,7 +66,7 @@ class Payment(models.Model):
     )
     financier = models.ForeignKey(
         "financial.Financier",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Financiadora",
         blank=True,
         null=True,
@@ -120,7 +120,7 @@ class Payment(models.Model):
 class PaymentInstallment(models.Model):
     payment = models.ForeignKey(
         "financial.Payment",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Pagamento",
         related_name="installments",
     )
@@ -157,7 +157,7 @@ class PaymentInstallment(models.Model):
 class FranchiseInstallment(models.Model):
     sale = models.ForeignKey(
         "resolve_crm.Sale",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Venda",
         related_name="franchise_installments",
     )
@@ -383,14 +383,14 @@ class FinancialRecord(models.Model):
     # Logs
     requester = models.ForeignKey(
         get_user_model(),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Solicitante",
         related_name="requested_financial_records",
     )
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     responsible = models.ForeignKey(
         get_user_model(),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Responsável",
         related_name="responsible_financial_records",
     )

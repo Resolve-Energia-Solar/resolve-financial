@@ -97,12 +97,6 @@ class ColumnNameSerializer(BaseSerializer):
 
 
 class ReadLeadSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    column = ColumnNameSerializer(read_only=True)
-    origin = SerializerMethodField()
-    sdr = RelatedUserSerializer(read_only=True)
-    seller = RelatedUserSerializer(read_only=True)
-
     # Para escrita: usar apenas ID
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
     origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
@@ -112,10 +106,7 @@ class ReadLeadSerializer(BaseSerializer):
     class Meta:
         model = Lead
         fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'origin', 'origin_id', 'sdr', 'kwp', 'qualification', 'funnel', 'created_at', 'sdr_id', 'seller_id']
-
-    def get_origin(self, obj):
-        from resolve_crm.serializers import OriginSerializer
-        return OriginSerializer(obj.origin).data
+        depth = 1
 
 
 class SimplifiedTaskSerializer(BaseSerializer):
@@ -125,10 +116,7 @@ class SimplifiedTaskSerializer(BaseSerializer):
 
 
 class TaskSerializer(BaseSerializer):
-    owner = RelatedUserSerializer(read_only=True)
-    column = ColumnNameSerializer(read_only=True)
     depends_on = SerializerMethodField()
-    project = SerializerMethodField()
 
     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
@@ -137,17 +125,11 @@ class TaskSerializer(BaseSerializer):
     class Meta:
         model = Task
         fields = '__all__'
+        depth = 1
     
     def get_depends_on(self, obj):
         depends_on_qs = obj.depends_on.all()
         return SimplifiedTaskSerializer(depends_on_qs, many=True).data
-
-    def get_project(self, obj):
-        from resolve_crm.serializers import ProjectSerializer
-        if obj.project_id:
-            return ProjectSerializer(obj.project).data
-        return None
-
 
 class ColumnSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
