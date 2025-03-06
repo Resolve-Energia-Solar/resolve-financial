@@ -54,7 +54,7 @@ class LeadSerializer(BaseSerializer):
         return data
     
     def get_proposals(self, obj):
-        proposals = obj.comercialproposal_set.values_list('id', flat=True)
+        proposals = obj.proposals.values_list('id', flat=True)
         return list(proposals)
 
 
