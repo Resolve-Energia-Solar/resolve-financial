@@ -22,7 +22,7 @@ class PaymentInstallmentInline(admin.StackedInline):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('sale', 'value', 'payment_type', 'financier', 'due_date', 'created_at')
-    search_fields = ('sale__customer__name', 'payment_type', 'financier__name')
+    search_fields = ('sale__customer__complete_name', 'payment_type', 'financier__name')
     list_filter = ('payment_type', 'due_date', 'created_at')
     ordering = ('-created_at',)
     inlines = [PaymentInstallmentInline]
