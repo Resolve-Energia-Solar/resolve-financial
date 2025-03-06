@@ -77,7 +77,7 @@ class ProductSerializer(BaseSerializer):
         fields = '__all__'
         
     def get_branch(self, obj):
-        return [{'id': branch.id, 'name': branch.name} for branch in obj.branch.all()]
+        return [{'id': branch.id, 'name': branch.name} for branch in obj.branch.all()[:10]]
 
     @transaction.atomic
     def create(self, validated_data):

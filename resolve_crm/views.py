@@ -178,7 +178,13 @@ class SaleViewSet(BaseModelViewSet):
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data, 'indicators': indicators})
-
+    
+    def resumeList(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(status='F')
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response({'results': serialized_data})
+    
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

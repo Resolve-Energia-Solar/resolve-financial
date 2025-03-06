@@ -60,11 +60,11 @@ class FormsSerializer(BaseSerializer):
 class ScheduleSerializer(BaseSerializer):
     
     # Para leitura: usar serializador completo
-    service = ServiceSerializer(read_only=True)
-    schedule_agent = RelatedUserSerializer(read_only=True)
-    address = AddressSerializer(read_only=True)
+    # service = ServiceSerializer(read_only=True)
+    # schedule_agent = RelatedUserSerializer(read_only=True)
+    # address = AddressSerializer(read_only=True)
     project = SerializerMethodField()
-    customer = RelatedUserSerializer(read_only=True)
+    # customer = RelatedUserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     attachments = SerializerMethodField()
@@ -84,15 +84,12 @@ class ScheduleSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+        depth = 1
         
     def get_attachments(self, obj):
         from core.serializers import AttachmentSerializer
         return AttachmentSerializer(obj.attachments, many=True).data
-
-    def get_project(self, obj):
-        # problema com o import circular
-        from resolve_crm.serializers import ProjectSerializer
-        return ProjectSerializer(obj.project).data
+    
     
     def get_service_opinion(self, obj):
         from field_services.serializers import ServiceOpinionSerializer

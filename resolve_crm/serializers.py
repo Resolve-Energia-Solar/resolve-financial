@@ -22,15 +22,15 @@ class OriginSerializer(BaseSerializer):
       
         
 class ReadSalesSerializer(BaseSerializer):
-    missing_documents = SerializerMethodField()
+    # missing_documents = SerializerMethodField()
     total_paid = SerializerMethodField()
 
     class Meta:
         model = Sale
-        fields = ['id', 'total_value', 'status', 'total_paid', 'missing_documents',]
+        fields = ['id', 'total_value', 'status', 'total_paid',]
 
-    def get_missing_documents(self, obj):
-        return obj.missing_documents()
+    # def get_missing_documents(self, obj):
+    #     return obj.missing_documents()
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -127,15 +127,15 @@ class ReadProjectSerializer(BaseSerializer):
 
 class SaleSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
-    customer = RelatedUserSerializer(read_only=True)
-    seller = RelatedUserSerializer(read_only=True)
-    sales_supervisor = RelatedUserSerializer(read_only=True)
-    sales_manager = RelatedUserSerializer(read_only=True)
-    branch = BranchSerializer(read_only=True)
-    marketing_campaign = MarketingCampaignSerializer(read_only=True)
-    missing_documents = SerializerMethodField()
+    # customer = RelatedUserSerializer(read_only=True)
+    # seller = RelatedUserSerializer(read_only=True)
+    # sales_supervisor = RelatedUserSerializer(read_only=True)
+    # sales_manager = RelatedUserSerializer(read_only=True)
+    # branch = BranchSerializer(read_only=True)
+    # marketing_campaign = MarketingCampaignSerializer(read_only=True)
+    # missing_documents = SerializerMethodField()
+    # sale_products = SaleProductSerializer(many=True, read_only=True)
     documents_under_analysis = SerializerMethodField()
-    sale_products = SaleProductSerializer(many=True, read_only=True)
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
@@ -157,6 +157,7 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
+        depth = 1
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
@@ -307,8 +308,8 @@ class SaleSerializer(BaseSerializer):
 
         return total_value
     
-    def get_missing_documents(self, obj):
-        return obj.missing_documents()
+    # def get_missing_documents(self, obj):
+        # return obj.missing_documents()
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -330,13 +331,13 @@ class ReadSaleSerializer(BaseSerializer):
 
 
 class ProjectSerializer(BaseSerializer):
-    # Para leitura
-    product = ProductSerializer(read_only=True)
-    materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
-    attachments = AttachmentSerializer(many=True, read_only=True)
+    # # Para leitura
+    # product = ProductSerializer(read_only=True)
+    # materials = ProjectMaterialsSerializer(source='projectmaterials_set', many=True, read_only=True)
+    # attachments = AttachmentSerializer(many=True, read_only=True)
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
-    requests_energy_company = SerializerMethodField()
+    # requests_energy_company = SerializerMethodField()
     access_opnion = SerializerMethodField()
     trt_pending = SerializerMethodField()
     trt_status = SerializerMethodField()
@@ -383,13 +384,13 @@ class ProjectSerializer(BaseSerializer):
         return obj.access_opnion()    
     
     def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()
+        documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
     
-    def get_requests_energy_company(self, obj):
-        from engineering.serializers import ReadRequestsEnergyCompanySerializer
-        requests = obj.requests_energy_company.all()
-        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
+    # def get_requests_energy_company(self, obj):
+    #     from engineering.serializers import ReadRequestsEnergyCompanySerializer
+    #     requests = obj.requests_energy_company.all()
+    #     return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
     def update(self, instance, validated_data):
         # Extrair dados de materiais e endereços
