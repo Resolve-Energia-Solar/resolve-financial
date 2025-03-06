@@ -39,7 +39,6 @@ from .models import Sale
 from .serializers import SaleSerializer, AttachmentSerializer
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -67,13 +66,6 @@ class MarketingCampaignViewSet(BaseModelViewSet):
 class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
-
-
-from django.db import transaction
-from django.db.models import Count, Sum, Q
-from rest_framework.response import Response
-from .models import Sale
-from .serializers import SaleSerializer, AttachmentSerializer
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()

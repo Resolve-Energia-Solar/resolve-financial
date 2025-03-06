@@ -118,7 +118,7 @@ class Lead(models.Model):
     )
     customer = models.ForeignKey(
         get_user_model(), 
-        on_delete=models.CASCADE, 
+        on_delete=models.PROTECT, 
         verbose_name="Cliente", 
         related_name="customer_leads",
         blank=True, 
@@ -128,14 +128,14 @@ class Lead(models.Model):
     # CRM Information
     origin = models.ForeignKey(
         "resolve_crm.Origin", 
-        on_delete=models.CASCADE, 
+        on_delete=models.PROTECT, 
         verbose_name="Origem", 
         blank=True, 
         null=True
     )
     seller = models.ForeignKey(
         "accounts.User", 
-        on_delete=models.CASCADE, 
+        on_delete=models.PROTECT, 
         verbose_name="Vendedor", 
         related_name="lead_seller", 
         blank=True, 
@@ -143,7 +143,7 @@ class Lead(models.Model):
     )
     sdr = models.ForeignKey(
         "accounts.User", 
-        on_delete=models.CASCADE, 
+        on_delete=models.PROTECT, 
         verbose_name="SDR", 
         related_name="lead_sdr", 
         blank=True, 
@@ -176,7 +176,7 @@ class Lead(models.Model):
     # Kanban
     column = models.ForeignKey(
         "core.Column", 
-        on_delete=models.CASCADE, 
+        on_delete=models.PROTECT, 
         verbose_name="Coluna", 
         blank=True, 
         null=True, 
@@ -338,7 +338,7 @@ class ContractSubmission(models.Model):
 
 
 class ComercialProposal(models.Model):
-    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="proposals")
+    lead = models.ForeignKey(Lead, on_delete=models.PROTECT, verbose_name="Lead", related_name="proposals")
     due_date = models.DateField("Prazo para aceitação", auto_now=False, auto_now_add=False)
     value = models.DecimalField("Valor da proposta", max_digits=20, decimal_places=2)
     token = models.UUIDField("Token", editable=False, default=uuid4)
@@ -346,7 +346,7 @@ class ComercialProposal(models.Model):
     observation = models.TextField("Descrição da proposta", blank=True, null=True)
     products = models.ManyToManyField('logistics.Product', through='logistics.SaleProduct', verbose_name='Produtos')
 
-    created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Criado por", related_name="created_proposals")
+    created_by = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Criado por", related_name="created_proposals")
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     
     def __str__(self):
@@ -383,18 +383,18 @@ class Sale(models.Model):
     ]
 
     # Stakeholders
-    customer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Cliente", related_name="customer_sales")
-    seller = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Vendedor", related_name="seller_sales")
-    sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
-    sales_manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Gerente de Vendas", related_name="manager_sales")
+    customer = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Cliente", related_name="customer_sales")
+    seller = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Vendedor", related_name="seller_sales")
+    sales_supervisor = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Supervisor de Vendas", related_name="supervisor_sales")
+    sales_manager = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Gerente de Vendas", related_name="manager_sales")
     # Sale Information
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
     payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P")
     contract_number = models.CharField("Número do Contrato", max_length=20, unique=True, editable=False, null=True, blank=True)
     signature_date = models.DateField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False)
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Unidade")
-    marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.CASCADE, verbose_name="Campanha de Marketing", null=True, blank=True)
-    supplier = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
+    branch = models.ForeignKey(Branch, on_delete=models.PROTECT, verbose_name="Unidade")
+    marketing_campaign = models.ForeignKey(MarketingCampaign, on_delete=models.PROTECT, verbose_name="Campanha de Marketing", null=True, blank=True)
+    supplier = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
     is_pre_sale = models.BooleanField("Pré-venda", default=True) 
     status = models.CharField("Status da Venda", max_length=2, choices=[("P", "Pendente"), ("F", "Finalizado"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     cancellation_reasons = models.ManyToManyField(Reason, verbose_name="Motivo do Cancelamento", related_name="cancellation_reason_sales", blank=True)
@@ -551,14 +551,14 @@ class Step(models.Model):
 
 
 class Project(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venda", related_name="projects")
-    product = models.ForeignKey('logistics.Product', on_delete=models.CASCADE, verbose_name="Produto", blank=True, null=True)
+    sale = models.ForeignKey(Sale, on_delete=models.PROTECT, verbose_name="Venda", related_name="projects")
+    product = models.ForeignKey('logistics.Product', on_delete=models.PROTECT, verbose_name="Produto", blank=True, null=True)
     project_number = models.CharField("Número do Projeto", max_length=20, null=True, blank=True)
     plant_integration = models.CharField("ID da Usina", max_length=20, null=True, blank=True)
-    designer = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
+    designer = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Projetista", related_name="designer_projects", null=True, blank=True)
     designer_status = models.CharField("Status do Projeto de Engenharia", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], null=False, blank=False, default="P")
     designer_coclusion_date = models.DateField("Data de Conclusão do Projeto de Engenharia", null=True, blank=True)
-    inspection = models.ForeignKey('field_services.Schedule', on_delete=models.CASCADE, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_field_services")
+    inspection = models.ForeignKey('field_services.Schedule', on_delete=models.PROTECT, verbose_name="Agendamento da Vistoria", null=True, blank=True, related_name="project_field_services")
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
@@ -566,11 +566,11 @@ class Project(models.Model):
     status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     attachments = GenericRelation(Attachment, related_query_name='project_attachments')
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
-    homologator = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
+    homologator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
     material_list_is_completed = models.BooleanField("Lista de Materiais Finalizada", default=False, null=True, blank=True)
     documention_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
-    registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.CASCADE, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
+    registered_circuit_breaker = models.ForeignKey('logistics.Materials', on_delete=models.PROTECT, related_name="registered_circuit_breaker", verbose_name="Disjuntor Cadastrado", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
