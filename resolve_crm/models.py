@@ -422,7 +422,7 @@ class Sale(models.Model):
     
     
     def is_released_to_engineering(self):
-        return all(project.is_released_to_engineering() for project in self.projects.all())
+        return any(project.is_released_to_engineering() for project in self.projects.all())
     
     
     def final_service_opinion(self):
