@@ -13,7 +13,7 @@ def send_to_omie_task(record_id):
         logger.error(f"Registro {record_id} não encontrado.")
         return
     omie_service = OmieIntegrationView()
-    if record.integration_code is not None and record.responsible_status == 'A' and record.payment_status == 'P':
+    if record.integration_code is None and record.responsible_status == 'A' and record.payment_status == 'P':
         result = omie_service.create_payment_request(record, "Aprovado", record.responsible_notes)
         if result.get("codigo_status") != "0":
             logger.error(f"Erro ao enviar o registro {record.protocol}: {result.get('descricao_status')}")
