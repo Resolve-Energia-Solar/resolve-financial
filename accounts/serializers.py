@@ -203,7 +203,12 @@ class EmployeeSerializer(BaseSerializer):
         return employee
 
     def update(self, instance, validated_data):
-        user_data = validated_data.pop('user')
+        # Remover o campo many-to-many do dicionário
+        related_branches = validated_data.pop('related_branches', None)
+        
+        user_data = validated_data.pop('user', {})
+        if not isinstance(user_data, dict):
+            user_data = {}
         user = instance.user
 
         addresses_ids = user_data.pop('addresses_ids', [])
@@ -215,19 +220,17 @@ class EmployeeSerializer(BaseSerializer):
             setattr(user, attr, value)
         user.save()
 
-        # Atualizar relações many-to-many
-        if addresses_ids:
-            user.addresses.set(addresses_ids)
-        if user_types_ids:
-            user.user_types.set(user_types_ids)
-        if groups_ids:
-            user.groups.set(groups_ids)
-
-        # Atualizar campos do empregado
+        # Atualizar campos do empregado (exceto many-to-many)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        # Atualizar o many-to-many 'related_branches', se fornecido
+        if related_branches is not None:
+            instance.related_branches.set(related_branches)
+
         return instance
+
 
 
 class UserSerializer(BaseSerializer):
