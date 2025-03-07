@@ -607,7 +607,7 @@ class Project(models.Model):
         #Lógica anterior    
         # return ((self.is_documentation_completed or self.sale.status in ['F']) and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved) and not (self.status in ['CO'] and self.sale.is_pre_sale == False)
         
-        return (check_unit and attachments and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved and self.sale.is_pre_sale == False and not self.status in ['CO', 'D']) and self.sale.status in ['EA', 'F']
+        return (check_unit and attachments and self.sale.payment_status in ['L', 'C', 'CO'] and final_service_opinion_contains_approved and self.sale.is_pre_sale == False and not self.status in ['C', 'D']) and self.sale.status in ['EA', 'F']
     
     
     def pending_material_list(self):
