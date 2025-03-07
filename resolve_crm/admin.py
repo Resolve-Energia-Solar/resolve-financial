@@ -51,7 +51,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(ContractSubmission)
 class ContractSubmissionAdmin(admin.ModelAdmin):
-    list_display = ("sale", "status", "key_number", "finished_at")
+    list_display = ("sale", "status", "key_number", "finished_at", "submit_datetime")
     search_fields = ("sale__contract_number", "key_number", "sale__customer__complete_name")
     list_filter = ("finished_at",)
     ordering = ("-finished_at",)
