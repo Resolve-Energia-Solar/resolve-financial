@@ -73,6 +73,13 @@ class ScheduleSerializer(BaseSerializer):
     service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='service_opinion', required=False, allow_null=True)
     final_service_opinion_id = PrimaryKeyRelatedField(queryset=ServiceOpinion.objects.all(), write_only=True, source='final_service_opinion', required=False, allow_null=True)
     leads_ids = PrimaryKeyRelatedField(queryset=Lead.objects.all(), many=True, required=False, write_only=True, source='leads')
+    schedule_creator_id = PrimaryKeyRelatedField(
+    queryset=User.objects.all(), 
+    write_only=True, 
+    source='schedule_creator', 
+    required=True
+    )
+
 
     class Meta(BaseSerializer.Meta):
         model = Schedule
