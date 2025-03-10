@@ -120,7 +120,7 @@ class Payment(models.Model):
 class PaymentInstallment(models.Model):
     payment = models.ForeignKey(
         "financial.Payment",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         verbose_name="Pagamento",
         related_name="installments",
     )
