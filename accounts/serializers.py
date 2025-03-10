@@ -235,11 +235,11 @@ class EmployeeSerializer(BaseSerializer):
 
 class UserSerializer(BaseSerializer):
     # Para leitura: usar serializadores completos
-    addresses = AddressSerializer(many=True, read_only=True)
-    user_types = UserTypeSerializer(many=True, read_only=True)
-    groups = GroupSerializer(many=True, read_only=True)
-    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
-    employee = EmployeeSerializer(read_only=True)
+    # addresses = AddressSerializer(many=True, read_only=True)
+    # user_types = UserTypeSerializer(many=True, read_only=True)
+    # groups = GroupSerializer(many=True, read_only=True)
+    # phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
+    # employee = EmployeeSerializer(read_only=True)
     employee_data = SerializerMethodField()
 
     # Para escrita: usar apenas IDs

@@ -17,53 +17,7 @@ class BaseModelViewSet(ModelViewSet):
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     pagination_class = CustomLimitOffsetPagination 
-
-
-    def list(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        
-        queryset = self.filter_queryset(self.get_queryset())
-        queryset = self.paginate_queryset(queryset)
-
-        if fields:
-            fields = fields.split(',')
-            serializer = self.get_serializer(queryset, many=True)
-            filtered_data = [
-                {field: self._get_field_data(item, field) for field in fields}
-                for item in serializer.data
-            ]
-            return self.get_paginated_response(filtered_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return self.get_paginated_response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        fields = request.query_params.get('fields')
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-
-        if fields:
-            fields = fields.split(',')
-            filtered_data = {field: self._get_field_data(serializer.data, field) for field in fields}
-            return Response(filtered_data, status=status.HTTP_200_OK)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def _get_field_data(self, obj, field):
-        """Auxiliary method to get nested field data."""
-        if '.' in field:
-            keys = field.split('.')
-            value = obj
-            for key in keys:
-                if isinstance(value, list):
-                    value = [item.get(key, None) for item in value if isinstance(item, dict)]
-                elif isinstance(value, dict):
-                    value = value.get(key, None)
-                else:
-                    return None
-            return value
-        return obj.get(field, None)
-
+    
     @property
     def filterset_fields(self):
         model = self.get_queryset().model
@@ -86,8 +40,8 @@ class BaseModelViewSet(ModelViewSet):
                 elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField']:
                     filter_fields[field.name] = ['exact', 'gte', 'lte']
         return filter_fields
-
-
+    
+    
 class ContratoView(APIView):
     def post(self, request):
         dados_contrato = request.data
