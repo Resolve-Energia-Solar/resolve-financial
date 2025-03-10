@@ -76,18 +76,11 @@ class MarketingCampaignSerializer(BaseSerializer):
         
         
 class ReadProjectSerializer(BaseSerializer):
-    requests_energy_company = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
 
     class Meta:
         model = Project
         fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company', 'documents_under_analysis']
-        depth = 1
-
-    def get_requests_energy_company(self, obj):
-        from engineering.serializers import ReadRequestsEnergyCompanySerializer
-        requests = obj.requests_energy_company.all()
-        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()
@@ -95,7 +88,6 @@ class ReadProjectSerializer(BaseSerializer):
 
 
 class SaleSerializer(BaseSerializer):
-    attachments = AttachmentSerializer(many=True, read_only=True)
     documents_under_analysis = SerializerMethodField()
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
@@ -116,13 +108,11 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        depth = 1
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
 
-    
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
     
@@ -281,7 +271,6 @@ class ReadSaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        depth = 1
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -312,7 +301,6 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        depth = 1
         
         
     def get_request_requested(self, obj):
@@ -387,7 +375,6 @@ class ComercialProposalSerializer(BaseSerializer):
     class Meta:
         model = ComercialProposal
         fields = '__all__'
-        depth = 1
 
     def create(self, validated_data):
         # Extrair os dados relacionados aos produtos
@@ -430,8 +417,6 @@ class ComercialProposalSerializer(BaseSerializer):
 
 
 class ContractSubmissionSerializer(BaseSerializer):
-    sale = SaleSerializer(read_only=True)
-
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
@@ -440,7 +425,6 @@ class ContractSubmissionSerializer(BaseSerializer):
 
 
 class ContractTemplateSerializer(BaseSerializer):
-    branches = BranchSerializer(many=True, read_only=True)
     branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
     
     class Meta:

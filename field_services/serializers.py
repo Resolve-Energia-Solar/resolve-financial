@@ -7,7 +7,6 @@ from resolve_crm.models import Lead, Project
 
 
 class RoofTypeSerializer(BaseSerializer):
-      
     class Meta(BaseSerializer.Meta):
         model = RoofType
         fields = '__all__'
@@ -15,7 +14,6 @@ class RoofTypeSerializer(BaseSerializer):
 
 class CategorySerializer(BaseSerializer):
     members_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='members', many=True)
-
     class Meta:
         model = Category
         fields = '__all__'
@@ -29,9 +27,6 @@ class DeadlineSerializer(BaseSerializer):
 
 
 class ServiceSerializer(BaseSerializer):  
-    category = CategorySerializer(read_only=True, many=False)
-    deadline = DeadlineSerializer(read_only=True, many=False)
-
     category_id = PrimaryKeyRelatedField(queryset=Category.objects.all(), write_only=True, source='category')
     deadline_id = PrimaryKeyRelatedField(queryset=Deadline.objects.all(), write_only=True, source='deadline')
 
@@ -41,8 +36,6 @@ class ServiceSerializer(BaseSerializer):
 
 
 class FormsSerializer(BaseSerializer):
-
-    # Para leitura: usar serializador completo
     service = ServiceSerializer(read_only=True)
 
     class Meta(BaseSerializer.Meta):
@@ -51,13 +44,6 @@ class FormsSerializer(BaseSerializer):
 
 
 class ScheduleSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializador completo
-    # service = ServiceSerializer(read_only=True)
-    # schedule_agent = RelatedUserSerializer(read_only=True)
-    # address = AddressSerializer(read_only=True)
-    # project = SerializerMethodField()
-    # customer = RelatedUserSerializer(read_only=True)
     service_opinion = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     attachments = SerializerMethodField()
@@ -80,11 +66,9 @@ class ScheduleSerializer(BaseSerializer):
     required=True
     )
 
-
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
-        depth = 1
         
     def get_attachments(self, obj):
         from core.serializers import AttachmentSerializer
@@ -100,14 +84,7 @@ class ScheduleSerializer(BaseSerializer):
         return ServiceOpinionSerializer(obj.final_service_opinion).data if obj.final_service_opinion else None
 
 
-
-
 class AnswerSerializer(BaseSerializer):
-
-    # Para leitura: usar serializador completo
-    form = FormsSerializer(read_only=True)
-    schedule = ScheduleSerializer(read_only=True)
-
     # Para escrita: usar apenas ID
     form_id = PrimaryKeyRelatedField(queryset=Forms.objects.all(), 
     write_only=True, source='form')
@@ -119,10 +96,6 @@ class AnswerSerializer(BaseSerializer):
 
 
 class BlockTimeAgentSerializer(BaseSerializer):
-    #leitura
-    agent = RelatedUserSerializer(read_only=True)
-
-    #escrita
     agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
 
     class Meta(BaseSerializer.Meta):
@@ -130,10 +103,6 @@ class BlockTimeAgentSerializer(BaseSerializer):
         fields = '__all__'
 
 class FreeTimeAgentSerializer(BaseSerializer):
-    #leitura
-    agent = RelatedUserSerializer(read_only=True)
-
-    #escrita
     agent_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='agent')
 
     class Meta(BaseSerializer.Meta):
@@ -146,10 +115,6 @@ class FormFileSerializer(BaseSerializer):
         fields = '__all__'
 
 class ServiceOpinionSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    service = ServiceSerializer(read_only=True)
-    
-    # Para escrita: usar apenas ID
     service_id = PrimaryKeyRelatedField(queryset=Service.objects.all(), write_only=True, source='service')
     
     class Meta(BaseSerializer.Meta):

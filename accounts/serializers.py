@@ -8,7 +8,6 @@ from validate_docbr import CPF, CNPJ
 
 
 class DepartmentSerializer(BaseSerializer):
-
     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner')
 
     class Meta:
@@ -23,7 +22,6 @@ class RoleSerializer(BaseSerializer):
 
 
 class PhoneNumberSerializer(BaseSerializer):
-    user = SerializerMethodField(read_only=True)  # Apenas leitura
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user', required=False)  # Apenas escrita
 
     class Meta:
@@ -38,18 +36,8 @@ class PhoneNumberSerializer(BaseSerializer):
         phone_number = PhoneNumber.objects.create(user=user, **validated_data)
         return phone_number
 
-    def get_user(self, obj):
-        # Retorna informações básicas do usuário
-        if obj.user:
-            return {
-                "id": obj.user.id,
-                "complete_name": obj.user.complete_name,
-            }
-        return None
-
 
 class RelatedUserSerializer(BaseSerializer):
-    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
     employee_data = SerializerMethodField()
 
     class Meta:
@@ -80,10 +68,6 @@ class AddressSerializer(BaseSerializer):
 
 
 class BranchSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    owners = RelatedUserSerializer(many=True, read_only=True)
-    address = AddressSerializer(read_only=True)
-
     # Para escrita: usar apenas IDs
     owners_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='owners')
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
@@ -102,9 +86,6 @@ class ContentTypeSerializer(BaseSerializer):
 
 
 class PermissionSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    content_type = ContentTypeSerializer(read_only=True)
-
     # Para escrita: usar apenas ID
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
 
@@ -114,16 +95,11 @@ class PermissionSerializer(BaseSerializer):
 
 
 class GroupSerializer(BaseSerializer):
-    # Para leitura: usar serializador completo
-    permissions = PermissionSerializer(many=True, read_only=True)
-
-    # Para escrita: usar apenas IDs
     permissions_ids = PrimaryKeyRelatedField(queryset=Permission.objects.all(), many=True, write_only=True, source='permissions')
 
     class Meta:
         model = Group
         fields = '__all__'
-        
 
 class UserTypeSerializer(BaseSerializer):
         
@@ -133,7 +109,6 @@ class UserTypeSerializer(BaseSerializer):
 
 
 class CustomFieldSerializer(BaseSerializer):
-    user = SerializerMethodField(read_only=True)
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
 
     class Meta:
@@ -146,18 +121,8 @@ class CustomFieldSerializer(BaseSerializer):
         instance = CustomField.objects.create(user=user, **validated_data)
         return instance
 
-    def get_user(self, obj):
-        return obj.user.id if obj.user else None
-
 
 class EmployeeSerializer(BaseSerializer):
-
-    user = RelatedUserSerializer(read_only=True)
-    department = DepartmentSerializer(read_only=True)
-    branch = BranchSerializer(read_only=True)
-    role = RoleSerializer(read_only=True)
-    manager = SerializerMethodField()
-    
     user_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='user')
     department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='department')
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
@@ -167,12 +132,6 @@ class EmployeeSerializer(BaseSerializer):
     class Meta:
         model = Employee
         fields = '__all__'
-        
-    def get_manager(self, obj):
-        try:
-            return RelatedUserSerializer(obj.user_manager).data
-        except:
-            return None
         
     def create(self, validated_data):
         user_data = validated_data.pop('user', None)
@@ -234,15 +193,8 @@ class EmployeeSerializer(BaseSerializer):
 
 
 class UserSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    # addresses = AddressSerializer(many=True, read_only=True)
-    # user_types = UserTypeSerializer(many=True, read_only=True)
-    # groups = GroupSerializer(many=True, read_only=True)
-    # phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
-    # employee = EmployeeSerializer(read_only=True)
     employee_data = SerializerMethodField()
-
-    # Para escrita: usar apenas IDs
+    
     addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', allow_null=True)
     user_types_ids = PrimaryKeyRelatedField(queryset=UserType.objects.all(), many=True, write_only=True, source='user_types', allow_null=True)
     groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
@@ -304,11 +256,6 @@ class UserSerializer(BaseSerializer):
     
 
 class SquadSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    branch = BranchSerializer(read_only=True)
-    manager = RelatedUserSerializer(read_only=True)
-    members = RelatedUserSerializer(many=True, read_only=True)
-
     # Para escrita: usar apenas IDs
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
     manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='manager')
@@ -319,10 +266,6 @@ class SquadSerializer(BaseSerializer):
     class Meta:
         model = Squad
         fields = '__all__'
-
-    def get_boards(self, obj):
-        from core.serializers import BoardSerializer
-        return BoardSerializer(obj.boards, many=True).data
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):

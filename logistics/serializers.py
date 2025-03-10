@@ -15,8 +15,6 @@ class MaterialAttributesSerializer(BaseSerializer):
 
 
 class MaterialsSerializer(BaseSerializer):
-    attributes = MaterialAttributesSerializer(many=True, required=False)
-
     class Meta(BaseSerializer.Meta):
         model = Materials
         fields = ['id', 'name', 'price', 'attributes']
@@ -38,7 +36,6 @@ class MaterialsSerializer(BaseSerializer):
         
         
 class ProductMaterialsSerializer(BaseSerializer):
-    material = MaterialsSerializer(read_only=True)
     material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
 
     class Meta(BaseSerializer.Meta):
@@ -47,12 +44,6 @@ class ProductMaterialsSerializer(BaseSerializer):
 
 
 class ProductSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    materials = ProductMaterialsSerializer(many=True, read_only=True)
-    roof_type = RoofTypeSerializer(read_only=True)
-    branch = serializers.SerializerMethodField()
-
-    # Para escrita: usar apenas IDs com quantidade
     branches_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,
@@ -75,9 +66,6 @@ class ProductSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Product
         fields = '__all__'
-        
-    def get_branch(self, obj):
-        return [{'id': branch.id, 'name': branch.name} for branch in obj.branch.all()[:10]]
 
     @transaction.atomic
     def create(self, validated_data):
@@ -253,9 +241,6 @@ class ProductSerializer(BaseSerializer):
 
 
 class SaleProductSerializer(BaseSerializer):
-    
-    product = ProductSerializer(read_only=True)
-    
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
     sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
     commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='commercial_proposal', required=False)
@@ -266,8 +251,6 @@ class SaleProductSerializer(BaseSerializer):
         
 
 class ProjectMaterialsSerializer(BaseSerializer):
-    # project = StringRelatedField(read_only=True)
-    material = MaterialsSerializer(read_only=True)
     material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), source='material', write_only=True)
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), source='project', write_only=True)
     

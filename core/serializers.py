@@ -34,8 +34,6 @@ class DocumentSubTypeSerializer(BaseSerializer):
 
 
 class DocumentTypeSerializer(BaseSerializer):
-    subtypes = DocumentSubTypeSerializer(many=True, read_only=True)
-    
     subtypes_ids = PrimaryKeyRelatedField(queryset=DocumentSubType.objects.all(), many=True, write_only=True, source='subtypes', required=False)
     
     class Meta:
@@ -45,12 +43,6 @@ class DocumentTypeSerializer(BaseSerializer):
         
 
 class AttachmentSerializer(BaseSerializer):
-    
-    # Para leitura: usar serializadores completos
-    content_type = ContentTypeSerializer(read_only=True)
-    document_type = DocumentTypeSerializer(read_only=True)
-    document_subtype = DocumentSubTypeSerializer(read_only=True)
-    
     # Para escrita: usar apenas ID
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     document_type_id = PrimaryKeyRelatedField(queryset=DocumentType.objects.all(), write_only=True, source='document_type', required=False)
@@ -67,9 +59,6 @@ class AttachmentSerializer(BaseSerializer):
     
 
 class TagSerializer(BaseSerializer):
-    
-    content_type = ContentTypeSerializer(read_only=True)
-    
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     
     class Meta:
@@ -78,9 +67,6 @@ class TagSerializer(BaseSerializer):
 
 
 class CommentSerializer(BaseSerializer):
-    author = RelatedUserSerializer(read_only=True)
-    content_type = ContentTypeSerializer(read_only=True)
-    
     author_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='author')
     content_type_id = PrimaryKeyRelatedField(queryset=ContentType.objects.all().order_by('app_label', 'model'), write_only=True, source='content_type')
     
@@ -90,7 +76,6 @@ class CommentSerializer(BaseSerializer):
 
 
 class ColumnNameSerializer(BaseSerializer):
-        
         class Meta:
             model = Column
             fields = ['id', 'name']
@@ -106,7 +91,6 @@ class ReadLeadSerializer(BaseSerializer):
     class Meta:
         model = Lead
         fields = ['id', 'name', 'column', 'column_id', 'contact_email', 'phone', 'seller', 'origin', 'origin_id', 'sdr', 'kwp', 'qualification', 'funnel', 'created_at', 'sdr_id', 'seller_id']
-        depth = 1
 
 
 class SimplifiedTaskSerializer(BaseSerializer):
@@ -116,8 +100,6 @@ class SimplifiedTaskSerializer(BaseSerializer):
 
 
 class TaskSerializer(BaseSerializer):
-    depends_on = SerializerMethodField()
-
     owner_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='owner', required=False)
     column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column')
     depends_on_ids = PrimaryKeyRelatedField(queryset=Task.objects.all(), many=True, write_only=True, source='depends_on', required=False)
@@ -125,18 +107,9 @@ class TaskSerializer(BaseSerializer):
     class Meta:
         model = Task
         fields = '__all__'
-        depth = 1
-    
-    def get_depends_on(self, obj):
-        depends_on_qs = obj.depends_on.all()
-        return SimplifiedTaskSerializer(depends_on_qs, many=True).data
 
 class ColumnSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    leads = ReadLeadSerializer(many=True, read_only=True)
-    task = TaskSerializer(many=True, read_only=True)
     proposals_value = SerializerMethodField()
-    board = SerializerMethodField()
     # Para escrita: usar apenas ID
     board_id = PrimaryKeyRelatedField(queryset=Board.objects.all(), write_only=True, source='board')
     column_type = ChoiceField(choices=Column.COLUMN_TYPES, required=False, allow_null=True, allow_blank=True)
@@ -145,19 +118,12 @@ class ColumnSerializer(BaseSerializer):
     class Meta:
         model = Column
         fields = '__all__'
-        
-    def get_board(self, obj):
-        return obj.board.id if obj.board else None
 
     def get_proposals_value(self, obj):
         return obj.proposals_value
 
 
 class BoardSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    columns = ColumnSerializer(many=True, read_only=True)
-    branch = BranchSerializer(read_only=True)
-
     # Para escrita: usar apenas IDs
     columns_ids = PrimaryKeyRelatedField(queryset=Column.objects.all(), many=True, write_only=True, source='columns', required=False, allow_null=True)
     branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
@@ -168,18 +134,11 @@ class BoardSerializer(BaseSerializer):
 
 
 class TaskTemplatesSerializer(BaseSerializer):
-  
-    depends_on = SerializerMethodField()
-    
     depends_on_ids = PrimaryKeyRelatedField(queryset=TaskTemplates.objects.all(), many=True, write_only=True, source='depends_on', required=False)
       
     class Meta:
         model = TaskTemplates
         fields = '__all__'
-    
-    def get_depends_on(self, obj):
-        return TaskTemplatesSerializer(obj.depends_on, many=True).data
-
 
 class GenericNotificationRelatedField(RelatedField):
     def to_representation(self, value):
@@ -187,7 +146,6 @@ class GenericNotificationRelatedField(RelatedField):
 
 
 class NotificationSerializer(BaseSerializer):
-    recipient = RelatedUserSerializer(User)
     unread = BooleanField()
     target = GenericNotificationRelatedField(read_only=True)
     actor = GenericNotificationRelatedField(read_only=True)

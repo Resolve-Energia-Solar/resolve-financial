@@ -25,8 +25,6 @@ class EnergyCompanySerializer(BaseSerializer):
     class Meta:
         model = EnergyCompany
         exclude = ['is_deleted']
-        depth = 1
-        
 
 class ProjectReadSerializer(BaseSerializer):
     sale =  SaleSerializer(read_only=True)
@@ -41,10 +39,7 @@ class SupplyAdequanceSerializer(BaseSerializer):
         fields = '__all__'
 
 
-class UnitsSerializer(BaseSerializer):
-    supply_adquance = SupplyAdequanceSerializer(read_only=True, many=True)
-    address = AddressSerializer(read_only=True)
-    
+class UnitsSerializer(BaseSerializer):    
     address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
     supply_adquance_ids = PrimaryKeyRelatedField(queryset=SupplyAdequance.objects.all(), many=True, write_only=True, source='supply_adquance')
     project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
@@ -77,11 +72,9 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
     class Meta:
         model = RequestsEnergyCompany
         exclude = ['is_deleted']
-        depth = 1
 
 
 class ReadRequestsEnergyCompanySerializer(BaseSerializer):
     class Meta:
         model = RequestsEnergyCompany
         exclude = ['is_deleted']
-        depth = 1
