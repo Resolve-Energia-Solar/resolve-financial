@@ -3,6 +3,7 @@ from core.models import Attachment
 from field_services.models import *
 from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField
 from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
+from logistics.models import Product
 from resolve_crm.models import Lead, Project
 
 
@@ -78,6 +79,10 @@ class ScheduleSerializer(BaseSerializer):
     write_only=True, 
     source='schedule_creator', 
     required=True
+    )
+    products = PrimaryKeyRelatedField(
+        many=True,
+        queryset=Product.objects.all()
     )
 
 
