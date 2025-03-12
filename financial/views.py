@@ -375,7 +375,7 @@ class OmieIntegrationView(APIView):
                         "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
                         "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
                         "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
-                        "observacao": f'nº {financial_record.protocol}: {financial_record.description}',
+                        "observacao": f'nº {financial_record.protocol}: {financial_record.notes}',
                         "distribuicao": [
                             {
                                 "cCodDep": financial_record.department_code,
