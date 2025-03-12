@@ -401,7 +401,7 @@ class Sale(models.Model):
     billing_date = models.DateField("Data de competência", auto_now=False, auto_now_add=False, null=True, blank=True)
     attachments = GenericRelation(Attachment, related_query_name='sale_attachments')
     tags = GenericRelation('core.Tag', related_query_name='sale_tags')
-    
+    reference_table = models.CharField("Tabela de Referência", max_length=100, null=True, blank=True)
     transfer_percentage = models.DecimalField(
         "Porcentagem de Repasse",
         max_digits=7,
