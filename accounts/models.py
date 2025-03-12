@@ -188,8 +188,8 @@ class Address(models.Model):
     street = models.CharField("Rua", max_length=255)
     number = models.CharField("Número", max_length=10)
     complement = models.CharField("Complemento", max_length=255, blank=True, null=True)
-    latitude = models.DecimalField("Latitude", max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField("Longitude", max_digits=9, decimal_places=6, blank=True, null=True)
+    latitude = models.DecimalField("Latitude", max_digits=20, decimal_places=10, blank=True, null=True)
+    longitude = models.DecimalField("Longitude", max_digits=20, decimal_places=10, blank=True, null=True)
     is_deleted = models.BooleanField("Deletado?", default=False)
     # Logs
     history = HistoricalRecords()
