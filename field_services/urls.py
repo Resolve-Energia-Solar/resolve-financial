@@ -13,3 +13,4 @@ router.register('block-time-agent', BlockTimeAgentViewSet, basename='block-time-
 router.register('free-time-agent', FreeTimeAgentViewSet, basename='free-time-agent')
 router.register('form-files', FormFileViewSet, basename='form-file')
 router.register('service-opinions', ServiceOpinionViewSet, basename='service-opinion')
+router.register('routes', RouteViewSet, basename='route')
