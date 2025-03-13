@@ -180,7 +180,7 @@ class PhoneNumber(models.Model):
 
 
 class Address(models.Model):
-    zip_code = models.CharField("CEP", max_length=8, validators=[RegexValidator(r'^\d{1,8}$')])
+    zip_code = models.CharField("CEP", max_length=8, validators=[RegexValidator(r'^\d{1,8}$')], blank=True, null=True)
     country = models.CharField("País", max_length=255)
     state = models.CharField("Estado", max_length=2, choices=(("AC", "AC"), ("AL", "AL"), ("AP", "AP"), ("AM", "AM"), ("BA", "BA"), ("CE", "CE"), ("DF", "DF"), ("ES", "ES"), ("GO", "GO"), ("MA", "MA"), ("MT", "MT"), ("MS", "MS"), ("MG", "MG"), ("PA", "PA"), ("PB", "PB"), ("PR", "PR"), ("PE", "PE"), ("PI", "PI"), ("RJ", "RJ"), ("RN", "RN"), ("RS", "RS"), ("RO", "RO"), ("RR", "RR"), ("SC", "SC"), ("SP", "SP"), ("SE", "SE"), ("TO", "TO")))
     city = models.CharField("Cidade", max_length=255)
@@ -188,8 +188,8 @@ class Address(models.Model):
     street = models.CharField("Rua", max_length=255)
     number = models.CharField("Número", max_length=10)
     complement = models.CharField("Complemento", max_length=255, blank=True, null=True)
-    latitude = models.DecimalField("Latitude", max_digits=20, decimal_places=10, blank=True, null=True)
-    longitude = models.DecimalField("Longitude", max_digits=20, decimal_places=10, blank=True, null=True)
+    latitude = models.DecimalField("Latitude", max_digits=50, decimal_places=25, blank=True, null=True)
+    longitude = models.DecimalField("Longitude", max_digits=50, decimal_places=25, blank=True, null=True)
     is_deleted = models.BooleanField("Deletado?", default=False)
     # Logs
     history = HistoricalRecords()
@@ -202,10 +202,14 @@ class Address(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
+        address = f"{self.street} - {self.number}"
         if self.complement:
-            return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
-        else:
-            return f"{self.street} - {self.number}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
+            address += f", {self.complement}"
+        address += f", {self.city}/{self.state}"
+        if self.zip_code:
+            address += f" - {self.zip_code}"
+        address += f", {self.country}"
+        return address
     
     class Meta:
         verbose_name = "Endereço"
