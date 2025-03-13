@@ -35,7 +35,7 @@ class ReadSalesSerializer(BaseSerializer):
 class LeadSerializer(BaseSerializer):
     proposals = SerializerMethodField()
     
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
+    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer', required=False)
     schedules = PrimaryKeyRelatedField(many=True, read_only=True)
     seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
     sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
