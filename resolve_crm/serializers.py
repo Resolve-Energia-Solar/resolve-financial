@@ -302,7 +302,7 @@ class ProjectSerializer(BaseSerializer):
     product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
     units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
     designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
-    inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False)
+    inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False, allow_null=True)
     materials_data = ListField(
         child= DictField(),
         write_only=True,
