@@ -1,6 +1,7 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class SicoobRequest(models.Model):
@@ -10,6 +11,9 @@ class SicoobRequest(models.Model):
     monthly_income = models.DecimalField('Renda mensal', max_digits=10, decimal_places=2)
     managing_partner = models.ForeignKey('accounts.User', verbose_name='Sócio Administrador', on_delete=models.CASCADE, related_name='sicoob_requests_as_managing_partner', null=True, blank=True)
     status = models.CharField(max_length=2, default='P', choices=[('P', 'Pendente'), ('A', 'Aprovado'), ('R', 'Reprovado'), ('PA', 'Pré-Aprovado')])
+    requested_by = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name='Solicitado por', related_name='sicoob_requests_requested_by')
+    attachments = GenericRelation("core.Attachment", related_query_name='sicoob_request_attachments')
+    created_at = models.DateTimeField(auto_now_add=True)
     
     history = HistoricalRecords()
 

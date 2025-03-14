@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.forms import ValidationError
 from simple_history.models import HistoricalRecords
@@ -62,7 +63,6 @@ class User(AbstractUser):
         ('PF', 'Pessoa Física'),
         ('PJ', 'Pessoa Jurídica'),
     ]
-    
     # Personal Info
     complete_name = models.CharField("Nome Completo", max_length=255, blank=False, null=False)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
@@ -70,21 +70,16 @@ class User(AbstractUser):
     first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
     second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
-    
     username = models.CharField("Nome de Usuário", max_length=150, unique=True, blank=True, null=True)
     password = models.CharField("Senha", max_length=128, blank=True, null=True)
-
+    attachments = GenericRelation("core.Attachment", related_query_name="user_attachments")
     # Contact
     email = models.EmailField("E-mail", unique=True)
-
     # Address
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
-
     # User Type Info
     user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
-
     person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
-
     # Logs
     history = HistoricalRecords()
     
