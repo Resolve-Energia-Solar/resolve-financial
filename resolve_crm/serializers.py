@@ -34,9 +34,6 @@ class LeadSerializer(BaseSerializer):
 
 
 class LeadTaskSerializer(BaseSerializer):
-    # members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
-    # lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
-    
     class Meta:
         model = Task
         fields = '__all__'
@@ -54,17 +51,6 @@ class SaleSerializer(BaseSerializer):
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
-
-    # Para escrita: usar apenas IDs
-    # customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    # seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
-    # sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
-    # sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
-    # branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    # marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-    # products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
-    # commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
-    # cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
 
     class Meta:
         model = Sale
@@ -219,9 +205,6 @@ class SaleSerializer(BaseSerializer):
             total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
         return total_value
-    
-    # def get_missing_documents(self, obj):
-        # return obj.missing_documents()
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -272,15 +255,12 @@ class ProjectSerializer(BaseSerializer):
         return AttachmentSerializer(documents, many=True).data
     
     def update(self, instance, validated_data):
-        # Extrair dados de materiais e endereços
         materials_data = validated_data.pop('materials_data', [])
         
-        # Atualiza os campos do projeto
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Atualiza materiais se fornecidos
         if materials_data:
             self._save_materials(instance, materials_data)
 
@@ -288,15 +268,13 @@ class ProjectSerializer(BaseSerializer):
 
 
     def _save_materials(self, project, materials_data):
-        """Função auxiliar para criar ou atualizar materiais do projeto com detalhes extras"""
-        project.materials.clear()  # Limpar materiais antigos
+        project.materials.clear()
         for material_data in materials_data:
             material_id = material_data.get('material_id')
             amount = material_data.get('amount', 1)
             is_exit = material_data.get('is_exit', False)
             serial_number = material_data.get('serial_number', None)
 
-            # Verificar se o material existe
             try:
                 material = Materials.objects.get(id=material_id)
             except Materials.DoesNotExist:
@@ -312,48 +290,38 @@ class ProjectSerializer(BaseSerializer):
             
 
 class ComercialProposalSerializer(BaseSerializer):
-    # lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
-    # created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    # commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
-
     class Meta:
         model = ComercialProposal
         fields = '__all__'
 
     def create(self, validated_data):
-        # Extrair os dados relacionados aos produtos
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().create(validated_data)
-        
-        # Criar entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
                 commercial_proposal=proposal,
                 product=product,
-                amount=1,  # Pode ser customizado conforme necessário
-                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
-                reference_value=product.reference_value,  # Ajuste conforme necessário
+                amount=1,
+                cost_value=product.cost_value,
+                reference_value=product.reference_value,
                 value = product.product_value
             )
 
         return proposal
 
     def update(self, instance, validated_data):
-        # Extrair os dados relacionados aos produtos
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().update(instance, validated_data)
 
-        # Limpar produtos antigos relacionados
         SaleProduct.objects.filter(commercial_proposal=instance).delete()
 
-        # Criar novas entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
                 commercial_proposal=proposal,
                 product=product,
-                amount=1,  # Pode ser customizado conforme necessário
-                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
-                reference_value=product.reference_value,  # Ajuste conforme necessário
+                amount=1,
+                cost_value=product.cost_value,
+                reference_value=product.reference_value, 
                 value = product.product_value
             )
 
@@ -361,16 +329,12 @@ class ComercialProposalSerializer(BaseSerializer):
 
 
 class ContractSubmissionSerializer(BaseSerializer):
-    # sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-
     class Meta:
         model = ContractSubmission
         fields = '__all__'
 
 
 class ContractTemplateSerializer(BaseSerializer):
-    # branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
-    
     class Meta:
         model = ContractTemplate
         fields = '__all__'
