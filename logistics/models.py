@@ -38,7 +38,7 @@ class Materials(models.Model):
 
 
 class ProductMaterials(models.Model):
-    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", related_name="materials", null=True, blank=True)
+    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True)
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="products", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)

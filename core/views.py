@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from django.db.models import ForeignKey, OneToOneField
 from django.apps import apps
 
+from accounts.serializers import ContentTypeSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from notifications.models import Notification
 from resolve_crm.models import Sale
@@ -133,7 +134,7 @@ class HistoryView(APIView):
                 delta = new_record.diff_against(old_record)
 
                 if delta.changes:
-                    author_data = RelatedUserSerializer(new_record.history_user).data if new_record.history_user else {'username': 'Desconhecido'}
+                    author_data = UserSerializer(new_record.history_user).data if new_record.history_user else {'username': 'Desconhecido'}
                     change_list = []
                     for change in delta.changes:
                         field_name = change.field
