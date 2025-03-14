@@ -144,3 +144,11 @@ class ReciveContractInfomation(APIView):
 class SicoobRequestViewSet(BaseModelViewSet):
     serializer_class = SicoobRequestSerializer
     queryset = SicoobRequest.objects.all()
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        instance.full_clean()
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        instance.full_clean()
