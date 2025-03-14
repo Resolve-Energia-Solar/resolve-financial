@@ -144,4 +144,3 @@ class ReciveContractInfomation(APIView):
 class SicoobRequestViewSet(BaseModelViewSet):
     serializer_class = SicoobRequestSerializer
     queryset = SicoobRequest.objects.all()
-    permission_classes = [AllowAny]
