@@ -8,12 +8,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.utils import extract_data_from_pdf
+from contracts.models import SicoobRequest
+from contracts.serializers import SicoobRequestSerializer
 from core.models import Attachment, DocumentType
 from resolve_crm.models import ContractSubmission, Sale
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 import logging
 from django.core.files.base import ContentFile
+from api.views import BaseModelViewSet
 
 
 class InformacaoFaturaAPIView(APIView):
@@ -138,3 +141,7 @@ class ReciveContractInfomation(APIView):
                 return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class SicoobRequestViewSet(BaseModelViewSet):
+    serializer_class = SicoobRequestSerializer
+    queryset = SicoobRequest.objects.all()
+    permission_classes = [AllowAny]
