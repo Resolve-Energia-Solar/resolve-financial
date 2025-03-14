@@ -11,13 +11,13 @@ from django.db import transaction
 class MaterialAttributesSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = MaterialAttributes
-        fields = ['key', 'value']
+        fields = '__all__'
 
 
 class MaterialsSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Materials
-        fields = ['id', 'name', 'price', 'attributes']
+        fields = '__all__'
 
     def create(self, validated_data):
         attributes_data = validated_data.pop('attributes', [])
@@ -36,30 +36,13 @@ class MaterialsSerializer(BaseSerializer):
         
         
 class ProductMaterialsSerializer(BaseSerializer):
-    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
 
     class Meta(BaseSerializer.Meta):
         model = ProductMaterials
-        fields = ['material', 'material_id', 'amount', 'id']
+        fields = '__all__'
 
 
 class ProductSerializer(BaseSerializer):
-    branches_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        source='branch',
-        required=True
-    )
-    
-    roof_type_id = PrimaryKeyRelatedField(queryset=RoofType.objects.all(), write_only=True, source='roof_type', required=False)
-    materials_ids = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.DecimalField(max_digits=20, decimal_places=6),
-            help_text="Lista de materiais com `id` e `amount`."
-        ),
-        write_only=True,
-        required=False
-    )
     sale_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
@@ -241,19 +224,12 @@ class ProductSerializer(BaseSerializer):
 
 
 class SaleProductSerializer(BaseSerializer):
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='commercial_proposal', required=False)
-    
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
         fields = '__all__'
         
 
 class ProjectMaterialsSerializer(BaseSerializer):
-    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), source='material', write_only=True)
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), source='project', write_only=True)
-    
     class Meta:
         model = ProjectMaterials
-        fields = ['material', 'material_id', 'project_id', 'amount', 'is_exit', 'serial_number', 'id']
+        fields = '__all__'

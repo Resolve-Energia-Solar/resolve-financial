@@ -1,9 +1,5 @@
-from accounts.models import Address, User
-from resolve_crm.serializers import SaleSerializer
 from engineering.models import *
 from api.serializers import BaseSerializer
-from accounts.serializers import AddressSerializer, RelatedUserSerializer
-from rest_framework.relations import PrimaryKeyRelatedField
 
 
 class SituationEnergyCompanySerializer(BaseSerializer):
@@ -19,15 +15,11 @@ class ResquestTypeSerializer(BaseSerializer):
     
 
 class EnergyCompanySerializer(BaseSerializer):
-    # Para escrita: usar apenas ID
-    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address', required=False)
-
     class Meta:
         model = EnergyCompany
-        exclude = ['is_deleted']
+        fields = '__all__'
 
 class ProjectReadSerializer(BaseSerializer):
-    sale =  SaleSerializer(read_only=True)
     class Meta:
         model = Project
         fields = '__all__'
@@ -40,10 +32,6 @@ class SupplyAdequanceSerializer(BaseSerializer):
 
 
 class UnitsSerializer(BaseSerializer):    
-    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
-    supply_adquance_ids = PrimaryKeyRelatedField(queryset=SupplyAdequance.objects.all(), many=True, write_only=True, source='supply_adquance')
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
-    
     def validate(self, data):
         project = data.get('project') or (self.instance.project if self.instance else None)
         unit_percentage = data.get('unit_percentage') or (self.instance.unit_percentage if self.instance else 0)
@@ -61,20 +49,12 @@ class UnitsSerializer(BaseSerializer):
 
 
 class RequestsEnergyCompanySerializer(BaseSerializer):
-    # Para escrita: usar apenas ID
-    company_id = PrimaryKeyRelatedField(queryset=EnergyCompany.objects.all(), write_only=True, source='company')
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, source='project')
-    type_id = PrimaryKeyRelatedField(queryset=ResquestType.objects.all(), write_only=True, source='type')
-    situation_ids = PrimaryKeyRelatedField(queryset=SituationEnergyCompany.objects.all(), many=True, write_only=True, source='situation')
-    unit_id = PrimaryKeyRelatedField(queryset=Units.objects.all(), write_only=True, source='unit')
-    requested_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requested_by')
-
     class Meta:
         model = RequestsEnergyCompany
-        exclude = ['is_deleted']
+        fields = '__all__'
 
 
 class ReadRequestsEnergyCompanySerializer(BaseSerializer):
     class Meta:
         model = RequestsEnergyCompany
-        exclude = ['is_deleted']
+        fields = '__all__'

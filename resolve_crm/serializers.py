@@ -1,17 +1,11 @@
 from django.forms import ValidationError
-from accounts.models import Address, User
-from core.models import Column
 from core.serializers import AttachmentSerializer
-from engineering.models import Units
-from field_services.models import Schedule
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
-from accounts.serializers import RelatedUserSerializer, AddressSerializer, BranchSerializer
+from accounts.serializers import AddressSerializer
 from api.serializers import BaseSerializer
-from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
-from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
-from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
+from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
 
 
@@ -20,33 +14,22 @@ class OriginSerializer(BaseSerializer):
         model = Origin
         fields = '__all__'
       
-        
-class ReadSalesSerializer(BaseSerializer):
-    total_paid = SerializerMethodField()
-
-    class Meta:
-        model = Sale
-        fields = ['id', 'total_value', 'status', 'total_paid',]
-
-    def get_total_paid(self, obj):
-        return obj.total_paid
 
  
 class LeadSerializer(BaseSerializer):
     proposals = SerializerMethodField()
     
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    schedules = PrimaryKeyRelatedField(many=True, read_only=True)
-    seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
-    sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
-    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
-    origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
+    # customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
+    # schedules = PrimaryKeyRelatedField(many=True, read_only=True)
+    # seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
+    # sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
+    # addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
+    # column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
+    # origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
 
     class Meta:
         model = Lead
         fields = '__all__'
-        depth = 1
         
     def validate(self, data):
         phone = data.get('phone')
@@ -60,31 +43,18 @@ class LeadSerializer(BaseSerializer):
 
 
 class LeadTaskSerializer(BaseSerializer):
-    members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    # members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
+    # lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
     
     class Meta:
         model = Task
         fields = '__all__'
-        depth = 1
 
 
 class MarketingCampaignSerializer(BaseSerializer):
     class Meta:
         model = MarketingCampaign
         fields = '__all__'
-        
-        
-class ReadProjectSerializer(BaseSerializer):
-    documents_under_analysis = SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company', 'documents_under_analysis']
-    
-    def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()
-        return AttachmentSerializer(documents, many=True).data
 
 
 class SaleSerializer(BaseSerializer):
@@ -95,15 +65,15 @@ class SaleSerializer(BaseSerializer):
     is_released_to_engineering = SerializerMethodField()
 
     # Para escrita: usar apenas IDs
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
-    sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
-    sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
-    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
-    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
-    cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
+    # customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
+    # seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
+    # sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
+    # sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
+    # branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
+    # marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
+    # products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
+    # commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
+    # cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
 
     class Meta:
         model = Sale
@@ -266,16 +236,6 @@ class SaleSerializer(BaseSerializer):
         return obj.total_paid
 
 
-class ReadSaleSerializer(BaseSerializer):
-    total_paid = SerializerMethodField()
-    class Meta:
-        model = Sale
-        fields = '__all__'
-
-    def get_total_paid(self, obj):
-        return obj.total_paid
-
-
 class ProjectSerializer(BaseSerializer):
     is_released_to_engineering = SerializerMethodField()
     documents_under_analysis = SerializerMethodField()
@@ -286,12 +246,12 @@ class ProjectSerializer(BaseSerializer):
     address = SerializerMethodField()
 
     # Para escrita
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
-    homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
-    units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
-    designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
-    inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False)
+    # sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
+    # homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
+    # product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
+    # units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
+    # designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
+    # inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False)
     materials_data = ListField(
         child= DictField(),
         write_only=True,
@@ -368,9 +328,9 @@ class ProjectSerializer(BaseSerializer):
             
 
 class ComercialProposalSerializer(BaseSerializer):
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
-    created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
+    # lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
+    # created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
+    # commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
 
     class Meta:
         model = ComercialProposal
@@ -417,7 +377,7 @@ class ComercialProposalSerializer(BaseSerializer):
 
 
 class ContractSubmissionSerializer(BaseSerializer):
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
+    # sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
         model = ContractSubmission
@@ -425,7 +385,7 @@ class ContractSubmissionSerializer(BaseSerializer):
 
 
 class ContractTemplateSerializer(BaseSerializer):
-    branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
+    # branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
     
     class Meta:
         model = ContractTemplate
