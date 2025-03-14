@@ -46,6 +46,7 @@ class TaskAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("sale", "product", "created_at")
     autocomplete_fields = ["sale", "product", "designer", "inspection", "homologator", "materials", "registered_circuit_breaker"]
+    search_fields = ("sale__contract_number", "product__name", "sale__customer__complete_name")
     inlines = [ProjectMaterialsInline]
 
 

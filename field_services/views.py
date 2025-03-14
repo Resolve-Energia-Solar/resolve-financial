@@ -260,3 +260,6 @@ class ServiceOpinionViewSet(BaseModelViewSet):
         return queryset
 
 
+class RouteViewSet(BaseModelViewSet):
+    queryset = Route.objects.all()
+    serializer_class = RouteSerializer

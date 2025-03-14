@@ -612,6 +612,9 @@ class GeneratePreSaleView(APIView):
             return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = lead.phone
+        if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
+            return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         match = re.match(r'(\d{2})(\d+)', phone_number)
         if match:
             area_code, number = match.groups()

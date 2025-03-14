@@ -258,3 +258,27 @@ class ServiceOpinion(models.Model):
         return self.name
 
 
+class Route(models.Model):
+    STATUS_CHOICES = [
+        ("I", "Iniciada"),
+        ("C", "Concluído"),
+        ("CA", "Cancelado"),   
+    ]
+    schedule = models.ForeignKey(Schedule, verbose_name="Agendamento", on_delete=models.CASCADE)
+    agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)
+    start_time = models.DateTimeField("Horário de Início")
+    end_time = models.DateTimeField("Horário de Fim")
+    start_lat_long = models.CharField("Latitude e Longitude de Início", max_length=50, blank=True, null=True)
+    end_lat_long = models.CharField("Latitude e Longitude de Fim", max_length=50, blank=True, null=True)
+    status = models.CharField("Status", max_length=50, choices=STATUS_CHOICES)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return f"{self.schedule.protocol} - {self.agent.get_full_name()}"
+    
+    class Meta:
+        verbose_name = "Rota"
+        verbose_name_plural = "Rotas"
+        ordering = ["-created_at"]

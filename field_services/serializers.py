@@ -61,3 +61,9 @@ class ServiceOpinionSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = ServiceOpinion
         fields = '__all__'
+
+
+class RouteSerializer(BaseSerializer):
+    class Meta:
+        model = Route
+        fields = '__all__'

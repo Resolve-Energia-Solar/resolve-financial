@@ -27,6 +27,7 @@ router.APIRootView = ErpApiRootView
 
 import accounts.urls
 import core.urls
+import contracts.urls
 import engineering.urls
 import financial.urls
 import field_services.urls

@@ -200,37 +200,38 @@ class UserViewSet(BaseModelViewSet):
             )
 
             # Se houver latitude e longitude, calcula também a distância
-            if latitude and longitude:
-                latitude = float(latitude)
-                longitude = float(longitude)
+            # if latitude and longitude:
+            #     latitude = float(latitude)
+            #     longitude = float(longitude)
 
-                # Anotar dados do último agendamento para cálculo de distância
-                last_schedule_qs = Schedule.objects.filter(
-                    schedule_agent=OuterRef('pk'),
-                    schedule_date=date
-                ).order_by('-schedule_end_time')
+            #     # Anotar dados do último agendamento para cálculo de distância
+            #     last_schedule_qs = Schedule.objects.filter(
+            #         schedule_agent=OuterRef('pk'),
+            #         schedule_date=date
+            #     ).order_by('-schedule_end_time')
 
-                queryset = queryset.annotate(
-                    last_schedule_latitude=Subquery(last_schedule_qs.values('latitude')[:1]),
-                    last_schedule_longitude=Subquery(last_schedule_qs.values('longitude')[:1])
-                )
+            #     queryset = queryset.annotate(
+            #         last_schedule_latitude=Subquery(last_schedule_qs.values('latitude')[:1]),
+            #         last_schedule_longitude=Subquery(last_schedule_qs.values('longitude')[:1])
+            #     )
 
-                # Converter o queryset para lista para calcular a distância em Python
-                agents = list(queryset)
-                for agent in agents:
-                    if agent.last_schedule_latitude is not None and agent.last_schedule_longitude is not None:
-                        agent.distance = calculate_distance(
-                            latitude,
-                            longitude,
-                            agent.last_schedule_latitude,
-                            agent.last_schedule_longitude
-                        )
-                    else:
-                        agent.distance = None
+            #     # Converter o queryset para lista para calcular a distância em Python
+            #     agents = list(queryset)
+            #     for agent in agents:
+            #         if agent.last_schedule_latitude is not None and agent.last_schedule_longitude is not None:
+            #             agent.distance = calculate_distance(
+            #                 latitude,
+            #                 longitude,
+            #                 agent.last_schedule_latitude,
+            #                 agent.last_schedule_longitude
+            #             )
+            #         else:
+            #             agent.distance = None
 
-                # Ordenar os agentes pela distância (colocando os que não têm distância no final)
-                agents.sort(key=lambda a: (a.distance is None, a.distance))
-                return agents
+            #     # Ordenar os agentes pela distância (colocando os que não têm distância no final)
+            #     agents.sort(key=lambda a: (a.distance is None, a.distance))
+            #     return agents
+
 
         return queryset
 

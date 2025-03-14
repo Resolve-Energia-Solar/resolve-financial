@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.forms import ValidationError
 from simple_history.models import HistoricalRecords
@@ -62,7 +63,6 @@ class User(AbstractUser):
         ('PF', 'Pessoa Física'),
         ('PJ', 'Pessoa Jurídica'),
     ]
-    
     # Personal Info
     complete_name = models.CharField("Nome Completo", max_length=255, blank=False, null=False)
     birth_date = models.DateField("Data de Nascimento", blank=True, null=True)
@@ -70,21 +70,16 @@ class User(AbstractUser):
     first_document = models.CharField("CPF/CNPJ", max_length=20, blank=True, null=True)
     second_document = models.CharField("RG/Inscrição Estadual", max_length=12, blank=True, null=True)
     profile_picture = models.ImageField("Foto de Perfil", upload_to="profiles", default="profiles/default.png")
-    
     username = models.CharField("Nome de Usuário", max_length=150, unique=True, blank=True, null=True)
     password = models.CharField("Senha", max_length=128, blank=True, null=True)
-
+    attachments = GenericRelation("core.Attachment", related_query_name="user_attachments")
     # Contact
     email = models.EmailField("E-mail", unique=True)
-
     # Address
     addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
-
     # User Type Info
     user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
-
     person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
-
     # Logs
     history = HistoricalRecords()
     
@@ -180,7 +175,7 @@ class PhoneNumber(models.Model):
 
 
 class Address(models.Model):
-    zip_code = models.CharField("CEP", max_length=8, validators=[RegexValidator(r'^\d{1,8}$')])
+    zip_code = models.CharField("CEP", max_length=8, validators=[RegexValidator(r'^\d{1,8}$')], blank=True, null=True)
     country = models.CharField("País", max_length=255)
     state = models.CharField("Estado", max_length=2, choices=(("AC", "AC"), ("AL", "AL"), ("AP", "AP"), ("AM", "AM"), ("BA", "BA"), ("CE", "CE"), ("DF", "DF"), ("ES", "ES"), ("GO", "GO"), ("MA", "MA"), ("MT", "MT"), ("MS", "MS"), ("MG", "MG"), ("PA", "PA"), ("PB", "PB"), ("PR", "PR"), ("PE", "PE"), ("PI", "PI"), ("RJ", "RJ"), ("RN", "RN"), ("RS", "RS"), ("RO", "RO"), ("RR", "RR"), ("SC", "SC"), ("SP", "SP"), ("SE", "SE"), ("TO", "TO")))
     city = models.CharField("Cidade", max_length=255)
@@ -188,6 +183,8 @@ class Address(models.Model):
     street = models.CharField("Rua", max_length=255)
     number = models.CharField("Número", max_length=10)
     complement = models.CharField("Complemento", max_length=255, blank=True, null=True)
+    latitude = models.DecimalField("Latitude", max_digits=50, decimal_places=25, blank=True, null=True)
+    longitude = models.DecimalField("Longitude", max_digits=50, decimal_places=25, blank=True, null=True)
     is_deleted = models.BooleanField("Deletado?", default=False)
     # Logs
     history = HistoricalRecords()
@@ -200,10 +197,14 @@ class Address(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
+        address = f"{self.street} - {self.number}"
         if self.complement:
-            return f"{self.street} - {self.number}, {self.complement}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
-        else:
-            return f"{self.street} - {self.number}, {self.city}/{self.state} - {self.zip_code}, {self.country}"
+            address += f", {self.complement}"
+        address += f", {self.city}/{self.state}"
+        if self.zip_code:
+            address += f" - {self.zip_code}"
+        address += f", {self.country}"
+        return address
     
     class Meta:
         verbose_name = "Endereço"

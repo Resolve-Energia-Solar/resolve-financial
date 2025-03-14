@@ -11,14 +11,18 @@ class RoofTypeAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name",)
+    search_fields = ("name",)
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "form")
+    search_fields = ("name", "category__name")
+    autocomplete_fields = ("category", "form")
 
 @admin.register(Forms)
 class FormsAdmin(admin.ModelAdmin):
     list_display = ("name",)
+    search_fields = ("name",)
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
@@ -30,9 +34,10 @@ class DeadlineAdmin(admin.ModelAdmin):
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("schedule_date", "project", "service")
-    search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name")
+    list_display = ("customer", "schedule_date", "project", "service", "protocol", "schedule_creator", "status")
+    search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name", "customer__complete_name", "project__sale__customer__complete_name")
     readonly_fields = ("display_leads",)
+    autocomplete_fields = ("project", "service", "schedule_creator", "parent_schedules", "attachments", "address", "schedule_agent", "branch", "service_opinion", "final_service_opinion", "customer")
 
     def display_leads(self, obj):
         leads = obj.lead_inspections.all()
@@ -76,3 +81,4 @@ class FormFileAdmin(admin.ModelAdmin):
 @admin.register(ServiceOpinion)
 class ServiceOpinionAdmin(admin.ModelAdmin):
     list_display = ("name", "service", "is_final_opinion")
+    search_fields = ("name", "service__name")

@@ -18,15 +18,6 @@ class OriginSerializer(BaseSerializer):
  
 class LeadSerializer(BaseSerializer):
     proposals = SerializerMethodField()
-    
-    # customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    # schedules = PrimaryKeyRelatedField(many=True, read_only=True)
-    # seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
-    # sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
-    # addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
-    # column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
-    # origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
-
     class Meta:
         model = Lead
         fields = '__all__'
@@ -245,13 +236,6 @@ class ProjectSerializer(BaseSerializer):
     request_requested = SerializerMethodField()
     address = SerializerMethodField()
 
-    # Para escrita
-    # sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
-    # homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
-    # product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
-    # units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
-    # designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
-    # inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False)
     materials_data = ListField(
         child= DictField(),
         write_only=True,
