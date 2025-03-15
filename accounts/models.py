@@ -76,7 +76,7 @@ class User(AbstractUser):
     # Contact
     email = models.EmailField("E-mail", unique=True)
     # Address
-    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses")
+    addresses = models.ManyToManyField("accounts.Address", verbose_name="Endereços", related_name="customer_addresses", blank=True)
     # User Type Info
     user_types = models.ManyToManyField("accounts.UserType", verbose_name="Tipos de Usuário")
     person_type = models.CharField("Tipo de Pessoa", max_length=2, choices=PERSON_TYPE_CHOICES, blank=True, null=True)
