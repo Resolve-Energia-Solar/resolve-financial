@@ -121,7 +121,6 @@ class SaleSerializer(BaseSerializer):
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
-
     
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
@@ -137,6 +136,7 @@ class SaleSerializer(BaseSerializer):
         return [opinion.name for opinion in final_opinions if opinion is not None and opinion.name]
         
     def validate(self, data):
+        # Validação para definir o percentual de repasse
         if self.instance is None:
             branch = data.get('branch')
             if 'transfer_percentage' not in data:
@@ -144,7 +144,16 @@ class SaleSerializer(BaseSerializer):
                     data['transfer_percentage'] = branch.transfer_percentage
                 else:
                     raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
-        
+
+        # Validação adicional para pré-venda
+        if data.get('is_pre_sale'):
+            customer = data.get('customer')
+            qs = Sale.objects.filter(customer=customer, is_pre_sale=True)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise ValidationError({'customer_id': 'Já existe uma pré-venda para esse cliente.'})
+
         return data
 
     def create(self, validated_data):
