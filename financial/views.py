@@ -261,7 +261,13 @@ class OmieIntegrationView(APIView):
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 200:
             categories = response.json().get('categoria_cadastro', [])
-            active_categories = [cat for cat in categories if cat.get('totalizadora') == 'N' and cat.get('conta_inativa') == 'N']
+            active_categories = [
+                cat for cat in categories 
+                if cat.get('totalizadora') == 'N'
+                and cat.get('conta_inativa') == 'N'
+                and cat.get('nao_exibir') == 'N'
+                and cat.get('conta_despesa') == 'S'
+            ]
             return Response(active_categories)
         else:
             return Response({"error": "Failed to fetch data from Omie API"}, status=response.status_code)
