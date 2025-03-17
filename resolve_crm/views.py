@@ -1,10 +1,6 @@
-import base64
-from datetime import datetime, timezone
-from io import BytesIO
+from datetime import datetime
 import logging
-import os
 from django.shortcuts import redirect
-import qrcode
 import re
 
 from django.db import transaction
@@ -16,16 +12,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 
-from accounts.models import PhoneNumber, UserType
+from accounts.models import UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
-from django.db.models import Exists, OuterRef, Q, Value, Case, When, CharField, Prefetch
+from django.db.models import Exists, OuterRef, Q
 from django.contrib import messages
 from django.http import HttpResponse
 from rest_framework.decorators import action
@@ -69,6 +64,7 @@ class MarketingCampaignViewSet(BaseModelViewSet):
 class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
+
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
@@ -196,14 +192,13 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_documents_under_analysis(self, obj):
         """Método otimizado para obter apenas os primeiros 10 documentos."""
-        documents = obj.documents_under_analysis[:10]  # ⚠️ Ajuste para evitar chamadas desnecessárias ao banco
+        documents = obj.documents_under_analysis[:10]
         return AttachmentSerializer(documents, many=True).data
 
 
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -384,7 +379,6 @@ class ProjectViewSet(BaseModelViewSet):
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data})
-
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
