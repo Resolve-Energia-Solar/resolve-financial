@@ -285,6 +285,10 @@ class AddressViewSet(BaseModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         search = self.request.query_params.get('q')
+        customer = self.request.query_params.get('customer_id')
+        
+        if customer:
+            queryset = queryset.filter(customer_addresses__id=customer)
 
         if search:
             queryset = queryset.filter(
