@@ -103,6 +103,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
             existing_submission.key_number,
             sale.contract_number,
             sale.customer,
+            existing_submission.request_signature_key,
             pdf_content
         )
         if document_response.get("status") == "error":
