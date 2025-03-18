@@ -384,3 +384,72 @@ def send_notification(envelope_id, message="Olá! O contrato está disponível p
     except requests.exceptions.RequestException as e:
         logger.error("Erro na requisição: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+
+def update_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes):
+    if not API_URL or not ACCESS_TOKEN:
+        logger.error("API_URL ou ACCESS_TOKEN não configurados.")
+        return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
+
+    try:
+        document_content = pdf_bytes
+        if not document_content:
+            logger.error("PDF está vazio (0 bytes).")
+            return {"status": "error", "message": "O PDF gerado está vazio (0 bytes)."}
+        document_base64 = base64.b64encode(document_content).decode("utf-8")
+        content_base64 = f"data:application/pdf;base64,{document_base64}"
+    except Exception as e:
+        logger.error("Erro ao converter documento para base64: %s", e)
+        return {"status": "error", "message": f"Base64ConversionError: {str(e)}"}
+
+    # Busca o documento existente no envelope
+    get_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents"
+    headers = {
+        "Content-Type": "application/vnd.api+json",
+        "Accept": "application/vnd.api+json",
+        "Authorization": f"{ACCESS_TOKEN}"
+    }
+    try:
+        response = requests.get(get_url, headers=headers)
+        response.raise_for_status()
+        documents = response.json().get("data", [])
+        if not documents:
+            logger.error("Nenhum documento encontrado para o envelope %s", envelope_id)
+            return {"status": "error", "message": "Nenhum documento encontrado para atualização."}
+        # Assume que o contrato é o primeiro documento
+        document_id = documents[0]["id"]
+    except Exception as e:
+        logger.error("Erro ao obter documentos do envelope: %s", e)
+        return {"status": "error", "message": f"Erro ao obter documentos: {str(e)}"}
+
+    # Atualiza o documento existente
+    update_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents/{document_id}"
+    document_name = f"CONTRATO-{sale_number}-{customer_name}.pdf"
+    payload = {
+        "data": {
+            "id": document_id,
+            "type": "documents",
+            "attributes": {
+                "filename": document_name,
+                "content_base64": content_base64,
+                "metadata": {
+                    "sale_number": sale_number,
+                    "customer_name": customer_name
+                }
+            }
+        }
+    }
+    try:
+        update_response = requests.patch(update_url, headers=headers, json=payload)
+        update_response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição para atualizar o documento: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+    if update_response.status_code == 200:
+        document_data = update_response.json()
+        logger.info("Documento atualizado com sucesso!")
+        return document_data
+    else:
+        logger.error("Erro ao atualizar o documento: %s", update_response.text)
+        return {"status": "error", "message": "Failed to update document.", "response": update_response.json()}
