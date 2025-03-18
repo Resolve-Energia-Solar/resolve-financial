@@ -100,8 +100,9 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         # Atualiza o documento do envelope
         document_response = update_clicksign_document(
             envelope_id,
+            existing_submission.key_number,
             sale.contract_number,
-            sale.customer.complete_name,
+            sale.customer,
             pdf_content
         )
         if document_response.get("status") == "error":
@@ -172,7 +173,6 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         link=f"https://app.clicksign.com/envelopes/{envelope_id}"
     )
     return {"status": "success", "submission_id": submission.id}
-
 
 
 @shared_task

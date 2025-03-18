@@ -386,7 +386,7 @@ def send_notification(envelope_id, message="Olá! O contrato está disponível p
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
-def update_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes):
+def update_clicksign_document(envelope_id, document_id, sale_number, customer, pdf_bytes):
     if not API_URL or not ACCESS_TOKEN:
         logger.error("API_URL ou ACCESS_TOKEN não configurados.")
         return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
@@ -402,54 +402,81 @@ def update_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes
         logger.error("Erro ao converter documento para base64: %s", e)
         return {"status": "error", "message": f"Base64ConversionError: {str(e)}"}
 
-    # Busca o documento existente no envelope
-    get_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents"
     headers = {
         "Content-Type": "application/vnd.api+json",
         "Accept": "application/vnd.api+json",
         "Authorization": f"{ACCESS_TOKEN}"
     }
-    try:
-        response = requests.get(get_url, headers=headers)
-        response.raise_for_status()
-        documents = response.json().get("data", [])
-        if not documents:
-            logger.error("Nenhum documento encontrado para o envelope %s", envelope_id)
-            return {"status": "error", "message": "Nenhum documento encontrado para atualização."}
-        # Assume que o contrato é o primeiro documento
-        document_id = documents[0]["id"]
-    except Exception as e:
-        logger.error("Erro ao obter documentos do envelope: %s", e)
-        return {"status": "error", "message": f"Erro ao obter documentos: {str(e)}"}
 
-    # Atualiza o documento existente
-    update_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents/{document_id}"
-    document_name = f"CONTRATO-{sale_number}-{customer_name}.pdf"
-    payload = {
+    # Agora adiciona o novo documento
+    document_name = f"CONTRATO-{sale_number}-{customer.complete_name}.pdf"
+    add_document_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents"
+    add_document_payload = {
         "data": {
-            "id": document_id,
             "type": "documents",
             "attributes": {
                 "filename": document_name,
                 "content_base64": content_base64,
                 "metadata": {
                     "sale_number": sale_number,
-                    "customer_name": customer_name
+                    "customer_name": customer.complete_name
                 }
             }
         }
     }
+
     try:
-        update_response = requests.patch(update_url, headers=headers, json=payload)
-        update_response.raise_for_status()
+        add_document_response = requests.post(add_document_url, headers=headers, json=add_document_payload)
+        add_document_response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição para atualizar o documento: %s", e)
+        logger.error("Erro ao adicionar o novo documento: %s", e)
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
-    if update_response.status_code == 200:
-        document_data = update_response.json()
-        logger.info("Documento atualizado com sucesso!")
-        return document_data
+    if add_document_response.status_code == 201:
+        document_data = add_document_response.json()
+        logger.info("Novo documento adicionado com sucesso!")
+        new_document_id = document_data["data"]["id"]
     else:
-        logger.error("Erro ao atualizar o documento: %s", update_response.text)
-        return {"status": "error", "message": "Failed to update document.", "response": update_response.json()}
+        logger.error("Erro ao adicionar o novo documento: %s", add_document_response.text)
+        return {"status": "error", "message": "Failed to add new document.", "response": add_document_response.json()}
+
+    # Vincula o signatário ao novo documento
+    signer_response = create_signer(envelope_id, customer)
+    if signer_response.get("status") != "success":
+        logger.error("Erro ao criar o signatário: %s", signer_response.get("message"))
+        return {"status": "error", "message": "Erro ao criar o signatário."}
+
+    signer_key = signer_response.get("signer_key")
+    if not signer_key:
+        logger.error("Erro ao obter a chave do signatário.")
+        return {"status": "error", "message": "Chave do signatário não encontrada."}
+
+    add_requirements_response = add_envelope_requirements(envelope_id, new_document_id, signer_key)
+    if any(req.get("status") != "success" for req in add_requirements_response):
+        logger.error("Erro ao adicionar requisitos ao envelope.")
+        return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
+
+    # Cancelar o documento antigo
+    cancel_url = f"{API_URL}/api/v3/envelopes/{envelope_id}/documents/{document_id}"
+    cancel_payload = {
+        "data": {
+            "type": "documents",
+            "id": document_id,
+            "attributes": {
+                "status": "canceled"
+            }
+        }
+    }
+    try:
+        cancel_response = requests.patch(cancel_url, headers=headers, json=cancel_payload)
+        cancel_response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro ao cancelar o documento: %s", e)
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
+
+    if cancel_response.status_code != 200:
+        logger.error("Erro ao cancelar o documento: %s", cancel_response.text)
+        return {"status": "error", "message": "Failed to cancel the old document."}
+
+    logger.info(f"Documento antigo cancelado com sucesso! Novo documento ID: {new_document_id}")
+    return {"status": "success", "new_document_id": new_document_id}
