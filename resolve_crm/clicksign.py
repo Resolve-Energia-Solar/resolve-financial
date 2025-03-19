@@ -230,61 +230,66 @@ def create_signer(envelope_id, customer):
 
 
 def add_envelope_requirements(envelope_id, document_id, signer_id):
-    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/requirements"
+    url = f"{API_URL}/api/v3/envelopes/{envelope_id}/bulk_requirements"
     
-    payloads = [
-        {
-            "data": {
-                "type": "requirements",
-                "attributes": {
-                    "action": "agree",
-                    "role": "contractor"
-                },
-                "relationships": {
-                    "document": {
-                        "data": { "type": "documents", "id": document_id }
+    payload = {
+        "atomic:operations": [
+            {
+                "op": "add",
+                "data": {
+                    "type": "requirements",
+                    "attributes": {
+                        "action": "agree",
+                        "role": "contractor"
                     },
-                    "signer": {
-                        "data": { "type": "signers", "id": signer_id }
+                    "relationships": {
+                        "document": {
+                            "data": {"type": "documents", "id": document_id}
+                        },
+                        "signer": {
+                            "data": {"type": "signers", "id": signer_id}
+                        }
+                    }
+                }
+            },
+            {
+                "op": "add",
+                "data": {
+                    "type": "requirements",
+                    "attributes": {
+                        "action": "provide_evidence",
+                        "auth": "selfie"
+                    },
+                    "relationships": {
+                        "document": {
+                            "data": {"type": "documents", "id": document_id}
+                        },
+                        "signer": {
+                            "data": {"type": "signers", "id": signer_id}
+                        }
+                    }
+                }
+            },
+            {
+                "op": "add",
+                "data": {
+                    "type": "requirements",
+                    "attributes": {
+                        "action": "provide_evidence",
+                        "auth": "official_document"
+                    },
+                    "relationships": {
+                        "document": {
+                            "data": {"type": "documents", "id": document_id}
+                        },
+                        "signer": {
+                            "data": {"type": "signers", "id": signer_id}
+                        }
                     }
                 }
             }
-        },
-        {
-            "data": {
-                "type": "requirements",
-                "attributes": {
-                    "action": "provide_evidence",
-                    "auth": "selfie"
-                },
-                "relationships": {
-                    "document": {
-                        "data": { "type": "documents", "id": document_id }
-                    },
-                    "signer": {
-                        "data": { "type": "signers", "id": signer_id }
-                    }
-                }
-            }
-        },
-        {
-            "data": {
-                "type": "requirements",
-                "attributes": {
-                    "action": "provide_evidence",
-                    "auth": "official_document"
-                },
-                "relationships": {
-                    "document": {
-                        "data": { "type": "documents", "id": document_id }
-                    },
-                    "signer": {
-                        "data": { "type": "signers", "id": signer_id }
-                    }
-                }
-            }
-        }
-    ]
+        ]
+    }
 
     headers = {
         "Content-Type": "application/vnd.api+json",
@@ -292,27 +297,23 @@ def add_envelope_requirements(envelope_id, document_id, signer_id):
         "Authorization": f"{ACCESS_TOKEN}"
     }
 
-    results = []
-    for payload in payloads:
-        try:
-            response = requests.post(url, headers=headers, json=payload)
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code != 201:
+            try:
+                error_data = response.json()
+                errors = error_data.get("errors", [])
+                for error in errors:
+                    logger.error(f"Erro do Clicksign: {error.get('detail', 'Erro desconhecido')}")
+            except Exception as parse_err:
+                logger.error(f"Falha ao decodificar JSON de erro: {str(parse_err)}")
             response.raise_for_status()
-
-            if response.status_code == 201:
-                results.append({"status": "success", "message": "Requisito adicionado com sucesso."})
-            else:
-                error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-                logger.error(f"Erro ao adicionar o requisito: {error_detail}")
-                results.append({
-                    "status": "error",
-                    "message": f"Failed to add requirement: {error_detail}",
-                    "response": response.content,
-                })
-        except requests.exceptions.RequestException as e:
-            logger.error("(add_envelope_requirements) Erro na requisição", str(e))
-            results.append({"status": "error", "message": f"RequestException: {str(e)}"})
-
-    return results
+        
+        logger.info("Requisitos adicionados com sucesso via bulk_requirements.")
+        return {"status": "success", "message": "Requisitos adicionados com sucesso."}
+    except requests.exceptions.RequestException as e:
+        logger.error("Erro na requisição: " + str(e))
+        return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
 def activate_envelope(envelope_id):
@@ -436,7 +437,6 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
         add_document_response = requests.post(add_document_url, headers=headers, json=add_document_payload)
         add_document_response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        # Verifica erros do Clicksign
         if add_document_response.status_code == 403:
             error_detail = add_document_response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
             logger.error(f"Erro ao adicionar o novo documento: {error_detail}")
@@ -457,9 +457,9 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
         logger.error(f"Erro ao adicionar o novo documento: {error_detail}")
         return {"status": "error", "message": f"Failed to add new document: {error_detail}"}
 
-    # Vincula o signatário existente ao novo documento
+    # Vincula o signatário existente ao novo documento usando bulk_requirements
     add_requirements_response = add_envelope_requirements(envelope_id, new_document_id, signer_id)
-    if any(req.get("status") != "success" for req in add_requirements_response):
+    if add_requirements_response.get("status") != "success":
         logger.error("Erro ao adicionar requisitos ao envelope", add_requirements_response)
         return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
 

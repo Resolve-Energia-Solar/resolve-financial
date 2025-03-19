@@ -108,8 +108,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         )
         if document_response.get("status") == "error":
             return {"status": "error", "message": f"Erro ao atualizar documento no envelope: {document_response}"}
-        document_data = document_response.get("data", {})
-        document_key = document_data.get("id")
+        document_key = document_response.get("new_document_id")
         if not document_key:
             return {"status": "error", "message": "Chave do documento ausente após atualização."}
 
@@ -151,9 +150,8 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     signer_key = signer_response.get("signer_key")
 
     req_response = add_envelope_requirements(envelope_id, document_key, signer_key)
-    for req in req_response:
-        if req.get("status") != "success":
-            return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
+    if req_response.get("status") != "success":
+        return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
 
     activate_response = activate_envelope(envelope_id)
     if activate_response.get("status") != "success":
