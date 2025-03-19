@@ -40,6 +40,7 @@ et_xmlfile==2.0.0
 fonttools==4.55.4
 geographiclib==2.0
 geopy==2.4.1
+gevent==24.11.1
 google-api-core==2.22.0
 google-auth==2.35.0
 google-cloud==0.34.0
@@ -48,6 +49,7 @@ google-cloud-storage==2.18.2
 google-crc32c==1.6.0
 google-resumable-media==2.7.2
 googleapis-common-protos==1.65.0
+greenlet==3.1.1
 gunicorn==22.0.0
 hyperlink==21.0.0
 idna==3.10
@@ -106,5 +108,6 @@ webencodings==0.5.1
 wheel==0.42.0
 whitenoise==6.8.2
 workdays==1.4
+zope.event==5.0
 zope.interface==7.2
 zopfli==0.2.3.post1
