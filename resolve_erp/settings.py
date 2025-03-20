@@ -29,13 +29,14 @@ if not DEBUG:
 
 INSTALLED_APPS = [
     'jazzmin',
-    'daphne',
+    # 'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'accounts.apps.AccountsConfig',
     'core.apps.CoreConfig',
     'resolve_crm.apps.ResolveCRMConfig',
@@ -68,7 +69,6 @@ CHANNEL_LAYERS = {
 DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
 MIDDLEWARE = [
-    'resolve_erp.middlewares.CloseDBConnectionMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -79,25 +79,30 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
-REST_FLEX_FIELDS = {
-    'SERIALIZER_EXTENSIONS': [
-        'accounts.serializers',
-        'core.serializers',
-        'resolve_crm.serializers',
-        'contracts.serializers',
-        'logistics.serializers',
-        'field_services.serializers',
-        'engineering.serializers',
-        'financial.serializers',
-        'mobile_app.serializers',
-        'api.serializers',
-    ],
-}
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+# REST_FLEX_FIELDS = {
+#     'SERIALIZER_EXTENSIONS': [
+#         'accounts.serializers',
+#         'core.serializers',
+#         'resolve_crm.serializers',
+#         'contracts.serializers',
+#         'logistics.serializers',
+#         'field_services.serializers',
+#         'engineering.serializers',
+#         'financial.serializers',
+#         'mobile_app.serializers',
+#         'api.serializers',
+#     ],
+# }
 
 
 CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672//"
@@ -174,10 +179,8 @@ DATABASES = {
         'PASSWORD': os.environ.get("DB1_PASSWORD"),
         'HOST': os.environ.get("DB1_HOST"),
         'PORT': os.environ.get("DB1_PORT"),
-        'CONN_MAX_AGE': 60,
     }
 }
-
 
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
@@ -199,7 +202,7 @@ STORAGES = {
 }
 
 SIMPLE_HISTORY_HISTORY_ID_USE_UUID = False
-SIMPLE_HISTORY_ENABLED = True
+# SIMPLE_HISTORY_ENABLED = True
 
 
 # User model
@@ -234,7 +237,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'api.pagination.CustomCursorPagination',
     'PAGE_SIZE': 10,
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    # 'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
 

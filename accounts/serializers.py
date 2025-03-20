@@ -10,13 +10,13 @@ from validate_docbr import CPF, CNPJ
 class DepartmentSerializer(BaseSerializer):
     class Meta:
         model = Department
-        exclude = '__all__'
+        fields = '__all__'
 
         
 class RoleSerializer(BaseSerializer):
     class Meta:
         model = Role
-        exclude = '__all__'
+        fields = '__all__'
 
 
 class PhoneNumberSerializer(BaseSerializer):
@@ -50,7 +50,7 @@ class AddressSerializer(BaseSerializer):
 class BranchSerializer(BaseSerializer):
     class Meta:
         model = Branch
-        exclude = '__all__'
+        fields = '__all__'
 
 
 class ContentTypeSerializer(BaseSerializer):
