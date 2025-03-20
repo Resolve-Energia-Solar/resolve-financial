@@ -6,7 +6,6 @@ from django.utils.functional import cached_property
 class BaseSerializer(FlexFieldsModelSerializer):
     class Meta:
         model = None
-        exclude = ['is_deleted']
 
     @cached_property
     def expandable_fields(self):
