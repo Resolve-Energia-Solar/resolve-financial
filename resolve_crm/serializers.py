@@ -1,17 +1,11 @@
 from django.forms import ValidationError
-from accounts.models import Address, User
-from core.models import Column
 from core.serializers import AttachmentSerializer
-from engineering.models import Units
-from field_services.models import Schedule
 from financial.models import FranchiseInstallment
 from resolve_crm.models import *
-from accounts.serializers import RelatedUserSerializer, AddressSerializer, BranchSerializer
+from accounts.serializers import AddressSerializer
 from api.serializers import BaseSerializer
-from logistics.serializers import ProductSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
-from rest_framework.serializers import PrimaryKeyRelatedField, SerializerMethodField, ListField, DictField
-from logistics.serializers import ProjectMaterialsSerializer, SaleProductSerializer
+from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
 
 
@@ -20,33 +14,13 @@ class OriginSerializer(BaseSerializer):
         model = Origin
         fields = '__all__'
       
-        
-class ReadSalesSerializer(BaseSerializer):
-    total_paid = SerializerMethodField()
-
-    class Meta:
-        model = Sale
-        fields = ['id', 'total_value', 'status', 'total_paid',]
-
-    def get_total_paid(self, obj):
-        return obj.total_paid
 
  
 class LeadSerializer(BaseSerializer):
     proposals = SerializerMethodField()
-    
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer', required=False)
-    schedules = PrimaryKeyRelatedField(many=True, read_only=True)
-    seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller', allow_null=True, required=False)
-    sdr_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sdr', allow_null=True, required=False)
-    addresses_ids = PrimaryKeyRelatedField(queryset=Address.objects.all(), many=True, write_only=True, source='addresses', required=False)
-    column_id = PrimaryKeyRelatedField(queryset=Column.objects.all(), write_only=True, source='column', required=False)
-    origin_id = PrimaryKeyRelatedField(queryset=Origin.objects.all(), write_only=True, source='origin')
-
     class Meta:
         model = Lead
         fields = '__all__'
-        depth = 1
         
     def validate(self, data):
         phone = data.get('phone')
@@ -60,68 +34,32 @@ class LeadSerializer(BaseSerializer):
 
 
 class LeadTaskSerializer(BaseSerializer):
-    members_ids = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, write_only=True, source='members')
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
-    
     class Meta:
         model = Task
         fields = '__all__'
-        depth = 1
 
 
 class MarketingCampaignSerializer(BaseSerializer):
     class Meta:
         model = MarketingCampaign
         fields = '__all__'
-        
-        
-class ReadProjectSerializer(BaseSerializer):
-    requests_energy_company = SerializerMethodField()
-    documents_under_analysis = SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = ['id', 'designer', 'homologator', 'product', 'materials', 'requests_energy_company', 'documents_under_analysis']
-        depth = 1
-
-    def get_requests_energy_company(self, obj):
-        from engineering.serializers import ReadRequestsEnergyCompanySerializer
-        requests = obj.requests_energy_company.all()
-        return ReadRequestsEnergyCompanySerializer(requests, many=True).data
-    
-    def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()
-        return AttachmentSerializer(documents, many=True).data
 
 
 class SaleSerializer(BaseSerializer):
-    attachments = AttachmentSerializer(many=True, read_only=True)
     documents_under_analysis = SerializerMethodField()
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
 
-    # Para escrita: usar apenas IDs
-    customer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='customer')
-    seller_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='seller')
-    sales_supervisor_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_supervisor')
-    sales_manager_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='sales_manager')
-    branch_id = PrimaryKeyRelatedField(queryset=Branch.objects.all(), write_only=True, source='branch')
-    marketing_campaign_id = PrimaryKeyRelatedField(queryset=MarketingCampaign.objects.all(), write_only=True, source='marketing_campaign', required=False)
-    products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, required=False)
-    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, required=False)
-    cancellation_reasons_ids = PrimaryKeyRelatedField(queryset=Reason.objects.all(), many=True, write_only=True, source='cancellation_reasons', required=False)
-
     class Meta:
         model = Sale
         fields = '__all__'
-        depth = 1
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
         return AttachmentSerializer(documents, many=True).data
-    
+
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering()
     
@@ -277,20 +215,6 @@ class SaleSerializer(BaseSerializer):
             total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
         return total_value
-    
-    # def get_missing_documents(self, obj):
-        # return obj.missing_documents()
-
-    def get_total_paid(self, obj):
-        return obj.total_paid
-
-
-class ReadSaleSerializer(BaseSerializer):
-    total_paid = SerializerMethodField()
-    class Meta:
-        model = Sale
-        fields = '__all__'
-        depth = 1
 
     def get_total_paid(self, obj):
         return obj.total_paid
@@ -305,13 +229,6 @@ class ProjectSerializer(BaseSerializer):
     request_requested = SerializerMethodField()
     address = SerializerMethodField()
 
-    # Para escrita
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale', required=True)
-    homologator_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='homologator', required=False)
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.filter(id__in=SaleProduct.objects.values_list('product_id', flat=True)), write_only=True, source='product', required=False)
-    units_ids = PrimaryKeyRelatedField(queryset=Units.objects.all(), many=True, write_only=True, source='units', required=False)
-    designer_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='designer', required=False)
-    inspection_id = PrimaryKeyRelatedField(queryset=Schedule.objects.all(), write_only=True, source='inspection', required=False, allow_null=True)
     materials_data = ListField(
         child= DictField(),
         write_only=True,
@@ -321,7 +238,6 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        depth = 1
         
         
     def get_request_requested(self, obj):
@@ -349,15 +265,12 @@ class ProjectSerializer(BaseSerializer):
         return AttachmentSerializer(documents, many=True).data
     
     def update(self, instance, validated_data):
-        # Extrair dados de materiais e endereços
         materials_data = validated_data.pop('materials_data', [])
         
-        # Atualiza os campos do projeto
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Atualiza materiais se fornecidos
         if materials_data:
             self._save_materials(instance, materials_data)
 
@@ -365,15 +278,13 @@ class ProjectSerializer(BaseSerializer):
 
 
     def _save_materials(self, project, materials_data):
-        """Função auxiliar para criar ou atualizar materiais do projeto com detalhes extras"""
-        project.materials.clear()  # Limpar materiais antigos
+        project.materials.clear()
         for material_data in materials_data:
             material_id = material_data.get('material_id')
             amount = material_data.get('amount', 1)
             is_exit = material_data.get('is_exit', False)
             serial_number = material_data.get('serial_number', None)
 
-            # Verificar se o material existe
             try:
                 material = Materials.objects.get(id=material_id)
             except Materials.DoesNotExist:
@@ -389,49 +300,38 @@ class ProjectSerializer(BaseSerializer):
             
 
 class ComercialProposalSerializer(BaseSerializer):
-    lead_id = PrimaryKeyRelatedField(queryset=Lead.objects.all(), write_only=True, source='lead')
-    created_by_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='created_by')
-    commercial_products_ids = PrimaryKeyRelatedField(queryset=Product.objects.all(), many=True, write_only=True, source='commercial_products', required=False)
-
     class Meta:
         model = ComercialProposal
         fields = '__all__'
-        depth = 1
 
     def create(self, validated_data):
-        # Extrair os dados relacionados aos produtos
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().create(validated_data)
-        
-        # Criar entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
                 commercial_proposal=proposal,
                 product=product,
-                amount=1,  # Pode ser customizado conforme necessário
-                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
-                reference_value=product.reference_value,  # Ajuste conforme necessário
+                amount=1,
+                cost_value=product.cost_value,
+                reference_value=product.reference_value,
                 value = product.product_value
             )
 
         return proposal
 
     def update(self, instance, validated_data):
-        # Extrair os dados relacionados aos produtos
         products_data = validated_data.pop('commercial_products', [])
         proposal = super().update(instance, validated_data)
 
-        # Limpar produtos antigos relacionados
         SaleProduct.objects.filter(commercial_proposal=instance).delete()
 
-        # Criar novas entradas na tabela intermediária
         for product in products_data:
             SaleProduct.objects.create(
                 commercial_proposal=proposal,
                 product=product,
-                amount=1,  # Pode ser customizado conforme necessário
-                cost_value=product.cost_value,  # Substitua por lógica para obter o valor
-                reference_value=product.reference_value,  # Ajuste conforme necessário
+                amount=1,
+                cost_value=product.cost_value,
+                reference_value=product.reference_value, 
                 value = product.product_value
             )
 
@@ -439,19 +339,12 @@ class ComercialProposalSerializer(BaseSerializer):
 
 
 class ContractSubmissionSerializer(BaseSerializer):
-    sale = SaleSerializer(read_only=True)
-
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-
     class Meta:
         model = ContractSubmission
         fields = '__all__'
 
 
 class ContractTemplateSerializer(BaseSerializer):
-    branches = BranchSerializer(many=True, read_only=True)
-    branches_ids = PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True, write_only=True, source='branches')
-    
     class Meta:
         model = ContractTemplate
         fields = '__all__'

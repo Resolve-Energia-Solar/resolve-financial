@@ -12,10 +12,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 
-from accounts.models import UserType
+from accounts.models import PhoneNumber, User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
+from logistics.serializers import ProductSerializer
+from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *

@@ -30,7 +30,7 @@ class Financier(models.Model):
 
 class Payment(models.Model):
 
-    TYPE_CHOICES = [
+TYPE_CHOICES = [
         ("C", "Crédito"),
         ("D", "Débito"),
         ("B", "Boleto"),

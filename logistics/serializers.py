@@ -11,15 +11,13 @@ from django.db import transaction
 class MaterialAttributesSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = MaterialAttributes
-        fields = ['key', 'value']
+        fields = '__all__'
 
 
 class MaterialsSerializer(BaseSerializer):
-    attributes = MaterialAttributesSerializer(many=True, required=False)
-
     class Meta(BaseSerializer.Meta):
         model = Materials
-        fields = ['id', 'name', 'price', 'attributes']
+        fields = '__all__'
 
     def create(self, validated_data):
         attributes_data = validated_data.pop('attributes', [])
@@ -38,46 +36,19 @@ class MaterialsSerializer(BaseSerializer):
         
         
 class ProductMaterialsSerializer(BaseSerializer):
-    material = MaterialsSerializer(read_only=True)
-    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), write_only=True, source='material')
 
     class Meta(BaseSerializer.Meta):
         model = ProductMaterials
-        fields = ['material', 'material_id', 'amount', 'id']
+        fields = '__all__'
 
 
 class ProductSerializer(BaseSerializer):
-    # Para leitura: usar serializadores completos
-    materials = ProductMaterialsSerializer(many=True, read_only=True)
-    roof_type = RoofTypeSerializer(read_only=True)
-    branch = serializers.SerializerMethodField()
-
-    # Para escrita: usar apenas IDs com quantidade
-    branches_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        source='branch',
-        required=True
-    )
-    
-    roof_type_id = PrimaryKeyRelatedField(queryset=RoofType.objects.all(), write_only=True, source='roof_type', required=False)
-    materials_ids = serializers.ListField(
-        child=serializers.DictField(
-            child=serializers.DecimalField(max_digits=20, decimal_places=6),
-            help_text="Lista de materiais com `id` e `amount`."
-        ),
-        write_only=True,
-        required=False
-    )
     sale_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta(BaseSerializer.Meta):
         model = Product
         fields = '__all__'
-        
-    def get_branch(self, obj):
-        return [{'id': branch.id, 'name': branch.name} for branch in obj.branch.all()[:10]]
 
     @transaction.atomic
     def create(self, validated_data):
@@ -253,24 +224,12 @@ class ProductSerializer(BaseSerializer):
 
 
 class SaleProductSerializer(BaseSerializer):
-    
-    product = ProductSerializer(read_only=True)
-    
-    product_id = PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True, source='product')
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    commercial_proposal_id = PrimaryKeyRelatedField(queryset=ComercialProposal.objects.all(), write_only=True, source='commercial_proposal', required=False)
-    
     class Meta(BaseSerializer.Meta):
         model = SaleProduct
         fields = '__all__'
         
 
 class ProjectMaterialsSerializer(BaseSerializer):
-    # project = StringRelatedField(read_only=True)
-    material = MaterialsSerializer(read_only=True)
-    material_id = PrimaryKeyRelatedField(queryset=Materials.objects.all(), source='material', write_only=True)
-    project_id = PrimaryKeyRelatedField(queryset=Project.objects.all(), source='project', write_only=True)
-    
     class Meta:
         model = ProjectMaterials
-        fields = ['material', 'material_id', 'project_id', 'amount', 'is_exit', 'serial_number', 'id']
+        fields = '__all__'

@@ -38,7 +38,7 @@ class Materials(models.Model):
 
 
 class ProductMaterials(models.Model):
-    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", related_name="materials", null=True, blank=True)
+    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True)
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="products", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
@@ -66,7 +66,8 @@ class Product(models.Model):
     product_value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=False, blank=False)
     reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    branch = models.ManyToManyField("accounts.Branch", verbose_name="Filiais")
+    branches = models.ManyToManyField("accounts.Branch", verbose_name="Filiais")
+    materials = models.ManyToManyField(Materials, through="logistics.ProductMaterials", verbose_name="Materiais")
     roof_type = models.ForeignKey("field_services.RoofType", on_delete=models.CASCADE, verbose_name="Tipo de Telhado", null=True, blank=True)
     params = models.DecimalField("Parâmetros", max_digits=6, decimal_places=2, null=True, blank=True)
     default = models.CharField("Padrão", max_length=1, choices=DEFAULT_CHOICES, default="N", null=True, blank=True)
