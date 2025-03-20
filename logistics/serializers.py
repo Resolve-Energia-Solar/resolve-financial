@@ -48,7 +48,6 @@ class ProductSerializer(BaseSerializer):
 
     class Meta(BaseSerializer.Meta):
         model = Product
-        fields = '__all__'
 
     @transaction.atomic
     def create(self, validated_data):
