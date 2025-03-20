@@ -1,6 +1,7 @@
 from rest_flex_fields import FlexFieldsModelSerializer
 from rest_framework.serializers import CharField
 from django.contrib.contenttypes.models import ContentType
+from django.utils.functional import cached_property
 
 class BaseSerializer(FlexFieldsModelSerializer):
     class Meta:
@@ -8,13 +9,13 @@ class BaseSerializer(FlexFieldsModelSerializer):
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(BaseSerializer, self).__init__(*args, **kwargs)
         if 'is_deleted' in self.fields:
             self.fields.pop('is_deleted')
         if hasattr(self.Meta.model, '__str__'):
             self.fields['str'] = CharField(source='__str__', read_only=True)
 
-    @property
+    @cached_property
     def expandable_fields(self):
         model = self.Meta.model
         expandable = {}
