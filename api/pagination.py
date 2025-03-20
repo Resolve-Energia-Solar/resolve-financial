@@ -1,33 +1,26 @@
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import NotFound
+from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 
-class CustomLimitOffsetPagination(PageNumberPagination):
+class CustomCursorPagination(CursorPagination):
     page_size = 10
-    page_size_query_param = 'limit' 
-    page_query_param = 'page'
+    page_size_query_param = 'limit'  # Permite que o cliente informe o tamanho da página via parâmetro 'limit'
     max_page_size = 100
+    ordering = '-id'  # Certifique-se de que o campo 'id' esteja indexado e seja único
 
     def get_page_size(self, request):
-        try:
-            page_size = super().get_page_size(request)
-            if page_size is None:
+        if self.page_size_query_param:
+            try:
+                requested_page_size = int(request.query_params.get(self.page_size_query_param, self.page_size))
+                if requested_page_size <= 0:
+                    return self.page_size
+                return min(requested_page_size, self.max_page_size)
+            except (ValueError, TypeError):
                 return self.page_size
-            return min(page_size, self.max_page_size)
-        except (ValueError, TypeError):
-            return self.page_size
-
-    def paginate_queryset(self, queryset, request, view=None):
-        try:
-            return super().paginate_queryset(queryset, request, view)
-        except NotFound:
-            self.page = None
-            return []
+        return self.page_size
 
     def get_paginated_response(self, data):
         return Response({
-            'count': self.page.paginator.count if self.page else 0,
-            'next': self.get_next_link() if self.page else None,
-            'previous': self.get_previous_link() if self.page else None,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
             'results': data
         })

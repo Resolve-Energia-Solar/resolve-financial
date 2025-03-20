@@ -68,6 +68,7 @@ CHANNEL_LAYERS = {
 DJANGO_NOTIFICATIONS_CONFIG = {'SOFT_DELETE': True}
 
 MIDDLEWARE = [
+    'resolve_erp.middlewares.CloseDBConnectionMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -173,8 +174,10 @@ DATABASES = {
         'PASSWORD': os.environ.get("DB1_PASSWORD"),
         'HOST': os.environ.get("DB1_HOST"),
         'PORT': os.environ.get("DB1_PORT"),
+        'CONN_MAX_AGE': 60,
     }
 }
+
 
 # choose the database to use
 DATABASES['default'] = DATABASES[os.environ.get('DB_USED')]
@@ -229,7 +232,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'api.pagination.CustomLimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.CustomCursorPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }

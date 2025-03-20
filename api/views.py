@@ -1,3 +1,4 @@
+from django.utils.functional import cached_property
 from datetime import datetime
 from rest_framework.response import Response
 from rest_framework import status
@@ -6,9 +7,8 @@ from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
-from api.pagination import CustomLimitOffsetPagination
+from api.pagination import CustomCursorPagination
 from api.task import processar_contrato
-from django.views.decorators.csrf import csrf_exempt
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -16,9 +16,9 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
-    pagination_class = CustomLimitOffsetPagination 
-    
-    @property
+    pagination_class = CustomCursorPagination
+
+    @cached_property
     def filterset_fields(self):
         model = self.get_queryset().model
         exclude_field_types = ['ImageField', 'FileField']
@@ -31,7 +31,7 @@ class BaseModelViewSet(ModelViewSet):
         filter_fields = {}
         for field in model._meta.fields + model._meta.many_to_many:
             if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
-                if field.get_internal_type() in ['ForeignKey', 'BooleanField', 'BigIntegerField', 'PositiveIntegerField','ManyToManyField']:
+                if field.get_internal_type() in ['ForeignKey', 'BooleanField', 'BigIntegerField', 'PositiveIntegerField', 'ManyToManyField']:
                     filter_fields[field.name] = ['exact', 'in']
                 elif field.get_internal_type() in ['CharField', 'TextField']:
                     filter_fields[field.name] = ['icontains', 'in']
