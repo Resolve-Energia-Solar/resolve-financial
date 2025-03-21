@@ -7,7 +7,7 @@ import requests
 
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
-from core.models import Attachment
+from core.models import Attachment,Webhook
 import logging
 
 

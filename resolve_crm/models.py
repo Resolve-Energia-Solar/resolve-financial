@@ -516,7 +516,18 @@ class Sale(models.Model):
             self.is_completed_financial = False
 
         super().save(*args, **kwargs)
-        
+    
+    """
+    def clean(self):
+        if self.is_pre_sale:
+            qs = Sale.objects.filter(customer=self.customer, is_pre_sale=True)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError("Já existe uma pré-venda para esse cliente.")
+        super().clean()
+    """
+    
     @property
     def documents_under_analysis(self):
         sale_content_type = ContentType.objects.get_for_model(Sale)
@@ -529,10 +540,17 @@ class Sale(models.Model):
         permissions = [
             ('can_change_billing_date', 'Can change billing date'),
         ]
-    
+        """
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer'],
+                condition=models.Q(is_pre_sale=True),
+                name='unique_pre_sale_per_customer'
+            )
+        ]
+        """
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
-
 
 
 class Step(models.Model):
@@ -562,7 +580,7 @@ class Project(models.Model):
     # ajustar quando a data de início e término for definida
     start_date = models.DateField("Data de Início", null=True, blank=True)
     end_date = models.DateField("Data de Término", null=True, blank=True)
-    is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True) #se status estiver finalizado, is_completed = True
+    is_completed = models.BooleanField("Projeto Completo", default=False, null=True, blank=True)
     status = models.CharField("Status do Projeto", max_length=2, choices=[("P", "Pendente"), ("CO", "Concluído"), ("EA", "Em Andamento"), ("C", "Cancelado"), ("D", "Distrato")], default="P")
     attachments = GenericRelation(Attachment, related_query_name='project_attachments')
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')

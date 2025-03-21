@@ -3,7 +3,8 @@ FROM alpine:latest
 # Instalar dependências básicas e do Python
 RUN apk update && apk add --no-cache \
     zsh git python3 py3-pip tzdata pkgconfig \
-    mysql-dev gcc musl-dev python3-dev libffi-dev openssl-dev
+    mysql-dev gcc musl-dev python3-dev libffi-dev openssl-dev \
+    build-base
 
 # Instalar dependências para WeasyPrint e fontes
 RUN apk add --no-cache \
@@ -43,4 +44,4 @@ COPY . .
 EXPOSE 8001
 
 # Adicionar o comando para iniciar o Celery junto com o Django
-CMD ["sh", "-c", "celery -A resolve_erp worker --loglevel=info"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8001", "resolve_erp.asgi:application"]

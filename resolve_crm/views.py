@@ -1,10 +1,6 @@
-import base64
-from datetime import datetime, timezone
-from io import BytesIO
+from datetime import datetime
 import logging
-import os
 from django.shortcuts import redirect
-import qrcode
 import re
 
 from django.db import transaction
@@ -16,16 +12,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 
-from accounts.models import PhoneNumber, UserType
+from accounts.models import PhoneNumber, User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
+from logistics.serializers import ProductSerializer
 from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
-from django.db.models import Exists, OuterRef, Q, Value, Case, When, CharField, Prefetch
+from django.db.models import Exists, OuterRef, Q
 from django.contrib import messages
 from django.http import HttpResponse
 from rest_framework.decorators import action
@@ -39,7 +36,7 @@ from .models import Sale
 from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
-
+from rest_framework.decorators import api_view
 
 
 logger = logging.getLogger(__name__)
@@ -69,6 +66,7 @@ class MarketingCampaignViewSet(BaseModelViewSet):
 class ComercialProposalViewSet(BaseModelViewSet):
     queryset = ComercialProposal.objects.all()
     serializer_class = ComercialProposalSerializer
+
 
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
@@ -206,7 +204,6 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -387,7 +384,6 @@ class ProjectViewSet(BaseModelViewSet):
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data})
-
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
@@ -615,6 +611,16 @@ class GeneratePreSaleView(APIView):
             return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = lead.phone
+        if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
+            return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        formatted_document = lead.first_document.replace('.', '').replace('-', '')
+        customer = User.objects.filter(first_document=formatted_document).first()
+        
+        phone_number = lead.phone
+        if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
+            return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         match = re.match(r'(\d{2})(\d+)', phone_number)
         if match:
             area_code, number = match.groups()
@@ -629,10 +635,35 @@ class GeneratePreSaleView(APIView):
                 phone = phone_serializer.save()
             else:
                 return Response(phone_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        if customer:
+            # Atualiza os dados do usuário existente
+            phone_ids = list(customer.phone_numbers.values_list('id', flat=True))
+            if phone.id not in phone_ids:
+                phone_ids.append(phone.id)
+
+            data = {
+                'complete_name': lead.name,
+                'email': lead.contact_email,
+                'addresses': list(lead.addresses.values_list('id', flat=True)),
+                'phone_numbers_ids': phone_ids,
+            }
+            print(lead.contact_email)
+            print(customer.email)
+            print(lead.contact_email == customer.email)
+            if lead.contact_email == customer.email:
+                data.pop('email')
             
-        # Criação ou recuperação do cliente usando Serializer
-        customer = User.objects.filter(first_document=lead.first_document).first()
-        if not customer:
+            print(data)
+            
+            user_serializer = UserSerializer(customer, data=data, partial=True)
+            
+            if user_serializer.is_valid():
+                customer = user_serializer.save()
+            else:
+                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Criação de um novo usuário
             base_username = lead.name.split(' ')[0] + '.' + lead.name.split(' ')[-1]
             username = base_username
             counter = 1
@@ -640,15 +671,14 @@ class GeneratePreSaleView(APIView):
                 username = f"{base_username}{counter}"
                 counter += 1
             
-                
             user_data = {
                 'complete_name': lead.name,
                 'username': username,
                 'first_name': lead.name.split(' ')[0],
                 'last_name': lead.name.split(' ')[-1],
                 'email': lead.contact_email,
-                'addresses_ids': [address.id for address in lead.addresses.all()],
-                'user_types_ids': [UserType.objects.get(id=2).id],
+                'addresses': list(lead.addresses.values_list('id', flat=True)),
+                'user_types': [UserType.objects.get(name='Cliente').id],
                 'first_document': lead.first_document,
                 'phone_numbers_ids': [phone.id],
             }
@@ -657,27 +687,7 @@ class GeneratePreSaleView(APIView):
                 customer = user_serializer.save()
             else:
                 return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # Atualiza o cliente existente com os dados do lead, se necessário
-            phone_ids = []
-            for phone in PhoneNumber.objects.filter(user=customer):
-                phone_ids.append(phone.id)
-                
-            if phone.id not in phone_ids:
-                phone_ids.append(phone.id)
-            
-            user_serializer = UserSerializer(customer, data={
-                'complete_name': lead.name,
-                'email': lead.contact_email,
-                'addresses': [address.id for address in lead.addresses.all()],
-                'user_types': UserType.objects.get(id=2).id,
-                'phone_numbers_ids': phone_ids,
-            }, partial=True)
-            if user_serializer.is_valid():
-                customer = user_serializer.save()
-            else:
-                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
         lead.customer = customer
         lead.save()
 
@@ -719,6 +729,7 @@ class GeneratePreSaleView(APIView):
                 sales_manager_id = lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None
             except Exception as e:
                 logger.error(f'Erro ao recuperar informações do vendedor: {str(e)}')
+                print('Erro ao recuperar informações do vendedor', {str(e)})
                 return Response({'message': 'Erro ao recuperar informações do vendedor.'}, status=status.HTTP_400_BAD_REQUEST)
                 
             sale_data = {
@@ -759,7 +770,7 @@ class GeneratePreSaleView(APIView):
                                 'sale_id': pre_sale.id,
                                 'status': 'P',
                                 'product_id': saleproduct.product.id,
-                                'addresses_ids': [address.id for address in lead.addresses.all()]
+                                # 'addresses_ids': [address.id for address in lead.addresses.all()]
                             }
                             project_serializer = ProjectSerializer(data=project_data)
                             if project_serializer.is_valid():
@@ -784,7 +795,7 @@ class GeneratePreSaleView(APIView):
                     'sale_id': pre_sale.id,
                     'status': 'P',
                     'product_id': product.id,
-                    'addresses_ids': [address.id for address in lead.addresses.all()]
+                    # 'addresses_ids': [address.id for address in lead.addresses.all()]
                 }
                 project_serializer = ProjectSerializer(data=project_data)
                 if project_serializer.is_valid():
@@ -1119,3 +1130,10 @@ def save_all_sales_func(request):
     save_all_sales.delay()
     messages.success(request, 'Todas as vendas foram salvas com sucesso.')
     return redirect('admin:index')
+
+
+@api_view(['GET'])
+def list_sales_func(request):
+    fields = [f.name for f in Sale._meta.get_fields() if not f.many_to_many and not f.one_to_many]
+    sales = Sale.objects.values(*fields)
+    return Response(list(sales))
