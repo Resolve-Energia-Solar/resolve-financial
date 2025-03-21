@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 
-from api.pagination import CustomCursorPagination
+from api.pagination import CustomPagination
 from api.task import processar_contrato
 
 
@@ -17,7 +17,7 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
-    pagination_class = CustomCursorPagination
+    pagination_class = CustomPagination
 
     @cached_property
     def filterset_fields(self):

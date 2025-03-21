@@ -1,26 +1,28 @@
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-class CustomCursorPagination(CursorPagination):
+class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'limit'
     max_page_size = 100
-    ordering = '-id'
+    page_query_param = 'page'
 
-    def get_page_size(self, request):
-        if self.page_size_query_param:
-            try:
-                requested_page_size = int(request.query_params.get(self.page_size_query_param, self.page_size))
-                if requested_page_size <= 0:
-                    return self.page_size
-                return min(requested_page_size, self.max_page_size)
-            except (ValueError, TypeError):
-                return self.page_size
-        return self.page_size
+    def __init__(self):
+        super().__init__()
+        self.extra_meta = {}
 
     def get_paginated_response(self, data):
         return Response({
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data
+            'results': data,
+            'meta': {
+                'pagination': {
+                    'page': self.page.number,
+                    'limit': self.page.paginator.per_page, 
+                    'total_pages': self.page.paginator.num_pages,
+                    'total_count': self.page.paginator.count,
+                    'next': self.get_next_link(),
+                    'previous': self.get_previous_link(),
+                },
+                **self.extra_meta 
+            }
         })
