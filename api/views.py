@@ -11,6 +11,7 @@ from api.pagination import CustomPagination
 from api.task import processar_contrato
 
 
+
 class BaseModelViewSet(ModelViewSet):
     permission_classes = [DjangoModelPermissions]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
