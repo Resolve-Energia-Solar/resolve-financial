@@ -83,6 +83,7 @@ class SaleSerializer(BaseSerializer):
                 else:
                     raise ValidationError({'transfer_percentage': 'Percentual de repasse não cadastrado.'})
 
+        """
         # Validação adicional para pré-venda
         if data.get('is_pre_sale'):
             customer = data.get('customer')
@@ -91,7 +92,8 @@ class SaleSerializer(BaseSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise ValidationError({'customer_id': 'Já existe uma pré-venda para esse cliente.'})
-
+        """
+        
         return data
 
     def create(self, validated_data):

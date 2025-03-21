@@ -516,7 +516,8 @@ class Sale(models.Model):
             self.is_completed_financial = False
 
         super().save(*args, **kwargs)
-        
+    
+    """
     def clean(self):
         if self.is_pre_sale:
             qs = Sale.objects.filter(customer=self.customer, is_pre_sale=True)
@@ -525,7 +526,8 @@ class Sale(models.Model):
             if qs.exists():
                 raise ValidationError("Já existe uma pré-venda para esse cliente.")
         super().clean()
-        
+    """
+    
     @property
     def documents_under_analysis(self):
         sale_content_type = ContentType.objects.get_for_model(Sale)
@@ -538,6 +540,7 @@ class Sale(models.Model):
         permissions = [
             ('can_change_billing_date', 'Can change billing date'),
         ]
+        """
         constraints = [
             models.UniqueConstraint(
                 fields=['customer'],
@@ -545,7 +548,7 @@ class Sale(models.Model):
                 name='unique_pre_sale_per_customer'
             )
         ]
-    
+        """
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
 
