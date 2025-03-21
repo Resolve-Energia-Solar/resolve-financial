@@ -36,7 +36,7 @@ from .models import Sale
 from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
-
+from rest_framework.decorators import api_view
 
 
 logger = logging.getLogger(__name__)
@@ -102,49 +102,47 @@ class SaleViewSet(BaseModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Filtragem com base nos parâmetros da URL
-        payment_status = request.query_params.get('invoice_status')
-        is_signed = request.query_params.get('is_signed')
-        borrower = request.query_params.get('borrower')
-        homologator = request.query_params.get('homologator')
-        final_service_opinions = request.query_params.get('final_service_options')
-        tag_name = request.query_params.get('tag_name__exact')
-        documents_under_analysis = request.query_params.get('documents_under_analysis')
+        # 🔹 Captura os filtros da URL
+        query_params = request.query_params
+        filters = {
+            'invoice_status': query_params.get('invoice_status'),
+            'is_signed': query_params.get('is_signed'),
+            'borrower': query_params.get('borrower'),
+            'homologator': query_params.get('homologator'),
+            'final_service_opinions': query_params.get('final_service_options'),
+            'tag_name': query_params.get('tag_name__exact'),
+            'documents_under_analysis': query_params.get('documents_under_analysis'),
+        }
 
-        if documents_under_analysis == 'true':
+        # 🔹 Aplica os filtros
+        if filters['documents_under_analysis'] == 'true':
+            queryset = queryset.filter(attachments__document_type__required=True, attachments__status='EA')
+        elif filters['documents_under_analysis'] == 'false':
+            queryset = queryset.exclude(attachments__document_type__required=True, attachments__status='EA')
+
+        if filters['tag_name']:
+            queryset = queryset.filter(tags__tag__exact=filters['tag_name'])
+
+        if filters['final_service_opinions']:
             queryset = queryset.filter(
-                attachments__document_type__required=True,
-                attachments__status='EA',
-            )
-        elif documents_under_analysis == 'false':
-            queryset = queryset.exclude(
-                attachments__document_type__required=True,
-                attachments__status='EA',
+                projects__inspection__final_service_opinion__id__in=filters['final_service_opinions'].split(',')
             )
 
-        if tag_name:
-            queryset = queryset.filter(tags__tag__exact=tag_name)
+        if filters['borrower']:
+            queryset = queryset.filter(payments__borrower__id=filters['borrower'])
 
-        if final_service_opinions:
-            final_service_opinion_list = final_service_opinions.split(',')
-            queryset = queryset.filter(projects__inspection__final_service_opinion__id__in=final_service_opinion_list)
+        if filters['homologator']:
+            queryset = queryset.filter(projects__homologator__id=filters['homologator'])
 
-        if borrower:
-            queryset = queryset.filter(payments__borrower__id=borrower)
-
-        if homologator:
-            queryset = queryset.filter(projects__homologator__id=homologator)
-
-        if is_signed == 'true':
+        if filters['is_signed'] == 'true':
             queryset = queryset.filter(signature_date__isnull=False)
-        elif is_signed == 'false':
+        elif filters['is_signed'] == 'false':
             queryset = queryset.filter(signature_date__isnull=True)
 
-        if payment_status:
-            payment_status_list = payment_status.split(',')
-            queryset = queryset.filter(payments__invoice_status__in=payment_status_list)
+        if filters['invoice_status']:
+            queryset = queryset.filter(payments__invoice_status__in=filters['invoice_status'].split(','))
 
-        # Calcula os indicadores (agregações)
+        # 🔹 Calcula os indicadores (agregações)
         raw_indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
             pending_total_value=Sum('total_value', filter=Q(status="P")),
@@ -168,15 +166,20 @@ class SaleViewSet(BaseModelViewSet):
             "total_value_sum": raw_indicators["total_value_sum"]
         }
 
-        # Paginação antes da serialização
+        # 🔹 Pega a página paginada
         page = self.paginate_queryset(queryset)
+        
         if page is not None:
+            paginator = self.paginator
+            paginator.extra_meta = {"indicators": indicators}  # Passa os indicadores para o meta
+            
             serialized_data = self.get_serializer(page, many=True).data
-            return self.get_paginated_response({'results': serialized_data, 'indicators': indicators})
+            return self.get_paginated_response(serialized_data)
 
+        # Caso a paginação não esteja ativa
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data, 'indicators': indicators})
-    
+        return Response({'results': serialized_data, 'meta': {'indicators': indicators}})
+
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1127,3 +1130,10 @@ def save_all_sales_func(request):
     save_all_sales.delay()
     messages.success(request, 'Todas as vendas foram salvas com sucesso.')
     return redirect('admin:index')
+
+
+@api_view(['GET'])
+def list_sales_func(request):
+    fields = [f.name for f in Sale._meta.get_fields() if not f.many_to_many and not f.one_to_many]
+    sales = Sale.objects.values(*fields)
+    return Response(list(sales))
