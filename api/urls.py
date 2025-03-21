@@ -14,6 +14,7 @@ from financial.views import FinancialRecordApprovalView, OmieIntegrationView, Up
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
 from .views import ContratoView, GanttView, StatusView
 from resolve_crm.views import save_all_sales_func
+from resolve_crm.views import list_sales_func
 
 
 router = DefaultRouter()
@@ -73,4 +74,8 @@ urlpatterns = [
     path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
     
     path('save-sales/', save_all_sales_func , name='save_sales'),
+    
+    #Simple Serializer
+    
+    path('list-sale/', list_sales_func , name='simple_serializer'),
 ]

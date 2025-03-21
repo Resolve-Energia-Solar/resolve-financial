@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from simple_history.models import HistoricalRecords
+from django.contrib.auth.models import Group
 
 
 class RoofType(models.Model):
@@ -55,6 +56,7 @@ class Service(models.Model):
     category = models.ForeignKey(Category, verbose_name="Categoria", on_delete=models.CASCADE)
     description = models.TextField("Descrição", blank=True, null=True)
     deadline = models.ForeignKey(Deadline, verbose_name="Prazo", on_delete=models.CASCADE, blank=True, null=True)
+    groups = models.ManyToManyField(Group, verbose_name="Grupos", blank=True)
     form = models.ForeignKey("Forms", verbose_name="Formulário", on_delete=models.CASCADE, blank=False, null=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
