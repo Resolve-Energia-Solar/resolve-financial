@@ -81,7 +81,7 @@ class SaleViewSet(BaseModelViewSet):
             "branch", "marketing_campaign", "supplier"
         ).prefetch_related(
             "cancellation_reasons", "products", "attachments", "tags", "payments", "projects__inspection",
-            "projects__inspection__final_service_opinion__name", "projects__homologator", "projects__attachments",
+            "projects__homologator", "projects__attachments",
             "projects", "projects__units",
         ).order_by("-created_at")
 
