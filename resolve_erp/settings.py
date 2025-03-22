@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    "debug_toolbar",
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
@@ -82,6 +83,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 REST_FLEX_FIELDS = {
@@ -98,6 +100,19 @@ REST_FLEX_FIELDS = {
         'api.serializers',
     ],
 }
+
+DEBUG_TOOLBAR_PANELS = [
+    'debug_toolbar.panels.timer.TimerPanel',
+    'debug_toolbar.panels.sql.SQLPanel',
+    'debug_toolbar.panels.cache.CachePanel',
+    'debug_toolbar.panels.request.RequestPanel',
+    'debug_toolbar.panels.templates.TemplatesPanel',
+    'debug_toolbar.panels.settings.SettingsPanel',
+    'debug_toolbar.panels.headers.HeadersPanel',
+    'debug_toolbar.panels.logging.LoggingPanel',
+    # Removemos o painel de histórico que está quebrando
+    # 'debug_toolbar.panels.history.HistoryPanel',
+]
 
 
 CELERY_BROKER_URL = "amqp://guest:guest@rabbitmq:5672//"
@@ -229,6 +244,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
@@ -293,10 +311,12 @@ ADMINS = [
 ]
 
 # Configuração do Logging
-if DEBUG == False:
 
+if DEBUG == False:
+    
     import logging
     import logging.handlers
+
     
     LOGGING = {
         "version": 1,
