@@ -19,7 +19,6 @@ from accounts.models import PhoneNumber, User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
-from resolve_crm.clicksign import activate_envelope, add_envelope_requirements, create_clicksign_document, create_clicksign_envelope, create_signer, send_notification
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
@@ -70,7 +69,6 @@ class ComercialProposalViewSet(BaseModelViewSet):
     serializer_class = ComercialProposalSerializer
 
 class SaleViewSet(BaseModelViewSet):
-    queryset = Sale.objects.all()
     serializer_class = SaleSerializer
 
     def get_queryset(self):
