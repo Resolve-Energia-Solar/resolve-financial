@@ -97,7 +97,7 @@ class SaleSerializer(BaseSerializer):
         return data
 
     def create(self, validated_data):
-        products_ids = validated_data.pop('products_ids', [])
+        products_ids = validated_data.pop('products', [])
         commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
         sale = super().create(validated_data)
 
@@ -117,7 +117,7 @@ class SaleSerializer(BaseSerializer):
 
         return instance
 
-    def _handle_products(self, sale, products_ids, commercial_proposal_id):
+    def _handle_products(self, sale, products_ids=None, commercial_proposal_id=None):
         products_list = []
 
         if commercial_proposal_id:
@@ -138,24 +138,20 @@ class SaleSerializer(BaseSerializer):
 
             except ComercialProposal.DoesNotExist:
                 raise ValidationError({"detail": "Proposta comercial não encontrada."})
-        else:
-            products = self.validate_products_ids(products_ids)
-            sale_products = [
-                SaleProduct(
+        
+        elif products_ids:
+            validated_products = self.validate_products_ids(products_ids)
+            for product in validated_products:
+                sale_product = SaleProduct.objects.create(
                     sale=sale,
                     product=product,
-                    amount=1,
-                    value=product.product_value,
-                    reference_value=product.reference_value,
-                    cost_value=product.cost_value,
+                    value=product.price,  # ajuste conforme seu modelo
+                    amount=1  # ou outro valor default
                 )
-                for product in products
-            ]
-            SaleProduct.objects.bulk_create(sale_products)
-            products_list.extend(sale_products)
+                products_list.append(sale_product)
+
         self.create_projects(sale, products_list)
 
-        # Recalcular valores da venda, se necessário
         if sale.total_value is None or sale.total_value == 0:
             total_value = self.calculate_total_value(products_list)
             sale.total_value = total_value
@@ -167,24 +163,29 @@ class SaleSerializer(BaseSerializer):
                 FranchiseInstallment.objects.create(
                     sale=sale,
                     installment_value=total_installment_value,
-                )
+        )
+
                 
-    def create_projects(self, sale, products):
-        for product in products:
-            project = Project.objects.create(
-                sale=sale,
-                product=product.product,
-            )
-            try:
-                project.save()
-            except Exception as e:
-                raise ValidationError({"detail": f"Erro ao criar projeto para o produto {product.name}: {e}"})
+    def create(self, validated_data):
+        products_ids = validated_data.pop('products', [])
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+
+        sale = super().create(validated_data)
+
+        # Se vier proposta, prioriza ela
+        if commercial_proposal_id:
+            self._handle_products(sale, commercial_proposal_id=commercial_proposal_id)
+        else:
+            self._handle_products(sale, products_ids=products_ids)
+
+        return sale
+
 
     def validate_products_ids(self, products_ids):
         products = []
         for product_id in products_ids:
             if isinstance(product_id, Product):
-                products.append(product_id)  # Já é uma instância do modelo
+                products.append(product_id)
             else:
                 try:
                     product = Product.objects.get(id=product_id)
@@ -192,6 +193,7 @@ class SaleSerializer(BaseSerializer):
                 except Product.DoesNotExist:
                     raise ValidationError({"detail": f"Produto com ID {product_id} não encontrado."})
         return products
+
 
     def calculate_total_value(self, sale_products):
         total_value = 0
