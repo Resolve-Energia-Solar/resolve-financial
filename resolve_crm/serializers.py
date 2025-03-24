@@ -7,7 +7,7 @@ from api.serializers import BaseSerializer
 from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
-
+from rest_framework import serializers
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -46,6 +46,12 @@ class MarketingCampaignSerializer(BaseSerializer):
 
 
 class SaleSerializer(BaseSerializer):
+    products_ids = serializers.ListField(
+    child=serializers.IntegerField(), write_only=True, required=False
+    )
+
+    commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
+    
     documents_under_analysis = SerializerMethodField()
     total_paid = SerializerMethodField()
     final_service_opinion = SerializerMethodField()
@@ -96,14 +102,6 @@ class SaleSerializer(BaseSerializer):
         
         return data
 
-    def create(self, validated_data):
-        products_ids = validated_data.pop('products', [])
-        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-        sale = super().create(validated_data)
-
-        self._handle_products(sale, products_ids, commercial_proposal_id)
-        return sale
-
     def update(self, instance, validated_data):
         # Atualizar os campos restantes
         cancellation_reasons = validated_data.pop('cancellation_reasons', None)
@@ -141,14 +139,19 @@ class SaleSerializer(BaseSerializer):
         
         elif products_ids:
             validated_products = self.validate_products_ids(products_ids)
-            for product in validated_products:
-                sale_product = SaleProduct.objects.create(
+            print(validated_products)
+            sale_products = [
+                SaleProduct(
                     sale=sale,
                     product=product,
-                    value=product.price,  # ajuste conforme seu modelo
-                    amount=1  # ou outro valor default
+                    value=product.cost_value or 0,
+                    amount=1
                 )
-                products_list.append(sale_product)
+                for product in validated_products
+            ]
+            SaleProduct.objects.bulk_create(sale_products)
+            products_list.extend(sale_products)
+                
 
         self.create_projects(sale, products_list)
 
@@ -167,18 +170,24 @@ class SaleSerializer(BaseSerializer):
 
                 
     def create(self, validated_data):
-        products_ids = validated_data.pop('products', [])
+        products = validated_data.pop('products_ids', [])
         commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-
         sale = super().create(validated_data)
 
-        # Se vier proposta, prioriza ela
+        print('criando venda com produtos:', products)
         if commercial_proposal_id:
             self._handle_products(sale, commercial_proposal_id=commercial_proposal_id)
         else:
-            self._handle_products(sale, products_ids=products_ids)
-
+            self._handle_products(sale, products_ids=products)
+            
         return sale
+
+    def create_projects(self, sale, products):
+        projects = [
+            Project(sale=sale, product=sp.product)
+            for sp in products
+        ]
+        Project.objects.bulk_create(projects)
 
 
     def validate_products_ids(self, products_ids):

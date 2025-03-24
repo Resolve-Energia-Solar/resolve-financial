@@ -517,6 +517,8 @@ class Sale(models.Model):
 
         super().save(*args, **kwargs)
     
+    
+    
     """
     def clean(self):
         if self.is_pre_sale:

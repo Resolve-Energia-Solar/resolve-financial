@@ -15,6 +15,7 @@ from accounts.models import PhoneNumber, User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
+from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
@@ -146,21 +147,6 @@ class SaleViewSet(BaseModelViewSet):
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({'results': serialized_data, 'meta': {'indicators': indicators}})
-
-    @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        sale = serializer.save()
-        return Response(self.get_serializer(sale).data, status=201)
-
-    @transaction.atomic
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        sale = serializer.save()
-        return Response(self.get_serializer(sale).data, status=200)
 
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis[:10]
