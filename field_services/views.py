@@ -51,6 +51,18 @@ class ServiceViewSet(BaseModelViewSet):
             user_groups = self.request.user.groups.values_list('id', flat=True)
             queryset = queryset.filter(groups__id__in=user_groups)
         return queryset.filter()
+    
+    @action(detail=False, methods=['get'])
+    def get_my_services(self, request):
+        user = request.user
+        if user.is_superuser:
+            services = Service.objects.filter(is_deleted=False).distinct()
+        else:
+            user_groups = Group.objects.filter(user=user)
+            services = Service.objects.filter(groups__in=user_groups, is_deleted=False).distinct()
+        
+        service_ids = services.values_list('id', flat=True)
+        return Response(list(service_ids), status=status.HTTP_200_OK)
 
 
 class FormsViewSet(BaseModelViewSet):
