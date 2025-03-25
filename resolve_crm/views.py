@@ -157,10 +157,17 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    
+    def get_queryset(self):
+        queryset = Project.objects.all()
+        queryset = queryset.select_related('sale', 'inspection')
+        queryset = queryset.prefetch_related('attachments', 'units')
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         
+        q = request.query_params.get('q')
         customer = request.query_params.get('customer')
         is_released_to_engineering = request.query_params.get('is_released_to_engineering')
         inspection_status = request.query_params.get('inspection_status')
@@ -171,6 +178,9 @@ class ProjectViewSet(BaseModelViewSet):
         trt_status = request.query_params.get('trt_status')
         new_contract_number = request.query_params.get('new_contract_number')
         supply_adquance = request.query_params.get('supply_adquance')
+        
+        if q:
+            queryset = queryset.filter(Q(sale__customer__complete_name__icontains=q) | Q(sale__customer__first_document__icontains=q) | Q(project_number__icontains=q))
 
         if new_contract_number == 'true':
             queryset = queryset.filter(units__new_contract_number=True)
