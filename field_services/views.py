@@ -68,14 +68,17 @@ class ScheduleViewSet(BaseModelViewSet):
     serializer_class = ScheduleSerializer
 
     def get_queryset(self):
-        qs = Schedule.objects.select_related(
-            'customer',
-            'service',
-            'final_service_opinion',
-            'service_opinion',
-            'project',
-            'schedule_creator',
-            'schedule_agent',
+        qs = Schedule.objects.all()
+        
+        qs = qs.select_related(
+            'customer', 
+            'final_service_opinion', 
+            'service_opinion', 
+            'project', 
+            'project__sale', 
+            'schedule_creator', 
+            'schedule_creator__employee',
+            'schedule_agent'
         )
 
         user = self.request.user
@@ -229,6 +232,8 @@ class ScheduleViewSet(BaseModelViewSet):
             data.append(agent_data)
 
         return Response(data, status=status.HTTP_200_OK)
+
+
 
 class BlockTimeAgentViewSet(BaseModelViewSet):
     queryset = BlockTimeAgent.objects.all()
