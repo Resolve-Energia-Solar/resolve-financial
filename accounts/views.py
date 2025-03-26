@@ -196,10 +196,7 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.annotate(
                 daily_schedules_count=Coalesce(Subquery(daily_schedules_subquery), Value(0))
             )
-
-            # Converter o queryset para lista para calcular a distância em Python
-            agents = list(queryset)
-            return queryset
+        return queryset
 
 
 class EmployeeViewSet(BaseModelViewSet):
