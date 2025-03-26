@@ -346,7 +346,7 @@ class ProjectViewSet(BaseModelViewSet):
             return self.get_paginated_response(serialized_data)
 
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data})
+        return Response(serialized_data)
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
