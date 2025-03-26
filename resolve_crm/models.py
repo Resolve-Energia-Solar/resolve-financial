@@ -723,7 +723,7 @@ class Project(models.Model):
         ]
     
     def __str__(self):
-        return self.project_number
+        return self.project_number if self.project_number else f'Projeto {self.id}'
 
     def save(self, current_user=None, *args, **kwargs):
         if not self.project_number:
