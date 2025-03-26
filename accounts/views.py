@@ -107,7 +107,7 @@ class UserViewSet(BaseModelViewSet):
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -130,8 +130,6 @@ class UserViewSet(BaseModelViewSet):
         date = self.request.query_params.get('date')
         start_time = self.request.query_params.get('start_time')
         end_time = self.request.query_params.get('end_time')
-        latitude = self.request.query_params.get('latitude')
-        longitude = self.request.query_params.get('longitude')
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -201,11 +199,7 @@ class UserViewSet(BaseModelViewSet):
 
             # Converter o queryset para lista para calcular a distância em Python
             agents = list(queryset)
-
-            return agents
-
-
-        return queryset
+            return queryset
 
 
 class EmployeeViewSet(BaseModelViewSet):
