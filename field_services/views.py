@@ -1,4 +1,6 @@
 from requests import Response
+from accounts.models import User
+from accounts.serializers import UserSerializer
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
@@ -41,6 +43,14 @@ class DeadlineViewSet(BaseModelViewSet):
 class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        if not self.request.user.is_superuser:
+            user_groups = self.request.user.groups.values_list('id', flat=True)
+            queryset = queryset.filter(groups__id__in=user_groups)
+        return queryset.filter()
 
 
 class FormsViewSet(BaseModelViewSet):
@@ -58,14 +68,17 @@ class ScheduleViewSet(BaseModelViewSet):
     serializer_class = ScheduleSerializer
 
     def get_queryset(self):
-        qs = Schedule.objects.select_related(
-            'customer',
-            'service',
-            'final_service_opinion',
-            'service_opinion',
-            'project',
-            'schedule_creator',
-            'schedule_agent',
+        qs = Schedule.objects.all()
+        
+        qs = qs.select_related(
+            'customer', 
+            'final_service_opinion', 
+            'service_opinion', 
+            'project', 
+            'project__sale', 
+            'schedule_creator', 
+            'schedule_creator__employee',
+            'schedule_agent'
         )
 
         user = self.request.user
@@ -219,6 +232,8 @@ class ScheduleViewSet(BaseModelViewSet):
             data.append(agent_data)
 
         return Response(data, status=status.HTTP_200_OK)
+
+
 
 class BlockTimeAgentViewSet(BaseModelViewSet):
     queryset = BlockTimeAgent.objects.all()
