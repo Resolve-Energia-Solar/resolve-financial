@@ -116,7 +116,6 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        depth = 1
     
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis.all()[:10]
