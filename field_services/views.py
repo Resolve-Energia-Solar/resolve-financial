@@ -44,13 +44,13 @@ class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
         
-        if not self.request.user.is_superuser:
-            user_groups = self.request.user.groups.values_list('id', flat=True)
-            queryset = queryset.filter(groups__id__in=user_groups)
-        return queryset.filter()
+    #     if not self.request.user.is_superuser:
+    #         user_groups = self.request.user.groups.values_list('id', flat=True)
+    #         queryset = queryset.filter(groups__id__in=user_groups)
+    #     return queryset.filter()
 
 
 class FormsViewSet(BaseModelViewSet):
