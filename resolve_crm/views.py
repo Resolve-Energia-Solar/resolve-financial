@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import datetime
 import logging
 from django.shortcuts import redirect
 import re
@@ -16,10 +17,12 @@ from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
+from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum
+from django.db.models import Exists, OuterRef, Q
 from django.db.models import Exists, OuterRef, Q
 from django.contrib import messages
 from django.http import HttpResponse
@@ -34,6 +37,7 @@ from .models import Sale
 from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
+from rest_framework.decorators import api_view
 from rest_framework.decorators import api_view
 
 
@@ -344,9 +348,10 @@ class ProjectViewSet(BaseModelViewSet):
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
             return self.get_paginated_response(serialized_data)
+            return self.get_paginated_response(serialized_data)
 
         serialized_data = self.get_serializer(queryset, many=True).data
-        return Response({'results': serialized_data})
+        return Response(serialized_data)
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):

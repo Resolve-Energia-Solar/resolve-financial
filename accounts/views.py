@@ -106,23 +106,18 @@ class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
-    
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        queryset = queryset.select_related(
+            'employee',
+        ).all()
+        
         name = self.request.query_params.get('name')
         user_type = self.request.query_params.get('type')
         email = self.request.query_params.get('email')
         phone = self.request.query_params.get('phone')
-        branch = self.request.query_params.get('branch')
-        department = self.request.query_params.get('department')
-        role = self.request.query_params.get('role')
         person_type = self.request.query_params.get('person_type')
         first_document = self.request.query_params.get('first_document')
         second_document = self.request.query_params.get('second_document')
@@ -139,12 +134,6 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(email__icontains=email)
         if phone:
             queryset = queryset.filter(phone__number__icontains=phone)
-        if branch:
-            queryset = queryset.filter(branch__name__icontains=branch)
-        if department:
-            queryset = queryset.filter(department__name__icontains=department)
-        if role:
-            queryset = queryset.filter(role__name__icontains=role)
         if person_type:
             queryset = queryset.filter(person_type=person_type)
         if first_document:
@@ -157,7 +146,9 @@ class UserViewSet(BaseModelViewSet):
             )
 
         if date and start_time and end_time:
-            # Filtrar agentes bloqueados
+            from django.db.models import OuterRef, Subquery, Count, Value
+            from django.db.models.functions import Coalesce
+
             blocked_agents = BlockTimeAgent.objects.filter(
                 start_date__lte=date,
                 end_date__gte=date,
@@ -166,7 +157,6 @@ class UserViewSet(BaseModelViewSet):
             ).values_list('agent', flat=True)
             queryset = queryset.exclude(id__in=blocked_agents)
 
-            # Filtrar agentes com horários livres
             day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
             free_agents_ids = FreeTimeAgent.objects.filter(
                 day_of_week=day_of_week,
@@ -175,18 +165,13 @@ class UserViewSet(BaseModelViewSet):
             ).values_list('agent_id', flat=True).distinct()
             queryset = queryset.filter(id__in=free_agents_ids)
 
-            # Excluir agentes com agendamentos sobrepostos
             overlapping_schedules = Schedule.objects.filter(
                 schedule_date=date,
                 schedule_start_time__lt=parse_time(end_time),
                 schedule_end_time__gt=parse_time(start_time),
-                schedule_agent_id__isnull=False  
+                schedule_agent_id__isnull=False
             ).values_list('schedule_agent_id', flat=True)
             queryset = queryset.exclude(id__in=overlapping_schedules)
-
-            # Sempre anota a quantidade de agendamentos, independentemente da latitude/longitude
-            from django.db.models import OuterRef, Subquery, Count, Value
-            from django.db.models.functions import Coalesce
 
             daily_schedules_subquery = Schedule.objects.filter(
                 schedule_agent=OuterRef('pk'),

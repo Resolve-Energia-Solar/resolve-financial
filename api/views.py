@@ -10,11 +10,13 @@ from rest_framework.views import APIView
 from api.pagination import CustomPagination
 from api.task import processar_contrato
 
-
-
 class BaseModelViewSet(ModelViewSet):
+    """
+    ViewSet base com configurações comuns de permissões, filtros, ordenação e paginação.
+    """
     permission_classes = [DjangoModelPermissions]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
+    # Considerar especificar os campos de ordenação para evitar ordenações em colunas não indexadas.
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     pagination_class = CustomPagination
@@ -23,25 +25,29 @@ class BaseModelViewSet(ModelViewSet):
     def filterset_fields(self):
         model = self.get_queryset().model
         exclude_field_types = ['ImageField', 'FileField']
-        supported_lookups = [
-            'CharField', 'TextField', 'ForeignKey', 'DateField',
-            'DateTimeField', 'PositiveSmallIntegerField', 'IntegerField',
-            'DecimalField', 'ManyToManyField', 'BooleanField', 'BigIntegerField'
-        ]
+        
+        supported_lookups = {
+            'ForeignKey': ['exact', 'in'],
+            'BooleanField': ['exact', 'in'],
+            'BigIntegerField': ['exact', 'in'],
+            'PositiveIntegerField': ['exact', 'in'],
+            'ManyToManyField': ['exact', 'in'],
+            'CharField': ['icontains', 'in'],
+            'TextField': ['icontains', 'in'],
+            'DateField': ['range'],
+            'DateTimeField': ['range'],
+            'PositiveSmallIntegerField': ['exact', 'gte', 'lte'],
+            'IntegerField': ['exact', 'gte', 'lte'],
+            'DecimalField': ['exact', 'gte', 'lte'],
+        }
 
         filter_fields = {}
-        for field in model._meta.fields + model._meta.many_to_many:
-            if field.get_internal_type() in supported_lookups and field.get_internal_type() not in exclude_field_types:
-                if field.get_internal_type() in ['ForeignKey', 'BooleanField', 'BigIntegerField', 'PositiveIntegerField', 'ManyToManyField']:
-                    filter_fields[field.name] = ['exact', 'in']
-                elif field.get_internal_type() in ['CharField', 'TextField']:
-                    filter_fields[field.name] = ['icontains', 'in']
-                elif field.get_internal_type() in ['DateField', 'DateTimeField']:
-                    filter_fields[field.name] = ['range']
-                elif field.get_internal_type() in ['PositiveSmallIntegerField', 'IntegerField', 'DecimalField']:
-                    filter_fields[field.name] = ['exact', 'gte', 'lte']
+        for field in list(model._meta.fields) + list(model._meta.many_to_many):
+            field_type = field.get_internal_type()
+            if field_type in supported_lookups and field_type not in exclude_field_types:
+                filter_fields[field.name] = supported_lookups[field_type]
         return filter_fields
-    
+
     
 class ContratoView(APIView):
     def post(self, request):

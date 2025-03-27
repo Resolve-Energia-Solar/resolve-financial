@@ -105,7 +105,6 @@ class Answer(models.Model):
     def __str__(self):
         return f"{self.form.name} - {self.answerer.get_full_name()}"
 
-
 class Schedule(models.Model):
     status_choices = [
         ("Pendente", "Pendente"),
@@ -129,14 +128,14 @@ class Schedule(models.Model):
         (5, "Serviço Concluído"),
     ]
 
-    protocol = models.CharField("Protocolo", max_length=50, unique=True, null=True, blank=True)
+    protocol = models.CharField("Protocolo", max_length=50, unique=True, null=True, blank=True, db_index=True)
     schedule_creator = models.ForeignKey("accounts.User", verbose_name="Criador do Agendamento", on_delete=models.PROTECT, related_name='schedule_creator')
     schedule_date = models.DateField("Data do Agendamento")
     schedule_start_time = models.TimeField("Horário de Início")
     schedule_end_date = models.DateField("Data de Fim")
     schedule_end_time = models.TimeField("Horário de Fim")
     products = models.ManyToManyField("logistics.Product", verbose_name="Produtos", blank=True)
-    service = models.ForeignKey(Service, verbose_name="Serviço", on_delete=models.PROTECT)
+    service = models.ForeignKey("Service", verbose_name="Serviço", on_delete=models.PROTECT)
     customer = models.ForeignKey("accounts.User", verbose_name="Cliente", on_delete=models.PROTECT, related_name='costumer', blank=True, null=True)
     leads = models.ManyToManyField("resolve_crm.Lead", verbose_name="Leads", blank=True, related_name='schedules')
     project = models.ForeignKey("resolve_crm.Project", verbose_name="Projeto", on_delete=models.PROTECT, related_name='field_services', blank=True, null=True)
@@ -180,7 +179,14 @@ class Schedule(models.Model):
             ("view_service_opinion", "Can view service opinion"),
             ("can_change_service", "Can change service"),
         ]
-    
+        indexes = [
+            models.Index(fields=['schedule_date']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['branch']),
+            models.Index(fields=['status']),
+            models.Index(fields=['schedule_agent']),
+            models.Index(fields=['schedule_date', 'schedule_agent']),
+        ]
 
 class BlockTimeAgent(models.Model):
     agent = models.ForeignKey("accounts.User", verbose_name="Agente", on_delete=models.CASCADE)

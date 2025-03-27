@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db.models import Max
+import os
 
 
 class SystemConfig(models.Model):
@@ -65,10 +66,17 @@ class DocumentSubType(models.Model):
         return self.name
 
 
+def attachment_upload_to(instance, filename):
+    base, ext = os.path.splitext(filename)
+    timestamp = now().strftime("%Y%m%d%H%M%S")
+    new_filename = f"{base}_{timestamp}{ext}"
+    return os.path.join("attachments/", new_filename)
+
+
 class Attachment(models.Model):
     object_id = models.PositiveSmallIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    file = models.FileField("Arquivo", upload_to="resolve_crm/attachments/")
+    file = models.FileField("Arquivo", upload_to=attachment_upload_to)
     content_object = GenericForeignKey('content_type', 'object_id')
     status = models.CharField("Status", max_length=50, null=True, blank=True)
     document_type = models.ForeignKey("core.DocumentType", on_delete=models.CASCADE, verbose_name="Tipo de Documento", null=True, blank=True)
