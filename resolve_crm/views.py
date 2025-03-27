@@ -110,7 +110,7 @@ class SaleViewSet(BaseModelViewSet):
                 filter=Q(payments__installments__is_paid=True),
                 default=0
             )
-        )
+        ).order_by('-created_at')
 
 
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
