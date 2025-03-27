@@ -431,40 +431,6 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True, db_index=True)
     history = HistoricalRecords()
-    
-    
-    def is_released_to_engineering(self):
-        return any(project.is_released_to_engineering() for project in self.projects.all())
-    
-    
-    def final_service_opinion(self):
-        final_service_opinions = []
-        for project in self.projects.all():
-            if project.inspection:
-                final_service_opinions.append(project.inspection.final_service_opinion)
-        return final_service_opinions if final_service_opinions else None
-    
-
-    def signature_status(self):
-        if not self.signature_date:
-            if self.contract_submissions.exists():
-                if self.contract_submissions.filter(status='P').exists() and not self.contract_submissions.filter(status='A').exists():
-                    return 'Enviado'
-                elif self.contract_submissions.filter(status='A').exists():
-                    return 'Assinado'
-                elif self.contract_submissions.filter(status='R').exists():
-                    return 'Recusado'
-            else:
-                return 'Pendente'
-        return 'Assinado'
-        
-    @cached_property
-    def total_paid(self):
-        total = PaymentInstallment.objects.filter(
-            payment__sale=self, 
-            is_paid=True
-        ).aggregate(total=Sum('installment_value'))['total']
-        return total or 0
 
     @property
     def franchise_installments_generated(self):
@@ -531,11 +497,6 @@ class Sale(models.Model):
                 raise ValidationError("Já existe uma pré-venda para esse cliente.")
         super().clean()
     """
-    
-    @property
-    def documents_under_analysis(self):
-        sale_content_type = ContentType.objects.get_for_model(Sale)
-        return self.attachments.filter(content_type=sale_content_type, status='EA')
     
     class Meta:
         verbose_name = "Venda"
@@ -650,29 +611,48 @@ class Project(models.Model):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
 
+    @cached_property
     def is_released_to_engineering(self):
-        final_service_opinion = self.inspection.final_service_opinion.name if self.inspection and self.inspection.final_service_opinion else None
-        final_service_opinion_contains_approved = 'aprovado' in final_service_opinion.lower() if final_service_opinion else False
-        
-        attachments_cnh_or_rg_homologator = self.sale.attachments.filter(
-            (Q(document_type__name__icontains='CNH') | Q(document_type__name__icontains='RG')) &
-            Q(status='A') &
-            Q(document_type__name__icontains='homologador')
+    # Final service opinion
+        final_service_opinion = (
+            self.inspection.final_service_opinion.name
+            if self.inspection and self.inspection.final_service_opinion
+            else None
         )
-        attachments_contract = self.sale.attachments.filter(document_type__name__icontains='Contrato', status='A')
-        attachments = attachments_contract.exists() and attachments_cnh_or_rg_homologator.exists()
-        
-        main_unit = self.units.filter(main_unit=True, bill_file__isnull=False).exists()
-        check_new_uc = self.units.filter(new_contract_number=True).exists()
-        check_unit = main_unit or check_new_uc
-        
+        final_service_opinion_contains_approved = (
+            'aprovado' in final_service_opinion.lower()
+            if final_service_opinion else False
+        )
+
+        attachments = getattr(self.sale, 'approved_attachments', [])
+
+        has_contract = any(
+            'Contrato' in att.document_type.name for att in attachments
+        )
+        has_cnh_or_rg = any(
+            ('CNH' in att.document_type.name or 'RG' in att.document_type.name) and
+            'homologador' in att.document_type.name.lower()
+            for att in attachments
+        )
+        attachments_ok = has_contract and has_cnh_or_rg
+
+        # Units
+        units = list(self.units.all())
+        has_main_unit_with_file = any(u.main_unit and u.bill_file for u in units)
+        has_new_contract_uc = any(u.new_contract_number for u in units)
+        check_unit = has_main_unit_with_file or has_new_contract_uc
+
+        # Condições finais
         return (
-            check_unit and attachments and 
-            self.sale.payment_status in ['L', 'C', 'CO'] and 
-            final_service_opinion_contains_approved and 
-            self.sale.is_pre_sale == False and 
-            not self.status in ['C', 'D']
-        ) and self.sale.status in ['EA', 'F']
+            check_unit and
+            attachments_ok and
+            self.sale.payment_status in ['L', 'C', 'CO'] and
+            final_service_opinion_contains_approved and
+            not self.sale.is_pre_sale and
+            self.status not in ['C', 'D'] and
+            self.sale.status in ['EA', 'F']
+        )
+
 
     def pending_material_list(self):
         return (self.is_released_to_engineering() and not self.material_list_is_completed)

@@ -53,7 +53,7 @@ class SaleSerializer(BaseSerializer):
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
     
     documents_under_analysis = SerializerMethodField()
-    total_paid = SerializerMethodField()
+    total_paid = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
@@ -63,21 +63,44 @@ class SaleSerializer(BaseSerializer):
         fields = '__all__'
     
     def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()[:10]
-        return AttachmentSerializer(documents, many=True).data
+        attachments = getattr(obj, 'attachments_under_analysis', [])
+        return AttachmentSerializer(attachments, many=True, context=self.context).data
+
 
     def get_is_released_to_engineering(self, obj):
-        return obj.is_released_to_engineering()
+        return any(
+            getattr(p, 'is_released_to_engineering', False)
+            for p in obj.projects.all()
+        )
+
     
     def get_signature_status(self, obj):
-        return obj.signature_status()    
+        submissions = list(obj.contract_submissions.all())
+        statuses = {s.status for s in submissions}
+
+        if not obj.signature_date:
+            if not statuses:
+                return 'Pendente'
+            if 'P' in statuses and 'A' not in statuses:
+                return 'Enviado'
+            if 'A' in statuses:
+                return 'Assinado'
+            if 'R' in statuses:
+                return 'Recusado'
+        return 'Assinado'
+  
     
     def get_final_service_opinion(self, obj):
-        final_opinions = obj.final_service_opinion()
-        # Se for None, retorna lista vazia ou None, você decide
-        if not final_opinions:
-            return []
-        return [opinion.name for opinion in final_opinions if opinion is not None and opinion.name]
+        opinions = [
+            {
+                "id": p.inspection.final_service_opinion.id,
+                "name": p.inspection.final_service_opinion.name
+            }
+            for p in obj.projects.all()
+            if p.inspection and p.inspection.final_service_opinion
+        ]
+        return opinions or None
+
         
     def validate(self, data):
         # Validação para definir o percentual de repasse
@@ -101,6 +124,19 @@ class SaleSerializer(BaseSerializer):
         """
         
         return data
+    
+    def create(self, validated_data):
+        products = validated_data.pop('products_ids', [])
+        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
+        sale = super().create(validated_data)
+
+        print('criando venda com produtos:', products)
+        if commercial_proposal_id:
+            self._handle_products(sale, commercial_proposal_id=commercial_proposal_id)
+        else:
+            self._handle_products(sale, products_ids=products)
+            
+        return sale
 
     def update(self, instance, validated_data):
         # Atualizar os campos restantes
@@ -168,27 +204,12 @@ class SaleSerializer(BaseSerializer):
                     installment_value=total_installment_value,
         )
 
-                
-    def create(self, validated_data):
-        products = validated_data.pop('products_ids', [])
-        commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-        sale = super().create(validated_data)
-
-        print('criando venda com produtos:', products)
-        if commercial_proposal_id:
-            self._handle_products(sale, commercial_proposal_id=commercial_proposal_id)
-        else:
-            self._handle_products(sale, products_ids=products)
-            
-        return sale
-
     def create_projects(self, sale, products):
         projects = [
             Project(sale=sale, product=sp.product)
             for sp in products
         ]
         Project.objects.bulk_create(projects)
-
 
     def validate_products_ids(self, products_ids):
         products = []
@@ -202,7 +223,6 @@ class SaleSerializer(BaseSerializer):
                 except Product.DoesNotExist:
                     raise ValidationError({"detail": f"Produto com ID {product_id} não encontrado."})
         return products
-
 
     def calculate_total_value(self, sale_products):
         total_value = 0
@@ -228,9 +248,6 @@ class SaleSerializer(BaseSerializer):
             total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
         return total_value
-
-    def get_total_paid(self, obj):
-        return obj.total_paid
 
 
 class ProjectSerializer(BaseSerializer):

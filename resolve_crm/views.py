@@ -21,7 +21,7 @@ from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Prefetch
 from django.db.models import Exists, OuterRef, Q
 from django.db.models import Exists, OuterRef, Q
 from django.contrib import messages
@@ -38,11 +38,11 @@ from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
 from rest_framework.decorators import api_view
-from rest_framework.decorators import api_view
 
 
 logger = logging.getLogger(__name__)
 
+sale_content_type = ContentType.objects.get_for_model(Sale)
 
 class OriginViewSet(BaseModelViewSet):
     queryset = Origin.objects.all()
@@ -71,19 +71,47 @@ class ComercialProposalViewSet(BaseModelViewSet):
 
 
 class SaleViewSet(BaseModelViewSet):
+    queryset = Sale.objects.all()
     serializer_class = SaleSerializer
 
     def get_queryset(self):
         user = self.request.user
-
+        
         qs = Sale.objects.select_related(
             "customer", "seller", "sales_supervisor", "sales_manager",
             "branch", "marketing_campaign", "supplier"
         ).prefetch_related(
-            "cancellation_reasons", "products", "attachments", "tags", "payments", "projects__inspection",
-            "projects__homologator", "projects__attachments",
-            "projects", "projects__units",
-        ).order_by("-created_at")
+            "cancellation_reasons",
+            "products",
+            "attachments",
+            "tags",
+            "payments",
+            "projects",
+            "projects__units",
+            "projects__inspection__final_service_opinion",
+            "projects__homologator",
+            "contract_submissions",
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(
+                    content_type=sale_content_type,
+                    status="EA"
+                ),
+                to_attr="attachments_under_analysis"
+            ),
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(status='A'),
+                to_attr="approved_attachments"
+            ),
+        ).annotate(
+            total_paid=Sum(
+                'payments__installments__installment_value',
+                filter=Q(payments__installments__is_paid=True),
+                default=0
+            )
+        )
+
 
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
             return qs
@@ -166,6 +194,15 @@ class ProjectViewSet(BaseModelViewSet):
         queryset = Project.objects.all()
         queryset = queryset.select_related('sale', 'inspection')
         queryset = queryset.prefetch_related('attachments', 'units')
+        queryset = queryset.prefetch_related(
+                    Prefetch(
+                        'sale__attachments',
+                        queryset=Attachment.objects.filter(status='A'),
+                        to_attr='approved_attachments'
+                    ),
+                    'units',
+                    'inspection__final_service_opinion'
+                ).select_related('sale', 'inspection__final_service_opinion')
         return queryset
 
     def list(self, request, *args, **kwargs):
