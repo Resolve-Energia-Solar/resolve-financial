@@ -234,7 +234,6 @@ class ScheduleViewSet(BaseModelViewSet):
         return Response(data, status=status.HTTP_200_OK)
 
 
-
 class BlockTimeAgentViewSet(BaseModelViewSet):
     queryset = BlockTimeAgent.objects.all()
     serializer_class = BlockTimeAgentSerializer
