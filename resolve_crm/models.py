@@ -17,8 +17,6 @@ from django.db import transaction, models
 from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Sum
-
 
 def get_current_month():
     return datetime.date.today().month
@@ -606,6 +604,10 @@ class Project(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
+    @cached_property
+    def content_type_id(self):
+        return ContentType.objects.get_for_model(self).id
+    
     @property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
@@ -653,68 +655,74 @@ class Project(models.Model):
             self.sale.status in ['EA', 'F']
         )
 
+    
+    @cached_property
+    def trt_attachments(self):
+        return [
+            att for att in self.attachments.all()
+            if (
+                ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
+                and att.content_type_id == self.content_type
+            )
+        ]
+    
 
     def pending_material_list(self):
         return (self.is_released_to_engineering and not self.material_list_is_completed)
     
+    @cached_property
     def access_opnion(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        new_uc_exists = self.units.filter(new_contract_number=True).exists()
-        if trt_attachments.filter(status='A').exists() and not new_uc_exists and self.is_released_to_engineering:
+        has_aprovado = any(att.status == 'A' for att in self.trt_attachments)
+        has_new_uc = any(u.new_contract_number for u in self.units.all())
+        if has_aprovado and not has_new_uc and self.is_released_to_engineering:
             return 'Liberado'
         return 'Bloqueado'
     
+    @cached_property
     def trt_pending(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        if self.is_released_to_engineering:
-            if trt_attachments.filter(status='R').exists() and not trt_attachments.filter(status='A').exists():
-                return 'Reprovada'
-            if trt_attachments.filter(status='EA').exists() and not trt_attachments.filter(status='A').exists():
-                return 'Em Andamento'
-            if trt_attachments.filter(status='A').exists():
-                return 'Concluída'
-            return 'Pendente'
-        return 'Bloqueado'
+        statuses = [att.status for att in self.trt_attachments]
+        if not self.is_released_to_engineering:
+            return 'Bloqueado'
+        if 'R' in statuses and 'A' not in statuses:
+            return 'Reprovada'
+        if 'EA' in statuses and 'A' not in statuses:
+            return 'Em Andamento'
+        if 'A' in statuses:
+            return 'Concluída'
+        return 'Pendente'
     
+    @cached_property
     def trt_status(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        if trt_attachments.exists() and trt_attachments.first().status and trt_attachments.count() > 1:
-            return trt_attachments.first().status
-        return list(trt_attachments.values_list('status', flat=True))
+        if self.trt_attachments:
+            if len(self.trt_attachments) > 1 and self.trt_attachments[0].status:
+                return self.trt_attachments[0].status
+            return list({att.status for att in self.trt_attachments})
+        return []
     
+    @cached_property
     def request_requested(self):
         return self.requests_energy_company.exists()
     
-    @property
-    def missing_documents(self):
-        required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
-        missing_documents = []
-        if required_documents:
-            for document in required_documents:
-                if not self.attachments.filter(document_type=document).exists():
-                    missing_documents.append({
-                        'id': document.id,
-                        'name': document.name
-                    })
-            return missing_documents
-        return None
+    # @property
+    # def missing_documents(self):
+    #     required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
+    #     missing_documents = []
+    #     if required_documents:
+    #         for document in required_documents:
+    #             if not self.attachments.filter(document_type=document).exists():
+    #                 missing_documents.append({
+    #                     'id': document.id,
+    #                     'name': document.name
+    #                 })
+    #         return missing_documents
+    #     return None
     
-    @property
+    @cached_property
     def documents_under_analysis(self):
-        project_content_type = ContentType.objects.get_for_model(Project)
-        return self.attachments.filter(content_type=project_content_type, status='EA')
+        return [
+            att for att in self.attachments.all()
+            if att.content_type_id == self.content_type_id and att.status == 'EA'
+        ]
     
     def create_deadlines(self):
         steps = Step.objects.all()
@@ -769,6 +777,8 @@ class Project(models.Model):
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
             self.create_deadlines()
+
+
 
 class ProjectStep(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_steps")

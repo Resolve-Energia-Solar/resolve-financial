@@ -251,16 +251,16 @@ class SaleSerializer(BaseSerializer):
 
 
 class ProjectSerializer(BaseSerializer):
-    is_released_to_engineering = SerializerMethodField()
-    documents_under_analysis = SerializerMethodField()
-    access_opnion = SerializerMethodField()
-    trt_pending = SerializerMethodField()
-    trt_status = SerializerMethodField()
-    request_requested = SerializerMethodField()
-    address = SerializerMethodField()
+    is_released_to_engineering = serializers.SerializerMethodField()
+    documents_under_analysis = serializers.SerializerMethodField()
+    access_opnion = serializers.SerializerMethodField()
+    trt_pending = serializers.SerializerMethodField()
+    trt_status = serializers.SerializerMethodField()
+    request_requested = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
 
-    materials_data = ListField(
-        child= DictField(),
+    materials_data = serializers.ListField(
+        child=serializers.DictField(),
         write_only=True,
         required=False
     )
@@ -268,31 +268,32 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        
-        
-    def get_request_requested(self, obj):
-        return obj.request_requested()
-    
+
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering
-    
+
+    def get_documents_under_analysis(self, obj):
+        documents = obj.documents_under_analysis[:10]
+        return [{"id": d.id, "name": d.document_type.name, "status": d.status} for d in documents]
+
+
+    def get_access_opnion(self, obj):
+        return obj.access_opnion
+
     def get_trt_pending(self, obj):
-        return obj.trt_pending()
-    
+        return obj.trt_pending
+
     def get_trt_status(self, obj):
-        return obj.trt_status()
-    
+        return obj.trt_status
+
+    def get_request_requested(self, obj):
+        return obj.request_requested
+
     def get_address(self, obj):
         if obj.address:
             return AddressSerializer(obj.address).data
         return None
-    
-    def get_access_opnion(self, obj):
-        return obj.access_opnion()    
-    
-    def get_documents_under_analysis(self, obj):
-        documents = obj.documents_under_analysis.all()[:10]
-        return AttachmentSerializer(documents, many=True).data
+
     
     def update(self, instance, validated_data):
         materials_data = validated_data.pop('materials_data', [])
@@ -327,7 +328,7 @@ class ProjectSerializer(BaseSerializer):
                 is_exit=is_exit,
                 serial_number=serial_number
         )
-            
+       
 
 class ComercialProposalSerializer(BaseSerializer):
     class Meta:

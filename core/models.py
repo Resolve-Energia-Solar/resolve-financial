@@ -109,6 +109,11 @@ class Attachment(models.Model):
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['document_type', 'status']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+
 
 
 class Comment(models.Model):
