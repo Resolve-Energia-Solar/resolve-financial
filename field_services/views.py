@@ -1,6 +1,8 @@
 from requests import Response
 from accounts.models import User
 from accounts.serializers import UserSerializer
+from accounts.models import User
+from accounts.serializers import UserSerializer
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
@@ -44,13 +46,13 @@ class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
+    def get_queryset(self):
+        queryset = super().get_queryset()
         
-    #     if not self.request.user.is_superuser:
-    #         user_groups = self.request.user.groups.values_list('id', flat=True)
-    #         queryset = queryset.filter(groups__id__in=user_groups)
-    #     return queryset.filter()
+        if not self.request.user.is_superuser:
+            user_groups = self.request.user.groups.values_list('id', flat=True)
+            queryset = queryset.filter(groups__id__in=user_groups)
+        return queryset.filter()
 
 
 class FormsViewSet(BaseModelViewSet):
@@ -232,7 +234,6 @@ class ScheduleViewSet(BaseModelViewSet):
             data.append(agent_data)
 
         return Response(data, status=status.HTTP_200_OK)
-
 
 
 class BlockTimeAgentViewSet(BaseModelViewSet):

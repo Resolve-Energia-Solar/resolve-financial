@@ -1,14 +1,8 @@
-import os
 from django.forms import ValidationError
-import requests
 from dotenv import load_dotenv
-from accounts.models import Address, Department, User
-from accounts.serializers import AddressSerializer, BaseSerializer, RelatedUserSerializer
-from resolve_crm.serializers import SaleSerializer
+from accounts.serializers import BaseSerializer
 from financial.models import FinancialRecord, FranchiseInstallment, Payment, PaymentInstallment, Financier
-from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 from rest_framework.serializers import SerializerMethodField
-from resolve_crm.models import Sale
 from django.db import transaction
 
 
@@ -16,38 +10,19 @@ load_dotenv()
 
 
 class FinancierSerializer(BaseSerializer):
-
-    # Para leitura: usar serializador completo
-    address = AddressSerializer(read_only=True)
-
-    # Para escrita: usar apenas ID
-    address_id = PrimaryKeyRelatedField(queryset=Address.objects.all(), write_only=True, source='address')
-
-
     class Meta:
         model = Financier
         fields = '__all__'
 
-
 class PaymentInstallmentSerializer(BaseSerializer):
-    payment = PrimaryKeyRelatedField(queryset=Payment.objects.all(), required=False, write_only=True)
-
     class Meta:
         model = PaymentInstallment
         fields = '__all__'
 
 class PaymentSerializer(BaseSerializer):
-    sale = SaleSerializer(read_only=True)
-    financier = FinancierSerializer(read_only=True)
-    installments = PaymentInstallmentSerializer(many=True, required=False)
-    borrower = RelatedUserSerializer(read_only=True)
-
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
-    financier_id = PrimaryKeyRelatedField(queryset=Financier.objects.all(), write_only=True, source='financier', required=False)
     is_paid = SerializerMethodField()
     total_paid = SerializerMethodField()
     percentual_paid = SerializerMethodField()
-    borrower_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='borrower')
 
     class Meta:
         model = Payment
@@ -117,8 +92,6 @@ class PaymentSerializer(BaseSerializer):
 
 
 class FranchiseInstallmentSerializer(BaseSerializer):
-    # Campos para leitura
-    # sale = SaleSerializer(read_only=True)
     difference_value = SerializerMethodField()
     total_value = SerializerMethodField()
     transfer_percentage = SerializerMethodField()
@@ -127,17 +100,10 @@ class FranchiseInstallmentSerializer(BaseSerializer):
     is_payment_released = SerializerMethodField()
     reference_value = SerializerMethodField()
     payments_methods = SerializerMethodField()
-    
-    # Campos para escrita
-    sale_id = PrimaryKeyRelatedField(queryset=Sale.objects.all(), write_only=True, source='sale')
 
     class Meta:
         model = FranchiseInstallment
-        fields = [
-            'id', 'sale', 'status', 'installment_value', 'is_paid', 'paid_at', 'created_at',
-            'difference_value', 'total_value', 'transfer_percentage', 'percentage', 'margin_7',
-            'sale_id', 'is_payment_released', 'reference_value', 'payments_methods'
-        ]
+        fields = '__all__'
     
     def get_payments_methods(self, obj):
         return obj.payments_methods()
@@ -165,16 +131,6 @@ class FranchiseInstallmentSerializer(BaseSerializer):
 
 
 class FinancialRecordSerializer(BaseSerializer):
-    # Campos para leitura
-    requester = RelatedUserSerializer(read_only=True)
-    responsible = RelatedUserSerializer(read_only=True)
-    requesting_department = StringRelatedField(read_only=True)
-
-    # Campos para escrita
-    requester_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='requester')
-    responsible_id = PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True, source='responsible')
-    requesting_department_id = PrimaryKeyRelatedField(queryset=Department.objects.all(), write_only=True, source='requesting_department')
-
     class Meta:
         model = FinancialRecord
         fields = '__all__'

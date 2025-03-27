@@ -8,18 +8,49 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 from api.pagination import CustomPagination
-from api.task import processar_contrato
 
 class BaseModelViewSet(ModelViewSet):
-    """
-    ViewSet base com configurações comuns de permissões, filtros, ordenação e paginação.
-    """
     permission_classes = [DjangoModelPermissions]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    # Considerar especificar os campos de ordenação para evitar ordenações em colunas não indexadas.
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     pagination_class = CustomPagination
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        expand = self.request.query_params.get('expand')
+        if not expand:
+            return queryset
+
+        expand_fields = [e.strip() for e in expand.split(',') if e.strip()]
+        serializer = self.get_serializer()
+        expandable_fields = getattr(serializer, 'expandable_fields', {})
+
+        select_related_fields = []
+        prefetch_related_fields = []
+
+        for field in expand_fields:
+            field_info = expandable_fields.get(field)
+            if not field_info:
+                continue  # campo não registrado como expansível
+
+            serializer_class, options = field_info
+            many = options.get('many', False)
+
+            if many:
+                prefetch_related_fields.append(field)
+            else:
+                select_related_fields.append(field)
+
+        if select_related_fields:
+            queryset = queryset.select_related(*select_related_fields)
+        if prefetch_related_fields:
+            queryset = queryset.prefetch_related(*prefetch_related_fields)
+            
+        print('select_related_fields', select_related_fields)
+
+        return queryset
+
 
     @cached_property
     def filterset_fields(self):
@@ -47,22 +78,6 @@ class BaseModelViewSet(ModelViewSet):
             if field_type in supported_lookups and field_type not in exclude_field_types:
                 filter_fields[field.name] = supported_lookups[field_type]
         return filter_fields
-
-    
-class ContratoView(APIView):
-    def post(self, request):
-        dados_contrato = request.data
-        
-        # Pegue o token do frontend (geralmente enviado no header ou no corpo da requisição)
-        token = request.headers.get("Authorization")  # Ou `request.data['token']` se enviado no body
-
-        # Prepare os headers com o token recebido
-        headers = {"Authorization": token}
-
-        # Envie os dados para o Celery, incluindo o token
-        processar_contrato.delay(dados_contrato, token)
-        
-        return Response({"message": "Contrato enviado para processamento"}, status=status.HTTP_202_ACCEPTED)
 
 
 class GanttView(APIView):

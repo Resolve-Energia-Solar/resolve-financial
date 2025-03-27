@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 
+from accounts.models import User
 from api.views import BaseModelViewSet
 from core.models import Comment
 from .models import *

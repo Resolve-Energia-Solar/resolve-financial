@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import datetime
 import logging
 from django.shortcuts import redirect
 import re
@@ -16,10 +17,12 @@ from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
+from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Prefetch
+from django.db.models import Exists, OuterRef, Q
 from django.db.models import Exists, OuterRef, Q
 from django.contrib import messages
 from django.http import HttpResponse
@@ -38,6 +41,9 @@ from rest_framework.decorators import api_view
 
 
 logger = logging.getLogger(__name__)
+
+sale_content_type = ContentType.objects.get_for_model(Sale)
+project_content_type = ContentType.objects.get_for_model(Project)
 
 
 class OriginViewSet(BaseModelViewSet):
@@ -67,19 +73,47 @@ class ComercialProposalViewSet(BaseModelViewSet):
 
 
 class SaleViewSet(BaseModelViewSet):
+    queryset = Sale.objects.all()
     serializer_class = SaleSerializer
 
     def get_queryset(self):
         user = self.request.user
-
+        
         qs = Sale.objects.select_related(
             "customer", "seller", "sales_supervisor", "sales_manager",
             "branch", "marketing_campaign", "supplier"
         ).prefetch_related(
-            "cancellation_reasons", "products", "attachments", "tags", "payments", "projects__inspection",
-            "projects__homologator", "projects__attachments",
-            "projects", "projects__units",
-        ).order_by("-created_at")
+            "cancellation_reasons",
+            "products",
+            "attachments",
+            "tags",
+            "payments",
+            "projects",
+            "projects__units",
+            "projects__inspection__final_service_opinion",
+            "projects__homologator",
+            "contract_submissions",
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(
+                    content_type=sale_content_type,
+                    status="EA"
+                ),
+                to_attr="attachments_under_analysis"
+            ),
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(status='A'),
+                to_attr="approved_attachments"
+            ),
+        ).annotate(
+            total_paid=Sum(
+                'payments__installments__installment_value',
+                filter=Q(payments__installments__is_paid=True),
+                default=0
+            )
+        ).order_by('-created_at')
+
 
         if user.is_superuser or user.has_perm('resolve_crm.view_all_sales'):
             return qs
@@ -160,9 +194,21 @@ class ProjectViewSet(BaseModelViewSet):
     
     def get_queryset(self):
         queryset = Project.objects.all()
-        queryset = queryset.select_related('sale', 'inspection')
-        queryset = queryset.prefetch_related('attachments', 'units')
-        return queryset
+
+        queryset = queryset.select_related(
+            'sale', 'inspection__final_service_opinion'
+        ).prefetch_related(
+            'attachments',
+            'attachments__document_type',
+            'units',
+            Prefetch(
+                'sale__attachments',
+                queryset=Attachment.objects.filter(status='A').only('id', 'document_type_id', 'status', 'object_id'),
+                to_attr='approved_attachments'
+            )
+        )
+
+        return queryset.order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -344,13 +390,13 @@ class ProjectViewSet(BaseModelViewSet):
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
             return self.get_paginated_response(serialized_data)
+            return self.get_paginated_response(serialized_data)
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
-        # Criar chave de cache baseada nos filtros aplicados
         filter_params = request.GET.dict()
         filter_hash = md5(str(filter_params).encode()).hexdigest()
         cache_key = f'sale_indicators_{filter_hash}'
@@ -361,9 +407,6 @@ class ProjectViewSet(BaseModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset())
 
-        sale_content_type = ContentType.objects.get_for_model(Sale)
-
-        # Anotações para otimizar filtros reutilizáveis
         queryset = queryset.annotate(
             has_contract=Exists(
                 Attachment.objects.filter(
@@ -383,7 +426,6 @@ class ProjectViewSet(BaseModelViewSet):
             )
         )
 
-        # **Condição Reutilizável para `is_released_to_engineering`**
         is_released_to_engineering_filter = Q(
             sale__status__in=['F', 'EA'],
             sale__payment_status__in=['L', 'C', 'CO'],
@@ -395,37 +437,29 @@ class ProjectViewSet(BaseModelViewSet):
         )
 
         raw_indicators = queryset.aggregate(
-            # Indicadores para designer
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
             designer_in_progress_count=Count('id', filter=Q(designer_status="EA")),
             designer_complete_count=Count('id', filter=Q(designer_status="CO")),
             designer_canceled_count=Count('id', filter=Q(designer_status="C")),
             designer_termination_count=Count('id', filter=Q(designer_status="D")),
 
-            # Indicadores gerais
             pending_count=Count('id', filter=Q(status="P")),
             in_progress_count=Count('id', filter=Q(status="EA")),
             complete_count=Count('id', filter=Q(status="CO")),
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
 
-            # **Indicador: Liberado para engenharia (reutilizando a condição)**
             is_released_to_engineering_count=Count('id', filter=is_released_to_engineering_filter),
-
-            # **Indicador: Lista de materiais pendentes (reutilizando a condição)**
             pending_material_list=Count('id', filter=is_released_to_engineering_filter & Q(
                 designer_status="CO",
                 material_list_is_completed=False
             )),
-
-            # **Indicador: Bloqueado para engenharia (invertendo a condição)**
             blocked_to_engineering=Count('id', filter=~is_released_to_engineering_filter |
                 Q(units__bill_file__isnull=True, units__new_contract_number=False))
         )
 
         cache.set(cache_key, raw_indicators, 60)
         return Response({"indicators": raw_indicators})
-
 
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()

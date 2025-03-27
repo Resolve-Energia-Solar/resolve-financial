@@ -13,7 +13,6 @@ class CustomPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
         return Response({
-            'results': data,
             'meta': {
                 'pagination': {
                     'page': self.page.number,
@@ -24,5 +23,6 @@ class CustomPagination(PageNumberPagination):
                     'previous': self.get_previous_link(),
                 },
                 **self.extra_meta 
-            }
+            },
+            'results': data
         })
