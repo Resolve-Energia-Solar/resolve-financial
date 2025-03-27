@@ -210,6 +210,18 @@ class Address(models.Model):
         verbose_name = "Endereço"
         verbose_name_plural = "Endereços"
         ordering = ['city', 'state', 'street', 'number']
+        indexes = [
+            models.Index(fields=['zip_code']),
+            models.Index(fields=['country']),
+            models.Index(fields=['state']),
+            models.Index(fields=['city']),
+            models.Index(fields=['neighborhood']),
+            models.Index(fields=['street']),
+            models.Index(fields=['number']),
+            models.Index(fields=['complement']),
+            models.Index(fields=['latitude']),
+            models.Index(fields=['longitude']),
+        ]
 
 
 class Branch(models.Model):

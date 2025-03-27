@@ -1,9 +1,9 @@
 from rest_flex_fields import FlexFieldsModelSerializer
-from rest_framework.serializers import CharField
 from django.contrib.contenttypes.models import ContentType
 from django.utils.functional import cached_property
+from rest_framework.serializers import ModelSerializer
 
-class BaseSerializer(FlexFieldsModelSerializer):
+class BaseSerializer(FlexFieldsModelSerializer, ModelSerializer):
     class Meta:
         model = None
 
