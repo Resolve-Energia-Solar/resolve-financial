@@ -274,7 +274,7 @@ class ProjectSerializer(BaseSerializer):
         return obj.request_requested()
     
     def get_is_released_to_engineering(self, obj):
-        return obj.is_released_to_engineering()
+        return obj.is_released_to_engineering
     
     def get_trt_pending(self, obj):
         return obj.trt_pending()
