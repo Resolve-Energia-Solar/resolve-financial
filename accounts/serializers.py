@@ -31,12 +31,25 @@ class PhoneNumberSerializer(BaseSerializer):
 
 
 class AddressSerializer(BaseSerializer):
+    
+    complete_address = SerializerMethodField()
     user = PrimaryKeyRelatedField(
         queryset=User.objects.all(), write_only=True, required=False,
     )
+    
     class Meta:
         model = Address
         fields = '__all__'
+        
+    def get_complete_address(self, obj):
+        address = f"{obj.street} - {obj.number}"
+        if obj.complement:
+            address += f", {obj.complement}"
+        address += f", {obj.city}/{obj.state}"
+        if obj.zip_code:
+            address += f" - {obj.zip_code}"
+        address += f", {obj.country}"
+        return address
 
     def create(self, validated_data):
         if 'user' in validated_data:
