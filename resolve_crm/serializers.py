@@ -8,7 +8,6 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
 from rest_framework import serializers
-
 class OriginSerializer(BaseSerializer):
     class Meta:
         model = Origin
@@ -290,9 +289,9 @@ class ProjectSerializer(BaseSerializer):
         return obj.request_requested
 
     def get_address(self, obj):
-        if obj.address:
-            return AddressSerializer(obj.address).data
-        return None
+        main_unit = obj.main_unit_prefetched[0] if hasattr(obj, 'main_unit_prefetched') and obj.main_unit_prefetched else None
+        return AddressSerializer(main_unit.address).data if main_unit and main_unit.address else None
+
 
     
     def update(self, instance, validated_data):

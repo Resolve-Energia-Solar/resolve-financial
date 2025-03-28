@@ -12,6 +12,7 @@ from rest_framework.pagination import PageNumberPagination
 from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
+from engineering.models import Units
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
@@ -196,7 +197,12 @@ class ProjectViewSet(BaseModelViewSet):
                 'sale__attachments',
                 queryset=Attachment.objects.filter(status='A').only('id', 'document_type_id', 'status', 'object_id'),
                 to_attr='approved_attachments'
-            )
+            ),
+            Prefetch(
+                'units',
+                queryset=Units.objects.filter(main_unit=True).select_related('address'),
+                to_attr='main_unit_prefetched'
+            ),
         )
 
         return queryset.order_by('-created_at')

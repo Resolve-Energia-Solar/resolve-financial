@@ -608,7 +608,7 @@ class Project(models.Model):
     def content_type_id(self):
         return ContentType.objects.get_for_model(self).id
     
-    @property
+    @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
@@ -716,6 +716,11 @@ class Project(models.Model):
     #                 })
     #         return missing_documents
     #     return None
+    
+    @cached_property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
     
     @cached_property
     def documents_under_analysis(self):
