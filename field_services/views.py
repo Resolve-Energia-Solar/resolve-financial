@@ -67,12 +67,11 @@ class AnswerViewSet(BaseModelViewSet):
 
 
 class ScheduleViewSet(BaseModelViewSet):
+    queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
-    def get_queryset(self):
-        qs = Schedule.objects.all()
-        
-        qs = qs.select_related(
+    def get_queryset(self):    
+        qs = Schedule.objects.select_related(
             'customer', 
             'final_service_opinion', 
             'service_opinion', 

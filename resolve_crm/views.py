@@ -1,43 +1,31 @@
-from datetime import datetime
-from datetime import datetime
-import logging
-from django.shortcuts import redirect
 import re
-from django.db import transaction
+import logging
+from datetime import datetime
+from django.shortcuts import redirect
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from django.utils import formats
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 from rest_framework.pagination import PageNumberPagination
-from accounts.models import PhoneNumber, User, UserType
+from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
-from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
-from .models import *
-from .serializers import *
-from django.db.models import Count, Q, Sum, Prefetch
-from django.db.models import Exists, OuterRef, Q
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef, Q, Prefetch, Count, Sum
+from django.db import transaction
 from django.contrib import messages
 from django.http import HttpResponse
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny
-
-from django.db import transaction
-from django.db.models import Count, Sum, Q
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from .models import Sale
-from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
-from rest_framework.decorators import api_view
+from .serializers import *
+from .models import *
 
 
 logger = logging.getLogger(__name__)
@@ -126,6 +114,7 @@ class SaleViewSet(BaseModelViewSet):
 
         return qs.filter(stakeholder_filter)
 
+
     def apply_filters(self, queryset, query_params):
         if query_params.get('documents_under_analysis') == 'true':
             queryset = queryset.filter(attachments__document_type__required=True, attachments__status='EA')
@@ -158,6 +147,8 @@ class SaleViewSet(BaseModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_filters(queryset, request.query_params)
+
+        queryset = queryset.distinct()
 
         indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
@@ -390,7 +381,6 @@ class ProjectViewSet(BaseModelViewSet):
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
             return self.get_paginated_response(serialized_data)
-            return self.get_paginated_response(serialized_data)
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
@@ -435,6 +425,8 @@ class ProjectViewSet(BaseModelViewSet):
         ) & ~Q(status__in=['CO', 'D']) & Q(
             Q(units__bill_file__isnull=False) | Q(units__new_contract_number=True)
         )
+        
+        queryset = queryset.distinct()
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
@@ -460,6 +452,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         cache.set(cache_key, raw_indicators, 60)
         return Response({"indicators": raw_indicators})
+
 
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
