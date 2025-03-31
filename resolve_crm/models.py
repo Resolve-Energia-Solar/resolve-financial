@@ -662,7 +662,7 @@ class Project(models.Model):
             att for att in self.attachments.all()
             if (
                 ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
-                and att.content_type_id == self.content_type
+                and att.content_type_id == self.content_type_id
             )
         ]
     
