@@ -208,6 +208,10 @@ class PaymentViewSet(BaseModelViewSet):
         )
         consistency_indicators = qs_consistency.aggregate(
             total_payments=Count('id'),
+            total_payments_value=Coalesce(
+                Sum('value', output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
             consistent_payments=Count('id', filter=Q(is_consistent=True)),
             consistent_payments_value=Coalesce(
                 Sum('value', filter=Q(is_consistent=True), output_field=DecimalField()),
