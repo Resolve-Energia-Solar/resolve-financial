@@ -331,42 +331,36 @@ class ProjectSerializer(BaseSerializer):
        
 
 class ComercialProposalSerializer(BaseSerializer):
+    products = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
+
     class Meta:
         model = ComercialProposal
         fields = '__all__'
 
     def create(self, validated_data):
-        products_data = validated_data.pop('commercial_products', [])
+        products_ids = validated_data.pop('products', [])
         proposal = super().create(validated_data)
-        for product in products_data:
-            SaleProduct.objects.create(
-                commercial_proposal=proposal,
-                product=product,
-                amount=1,
-                cost_value=product.cost_value,
-                reference_value=product.reference_value,
-                value = product.product_value
-            )
 
+        self._set_products(proposal, products_ids)
         return proposal
 
     def update(self, instance, validated_data):
-        products_data = validated_data.pop('commercial_products', [])
+        products_ids = validated_data.pop('products', None)
         proposal = super().update(instance, validated_data)
 
-        SaleProduct.objects.filter(commercial_proposal=instance).delete()
-
-        for product in products_data:
-            SaleProduct.objects.create(
-                commercial_proposal=proposal,
-                product=product,
-                amount=1,
-                cost_value=product.cost_value,
-                reference_value=product.reference_value, 
-                value = product.product_value
-            )
-
+        if products_ids is not None:
+            # limpa os vínculos anteriores
+            SaleProduct.objects.filter(proposal=proposal).delete()
+            self._set_products(proposal, products_ids)
+        
         return proposal
+
+    def _set_products(self, proposal, products_ids):
+        products = Product.objects.filter(id__in=products_ids)
+        for product in products:
+            SaleProduct.objects.create(proposal=proposal, product=product)
 
 
 class ContractSubmissionSerializer(BaseSerializer):
