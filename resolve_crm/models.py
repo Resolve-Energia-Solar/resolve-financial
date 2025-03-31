@@ -434,6 +434,32 @@ class Sale(models.Model):
     def franchise_installments_generated(self):
         return self.franchise_installments.exists()
     
+    def treadmill_counter(self):
+        if not self.signature_date:
+            return None
+
+        from django.db.models import Prefetch
+        from field_services.models import Schedule
+        from django.utils.timezone import now
+
+        qs = self.projects.all().prefetch_related(
+            Prefetch(
+                'field_services',
+                queryset=Schedule.objects.filter(
+                    service__category__name='Instalação',
+                    final_service_opinion__name='Concluído'
+                ).select_related('service', 'final_service_opinion'),
+                to_attr='installations_filtered'
+            )
+        )
+
+        for project in qs:
+            if project.installations_filtered:
+                installation = project.installations_filtered[0]
+                return (installation.execution_finished_at - self.signature_date).days
+
+        return (now() - self.signature_date).days
+    
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
         missing_documents = []
@@ -662,7 +688,7 @@ class Project(models.Model):
             att for att in self.attachments.all()
             if (
                 ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
-                and att.content_type_id == self.content_type
+                and att.content_type_id == self.content_type_id
             )
         ]
     
