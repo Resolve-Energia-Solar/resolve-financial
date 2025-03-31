@@ -133,7 +133,6 @@ class PaymentViewSet(BaseModelViewSet):
         filter_hash = md5(str(filter_params).encode()).hexdigest()
         cache_key = f'payments_indicators_{filter_hash}'
 
-        # Se os indicadores já estão em cache, retorne-os
         combined_indicators = cache.get(cache_key)
         if combined_indicators:
             return Response({"indicators": combined_indicators})
@@ -141,7 +140,6 @@ class PaymentViewSet(BaseModelViewSet):
         # Base queryset com os filtros aplicados
         qs = self.filter_queryset(self.get_queryset())
 
-        # 1. Indicadores das parcelas (agregação direta)
         installments_indicators = qs.aggregate(
             overdue_installments_count=Count(
                 'installments',
@@ -211,6 +209,14 @@ class PaymentViewSet(BaseModelViewSet):
         consistency_indicators = qs_consistency.aggregate(
             total_payments=Count('id'),
             consistent_payments=Count('id', filter=Q(is_consistent=True)),
+            consistent_payments_value=Coalesce(
+                Sum('value', filter=Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
+            inconsistent_payments_value=Coalesce(
+                Sum('value', filter=~Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
             inconsistent_payments=Count('id', filter=~Q(is_consistent=True))
         )
 
