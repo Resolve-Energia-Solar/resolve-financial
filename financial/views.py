@@ -41,11 +41,6 @@ class PaymentViewSet(BaseModelViewSet):
             'sale',
             'sale__customer',
             'sale__branch',
-            'sale__projects',
-            'sale__projects__inspection',
-            'sale__projects__field_services',
-            'sale__projects__field_services__final_service_opinion',
-            'sale__projects__inspection__final_service_opinion'
         ).prefetch_related(
             'installments',
         )

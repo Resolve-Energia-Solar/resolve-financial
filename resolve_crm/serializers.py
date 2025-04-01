@@ -8,6 +8,7 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -58,10 +59,17 @@ class SaleSerializer(BaseSerializer):
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
     treadmill_counter = SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
         fields = '__all__'
+        
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.user_can_edit(request.user)
+        return False
     
     def get_documents_under_analysis(self, obj):
         attachments = getattr(obj, 'attachments_under_analysis', [])
@@ -142,7 +150,11 @@ class SaleSerializer(BaseSerializer):
         return sale
 
     def update(self, instance, validated_data):
-        # Atualizar os campos restantes
+        request = self.context.get('request')
+        print('permissao:', instance.user_can_edit(request.user))
+        if not instance.user_can_edit(request.user):
+            raise PermissionDenied("Você não editar vendas finalizadas")
+        
         cancellation_reasons = validated_data.pop('cancellation_reasons', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
