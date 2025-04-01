@@ -74,7 +74,7 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
         sale = Sale.objects.get(id=sale_id)
         logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
         for project in sale.projects.all():
-            if project.is_released_to_engineering():
+            if project.is_released_to_engineering:
                 logger.info(f"📌 Task: Projeto {project.id} liberado para engenharia.")
                 update_or_create_sale_tag.delay(sale.id, sale_status)
                 break
