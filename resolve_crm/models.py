@@ -453,12 +453,20 @@ class Sale(models.Model):
             )
         )
 
+        counters = {}
         for project in qs:
             if project.installations_filtered:
                 installation = project.installations_filtered[0]
-                return (installation.execution_finished_at - self.signature_date).days
+                days = (installation.execution_finished_at - self.signature_date).days
+            else:
+                days = (now() - self.signature_date).days
+            counters[project.id] = days
 
-        return (now() - self.signature_date).days
+        unique_days = set(counters.values())
+        if len(unique_days) == 1:
+            return unique_days.pop()
+        else:
+            return counters
     
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
