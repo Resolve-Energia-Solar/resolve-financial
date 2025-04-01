@@ -5,6 +5,7 @@ from api.serializers import BaseSerializer
 from accounts.models import *
 from rest_framework import serializers
 from validate_docbr import CPF, CNPJ
+from datetime import date
 
 
 class DepartmentSerializer(BaseSerializer):
@@ -183,6 +184,13 @@ class UserSerializer(BaseSerializer):
         if 'first_document' in attrs:
             attrs['first_document'] = self.validate_first_document(attrs['first_document'])
         
+        birth_date = attrs.get('birth_date')
+        if birth_date:
+            today = date.today()
+            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            if age < 18:
+                raise serializers.ValidationError("Usuários devem ter pelo menos 18 anos.")
+                
         return super().validate(attrs)
         
     def validate_first_document(self, value):

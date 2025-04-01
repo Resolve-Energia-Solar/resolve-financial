@@ -110,13 +110,17 @@ class User(AbstractUser):
         return False
     
     def clean(self):
+        from datetime import date
+        if self.birth_date:
+            today = date.today()
+            age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+            if age < 18:
+                raise ValidationError("O usuário deve ter pelo menos 18 anos.")
         if self.pk:
-            # Verifica se o documento foi alterado e se já existe no banco
             if self.check_if_first_documento_changed():
                 if User.check_if_exist_first_document(self.first_document):
                     raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         else:
-            # Verificação para um novo objeto
             if User.check_if_exist_first_document(self.first_document):
                 raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         return super().clean()
