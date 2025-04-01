@@ -334,7 +334,7 @@ class ProjectSerializer(BaseSerializer):
        
 
 class ComercialProposalSerializer(BaseSerializer):
-    products = serializers.ListField(
+    products_ids = serializers.ListField(
         child=serializers.IntegerField(), write_only=True, required=False
     )
 
@@ -343,27 +343,38 @@ class ComercialProposalSerializer(BaseSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        products_ids = validated_data.pop('products', [])
+        products_ids = validated_data.pop('products_ids', [])
         proposal = super().create(validated_data)
-
         self._set_products(proposal, products_ids)
         return proposal
 
     def update(self, instance, validated_data):
-        products_ids = validated_data.pop('products', None)
+        products_ids = validated_data.pop('products_ids', None)
         proposal = super().update(instance, validated_data)
 
         if products_ids is not None:
-            # limpa os vínculos anteriores
-            SaleProduct.objects.filter(proposal=proposal).delete()
+            SaleProduct.objects.filter(commercial_proposal=proposal).delete()
             self._set_products(proposal, products_ids)
-        
+
         return proposal
 
     def _set_products(self, proposal, products_ids):
         products = Product.objects.filter(id__in=products_ids)
+
+        sale_products = []
         for product in products:
-            SaleProduct.objects.create(proposal=proposal, product=product)
+            sale_product = SaleProduct(
+                commercial_proposal=proposal,
+                product=product,
+                value=product.product_value,
+                reference_value=product.reference_value or product.value,
+                cost_value=product.cost_value or 0,
+                amount=1 
+            )
+            sale_products.append(sale_product)
+
+        SaleProduct.objects.bulk_create(sale_products)
+
 
 
 class ContractSubmissionSerializer(BaseSerializer):
