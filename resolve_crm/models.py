@@ -430,9 +430,51 @@ class Sale(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True, db_index=True)
     history = HistoricalRecords()
 
+
+    def user_can_edit(self, user):
+        print(f"User: {user}, Sale Status: {self.status}, Is Pre Sale: {self.is_pre_sale}")
+        if self.is_pre_sale or self.status in ['P', 'EA']:
+            return True
+        return user.has_perm('resolve_crm.can_change_fineshed_sale')
+
+
     @property
     def franchise_installments_generated(self):
         return self.franchise_installments.exists()
+    
+    def treadmill_counter(self):
+        if not self.signature_date:
+            return None
+
+        from django.db.models import Prefetch
+        from field_services.models import Schedule
+        from django.utils.timezone import now
+
+        qs = self.projects.all().prefetch_related(
+            Prefetch(
+                'field_services',
+                queryset=Schedule.objects.filter(
+                    service__category__name='Instalação',
+                    final_service_opinion__name='Concluído'
+                ).select_related('service', 'final_service_opinion'),
+                to_attr='installations_filtered'
+            )
+        )
+
+        counters = {}
+        for project in qs:
+            if project.installations_filtered:
+                installation = project.installations_filtered[0]
+                days = (installation.execution_finished_at - self.signature_date).days
+            else:
+                days = (now() - self.signature_date).days
+            counters[project.id] = days
+
+        unique_days = set(counters.values())
+        if len(unique_days) == 1:
+            return unique_days.pop()
+        else:
+            return counters
     
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
@@ -447,18 +489,18 @@ class Sale(models.Model):
             return missing_documents
         return None
     
-    def clean(self):
-        if self.pk is not None:
-            original = Sale.objects.get(pk=self.pk)
-            if not original.is_pre_sale:
-                if self.is_pre_sale:
-                    raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
-                allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
-                for field in self._meta.fields:
-                    if field.name not in allowed_fields:
-                        if getattr(self, field.name) != getattr(original, field.name):
-                            raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
-        super().clean()
+    # def clean(self):
+    #     if self.pk is not None:
+    #         original = Sale.objects.get(pk=self.pk)
+    #         if not original.is_pre_sale:
+    #             if self.is_pre_sale:
+    #                 raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
+    #             allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
+    #             for field in self._meta.fields:
+    #                 if field.name not in allowed_fields:
+    #                     if getattr(self, field.name) != getattr(original, field.name):
+    #                         raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
+    #     super().clean()
 
     def save(self, *args, **kwargs):
         if not self.contract_number:
@@ -515,6 +557,7 @@ class Sale(models.Model):
         ]
         permissions = [
             ('can_change_billing_date', 'Can change billing date'),
+            ('can_change_fineshed_sale', 'Can change finished sale'),
         ]
         """
         constraints = [
@@ -662,7 +705,7 @@ class Project(models.Model):
             att for att in self.attachments.all()
             if (
                 ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
-                and att.content_type_id == self.content_type
+                and att.content_type_id == self.content_type_id
             )
         ]
     
@@ -782,7 +825,6 @@ class Project(models.Model):
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
             self.create_deadlines()
-
 
 
 class ProjectStep(models.Model):

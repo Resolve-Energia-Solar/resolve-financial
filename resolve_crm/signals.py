@@ -115,5 +115,5 @@ def project_changed(sender, instance, **kwargs):
     sale = instance.sale
     # logger.info(f"📌 Signal: Projeto salvo - Sale ID: {sale.id}")
     # logger.info(f"📌 Signal: sale status - Sale ID: {sale.status}")
-    if instance.is_released_to_engineering():
+    if instance.is_released_to_engineering:
         update_or_create_sale_tag.delay(sale.id, sale.status)

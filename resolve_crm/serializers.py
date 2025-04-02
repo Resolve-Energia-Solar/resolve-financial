@@ -8,6 +8,8 @@ from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
 from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+
 class OriginSerializer(BaseSerializer):
     class Meta:
         model = Origin
@@ -56,10 +58,18 @@ class SaleSerializer(BaseSerializer):
     final_service_opinion = SerializerMethodField()
     signature_status = SerializerMethodField()
     is_released_to_engineering = SerializerMethodField()
+    treadmill_counter = SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
         fields = '__all__'
+        
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.user_can_edit(request.user)
+        return False
     
     def get_documents_under_analysis(self, obj):
         attachments = getattr(obj, 'attachments_under_analysis', [])
@@ -100,6 +110,8 @@ class SaleSerializer(BaseSerializer):
         ]
         return opinions or None
 
+    def get_treadmill_counter(self, obj):
+        return obj.treadmill_counter()
         
     def validate(self, data):
         # Validação para definir o percentual de repasse
@@ -138,7 +150,11 @@ class SaleSerializer(BaseSerializer):
         return sale
 
     def update(self, instance, validated_data):
-        # Atualizar os campos restantes
+        request = self.context.get('request')
+        print('permissao:', instance.user_can_edit(request.user))
+        if not instance.user_can_edit(request.user):
+            raise PermissionDenied("Você não editar vendas finalizadas")
+        
         cancellation_reasons = validated_data.pop('cancellation_reasons', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -330,42 +346,47 @@ class ProjectSerializer(BaseSerializer):
        
 
 class ComercialProposalSerializer(BaseSerializer):
+    products_ids = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
+
     class Meta:
         model = ComercialProposal
         fields = '__all__'
 
     def create(self, validated_data):
-        products_data = validated_data.pop('commercial_products', [])
+        products_ids = validated_data.pop('products_ids', [])
         proposal = super().create(validated_data)
-        for product in products_data:
-            SaleProduct.objects.create(
-                commercial_proposal=proposal,
-                product=product,
-                amount=1,
-                cost_value=product.cost_value,
-                reference_value=product.reference_value,
-                value = product.product_value
-            )
-
+        self._set_products(proposal, products_ids)
         return proposal
 
     def update(self, instance, validated_data):
-        products_data = validated_data.pop('commercial_products', [])
+        products_ids = validated_data.pop('products_ids', None)
         proposal = super().update(instance, validated_data)
 
-        SaleProduct.objects.filter(commercial_proposal=instance).delete()
-
-        for product in products_data:
-            SaleProduct.objects.create(
-                commercial_proposal=proposal,
-                product=product,
-                amount=1,
-                cost_value=product.cost_value,
-                reference_value=product.reference_value, 
-                value = product.product_value
-            )
+        if products_ids is not None:
+            SaleProduct.objects.filter(commercial_proposal=proposal).delete()
+            self._set_products(proposal, products_ids)
 
         return proposal
+
+    def _set_products(self, proposal, products_ids):
+        products = Product.objects.filter(id__in=products_ids)
+
+        sale_products = []
+        for product in products:
+            sale_product = SaleProduct(
+                commercial_proposal=proposal,
+                product=product,
+                value=product.product_value,
+                reference_value=product.reference_value or product.value,
+                cost_value=product.cost_value or 0,
+                amount=1 
+            )
+            sale_products.append(sale_product)
+
+        SaleProduct.objects.bulk_create(sale_products)
+
 
 
 class ContractSubmissionSerializer(BaseSerializer):
