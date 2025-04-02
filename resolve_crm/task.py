@@ -8,6 +8,7 @@ from resolve_crm.models import Sale, ContractSubmission
 from resolve_crm.clicksign import (
     create_clicksign_envelope,
     create_clicksign_document,
+    update_clicksign_document,
     create_signer,
     add_envelope_requirements,
     activate_envelope,
@@ -73,7 +74,7 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
         sale = Sale.objects.get(id=sale_id)
         logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
         for project in sale.projects.all():
-            if project.is_released_to_engineering():
+            if project.is_released_to_engineering:
                 logger.info(f"📌 Task: Projeto {project.id} liberado para engenharia.")
                 update_or_create_sale_tag.delay(sale.id, sale_status)
                 break
@@ -92,14 +93,50 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     except Sale.DoesNotExist:
         return {"status": "error", "message": f"Sale {sale_id} não encontrada."}
 
-    # Cria o envelope no Clicksign
+    # Verifica se já existe um envio anterior para atualizar
+    existing_submission = ContractSubmission.objects.filter(sale=sale).first()
+    if existing_submission:
+        envelope_id = existing_submission.envelope_id
+        # Atualiza o documento do envelope
+        document_response = update_clicksign_document(
+            envelope_id,
+            existing_submission.key_number,
+            sale.contract_number,
+            sale.customer,
+            existing_submission.request_signature_key,
+            pdf_content
+        )
+        if document_response.get("status") == "error":
+            return {"status": "error", "message": f"Erro ao atualizar documento no envelope: {document_response}"}
+        document_key = document_response.get("new_document_id")
+        if not document_key:
+            return {"status": "error", "message": "Chave do documento ausente após atualização."}
+
+        # Atualiza os dados da submissão existente
+        existing_submission.key_number = document_key
+        existing_submission.submit_datetime = timezone.now()
+        existing_submission.due_date = timezone.now() + datetime.timedelta(days=7)
+        existing_submission.save()
+
+        # Envia notificação (opcional)
+        notif_response = send_notification(envelope_id)
+        if notif_response.get("status") != "success":
+            return {"status": "error", "message": "Erro ao enviar notificação após atualização do documento."}
+
+        return {"status": "success", "submission_id": existing_submission.id}
+
+    # Fluxo de criação de envelope, documento, signatário e requisitos (novo envio)
     envelope_response = create_clicksign_envelope(sale.contract_number, sale.customer.complete_name)
     if envelope_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao criar envelope no Clicksign."}
     envelope_id = envelope_response.get("envelope_id")
 
-    # Adiciona o documento (PDF) ao envelope
-    document_response = create_clicksign_document(envelope_id, sale.contract_number, sale.customer.complete_name, pdf_content)
+    document_response = create_clicksign_document(
+        envelope_id,
+        sale.contract_number,
+        sale.customer.complete_name,
+        pdf_content
+    )
     if document_response.get("status") == "error":
         return {"status": "error", "message": f"Erro ao criar documento no envelope: {document_response}"}
     document_data = document_response.get("data", {})
@@ -107,30 +144,23 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     if not document_key:
         return {"status": "error", "message": "Chave do documento ausente."}
 
-    # Cria o signatário para o envelope
     signer_response = create_signer(envelope_id, sale.customer)
     if signer_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao criar signatário."}
     signer_key = signer_response.get("signer_key")
 
-    # Adiciona os requisitos ao envelope
     req_response = add_envelope_requirements(envelope_id, document_key, signer_key)
-    # Verifica se todos os requisitos foram adicionados com sucesso
-    for req in req_response:
-        if req.get("status") != "success":
-            return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
+    if req_response.get("status") != "success":
+        return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
 
-    # Ativa o envelope
     activate_response = activate_envelope(envelope_id)
     if activate_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao ativar envelope."}
 
-    # Envia a notificação
     notif_response = send_notification(envelope_id)
     if notif_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao enviar notificação."}
 
-    # Cria o registro de ContractSubmission
     submission = ContractSubmission.objects.create(
         sale=sale,
         request_signature_key=signer_key,

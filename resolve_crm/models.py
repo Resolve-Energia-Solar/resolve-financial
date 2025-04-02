@@ -17,8 +17,6 @@ from django.db import transaction, models
 from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Sum
-
 
 def get_current_month():
     return datetime.date.today().month
@@ -431,44 +429,52 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True, db_index=True)
     history = HistoricalRecords()
-    
-    
-    def is_released_to_engineering(self):
-        return any(project.is_released_to_engineering() for project in self.projects.all())
-    
-    
-    def final_service_opinion(self):
-        final_service_opinions = []
-        for project in self.projects.all():
-            if project.inspection:
-                final_service_opinions.append(project.inspection.final_service_opinion)
-        return final_service_opinions if final_service_opinions else None
-    
 
-    def signature_status(self):
-        if not self.signature_date:
-            if self.contract_submissions.exists():
-                if self.contract_submissions.filter(status='P').exists() and not self.contract_submissions.filter(status='A').exists():
-                    return 'Enviado'
-                elif self.contract_submissions.filter(status='A').exists():
-                    return 'Assinado'
-                elif self.contract_submissions.filter(status='R').exists():
-                    return 'Recusado'
-            else:
-                return 'Pendente'
-        return 'Assinado'
-        
-    @cached_property
-    def total_paid(self):
-        total = PaymentInstallment.objects.filter(
-            payment__sale=self, 
-            is_paid=True
-        ).aggregate(total=Sum('installment_value'))['total']
-        return total or 0
+
+    def user_can_edit(self, user):
+        print(f"User: {user}, Sale Status: {self.status}, Is Pre Sale: {self.is_pre_sale}")
+        if self.is_pre_sale or self.status in ['P', 'EA']:
+            return True
+        return user.has_perm('resolve_crm.can_change_fineshed_sale')
+
 
     @property
     def franchise_installments_generated(self):
         return self.franchise_installments.exists()
+    
+    def treadmill_counter(self):
+        if not self.signature_date:
+            return None
+
+        from django.db.models import Prefetch
+        from field_services.models import Schedule
+        from django.utils.timezone import now
+
+        qs = self.projects.all().prefetch_related(
+            Prefetch(
+                'field_services',
+                queryset=Schedule.objects.filter(
+                    service__category__name='Instalação',
+                    final_service_opinion__name='Concluído'
+                ).select_related('service', 'final_service_opinion'),
+                to_attr='installations_filtered'
+            )
+        )
+
+        counters = {}
+        for project in qs:
+            if project.installations_filtered:
+                installation = project.installations_filtered[0]
+                days = (installation.execution_finished_at - self.signature_date).days
+            else:
+                days = (now() - self.signature_date).days
+            counters[project.id] = days
+
+        unique_days = set(counters.values())
+        if len(unique_days) == 1:
+            return unique_days.pop()
+        else:
+            return counters
     
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
@@ -483,18 +489,18 @@ class Sale(models.Model):
             return missing_documents
         return None
     
-    def clean(self):
-        if self.pk is not None:
-            original = Sale.objects.get(pk=self.pk)
-            if not original.is_pre_sale:
-                if self.is_pre_sale:
-                    raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
-                allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
-                for field in self._meta.fields:
-                    if field.name not in allowed_fields:
-                        if getattr(self, field.name) != getattr(original, field.name):
-                            raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
-        super().clean()
+    # def clean(self):
+    #     if self.pk is not None:
+    #         original = Sale.objects.get(pk=self.pk)
+    #         if not original.is_pre_sale:
+    #             if self.is_pre_sale:
+    #                 raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
+    #             allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
+    #             for field in self._meta.fields:
+    #                 if field.name not in allowed_fields:
+    #                     if getattr(self, field.name) != getattr(original, field.name):
+    #                         raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
+    #     super().clean()
 
     def save(self, *args, **kwargs):
         if not self.contract_number:
@@ -518,11 +524,19 @@ class Sale(models.Model):
             self.financial_completion_date = None
             self.is_completed_financial = False
         super().save(*args, **kwargs)
-        
-    @property
-    def documents_under_analysis(self):
-        sale_content_type = ContentType.objects.get_for_model(Sale)
-        return self.attachments.filter(content_type=sale_content_type, status='EA')
+    
+    
+    
+    """
+    def clean(self):
+        if self.is_pre_sale:
+            qs = Sale.objects.filter(customer=self.customer, is_pre_sale=True)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError("Já existe uma pré-venda para esse cliente.")
+        super().clean()
+    """
     
     class Meta:
         verbose_name = "Venda"
@@ -543,8 +557,17 @@ class Sale(models.Model):
         ]
         permissions = [
             ('can_change_billing_date', 'Can change billing date'),
+            ('can_change_fineshed_sale', 'Can change finished sale'),
         ]
-    
+        """
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer'],
+                condition=models.Q(is_pre_sale=True),
+                name='unique_pre_sale_per_customer'
+            )
+        ]
+        """
     def __str__(self):
         return f'{self.contract_number} - {self.customer}'
 
@@ -624,96 +647,130 @@ class Project(models.Model):
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
-    @property
+    @cached_property
+    def content_type_id(self):
+        return ContentType.objects.get_for_model(self).id
+    
+    @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
 
+    @cached_property
     def is_released_to_engineering(self):
-        final_service_opinion = self.inspection.final_service_opinion.name if self.inspection and self.inspection.final_service_opinion else None
-        final_service_opinion_contains_approved = 'aprovado' in final_service_opinion.lower() if final_service_opinion else False
-        
-        attachments_cnh_or_rg_homologator = self.sale.attachments.filter(
-            (Q(document_type__name__icontains='CNH') | Q(document_type__name__icontains='RG')) &
-            Q(status='A') &
-            Q(document_type__name__icontains='homologador')
+    # Final service opinion
+        final_service_opinion = (
+            self.inspection.final_service_opinion.name
+            if self.inspection and self.inspection.final_service_opinion
+            else None
         )
-        attachments_contract = self.sale.attachments.filter(document_type__name__icontains='Contrato', status='A')
-        attachments = attachments_contract.exists() and attachments_cnh_or_rg_homologator.exists()
-        
-        main_unit = self.units.filter(main_unit=True, bill_file__isnull=False).exists()
-        check_new_uc = self.units.filter(new_contract_number=True).exists()
-        check_unit = main_unit or check_new_uc
-        
+        final_service_opinion_contains_approved = (
+            'aprovado' in final_service_opinion.lower()
+            if final_service_opinion else False
+        )
+
+        attachments = getattr(self.sale, 'approved_attachments', [])
+
+        has_contract = any(
+            'Contrato' in att.document_type.name for att in attachments
+        )
+        has_cnh_or_rg = any(
+            ('CNH' in att.document_type.name or 'RG' in att.document_type.name) and
+            'homologador' in att.document_type.name.lower()
+            for att in attachments
+        )
+        attachments_ok = has_contract and has_cnh_or_rg
+
+        # Units
+        units = list(self.units.all())
+        has_main_unit_with_file = any(u.main_unit and u.bill_file for u in units)
+        has_new_contract_uc = any(u.new_contract_number for u in units)
+        check_unit = has_main_unit_with_file or has_new_contract_uc
+
+        # Condições finais
         return (
-            check_unit and attachments and 
-            self.sale.payment_status in ['L', 'C', 'CO'] and 
-            final_service_opinion_contains_approved and 
-            self.sale.is_pre_sale == False and 
-            not self.status in ['C', 'D']
-        ) and self.sale.status in ['EA', 'F']
+            check_unit and
+            attachments_ok and
+            self.sale.payment_status in ['L', 'C', 'CO'] and
+            final_service_opinion_contains_approved and
+            not self.sale.is_pre_sale and
+            self.status not in ['C', 'D'] and
+            self.sale.status in ['EA', 'F']
+        )
+
+    
+    @cached_property
+    def trt_attachments(self):
+        return [
+            att for att in self.attachments.all()
+            if (
+                ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
+                and att.content_type_id == self.content_type_id
+            )
+        ]
+    
 
     def pending_material_list(self):
-        return (self.is_released_to_engineering() and not self.material_list_is_completed)
+        return (self.is_released_to_engineering and not self.material_list_is_completed)
     
+    @cached_property
     def access_opnion(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        new_uc_exists = self.units.filter(new_contract_number=True).exists()
-        if trt_attachments.filter(status='A').exists() and not new_uc_exists and self.is_released_to_engineering():
+        has_aprovado = any(att.status == 'A' for att in self.trt_attachments)
+        has_new_uc = any(u.new_contract_number for u in self.units.all())
+        if has_aprovado and not has_new_uc and self.is_released_to_engineering:
             return 'Liberado'
         return 'Bloqueado'
     
+    @cached_property
     def trt_pending(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        if self.is_released_to_engineering():
-            if trt_attachments.filter(status='R').exists() and not trt_attachments.filter(status='A').exists():
-                return 'Reprovada'
-            if trt_attachments.filter(status='EA').exists() and not trt_attachments.filter(status='A').exists():
-                return 'Em Andamento'
-            if trt_attachments.filter(status='A').exists():
-                return 'Concluída'
-            return 'Pendente'
-        return 'Bloqueado'
+        statuses = [att.status for att in self.trt_attachments]
+        if not self.is_released_to_engineering:
+            return 'Bloqueado'
+        if 'R' in statuses and 'A' not in statuses:
+            return 'Reprovada'
+        if 'EA' in statuses and 'A' not in statuses:
+            return 'Em Andamento'
+        if 'A' in statuses:
+            return 'Concluída'
+        return 'Pendente'
     
+    @cached_property
     def trt_status(self):
-        trt_attachments = self.attachments.filter(
-            Q(document_type__name__icontains='TRT') | Q(document_type__name__icontains='ART'),
-            object_id=self.id,
-            content_type=ContentType.objects.get_for_model(self)
-        )
-        if trt_attachments.exists() and trt_attachments.first().status and trt_attachments.count() > 1:
-            return trt_attachments.first().status
-        return list(trt_attachments.values_list('status', flat=True))
+        if self.trt_attachments:
+            if len(self.trt_attachments) > 1 and self.trt_attachments[0].status:
+                return self.trt_attachments[0].status
+            return list({att.status for att in self.trt_attachments})
+        return []
     
+    @cached_property
     def request_requested(self):
         return self.requests_energy_company.exists()
     
-    @property
-    def missing_documents(self):
-        required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
-        missing_documents = []
-        if required_documents:
-            for document in required_documents:
-                if not self.attachments.filter(document_type=document).exists():
-                    missing_documents.append({
-                        'id': document.id,
-                        'name': document.name
-                    })
-            return missing_documents
-        return None
+    # @property
+    # def missing_documents(self):
+    #     required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
+    #     missing_documents = []
+    #     if required_documents:
+    #         for document in required_documents:
+    #             if not self.attachments.filter(document_type=document).exists():
+    #                 missing_documents.append({
+    #                     'id': document.id,
+    #                     'name': document.name
+    #                 })
+    #         return missing_documents
+    #     return None
     
-    @property
+    @cached_property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
+    
+    @cached_property
     def documents_under_analysis(self):
-        project_content_type = ContentType.objects.get_for_model(Project)
-        return self.attachments.filter(content_type=project_content_type, status='EA')
+        return [
+            att for att in self.attachments.all()
+            if att.content_type_id == self.content_type_id and att.status == 'EA'
+        ]
     
     def create_deadlines(self):
         steps = Step.objects.all()
@@ -743,8 +800,8 @@ class Project(models.Model):
         ]
     
     def __str__(self):
-        return self.project_number or ''
-    
+        return self.project_number if self.project_number else f'Projeto {self.id}'
+
     def save(self, current_user=None, *args, **kwargs):
         if not self.project_number:
             with transaction.atomic():
@@ -768,6 +825,7 @@ class Project(models.Model):
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
             self.create_deadlines()
+
 
 class ProjectStep(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="project_steps")

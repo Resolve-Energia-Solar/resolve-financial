@@ -96,12 +96,9 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
         # Paginação normal e retorno final
         page = self.paginate_queryset(queryset)
         if page is not None:
+            self.paginator.extra_meta = {"indicators": indicators, "indicators_by_type": indicators_by_type}
             serialized_data = self.get_serializer(page, many=True).data
-            return self.get_paginated_response({
-                "results": serialized_data,
-                "indicators": indicators,
-                "indicators_by_type": indicators_by_type,
-            })
+            return self.get_paginated_response(serialized_data)
         
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response({

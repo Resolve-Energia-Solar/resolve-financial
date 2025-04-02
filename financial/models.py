@@ -192,7 +192,7 @@ class FranchiseInstallment(models.Model):
     
     @property
     def is_payment_released(self):
-        return all(project.is_released_to_engineering() for project in self.sale.projects.all())
+        return all(project.is_released_to_engineering for project in self.sale.projects.all())
 
     @property
     def transfer_percentage(self):

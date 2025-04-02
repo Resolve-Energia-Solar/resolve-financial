@@ -37,7 +37,6 @@ class CustomPagination(PageNumberPagination):
             })
 
         return Response({
-            'results': data,
             'meta': {
                 'pagination': {
                     'page': self.page.number,
@@ -47,6 +46,7 @@ class CustomPagination(PageNumberPagination):
                     'next': self.get_next_link(),
                     'previous': self.get_previous_link(),
                 },
-                **self.extra_meta
-            }
+                **self.extra_meta 
+            },
+            'results': data
         })

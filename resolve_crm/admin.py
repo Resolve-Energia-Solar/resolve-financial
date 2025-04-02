@@ -29,7 +29,7 @@ class ComercialProposalAdmin(admin.ModelAdmin):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("customer" ,"contract_number", "total_value", "total_paid","signature_date", "billing_date", "created_at")
+    list_display = ("customer" ,"contract_number", "total_value","signature_date", "billing_date", "created_at")
     autocomplete_fields = ["customer", "seller", "sales_supervisor","sales_manager", "supplier"]
     inlines = [SaleProductInline, PaymentInline]
     search_fields = ("contract_number", "customer__complete_name", "seller__username")

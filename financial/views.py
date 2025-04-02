@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 import workdays
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
+from django.db.models import Count, Q, Sum, Prefetch, Value, Case, When, BooleanField, F, DecimalField
 from django.http import HttpResponse
 from django.template.loader import get_template
 from django.utils import timezone
@@ -13,11 +13,15 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
-
+from rest_framework.decorators import action
+from accounts.models import User
 from api.views import BaseModelViewSet
 from core.models import Comment
 from .models import *
 from .serializers import *
+from django.core.cache import cache
+from hashlib import md5
+from django.db.models.functions import Coalesce
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +35,18 @@ class FinancierViewSet(BaseModelViewSet):
 class PaymentViewSet(BaseModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+    
+    def get_queryset(self):
+        query = Payment.objects.select_related(
+            'sale',
+            'sale__customer',
+            'sale__branch',
+        ).prefetch_related(
+            'installments',
+        )
+        
+        return query.order_by('-created_at')
+            
 
     def perform_create(self, serializer):
         # Remover os campos que não pertencem ao modelo antes de salvar
@@ -104,6 +120,113 @@ class PaymentViewSet(BaseModelViewSet):
         
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
+
+
+    @action(detail=False, methods=['get'])
+    def indicators(self, request, *args, **kwargs):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f'payments_indicators_{filter_hash}'
+
+        combined_indicators = cache.get(cache_key)
+        if combined_indicators:
+            return Response({"indicators": combined_indicators})
+
+        # Base queryset com os filtros aplicados
+        qs = self.filter_queryset(self.get_queryset())
+
+        installments_indicators = qs.aggregate(
+            overdue_installments_count=Count(
+                'installments',
+                filter=Q(installments__is_paid=False, installments__due_date__lte=timezone.now())
+            ),
+            overdue_installments_value=Coalesce(
+                Sum(
+                    'installments__installment_value',
+                    filter=Q(installments__is_paid=False, installments__due_date__lte=timezone.now()),
+                    output_field=DecimalField()
+                ),
+                Value(0, output_field=DecimalField())
+            ),
+            on_time_installments_count=Count(
+                'installments',
+                filter=Q(installments__is_paid=False, installments__due_date__gt=timezone.now())
+            ),
+            on_time_installments_value=Coalesce(
+                Sum(
+                    'installments__installment_value',
+                    filter=Q(installments__is_paid=False, installments__due_date__gt=timezone.now()),
+                    output_field=DecimalField()
+                ),
+                Value(0, output_field=DecimalField())
+            ),
+            
+            paid_installments_count=Count(
+                'installments',
+                filter=Q(installments__is_paid=True)
+            ),
+            paid_installments_value=Coalesce(
+                Sum(
+                    'installments__installment_value',
+                    filter=Q(installments__is_paid=True),
+                    output_field=DecimalField()
+                ),
+                Value(0, output_field=DecimalField())
+            ),
+            total_installments=Count('installments'),
+            total_installments_value=Coalesce(
+                Sum(
+                    'installments__installment_value',
+                    output_field=DecimalField()
+                ),
+                Value(0, output_field=DecimalField())
+            )
+        )
+
+        qs_consistency = qs.annotate(
+            total_installments_value=Coalesce(
+                Sum('installments__installment_value', output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
+            total_installments_count=Count('installments'),
+            paid_installments_count=Count('installments', filter=Q(installments__is_paid=True))
+        ).annotate(
+            is_consistent=Case(
+                When(
+                    Q(total_installments_count=F('paid_installments_count')) &
+                    Q(value=F('total_installments_value')),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField()
+            )
+        )
+        consistency_indicators = qs_consistency.aggregate(
+            total_payments=Count('id'),
+            total_payments_value=Coalesce(
+                Sum('value', output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
+            consistent_payments=Count('id', filter=Q(is_consistent=True)),
+            consistent_payments_value=Coalesce(
+                Sum('value', filter=Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
+            inconsistent_payments_value=Coalesce(
+                Sum('value', filter=~Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
+            ),
+            inconsistent_payments=Count('id', filter=~Q(is_consistent=True))
+        )
+
+        # Combina os dois conjuntos de indicadores
+        combined_indicators = {
+            "installments": installments_indicators,
+            "consistency": consistency_indicators
+        }
+
+        cache.set(cache_key, combined_indicators, 60)
+        return Response({"indicators": combined_indicators})
 
 
 

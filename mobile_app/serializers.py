@@ -5,9 +5,8 @@ from .models import *
 from resolve_crm.serializers import ContractSubmissionSerializer
 from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
-
 from accounts.models import User
-from accounts.serializers import AddressSerializer, BranchSerializer, PhoneNumberSerializer, RelatedUserSerializer
+from accounts.serializers import AddressSerializer
 from api.serializers import BaseSerializer
 from engineering.models import RequestsEnergyCompany
 from engineering.serializers import UnitsSerializer
@@ -16,8 +15,6 @@ from resolve_crm.models import Project, Sale
 
 
 class CustomerSerializer(BaseSerializer):
-
-    phone_numbers = PhoneNumberSerializer(many=True, read_only=True)
     sales_urls = SerializerMethodField(read_only=True)
 
     class Meta:
@@ -34,19 +31,13 @@ class CustomerSerializer(BaseSerializer):
 
 
 class MobileSaleSerializer(BaseSerializer):
-
-    customer = RelatedUserSerializer(read_only=True)
-    seller = RelatedUserSerializer(read_only=True)
-    sales_supervisor = RelatedUserSerializer(read_only=True)
-    sales_manager = RelatedUserSerializer(read_only=True)
     projects_urls = SerializerMethodField(read_only=True)
     contract_submission = SerializerMethodField(read_only=True)
-    branch = BranchSerializer(read_only=True)
     financial_url = SerializerMethodField(read_only=True)
     
     class Meta:
         model = Sale
-        fields = ['id', 'contract_number', 'customer', 'seller', 'sales_supervisor', 'sales_manager', 'status', 'created_at', 'total_value', 'signature_date', 'branch', 'is_pre_sale', 'financial_url', 'projects_urls', 'contract_submission']
+        fields = '__all__'
 
     def get_projects_urls(self, obj):
         request = self.context.get('request')
@@ -82,15 +73,13 @@ class MobileProjectSerializer(BaseSerializer):
         fields = ['id', 'start_date', 'product', 'project_number', 'address', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
 
     def get_address(self, obj):
-        if obj.address:
-            return AddressSerializer(obj.address).data
+        if obj.units.filter(main_unit=True).exists():
+            return AddressSerializer(obj.units.filter(main_unit=True).first().address).data
         return None
 
     def get_deadlines(self, obj):
-        # Slugs a serem removidos
         excluded_slugs = {"documentacao", "financeiro", "project"}
 
-        # Obter slugs de field services e requests energy company
         field_service_slugs = {
             slugify(field_service.service) 
             for field_service in obj.field_services.all()
@@ -150,7 +139,6 @@ class MobileProjectSerializer(BaseSerializer):
 class FieldServiceSerializer(BaseSerializer):
 
     service = StringRelatedField(read_only=True)
-    schedule_agent = RelatedUserSerializer(read_only=True)
     
     class Meta:
         model = Schedule

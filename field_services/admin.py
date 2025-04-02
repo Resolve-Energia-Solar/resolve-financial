@@ -34,7 +34,7 @@ class DeadlineAdmin(admin.ModelAdmin):
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("customer", "schedule_date", "project", "service", "protocol", "schedule_creator", "status")
+    list_display = ("customer", "schedule_date", "project", "service", "protocol", "schedule_creator", "status", "created_at")
     search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name", "customer__complete_name", "project__sale__customer__complete_name")
     readonly_fields = ("display_leads",)
     autocomplete_fields = ("project", "service", "schedule_creator", "parent_schedules", "attachments", "address", "schedule_agent", "branch", "service_opinion", "final_service_opinion", "customer")
