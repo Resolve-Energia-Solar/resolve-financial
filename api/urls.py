@@ -26,6 +26,15 @@ class ErpApiRootView(APIRootView):
 
 router.APIRootView = ErpApiRootView
 
+import accounts.urls
+import core.urls
+import contracts.urls
+import engineering.urls
+import financial.urls
+import field_services.urls
+import logistics.urls
+import resolve_crm.urls
+
 api_schema_view = get_schema_view(
     openapi.Info(
         title="ERP API",
