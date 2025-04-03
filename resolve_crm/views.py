@@ -600,7 +600,9 @@ class GeneratePreSaleView(APIView):
             comercial_proposal = None
             if commercial_proposal_id:
                 try:
-                    comercial_proposal = ComercialProposal.objects.select_related('...').get(id=commercial_proposal_id)
+                    comercial_proposal = ComercialProposal.objects.select_related(
+                        'lead'
+                        ).get(id=commercial_proposal_id)
                 except ComercialProposal.DoesNotExist:
                     return Response({'message': 'Proposta Comercial não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
 
