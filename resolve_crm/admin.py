@@ -22,7 +22,7 @@ class LeadAdmin(admin.ModelAdmin):
 @admin.register(ComercialProposal)
 class ComercialProposalAdmin(admin.ModelAdmin):
     list_display = ("id", "lead", "due_date", "value", "status", "created_by", "created_at")
-    search_fields = ("lead__name", "status", "created_by__username")
+    search_fields = ("lead__name", "status", "created_by__username", "lead__name")
     list_filter = ("status", "due_date", "created_at")
     inlines = [SaleProductInline]
 
@@ -46,7 +46,7 @@ class TaskAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("sale", "product", "created_at")
     autocomplete_fields = ["sale", "product", "designer", "inspection", "homologator", "materials", "registered_circuit_breaker"]
-    search_fields = ("sale__contract_number", "product__name", "sale__customer__complete_name")
+    search_fields = ("sale__contract_number", "product__name", "sale__customer__complete_name", "project_number")
     inlines = [ProjectMaterialsInline]
 
 

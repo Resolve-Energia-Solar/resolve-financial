@@ -122,7 +122,7 @@ class AddressAdmin(admin.ModelAdmin):
 class BranchAdmin(admin.ModelAdmin):
     list_display = ("name", "address",)
     list_display_links = ("name", "address",)
-    search_fields = ("name", "address")
+    search_fields = ("name",)
     list_filter = ("owners",)
     list_per_page = 10
     list_max_show_all = 100
