@@ -340,3 +340,54 @@ class Tag(models.Model):
         verbose_name = 'Taggeado'
         verbose_name_plural = 'Taggeados'
         ordering = ['tag']
+        
+
+
+class ProcessBase(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    description = models.TextField("Descrição")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo")
+    deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
+    steps = models.JSONField("Etapas", default=dict, blank=True, null=True)
+    # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Modelo de Processo'
+        verbose_name_plural = 'Modelos de Processos'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['content_type']),
+        ]
+
+
+class Process(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    description = models.TextField("Descrição")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo")
+    object_id = models.PositiveSmallIntegerField("ID do Objeto")
+    content_object = GenericForeignKey('content_type', 'object_id')
+    deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
+    steps = models.JSONField("Etapas", default=dict, blank=True, null=True)
+    # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Processo'
+        verbose_name_plural = 'Processos'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['content_type']),
+        ]
+
+

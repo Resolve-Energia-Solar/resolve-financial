@@ -8,15 +8,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import ForeignKey, OneToOneField
 from django.apps import apps
-
 from accounts.serializers import ContentTypeSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from notifications.models import Notification
 from resolve_crm.models import Sale
-
+from django.utils import timezone
 from .models import *
 from .pagination import AttachmentPagination
 from .serializers import *
+from rest_framework import generics
 
 
 class SystemConfigView(APIView):
@@ -253,4 +253,66 @@ class CreateTasksFromSaleView(APIView):
 class TagViewSet(BaseModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    
+    
+class ProcessDetailView(generics.RetrieveAPIView):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+    
+
+class ProcessByObjectView(generics.RetrieveAPIView):
+    serializer_class = ProcessSerializer
+
+    def get(self, request, *args, **kwargs):
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get("model")
+        object_id = kwargs.get("object_id")
+
+        try:
+            content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+        except ContentType.DoesNotExist:
+            return Response({"error": "ContentType não encontrado"}, status=400)
+
+        process = get_object_or_404(Process, content_type=content_type, object_id=object_id)
+        serializer = self.get_serializer(process)
+        return Response(serializer.data)
+    
+    
+class ConcluirEtapaView(APIView):
+    def patch(self, request, process_id, etapa_id):
+        process = get_object_or_404(Process, id=process_id)
+
+        etapas = process.steps or []
+
+        if not etapas:
+            return Response({'error': 'Nenhuma etapa encontrada.'}, status=404)
+
+        etapa_encontrada = next((etapa for etapa in etapas if etapa['etapa_id'] == etapa_id), None)
+
+        if not etapa_encontrada:
+            return Response({'error': 'Etapa não encontrada.'}, status=404)
+
+        if etapa_encontrada.get('esta_finalizado'):
+            return Response({'error': 'Etapa já finalizada.'}, status=400)
+
+        dependencias = etapa_encontrada.get('dependencias', [])
+        etapas_concluidas = {et['etapa_id'] for et in etapas if et.get('esta_finalizado')}
+        dependencias_pendentes = [dep for dep in dependencias if dep not in etapas_concluidas]
+
+        if dependencias_pendentes:
+            return Response({
+                'error': 'Etapa não pode ser concluída. Existem dependências pendentes.',
+                'dependencias_pendentes': dependencias_pendentes
+            }, status=400)
+
+        etapa_encontrada['esta_finalizado'] = True
+        etapa_encontrada['data_conclusao'] = timezone.now().isoformat()
+        etapa_encontrada['usuario'] = request.data.get('usuario_id')
+        etapa_encontrada['tipo_conteudo'] = request.data.get('tipo_conteudo')
+        etapa_encontrada['id_objeto'] = request.data.get('id_objeto')
+
+        process.steps = etapas
+        process.save()
+
+        return Response({'status': 'etapa_concluida', 'etapa_id': etapa_id})
     
