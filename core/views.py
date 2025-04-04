@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import timedelta
 from django.core.exceptions import FieldDoesNotExist
 from django.shortcuts import get_object_or_404
@@ -279,7 +280,7 @@ class ProcessByObjectView(generics.RetrieveAPIView):
     
     
 class ConcluirEtapaView(APIView):
-    def patch(self, request, process_id, etapa_id):
+    def patch(self, request, process_id, step_id):
         process = get_object_or_404(Process, id=process_id)
 
         etapas = process.steps or []
@@ -287,16 +288,16 @@ class ConcluirEtapaView(APIView):
         if not etapas:
             return Response({'error': 'Nenhuma etapa encontrada.'}, status=404)
 
-        etapa_encontrada = next((etapa for etapa in etapas if etapa['etapa_id'] == etapa_id), None)
+        etapa_encontrada = next((etapa for etapa in etapas if etapa['step_id'] == step_id), None)
 
         if not etapa_encontrada:
             return Response({'error': 'Etapa não encontrada.'}, status=404)
 
-        if etapa_encontrada.get('esta_finalizado'):
+        if etapa_encontrada.get('is_completed'):
             return Response({'error': 'Etapa já finalizada.'}, status=400)
 
-        dependencias = etapa_encontrada.get('dependencias', [])
-        etapas_concluidas = {et['etapa_id'] for et in etapas if et.get('esta_finalizado')}
+        dependencias = etapa_encontrada.get('dependencies', [])
+        etapas_concluidas = {et['step_id'] for et in etapas if et.get('is_completed')}
         dependencias_pendentes = [dep for dep in dependencias if dep not in etapas_concluidas]
 
         if dependencias_pendentes:
@@ -305,14 +306,40 @@ class ConcluirEtapaView(APIView):
                 'dependencias_pendentes': dependencias_pendentes
             }, status=400)
 
-        etapa_encontrada['esta_finalizado'] = True
-        etapa_encontrada['data_conclusao'] = timezone.now().isoformat()
-        etapa_encontrada['usuario'] = request.data.get('usuario_id')
-        etapa_encontrada['tipo_conteudo'] = request.data.get('tipo_conteudo')
-        etapa_encontrada['id_objeto'] = request.data.get('id_objeto')
+        etapa_encontrada['is_completed'] = True
+        etapa_encontrada['completion_date'] = timezone.now().isoformat()
+        etapa_encontrada['user_id'] = request.data.get('user_id')
+        etapa_encontrada['content_type_id'] = request.data.get('content_type_id')
+        etapa_encontrada['object_id'] = request.data.get('object_id')
 
         process.steps = etapas
         process.save()
 
-        return Response({'status': 'etapa_concluida', 'etapa_id': etapa_id})
+        return Response({'status': 'etapa_concluida', 'step_id': step_id})
     
+
+def criar_processo_from_modelo(process_base_id, content_type_id, object_id, nome=None, descricao=None):
+    base = ProcessBase.objects.get(id=process_base_id)
+
+    # Suporta formato dict com 'etapas' ou lista direta
+    etapas_base = base.tasks.get("etapas") if isinstance(base.tasks, dict) else base.tasks
+    etapas_zeradas = []
+
+    for etapa in etapas_base:
+        etapa_copia = deepcopy(etapa)
+        etapa_copia["user_id"] = None
+        etapa_copia["object_id"] = None
+        etapa_copia["completion_date"] = None
+        etapa_copia["is_completed"] = False
+        etapas_zeradas.append(etapa_copia)
+
+    novo_processo = Process.objects.create(
+        name=nome or f"Processo - {base.name}",
+        description=descricao or base.description,
+        content_type=ContentType.objects.get(id=content_type_id),
+        object_id=object_id,
+        deadline=base.deadline,
+        steps=etapas_zeradas
+    )
+
+    return novo_processo

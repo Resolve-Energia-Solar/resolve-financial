@@ -17,7 +17,7 @@ router.register('notifications', NotificationViewSet, basename='notification')
 router.register('tags', TagViewSet, basename='tag')
 
 urlpatterns = [
-    path('processos/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),
-    path('processos/<int:process_id>/etapas/<int:etapa_id>/concluir/', ConcluirEtapaView.as_view(), name='concluir-etapa'),
-    path('processos/por-objeto/<str:app_label>/<str:model>/<int:object_id>/', ProcessByObjectView.as_view(), name='processo-por-objeto'),
+    path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),
+    path('process/<int:process_id>/etapas/<int:etapa_id>/finish/', ConcluirEtapaView.as_view(), name='concluir-etapa'),
+    path('process/por-objeto/<str:app_label>/<str:model>/<int:object_id>/', ProcessByObjectView.as_view(), name='process-per-object'),
 ]
