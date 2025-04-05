@@ -1,9 +1,52 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.contenttypes.models import ContentType
 
+from core.models import Process, ProcessBase
+from core.task import create_process_async
 from financial.admin import PaymentInline
 from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Reason, Step, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
+@admin.action(description="Criar processos para os projetos dessa venda")
+def criar_processos_para_venda(modeladmin, request, queryset):
+    modelo_id = 1 
+
+    try:
+        modelo = ProcessBase.objects.get(id=modelo_id)
+    except ProcessBase.DoesNotExist:
+        messages.error(request, "Modelo de processo não encontrado.")
+        return
+
+    content_type = ContentType.objects.get_for_model(Project)
+
+    for venda in queryset:
+        if not venda.signature_date:
+            messages.warning(request, f"Venda {venda.id} sem data de assinatura.")
+            continue
+
+        projects = Project.objects.filter(sale=venda)
+        existing_process_ids = set(
+            Process.objects.filter(
+                content_type=content_type,
+                object_id__in=projects.values_list('id', flat=True)
+            ).values_list('object_id', flat=True)
+        )
+
+        for project in projects:
+            if project.id in existing_process_ids:
+                continue
+
+            create_process_async.delay(
+                process_base_id=modelo.id,
+                content_type_id=content_type.id,
+                object_id=project.id,
+                nome=f"Processo {modelo.name} {venda.contract_number} - {venda.customer.complete_name}",
+                descricao=modelo.description,
+                user_id=venda.customer.id if venda.customer else None,
+                completion_date=venda.signature_date.isoformat()
+            )
+
+    messages.success(request, "Processos sendo criados em segundo plano.")
 
 @admin.register(Origin)
 class OriginAdmin(admin.ModelAdmin):
@@ -35,6 +78,7 @@ class SaleAdmin(admin.ModelAdmin):
     search_fields = ("contract_number", "customer__complete_name", "seller__username")
     list_filter = ("payment_status", "status", "created_at")
     ordering = ("-created_at",)
+    actions = [criar_processos_para_venda]
 
 
 @admin.register(Task)

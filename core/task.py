@@ -1,9 +1,14 @@
+# core/tasks.py
+
+from celery import shared_task
 from copy import deepcopy
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from core.models import Process, ProcessBase
 
-def create_process(
+@shared_task(bind= True , max_retries= 3 , default_retry_delay= 5 * 60) 
+def create_process_async(
+    self,
     process_base_id,
     content_type_id,
     object_id,
@@ -13,6 +18,7 @@ def create_process(
     completion_date=None
 ):
     with transaction.atomic():
+        print(f"Creating process asynchronously for object ID: {object_id}")
         base = ProcessBase.objects.get(id=process_base_id)
 
         base_step = base.steps or []
@@ -40,5 +46,7 @@ def create_process(
             deadline=base.deadline,
             steps=reset_step
         )
+        
+        print(f"Process created with ID: {new_process.id}")
 
         return new_process.id

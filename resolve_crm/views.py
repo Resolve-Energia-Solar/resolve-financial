@@ -37,6 +37,9 @@ from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
 from rest_framework.decorators import api_view
+from django.contrib.contenttypes.models import ContentType
+from core.task import create_process_async
+from core.models import ProcessBase, Process
 
 
 logger = logging.getLogger(__name__)
@@ -187,6 +190,45 @@ class SaleViewSet(BaseModelViewSet):
         return AttachmentSerializer(documents, many=True).data
     
 
+    @action(detail=True, methods=['post'])
+    def create_process(self, request, pk=None):
+        sale = self.get_object()
+
+        if not sale.signature_date:
+            return Response({"error": "Essa venda não tem data de assinatura."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            modelo = ProcessBase.objects.get(id=1)
+        except ProcessBase.DoesNotExist:
+            return Response({"error": "Modelo de processo não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        projects = Project.objects.filter(sale=sale)
+        content_type = ContentType.objects.get_for_model(Project)
+
+        existing_process_ids = set(
+            Process.objects.filter(
+                content_type=content_type,
+                object_id__in=projects.values_list('id', flat=True)
+            ).values_list('object_id', flat=True)
+        )
+
+        for project in projects:
+            if project.id in existing_process_ids:
+                continue
+
+            create_process_async.delay(
+                process_base_id=modelo.id,
+                content_type_id=content_type.id,
+                object_id=project.id,
+                nome=f"Processo {modelo.name} {sale.contract_number} - {sale.customer.complete_name}",
+                descricao=modelo.description,
+                user_id=sale.customer.id if sale.customer else None,
+                completion_date=sale.signature_date.isoformat()
+            )
+
+        return Response({"message": "Processos estão sendo criados."}, status=status.HTTP_202_ACCEPTED)
+    
+    
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer

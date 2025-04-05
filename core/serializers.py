@@ -127,8 +127,8 @@ class ProcessSerializer(BaseSerializer):
         fields = ['id', 'name', 'description', 'content_type', 'object_id', 'deadline', 'steps', 'created_at']
 
     def validate_steps(self, value):
-        etapas = value.get("etapas", [])
+        etapas = value.get("steps", [])
         for etapa in etapas:
-            if "etapa_id" not in etapa or "nome" not in etapa or "ordem" not in etapa:
-                raise ValidationError("Cada etapa deve conter 'etapa_id', 'nome' e 'ordem'.")
+            if "step_id" not in etapa or "nome" not in etapa:
+                raise ValidationError("Cada etapa deve conter 'step_id' e 'nome'.")
         return value
