@@ -9,12 +9,9 @@ from core.models import Attachment, DocumentType
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
-from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
-from django.core.exceptions import ValidationError
 from django.db import transaction, models
-from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
 
