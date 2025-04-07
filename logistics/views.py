@@ -77,3 +77,8 @@ class ProductViewSet(BaseModelViewSet):
 class ProjectMaterialsViewSet(BaseModelViewSet):
     queryset = ProjectMaterials.objects.all()
     serializer_class = ProjectMaterialsSerializer
+    
+
+class SaleProductViewSet(BaseModelViewSet):
+    queryset = SaleProduct.objects.all()
+    serializer_class = SaleProductSerializer

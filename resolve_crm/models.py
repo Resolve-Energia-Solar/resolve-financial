@@ -389,7 +389,7 @@ class Sale(models.Model):
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
     payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P", db_index=True)
     contract_number = models.CharField("Número do Contrato", max_length=20, unique=True, editable=False, null=True, blank=True)
-    signature_date = models.DateTimeField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False, db_index=True)
+    signature_date = models.DateTimeField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, db_index=True)
     branch = models.ForeignKey('accounts.Branch', on_delete=models.PROTECT, verbose_name="Unidade", db_index=True)
     marketing_campaign = models.ForeignKey('MarketingCampaign', on_delete=models.PROTECT, verbose_name="Campanha de Marketing", null=True, blank=True)
     supplier = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
@@ -704,7 +704,8 @@ class Project(models.Model):
         return [
             att for att in self.attachments.all()
             if (
-                ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
+                att.document_type is not None and
+                (('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper()))
                 and att.content_type_id == self.content_type_id
             )
         ]

@@ -16,7 +16,10 @@ from engineering.models import Units
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
-from django.db.models import Exists, OuterRef, Q, Prefetch, Count, Sum
+from .models import *
+from .serializers import *
+from django.db.models import Count, Q, Sum, Prefetch
+from django.db.models import Exists, OuterRef, Q, F
 from django.db import transaction
 from django.contrib import messages
 from django.http import HttpResponse
@@ -25,6 +28,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.core.cache import cache
 from hashlib import md5
+from rest_framework.decorators import api_view
+from django.contrib.contenttypes.models import ContentType
+from core.task import create_process_async
+from core.models import ProcessBase, Process
 from .serializers import *
 from .models import *
 
@@ -180,6 +187,45 @@ class SaleViewSet(BaseModelViewSet):
         return AttachmentSerializer(documents, many=True).data
     
 
+    @action(detail=True, methods=['post'])
+    def create_process(self, request, pk=None):
+        sale = self.get_object()
+
+        if not sale.signature_date:
+            return Response({"error": "Essa venda não tem data de assinatura."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            modelo = ProcessBase.objects.get(id=1)
+        except ProcessBase.DoesNotExist:
+            return Response({"error": "Modelo de processo não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        projects = Project.objects.filter(sale=sale)
+        content_type = ContentType.objects.get_for_model(Project)
+
+        existing_process_ids = set(
+            Process.objects.filter(
+                content_type=content_type,
+                object_id__in=projects.values_list('id', flat=True)
+            ).values_list('object_id', flat=True)
+        )
+
+        for project in projects:
+            if project.id in existing_process_ids:
+                continue
+
+            create_process_async.delay(
+                process_base_id=modelo.id,
+                content_type_id=content_type.id,
+                object_id=project.id,
+                nome=f"Processo {modelo.name} {sale.contract_number} - {sale.customer.complete_name}",
+                descricao=modelo.description,
+                user_id=sale.customer.id if sale.customer else None,
+                completion_date=sale.signature_date.isoformat()
+            )
+
+        return Response({"message": "Processos estão sendo criados."}, status=status.HTTP_202_ACCEPTED)
+    
+    
 class ProjectViewSet(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
@@ -573,50 +619,193 @@ class GenerateSalesProjectsView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class GeneratePreSaleView(APIView): 
+
+class GeneratePreSaleView(APIView):
     http_method_names = ['post']
 
-    @transaction.atomic
     def post(self, request):
-        lead_id = request.data.get('lead_id')
-        products = request.data.get('products')
-        commercial_proposal_id = request.data.get('commercial_proposal_id')
-        # payment_data = request.data.get('payment')
+        with transaction.atomic():
+            data = request.data
+            lead_id = data.get('lead_id')
+            products = data.get('products')
+            commercial_proposal_id = data.get('commercial_proposal_id')
 
-        if not lead_id:
-            return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not products and not commercial_proposal_id:
-            return Response({'message': 'É obrigatório possuir um produto ou uma Proposta Comercial.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if commercial_proposal_id and products:
-            return Response({'message': 'commercial_proposal_id e products são mutuamente exclusivos.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if commercial_proposal_id:
+            # Validações iniciais
+            if not lead_id:
+                return Response({'message': 'lead_id é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not products and not commercial_proposal_id:
+                return Response({'message': 'É obrigatório possuir um produto ou uma Proposta Comercial.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            if commercial_proposal_id and products:
+                return Response({'message': 'commercial_proposal_id e products são mutuamente exclusivos.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Obtenção da Proposta Comercial (se fornecida)
+            comercial_proposal = None
+            if commercial_proposal_id:
+                try:
+                    comercial_proposal = ComercialProposal.objects.select_related(
+                        'lead'
+                        ).get(id=commercial_proposal_id)
+                except ComercialProposal.DoesNotExist:
+                    return Response({'message': 'Proposta Comercial não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Obtenção do Lead com seus relacionamentos críticos
             try:
-                comercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
-            except ComercialProposal.DoesNotExist:
-                return Response({'message': 'Proposta Comercial não encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+                lead = Lead.objects.select_related(
+                    'seller',
+                    'seller__employee',
+                    'seller__employee__branch',
+                    'seller__employee__user_manager',
+                    'seller__employee__user_manager__employee',
+                    'seller__employee__user_manager__employee__user_manager'
+                ).prefetch_related('addresses').get(id=lead_id)
+            except Lead.DoesNotExist:
+                return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            lead = Lead.objects.get(id=lead_id)
-        except Lead.DoesNotExist:
-            return Response({'message': 'Lead não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not lead.first_document:
-            return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        phone_number = lead.phone
-        if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
-            return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        formatted_document = lead.first_document.replace('.', '').replace('-', '')
-        customer = User.objects.filter(first_document=formatted_document).first()
-        
-        phone_number = lead.phone
-        if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
-            return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            if not lead.first_document:
+                return Response({'message': 'Lead não possui CPF cadastrado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validação e criação do telefone (única validação)
+            phone_number = lead.phone
+            if not phone_number or not re.match(r'^\d{10,11}$', phone_number):
+                return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+            phone = self._create_phone(phone_number)
+            if isinstance(phone, Response):
+                return phone
+
+            # Busca usuário existente pelo CPF formatado
+            formatted_document = lead.first_document.replace('.', '').replace('-', '')
+            customer = User.objects.filter(first_document=formatted_document).first()
+
+            # Atualiza ou cria o cliente
+            if customer:
+                customer = self._update_customer(customer, lead, phone)
+                if isinstance(customer, Response):
+                    return customer
+            else:
+                customer = self._create_customer(lead, phone)
+                if isinstance(customer, Response):
+                    return customer
+
+            # Associação do Lead ao cliente
+            lead.customer = customer
+            lead.save()
+
+            products_ = []
+            total_value = comercial_proposal.value if comercial_proposal else 0
+
+            # Processa os produtos (novo ou existentes)
+            if products:
+                for prod_data in products:
+                    if 'id' not in prod_data:
+                        product_serializer = ProductSerializer(data=prod_data)
+                        if product_serializer.is_valid():
+                            new_product = product_serializer.save()
+                            products_.append(new_product)
+                            total_value += self._calculate_product_value(new_product)
+                        else:
+                            return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        try:
+                            existing_product = Product.objects.get(id=prod_data['id'])
+                            products_.append(existing_product)
+                            total_value += self._calculate_product_value(existing_product)
+                        except Product.DoesNotExist:
+                            return Response({'message': f'Produto com id {prod_data["id"]} não encontrado.'},
+                                            status=status.HTTP_400_BAD_REQUEST)
+
+            # Obtém os IDs relacionados à venda
+            sale_ids = self._get_sale_related_ids(lead)
+            if isinstance(sale_ids, Response):
+                return sale_ids
+            seller_id, sales_supervisor_id, sales_manager_id = sale_ids
+
+            # Cria a pré-venda
+            sale_data = {
+                'customer': customer.id,
+                'lead': lead.id,
+                'is_pre_sale': True,
+                'status': 'P',
+                'branch': lead.seller.employee.branch.id,
+                'seller': seller_id,
+                'sales_supervisor': sales_supervisor_id,
+                'sales_manager': sales_manager_id,
+                'total_value': round(total_value, 3),
+            }
+            if products:
+                sale_data['products_ids'] = [p.id for p in products_]
+
+            sale_serializer = SaleSerializer(data=sale_data)
+            if sale_serializer.is_valid():
+                pre_sale = sale_serializer.save()
+            else:
+                return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Caso exista Proposta Comercial, vincula produtos à pré-venda
+            if comercial_proposal:
+                salesproducts = SaleProduct.objects.filter(commercial_proposal=comercial_proposal)
+                for sp in salesproducts:
+                    if sp.sale:
+                        return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                # Atualiza status da proposta e vincula os SaleProducts à pré-venda
+                comercial_proposal.status = 'A'
+                comercial_proposal.save()
+                for sp in salesproducts:
+                    sp.sale = pre_sale
+                SaleProduct.objects.bulk_update(salesproducts, ['sale'])
+
+                # Cria os projetos para cada produto da proposta comercial
+                for sp in salesproducts:
+                    project_data = {
+                        'sale': pre_sale.id,
+                        'status': 'P',
+                        'product': sp.product.id,
+                    }
+                    project_serializer = ProjectSerializer(data=project_data)
+                    if project_serializer.is_valid():
+                        project_serializer.save()
+                    else:
+                        return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Cria os projetos para os produtos (se fornecidos)
+            if products:
+                for product in products_:
+                    project_data = {
+                        'sale': pre_sale.id,
+                        'status': 'P',
+                        'product': product.id,
+                    }
+                    project_serializer = ProjectSerializer(data=project_data)
+                    if project_serializer.is_valid():
+                        project_serializer.save()
+                    else:
+                        return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Criação do pagamento (comentado conforme a versão original)
+            """
+            payment_data = data.get('payment', {})
+            payment_data['value'] = total_value
+            payment_data['sale'] = pre_sale.id
+            payment_serializer = PaymentSerializer(data=payment_data)
+            if payment_serializer.is_valid():
+                payment_serializer.save()
+            else:
+                return Response(payment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            """
+
+            return Response({
+                'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
+                'pre_sale_id': pre_sale.id
+            }, status=status.HTTP_200_OK)
+
+    def _create_phone(self, phone_number):
+        """
+        Valida e cria o telefone utilizando o PhoneNumberSerializer.
+        """
         match = re.match(r'(\d{2})(\d+)', phone_number)
         if match:
             area_code, number = match.groups()
@@ -628,208 +817,92 @@ class GeneratePreSaleView(APIView):
             }
             phone_serializer = PhoneNumberSerializer(data=phone_data)
             if phone_serializer.is_valid():
-                phone = phone_serializer.save()
+                return phone_serializer.save()
             else:
                 return Response(phone_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        if customer:
-            # Atualiza os dados do usuário existente
-            phone_ids = list(customer.phone_numbers.values_list('id', flat=True))
-            if phone.id not in phone_ids:
-                phone_ids.append(phone.id)
+        return Response({'message': 'Telefone no formato inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            data = {
-                'complete_name': lead.name,
-                'email': lead.contact_email,
-                'addresses': list(lead.addresses.values_list('id', flat=True)),
-                'phone_numbers_ids': phone_ids,
-            }
-            print(lead.contact_email)
-            print(customer.email)
-            print(lead.contact_email == customer.email)
-            if lead.contact_email == customer.email:
-                data.pop('email')
-            
-            print(data)
-            
-            user_serializer = UserSerializer(customer, data=data, partial=True)
-            
-            if user_serializer.is_valid():
-                customer = user_serializer.save()
-            else:
-                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def _update_customer(self, customer, lead, phone):
+        """
+        Atualiza o usuário existente com os dados do Lead.
+        """
+        phone_ids = list(customer.phone_numbers.values_list('id', flat=True))
+        if phone.id not in phone_ids:
+            phone_ids.append(phone.id)
+
+        update_data = {
+            'complete_name': lead.name,
+            'addresses': list(lead.addresses.values_list('id', flat=True)),
+            'phone_numbers_ids': phone_ids,
+        }
+        if lead.contact_email != customer.email:
+            update_data['email'] = lead.contact_email
+
+        user_serializer = UserSerializer(customer, data=update_data, partial=True)
+        if user_serializer.is_valid():
+            return user_serializer.save()
         else:
-            # Criação de um novo usuário
-            base_username = lead.name.split(' ')[0] + '.' + lead.name.split(' ')[-1]
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-            
-            user_data = {
-                'complete_name': lead.name,
-                'username': username,
-                'first_name': lead.name.split(' ')[0],
-                'last_name': lead.name.split(' ')[-1],
-                'email': lead.contact_email,
-                'addresses': list(lead.addresses.values_list('id', flat=True)),
-                'user_types': [UserType.objects.get(name='Cliente').id],
-                'first_document': lead.first_document,
-                'phone_numbers_ids': [phone.id],
-            }
-            user_serializer = UserSerializer(data=user_data)
-            if user_serializer.is_valid():
-                customer = user_serializer.save()
-            else:
-                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        lead.customer = customer
-        lead.save()
+            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        products_ = []
-        total_value = comercial_proposal.value if commercial_proposal_id else 0
-        if products:
-            for product in products:
-                # Verificar se é um novo produto ou um existente
-                if 'id' not in product:
-                    # Criar novo produto
-                    product_serializer = ProductSerializer(data=product)
-                    if product_serializer.is_valid():
-                        new_product = product_serializer.save()
-                        products_.append(new_product)
-    
-                        # Calcular o valor do produto com base nos materiais associados
-                        product_value = self.calculate_product_value(new_product)
-                        total_value += product_value
-                    else:
-                        return Response(product_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    # Capturar produto existente
-                    try:
-                        existing_product = Product.objects.get(id=product['id'])
-                        products_.append(existing_product)
+    def _create_customer(self, lead, phone):
+        """
+        Cria um novo usuário com base nos dados do Lead.
+        """
+        base_username = f"{lead.name.split(' ')[0]}.{lead.name.split(' ')[-1]}"
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
 
-                        # Calcular o valor do produto com base nos materiais associados
-                        product_value = self.calculate_product_value(existing_product)
-                        total_value += product_value
-                    except Product.DoesNotExist:
-                        return Response({'message': f'Produto com id {product["id"]} não encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        user_data = {
+            'complete_name': lead.name,
+            'username': username,
+            'first_name': lead.name.split(' ')[0],
+            'last_name': lead.name.split(' ')[-1],
+            'email': lead.contact_email,
+            'addresses': list(lead.addresses.values_list('id', flat=True)),
+            'user_types': [UserType.objects.get(name='Cliente').id],
+            'first_document': lead.first_document,
+            'phone_numbers_ids': [phone.id],
+        }
+        user_serializer = UserSerializer(data=user_data)
+        if user_serializer.is_valid():
+            return user_serializer.save()
+        else:
+            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def _calculate_product_value(self, product):
+        """
+        Calcula o valor do produto somando o valor base e o custo agregado dos materiais,
+        utilizando funções de agregação do Django para otimizar a consulta.
+        """
+        base_value = product.product_value
+        aggregation = ProductMaterials.objects.filter(product=product, is_deleted=False).aggregate(
+            total_cost=Sum(F('material__price') * F('amount'))
+        )
+        materials_cost = aggregation.get('total_cost') or 0
+        return base_value + materials_cost
+
+    def _get_sale_related_ids(self, lead):
+        """
+        Recupera os IDs do vendedor, supervisor e gerente a partir do lead.
+        """
         try:
-            
-            # Criação da pré-venda usando Serializer
-            try:
-                seller_id = lead.seller.id
-                sales_supervisor_id = lead.seller.employee.user_manager.id if lead.seller.employee.user_manager else None
-                sales_manager_id = lead.seller.employee.user_manager.employee.user_manager.id if lead.seller.employee.user_manager and lead.seller.employee.user_manager.employee.user_manager else None
-            except Exception as e:
-                logger.error(f'Erro ao recuperar informações do vendedor: {str(e)}')
-                print('Erro ao recuperar informações do vendedor', {str(e)})
-                return Response({'message': 'Erro ao recuperar informações do vendedor.'}, status=status.HTTP_400_BAD_REQUEST)
-                
-            sale_data = {
-                'customer_id': customer.id,
-                'lead_id': lead.id,
-                'is_pre_sale': True,
-                'status': 'P',
-                'branch_id': lead.seller.employee.branch.id,
-                'seller_id': seller_id,
-                'sales_supervisor_id': sales_supervisor_id,
-                'sales_manager_id': sales_manager_id,
-                'total_value': round(total_value, 3),
-                # **({'commercial_proposal_id': commercial_proposal_id} if commercial_proposal_id else {}),
-                **({'products_ids': [product.id for product in products_]} if products else {})
-            }
-            sale_serializer = SaleSerializer(data=sale_data)
-            if sale_serializer.is_valid():
-                pre_sale = sale_serializer.save()
-                
-                if commercial_proposal_id:
-                    try:
-                        salesproduct = SaleProduct.objects.filter(commercial_proposal=comercial_proposal)
-                        
-                        for saleproduct in salesproduct:
-                            if saleproduct.sale:
-                                return Response({'message': 'Proposta Comercial já vinculada à uma pré-venda.'}, status=status.HTTP_400_BAD_REQUEST)
-                            
-                            try:
-                                comercial_proposal.status = 'A'
-                                comercial_proposal.save()
-                                saleproduct.sale = pre_sale
-                                saleproduct.save()
-                            except Exception as e:
-                                logger.error(f'Erro ao vincular produtos da proposta comercial à pré-venda: {str(e)}')
-                                return Response({'message': 'Erro ao vincular produtos da proposta comercial à pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                            
-                            project_data = {
-                                'sale_id': pre_sale.id,
-                                'status': 'P',
-                                'product_id': saleproduct.product.id,
-                                # 'addresses_ids': [address.id for address in lead.addresses.all()]
-                            }
-                            project_serializer = ProjectSerializer(data=project_data)
-                            if project_serializer.is_valid():
-                                project_serializer.save()
-                            else:
-                                return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-                            
-                    except Exception as e:
-                        logger.error(f'Erro ao vincular produtos da proposta comercial à pré-venda: {str(e)}')
-                        return Response({'message': 'Erro ao vincular produtos da proposta comercial à pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                
-            else:
-                return Response(sale_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            seller = lead.seller
+            seller_id = seller.id
+            supervisor = seller.employee.user_manager
+            supervisor_id = supervisor.id if supervisor else None
+            manager = None
+            if supervisor and hasattr(supervisor, 'employee') and supervisor.employee.user_manager:
+                manager = supervisor.employee.user_manager
+            manager_id = manager.id if manager else None
+            return seller_id, supervisor_id, manager_id
         except Exception as e:
-            logger.error(f'Erro ao criar pré-venda: {str(e)}')
-            return Response({'message': 'Erro ao criar pré-venda.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        if products:
-            # Vinculação dos products ao projeto usando Serializer
-            for product in products_:
-                project_data = {
-                    'sale_id': pre_sale.id,
-                    'status': 'P',
-                    'product_id': product.id,
-                    # 'addresses_ids': [address.id for address in lead.addresses.all()]
-                }
-                project_serializer = ProjectSerializer(data=project_data)
-                if project_serializer.is_valid():
-                    project = project_serializer.save()
-                else:
-                    return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f'Erro ao recuperar informações do vendedor: {str(e)}')
+            return Response({'message': 'Erro ao recuperar informações do vendedor.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # Criação do pagamento usando Serializer
-        """
-        payment_data['value'] = total_value
-        payment_data['sale'] = pre_sale.id
-        payment_serializer = PaymentSerializer(data=payment_data)
-        if payment_serializer.is_valid():
-            payment_serializer.save()
-        else:
-            return Response(payment_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        """
-
-        return Response({
-            'message': 'Cliente, products, pré-venda, projetos e ~~pagamentos~~ gerados com sucesso.',
-            'pre_sale_id': pre_sale.id
-        }, status=status.HTTP_200_OK)
-    
-    
-    def calculate_product_value(self, product):
-        """
-        Função para calcular o valor total do produto com base no valor do próprio produto
-        e dos materiais associados.
-        """
-        product_value = product.product_value
-
-        # Somar o custo dos materiais associados ao produto
-        associated_materials = ProductMaterials.objects.filter(product=product, is_deleted=False)
-        for item in associated_materials:
-            material_cost = item.material.price * item.amount
-            product_value += material_cost
-
-        return product_value
 
 
 class ContractTemplateViewSet(BaseModelViewSet):

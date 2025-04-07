@@ -1,5 +1,6 @@
 from api.urls import router
 from core.views import *
+from django.urls import path
 
 
 router.register('lead-tasks', TaskViewSet, basename='lead-task')
@@ -14,3 +15,10 @@ router.register('document-types', DocumentTypeViewSet, basename='document-type')
 router.register('document-subtypes', DocumentSubTypeViewSet, basename='document-subtype')
 router.register('notifications', NotificationViewSet, basename='notification')
 router.register('tags', TagViewSet, basename='tag')
+router.register('processes', ProcessViewSet, basename='process')
+
+urlpatterns = [
+    path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),
+    path('process/<int:process_id>/etapas/<int:step_id>/finish/', FinishStepView.as_view(), name='finish-step'),
+    path('process/por-objeto/<str:app_label>/<str:model>/<int:object_id>/', ProcessByObjectView.as_view(), name='process-per-object'),
+]

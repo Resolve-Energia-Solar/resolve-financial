@@ -111,8 +111,12 @@ class SaleProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto", related_name="sales", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=1, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=1, null=True, blank=True)
+    
+    average_consumption = models.DecimalField("Consumo Médio", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    estimated_consumption = models.DecimalField("Consumo Estimado", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
 

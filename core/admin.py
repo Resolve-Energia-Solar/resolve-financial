@@ -116,3 +116,23 @@ class CommentAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+    
+
+@admin.register(ProcessBase)
+class ProcessBaseAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "created_at")
+    search_fields = ("name", "description")
+    list_filter = ("created_at",)
+    ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
+    
+    
+@admin.register(Process)
+class ProcessAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "content_type", "object_id", "deadline", "created_at")
+    search_fields = ("name", "description", "content_type", "object_id")
+    list_filter = ("created_at",)
+    ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
