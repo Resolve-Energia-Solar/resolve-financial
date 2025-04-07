@@ -704,7 +704,8 @@ class Project(models.Model):
         return [
             att for att in self.attachments.all()
             if (
-                ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
+                att.document_type is not None and
+                (('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper()))
                 and att.content_type_id == self.content_type_id
             )
         ]

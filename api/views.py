@@ -46,8 +46,6 @@ class BaseModelViewSet(ModelViewSet):
             queryset = queryset.select_related(*select_related_fields)
         if prefetch_related_fields:
             queryset = queryset.prefetch_related(*prefetch_related_fields)
-            
-        print('select_related_fields', select_related_fields)
 
         return queryset
 
