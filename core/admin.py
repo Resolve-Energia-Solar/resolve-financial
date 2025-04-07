@@ -136,3 +136,10 @@ class ProcessAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+    
+@admin.register(StepName)
+class StepNameAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("id", "name")
+    list_per_page = 10
+    list_max_show_all = 100

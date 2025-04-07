@@ -19,6 +19,6 @@ router.register('processes', ProcessViewSet, basename='process')
 
 urlpatterns = [
     path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),
-    path('process/<int:process_id>/etapas/<int:step_id>/finish/', FinishStepView.as_view(), name='finish-step'),
+    path('process/<int:process_id>/etapas/<int:id>/finish/', FinishStepView.as_view(), name='finish-step'),
     path('process/por-objeto/<str:app_label>/<str:model>/<int:object_id>/', ProcessByObjectView.as_view(), name='process-per-object'),
 ]
