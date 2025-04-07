@@ -43,6 +43,7 @@ class DocumentType(models.Model):
     app_label = models.CharField("App Label", max_length=100, choices=APP_LABEL_CHOICES)
     reusable = models.BooleanField("Reutilizável", default=False)
     required = models.BooleanField("Obrigatório", default=False)
+    is_customer_sendable = models.BooleanField("Enviável pelo Cliente?", default=False)
     
     class Meta:
         verbose_name = "Tipo de Documento"
