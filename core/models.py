@@ -373,7 +373,8 @@ class Process(models.Model):
     object_id = models.PositiveSmallIntegerField("ID do Objeto")
     content_object = GenericForeignKey('content_type', 'object_id')
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
-    steps = models.JSONField("Etapas", default=dict, blank=True, null=True)
+    steps = models.JSONField("Etapas", default=list, blank=True, null=True)
+    current_step = models.ManyToManyField('core.StepName', related_name='current_step', blank=True, verbose_name="Etapa Atual")
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -381,6 +382,45 @@ class Process(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_steps_liberadas(self):
+        etapas = self.steps or []
+        concluidas = {et.get("step_id") for et in etapas if et.get("is_completed")}
+        liberadas = []
+
+        for etapa in etapas:
+            if etapa.get("is_completed"):
+                continue
+
+            dependencias = etapa.get("dependencies", [])
+            if all(dep in concluidas for dep in dependencias):
+                liberadas.append(etapa)
+
+        return liberadas
+
+
+    def atualizar_etapas_atuais(self):
+        liberadas = self.get_steps_liberadas()
+
+        step_ids = []
+        for etapa in liberadas:
+            name = etapa.get("name")
+            if isinstance(name, list) and len(name) == 2:
+                _, step_id = name
+            else:
+                continue
+            step_ids.append(step_id)
+
+        self.save(update_fields=[])
+
+        # Atualiza ManyToMany após salvar
+        self.current_step.set(StepName.objects.filter(id__in=step_ids))
+
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.atualizar_etapas_atuais()
+
     
     class Meta:
         verbose_name = 'Processo'
@@ -391,3 +431,16 @@ class Process(models.Model):
         ]
 
 
+class StepName(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Etapa'
+        verbose_name_plural = 'Etapas'
+        ordering = ['name']
