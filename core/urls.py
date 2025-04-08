@@ -16,6 +16,7 @@ router.register('document-subtypes', DocumentSubTypeViewSet, basename='document-
 router.register('notifications', NotificationViewSet, basename='notification')
 router.register('tags', TagViewSet, basename='tag')
 router.register('processes', ProcessViewSet, basename='process')
+router.register('steps-names', StepNameViewSet, basename='step-name')
 
 urlpatterns = [
     path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),

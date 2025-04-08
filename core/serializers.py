@@ -132,3 +132,9 @@ class ProcessSerializer(BaseSerializer):
             if "id" not in etapa or "nome" not in etapa:
                 raise ValidationError("Cada etapa deve conter 'step_id' e 'nome'.")
         return value
+    
+
+class StepNameSerializer(BaseSerializer):
+    class Meta:
+        model = StepName
+        fields = ['id', 'name']
