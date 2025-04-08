@@ -397,24 +397,6 @@ class Process(models.Model):
                 liberadas.append(etapa)
         return liberadas
 
-    def _atualizar_etapas_atuais(self):
-        liberadas = self.get_steps_liberadas()
-
-        step_ids = []
-        for etapa in liberadas:
-            name = etapa.get("step")
-            if isinstance(name, list) and len(name) == 2:
-                _, step_id = name
-            else:
-                continue
-            step_ids.append(step_id)
-
-        # Atualiza o campo ManyToMany fora do save principal
-        self.current_step.set(StepName.objects.filter(id__in=step_ids))
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self._atualizar_etapas_atuais()
         
     class Meta:
         verbose_name = 'Processo'
