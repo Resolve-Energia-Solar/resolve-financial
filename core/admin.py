@@ -126,6 +126,12 @@ class ProcessBaseAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+
+    class Media:
+        js = ('admin/js/edit-steps-json.js',)
+        css = {
+            'all': ('admin/css/form-check.css',),
+        }
     
     
 @admin.register(Process)
