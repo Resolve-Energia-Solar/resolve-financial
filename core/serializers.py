@@ -5,6 +5,7 @@ from rest_framework.serializers import (
     RelatedField, 
     BooleanField
 )
+from rest_framework.serializers import ModelSerializer
 
 from accounts.models import User
 from api.serializers import BaseSerializer
@@ -138,3 +139,10 @@ class StepNameSerializer(BaseSerializer):
     class Meta:
         model = StepName
         fields = ['id', 'name']
+
+
+class ProcessStepCountSerializer(ModelSerializer):
+    
+    class Meta:
+        model = ProcessStepCount
+        fields = ('step', 'total_processes')

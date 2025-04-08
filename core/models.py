@@ -420,3 +420,12 @@ class StepName(models.Model):
         verbose_name = 'Etapa'
         verbose_name_plural = 'Etapas'
         ordering = ['name']
+        
+
+class ProcessStepCount(models.Model):
+    step = models.CharField('Etapa', max_length=200, db_column='step', primary_key=True)
+    total_processes = models.IntegerField('Processos', db_column='total_processes')
+
+    class Meta:
+        managed = False
+        db_table = 'vw_process_by_step'

@@ -343,7 +343,12 @@ class FinishStepView(APIView):
         return Response({'status': 'etapa_concluida', 'step_id': id})
 
 
-
 class StepNameViewSet(BaseModelViewSet):
     queryset = StepName.objects.all()
     serializer_class = StepNameSerializer
+    
+
+class ProcessStepCountListView(generics.ListAPIView):
+    queryset = ProcessStepCount.objects.all()
+    serializer_class = ProcessStepCountSerializer
+    pagination_class = None
