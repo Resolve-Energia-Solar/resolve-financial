@@ -1,5 +1,6 @@
 import decimal
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
@@ -446,3 +447,19 @@ class FinancialRecord(models.Model):
             ("view_all_department_payable_financial_records", "Can view all payable financial_records from the department"),
             ("view_financialrecord_attachment", "Can view financial record attachment"),
         ]
+
+
+class ContentTypeEndpoint(models.Model):
+    """
+    Model to store the endpoint of a content type.
+    """
+    content_type = models.OneToOneField(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo", related_name="endpoint")
+    endpoint = models.CharField("Endpoint", max_length=255)
+    label = models.CharField("Rótulo", max_length=255)
+    queryParam = models.CharField("Parâmetro de Busca", max_length=255)
+    extraParams = models.CharField("Parâmetros Extras", max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Endpoint do Tipo de Conteúdo"
+        verbose_name_plural = "Endpoints dos Tipos de Conteúdo"
+        ordering = ["-endpoint"]
