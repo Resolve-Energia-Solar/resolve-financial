@@ -293,8 +293,8 @@ class FinancialRecordViewSet(BaseModelViewSet):
         user = request.user
         employee = user.employee
         
-        request.data['requester_id'] = user.id
-        request.data['responsible_id'] = employee.user_manager.id
+        request.data['requester'] = user.id
+        request.data['responsible'] = employee.user_manager.id
                 
         return super().create(request, *args, **kwargs)
     
