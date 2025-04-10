@@ -310,19 +310,14 @@ class ProjectViewSet(BaseModelViewSet):
         if trt_status == 'P':
             queryset = queryset.filter(
             ~Q(
-                Q(attachments__document_type__name__icontains='TRT') &
+                Q(attachments__document_type__name__icontains='ART/TRT') &
                 Q(attachments__status__in=['A', 'EA', 'R'])
-            ) |
-            ~Q(
-                Q(attachments__document_type__name__icontains='ART') &
-                Q(attachments__status__in=['A', 'EA', 'R'])
-            ) 
+            )
         )
         elif trt_status:
             trt_status_list = trt_status.split(',')
             queryset = queryset.filter(Q(
-                Q(attachments__document_type__name__icontains='ART') |
-                Q(attachments__document_type__name__icontains='TRT')
+                Q(attachments__document_type__name__icontains='ART/TRT')
             ) &
                 Q(attachments__status__in=trt_status_list)
             )
