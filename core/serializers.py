@@ -146,3 +146,9 @@ class ProcessStepCountSerializer(ModelSerializer):
     class Meta:
         model = ProcessStepCount
         fields = ('step', 'total_processes')
+
+
+class ContentTypeEndpointSerializer(BaseSerializer):
+    class Meta:
+        model = ContentTypeEndpoint
+        fields = ('id', 'endpoint', 'label')

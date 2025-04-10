@@ -352,3 +352,8 @@ class ProcessStepCountListView(generics.ListAPIView):
     queryset = ProcessStepCount.objects.all()
     serializer_class = ProcessStepCountSerializer
     pagination_class = None
+    
+    
+class ContentTypeEndpointViewSet(BaseModelViewSet):
+    queryset = ContentTypeEndpoint.objects.all()
+    serializer_class = ContentTypeEndpointSerializer

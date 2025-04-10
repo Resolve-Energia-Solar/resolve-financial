@@ -429,3 +429,19 @@ class ProcessStepCount(models.Model):
     class Meta:
         managed = False
         db_table = 'vw_process_by_step'
+
+
+class ContentTypeEndpoint(models.Model):
+    """
+    Model to store the endpoint of a content type.
+    """
+    content_type = models.OneToOneField(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo", related_name="endpoint")
+    endpoint = models.CharField("Endpoint", max_length=255)
+    label = models.CharField("Rótulo", max_length=255)
+    queryParam = models.CharField("Parâmetro de Busca", max_length=255)
+    extraParams = models.CharField("Parâmetros Extras", max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Endpoint do Tipo de Conteúdo"
+        verbose_name_plural = "Endpoints dos Tipos de Conteúdo"
+        ordering = ["-endpoint"]

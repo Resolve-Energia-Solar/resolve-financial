@@ -17,6 +17,7 @@ router.register('notifications', NotificationViewSet, basename='notification')
 router.register('tags', TagViewSet, basename='tag')
 router.register('processes', ProcessViewSet, basename='process')
 router.register('steps-names', StepNameViewSet, basename='step-name')
+# router.register('content-types-endpoints', ContentTypeEndpointViewSet, basename='content-type-endpoint')
 
 urlpatterns = [
     path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),

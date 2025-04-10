@@ -149,3 +149,11 @@ class StepNameAdmin(admin.ModelAdmin):
     search_fields = ("id", "name")
     list_per_page = 10
     list_max_show_all = 100
+    
+    
+@admin.register(ContentTypeEndpoint)
+class ContentTypeEndpointAdmin(admin.ModelAdmin):
+    list_display = ("content_type", "endpoint",)
+    search_fields = ("endpoint",)
+    list_per_page = 10
+    list_max_show_all = 100
