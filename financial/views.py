@@ -229,7 +229,6 @@ class PaymentViewSet(BaseModelViewSet):
         return Response({"indicators": combined_indicators})
 
 
-
 class PaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PaymentInstallment.objects.all()
     serializer_class = PaymentInstallmentSerializer
@@ -297,6 +296,24 @@ class FinancialRecordViewSet(BaseModelViewSet):
         request.data['responsible'] = employee.user_manager.id
                 
         return super().create(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.responsible_status != 'P':
+            return Response({"error": "A solicitação não está pendente de aprovação."}, status=400)
+        
+        cancel_url = os.environ.get('CANCEL_FINANCIAL_RECORD_APPROVAL_URL')
+        if cancel_url:
+            body = {
+                "responsible_request_integration_code": instance.responsible_request_integration_code
+            }
+            cancel_response = requests.post(cancel_url, json=body)
+            logger.info(f"Cancel approval request response: {cancel_response.status_code} - {cancel_response.text}")
+        else:
+            logger.warning("CANCEL_FINANCIAL_RECORD_APPROVAL_URL não está definido nas variáveis de ambiente.")
+
+        OmieIntegrationView().update_payment_request(instance)
+        return super().update(request, *args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -530,6 +547,43 @@ class OmieIntegrationView(APIView):
             return Response(response.json(), status=response.status_code)
         else:
             return Response({"message": "Financial record updated without sending to Omie"}, status=200)
+        
+    def update_payment_request(self, financial_record):
+        url = f"{self.OMIE_API_URL}/financas/contapagar/"
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
+            "call": "AlterarContaPagar",
+            "app_key": self.OMIE_ACESSKEY,
+            "app_secret": self.OMIE_ACESSTOKEN,
+            "param": [
+                {
+                    "codigo_lancamento_integracao": financial_record.id,
+                    "codigo_cliente_fornecedor": financial_record.client_supplier_code,
+                    "data_vencimento": financial_record.due_date.strftime('%d/%m/%Y'),
+                    "valor_documento": financial_record.value,
+                    "codigo_categoria": financial_record.category_code,
+                    "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
+                    "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
+                    "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
+                    "observacao": f'nº {financial_record.protocol}: {financial_record.notes}',
+                    "distribuicao": [
+                        {
+                            "cCodDep": financial_record.department_code,
+                            "nPerDep": "100",
+                            "nValDep": financial_record.value
+                        }
+                    ]
+                }
+            ]
+        }
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            return Response(response.json(), status=response.status_code)
+        else:
+            logger.error(f"Failed to update payment request in Omie: {response.json()}")
+            return Response({"error": response.json()}, status=response.status_code)
 
 
 class FinancialRecordApprovalView(APIView):
