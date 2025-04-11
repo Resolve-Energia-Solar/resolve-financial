@@ -65,7 +65,7 @@ jobs:
           echo "OMIE_API_URL=${{ vars.OMIE_API_URL }}" >> .env
           echo "OMIE_ACESSKEY=${{ vars.OMIE_ACESSKEY }}" >> .env
           echo "OMIE_ACESSTOKEN=${{ vars.OMIE_ACESSTOKEN }}" >> .env
-          
+          echo "CANCEL_FINANCIAL_RECORD_APPROVAL_URL=${{ vars.CANCEL_FINANCIAL_RECORD_APPROVAL_URL}}" >> .env 
           # Criar google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
 
