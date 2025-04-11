@@ -1,6 +1,5 @@
 from field_services.models import *
 from accounts.serializers import BaseSerializer
-from rest_framework import serializers
 
 class RoofTypeSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
@@ -33,14 +32,25 @@ class FormsSerializer(BaseSerializer):
         
         
 class ScheduleSerializer(BaseSerializer):
-    str = serializers.SerializerMethodField()
+    # str = serializers.SerializerMethodField()
     
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
         
-    def get_str(self, obj):
-        return str(obj)
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     requested_fields = self.context.get('request').query_params.get('fields')
+    #     if requested_fields:
+    #         requested_fields = requested_fields.split(',')
+    #         if 'str' not in requested_fields:
+    #             self.fields.pop('str', None)
+    #     else:
+    #         self.fields.pop('str', None)
+
+    # def get_str(self, obj):
+    #     return str(obj)
     
 
 class AnswerSerializer(BaseSerializer):
