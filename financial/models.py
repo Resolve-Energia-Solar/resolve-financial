@@ -402,6 +402,9 @@ class FinancialRecord(models.Model):
         default="P",
     )
     responsible_response_date = models.DateTimeField("Data da Resposta do Gestor", null=True, blank=True)
+    responsible_request_integration_code = models.CharField(
+        "Código de Integração da Solicitação ao Gestor", max_length=50, null=True, blank=True
+    )
     responsible_notes = models.TextField("Notas do Responsável", null=True, blank=True)
     payment_method = models.CharField(
         "Método de Pagamento",
