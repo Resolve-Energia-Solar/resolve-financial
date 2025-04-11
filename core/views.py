@@ -283,7 +283,8 @@ class ProcessByObjectView(generics.RetrieveAPIView):
         serializer = self.get_serializer(process)
         return Response(serializer.data)
     
-    
+
+
 class FinishStepView(APIView):
     def patch(self, request, process_id, id):
         process = get_object_or_404(Process, id=process_id)
@@ -297,14 +298,12 @@ class FinishStepView(APIView):
         if not steps:
             return Response({'error': 'Nenhuma etapa encontrada.'}, status=404)
 
-        # Busca a etapa pelo step["id"] corretamente
-        etapa_encontrada = None
-        for etapa in steps:
-            step_data = etapa.get('step', {})
-            step_id = step_data.get('id') or etapa.get('id') 
-            if step_id == id:
-                etapa_encontrada = etapa
-                break
+        try:
+            etapa_id = int(id)
+        except ValueError:
+            return Response({'error': 'ID da etapa inválido.'}, status=400)
+
+        etapa_encontrada = next((et for et in steps if et.get("id") == etapa_id), None)
 
         if not etapa_encontrada:
             return Response({'error': 'Etapa não encontrada.'}, status=404)
@@ -314,16 +313,9 @@ class FinishStepView(APIView):
 
         # Verifica dependências
         dependencias = etapa_encontrada.get('dependencies', [])
-        steps_concluidas = set()
-
-        for et in steps:
-            step_data = et.get('step', {})
-            step_id = step_data.get('id') or et.get('id')
-            if et.get('is_completed'):
-                steps_concluidas.add(step_id)
+        steps_concluidas = {et.get('id') for et in steps if et.get('is_completed')}
 
         dependencias_pendentes = [dep for dep in dependencias if dep not in steps_concluidas]
-
         if dependencias_pendentes:
             return Response({
                 'error': 'Etapa não pode ser concluída. Existem dependências pendentes.',
@@ -340,7 +332,7 @@ class FinishStepView(APIView):
         process.steps = steps
         process.save()
 
-        return Response({'status': 'etapa_concluida', 'step_id': id})
+        return Response({'status': 'etapa_concluida', 'step_id': etapa_id})
 
 
 class StepNameViewSet(BaseModelViewSet):

@@ -1,6 +1,6 @@
 from field_services.models import *
 from accounts.serializers import BaseSerializer
-
+from rest_framework import serializers
 
 class RoofTypeSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
@@ -30,11 +30,18 @@ class FormsSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Forms
         fields = '__all__'
-
+        
+        
 class ScheduleSerializer(BaseSerializer):
+    str = serializers.SerializerMethodField()
+    
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+        
+    def get_str(self, obj):
+        return str(obj)
+    
 
 class AnswerSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
@@ -61,8 +68,6 @@ class ServiceOpinionSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = ServiceOpinion
         fields = '__all__'
-
-
 class RouteSerializer(BaseSerializer):
     class Meta:
         model = Route
