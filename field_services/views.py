@@ -117,6 +117,15 @@ class ScheduleViewSet(BaseModelViewSet):
         if service:
             qs = qs.filter(service__id=service)
 
+        if self.request.query_params.get('customer_project_or') == 'true':
+            customer = self.request.query_params.get('customer')
+            project = self.request.query_params.get('project')
+            if customer and project:
+                qs = qs.filter(
+                    Q(customer=customer) |
+                    Q(project=project)
+                )
+
         # 2. Filtros por permissão
         if user.has_perm('field_services.view_all_schedule'):
             return qs
