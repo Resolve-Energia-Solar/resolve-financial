@@ -65,7 +65,6 @@ class AnswerViewSet(BaseModelViewSet):
     serializer_class = AnswerSerializer
 
 
-
 class ScheduleViewSet(BaseModelViewSet):
     serializer_class = ScheduleSerializer
 
@@ -86,11 +85,11 @@ class ScheduleViewSet(BaseModelViewSet):
         user = self.request.user
 
         # 1. Filtros Globais
-        customer_icontains = self.request.query_params.get('customer_icontains')
-        if customer_icontains:
+        customer__icontains = self.request.query_params.get('customer__icontains')
+        if customer__icontains:
             qs = qs.filter(
-                Q(customer__complete_name__icontains=customer_icontains) |
-                Q(customer__first_document__icontains=customer_icontains)
+                Q(customer__complete_name__icontains=customer__icontains) |
+                Q(customer__first_document__icontains=customer__icontains)
             )
 
         final_services_opnions = self.request.query_params.get('final_services_opnions')
