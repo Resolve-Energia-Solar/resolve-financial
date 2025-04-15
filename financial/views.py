@@ -229,7 +229,6 @@ class PaymentViewSet(BaseModelViewSet):
         return Response({"indicators": combined_indicators})
 
 
-
 class PaymentInstallmentViewSet(BaseModelViewSet):
     queryset = PaymentInstallment.objects.all()
     serializer_class = PaymentInstallmentSerializer
@@ -293,10 +292,58 @@ class FinancialRecordViewSet(BaseModelViewSet):
         user = request.user
         employee = user.employee
         
-        request.data['requester_id'] = user.id
-        request.data['responsible_id'] = employee.user_manager.id
-                
+        request.data['requester'] = user.id
+        request.data['responsible'] = employee.user_manager.id
+
         return super().create(request, *args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.responsible_status != 'P':
+            return Response({"error": "A solicitação não está pendente de aprovação."}, status=400)
+        
+        cancel_url = os.environ.get('CANCEL_FINANCIAL_RECORD_APPROVAL_URL')
+        if cancel_url:
+            body = {
+                "run_id": instance.responsible_request_integration_code
+            }
+            cancel_response = requests.post(cancel_url, json=body)
+            logger.info(f"Cancel approval request response: {cancel_response.status_code} - {cancel_response.text}")
+        else:
+            logger.warning("CANCEL_FINANCIAL_RECORD_APPROVAL_URL não está definido nas variáveis de ambiente.")
+
+        FINANCIAL_RECORD_APPROVAL_URL = os.environ.get('FINANCIAL_RECORD_APPROVAL_URL', None)
+        
+        if not FINANCIAL_RECORD_APPROVAL_URL:
+            raise Exception("URL de aprovação não configurada.")
+
+        try:
+            url = FINANCIAL_RECORD_APPROVAL_URL
+            body = {
+                'id': instance.id,
+                'manager_email': instance.responsible.email,
+                'description': (
+                    f'Solicitação de Pagamento nº {instance.protocol}\n'
+                    f'Criada em: {instance.created_at.strftime("%d/%m/%Y %H:%M:%S")}\n'
+                    f'Requisitante: {instance.requester.complete_name}\n'
+                    f'Setor: {instance.requesting_department.name}\n'
+                    f'Valor: R$ {instance.value:.2f}\n'
+                    f'Descrição: {instance.notes}'
+                ),
+            }
+            response = requests.post(url, json=body)
+            response.raise_for_status()
+
+            integration_code = response.headers.get('x-ms-workflow-run-id')
+            if integration_code:
+                instance.responsible_request_integration_code = integration_code
+                instance.save()
+        except requests.RequestException as e:
+            logger.error(f"Erro ao solicitar aprovação: {e}")
+            print(f"Erro ao solicitar aprovação: {e}")
+            raise ValidationError(f"Erro ao solicitar aprovação: {e}")
+
+        return super().update(request, *args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

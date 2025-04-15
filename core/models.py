@@ -43,6 +43,7 @@ class DocumentType(models.Model):
     app_label = models.CharField("App Label", max_length=100, choices=APP_LABEL_CHOICES)
     reusable = models.BooleanField("Reutilizável", default=False)
     required = models.BooleanField("Obrigatório", default=False)
+    is_customer_sendable = models.BooleanField("Enviável pelo Cliente?", default=False)
     
     class Meta:
         verbose_name = "Tipo de Documento"
@@ -373,7 +374,8 @@ class Process(models.Model):
     object_id = models.PositiveSmallIntegerField("ID do Objeto")
     content_object = GenericForeignKey('content_type', 'object_id')
     deadline = models.PositiveIntegerField("Prazo", blank=True, null=True)
-    steps = models.JSONField("Etapas", default=dict, blank=True, null=True)
+    steps = models.JSONField("Etapas", default=list, blank=True, null=True)
+    current_step = models.ManyToManyField('core.StepName', related_name='current_step', blank=True, verbose_name="Etapa Atual")
     # Logs
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -382,6 +384,20 @@ class Process(models.Model):
     def __str__(self):
         return self.name
     
+    def get_steps_liberadas(self):
+        etapas = self.steps or []
+        concluidas = {et.get("id") for et in etapas if et.get("is_completed")}
+        liberadas = []
+
+        for etapa in etapas:
+            if etapa.get("is_completed"):
+                continue
+            dependencias = etapa.get("dependencies", [])
+            if all(dep in concluidas for dep in dependencias):
+                liberadas.append(etapa)
+        return liberadas
+
+        
     class Meta:
         verbose_name = 'Processo'
         verbose_name_plural = 'Processos'
@@ -391,3 +407,41 @@ class Process(models.Model):
         ]
 
 
+class StepName(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    # Logs
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Etapa'
+        verbose_name_plural = 'Etapas'
+        ordering = ['name']
+        
+
+class ProcessStepCount(models.Model):
+    step = models.CharField('Etapa', max_length=200, db_column='step', primary_key=True)
+    total_processes = models.IntegerField('Processos', db_column='total_processes')
+
+    class Meta:
+        managed = False
+        db_table = 'vw_process_by_step'
+
+
+class ContentTypeEndpoint(models.Model):
+    """
+    Model to store the endpoint of a content type.
+    """
+    content_type = models.OneToOneField(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo", related_name="endpoint")
+    endpoint = models.CharField("Endpoint", max_length=255)
+    label = models.CharField("Rótulo", max_length=255)
+    queryParam = models.CharField("Parâmetro de Busca", max_length=255)
+    extraParams = models.CharField("Parâmetros Extras", max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Endpoint do Tipo de Conteúdo"
+        verbose_name_plural = "Endpoints dos Tipos de Conteúdo"
+        ordering = ["-endpoint"]

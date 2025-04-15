@@ -283,24 +283,27 @@ class ProcessByObjectView(generics.RetrieveAPIView):
         serializer = self.get_serializer(process)
         return Response(serializer.data)
     
-    
+
+
 class FinishStepView(APIView):
-    def patch(self, request, process_id, step_id):
+    def patch(self, request, process_id, id):
         process = get_object_or_404(Process, id=process_id)
-        
-        user_id = request.data.get('user_id')
-        if user_id and user_id != request.user.id:
+        user_id = request.data.get('user_id') or request.user.id
+
+        if user_id != request.user.id:
             return Response({'error': 'Você não tem permissão para concluir esta etapa.'}, status=403)
-        
-        if not user_id:
-            user_id = request.user.id
 
         steps = process.steps or []
 
         if not steps:
             return Response({'error': 'Nenhuma etapa encontrada.'}, status=404)
 
-        etapa_encontrada = next((etapa for etapa in steps if etapa['step_id'] == step_id), None)
+        try:
+            etapa_id = int(id)
+        except ValueError:
+            return Response({'error': 'ID da etapa inválido.'}, status=400)
+
+        etapa_encontrada = next((et for et in steps if et.get("id") == etapa_id), None)
 
         if not etapa_encontrada:
             return Response({'error': 'Etapa não encontrada.'}, status=404)
@@ -308,16 +311,18 @@ class FinishStepView(APIView):
         if etapa_encontrada.get('is_completed'):
             return Response({'error': 'Etapa já finalizada.'}, status=400)
 
+        # Verifica dependências
         dependencias = etapa_encontrada.get('dependencies', [])
-        steps_concluidas = {et['step_id'] for et in steps if et.get('is_completed')}
-        dependencias_pendentes = [dep for dep in dependencias if dep not in steps_concluidas]
+        steps_concluidas = {et.get('id') for et in steps if et.get('is_completed')}
 
+        dependencias_pendentes = [dep for dep in dependencias if dep not in steps_concluidas]
         if dependencias_pendentes:
             return Response({
                 'error': 'Etapa não pode ser concluída. Existem dependências pendentes.',
                 'dependencias_pendentes': dependencias_pendentes
             }, status=400)
 
+        # Marca como concluída
         etapa_encontrada['is_completed'] = True
         etapa_encontrada['completion_date'] = timezone.now().isoformat()
         etapa_encontrada['user_id'] = user_id
@@ -327,5 +332,20 @@ class FinishStepView(APIView):
         process.steps = steps
         process.save()
 
-        return Response({'status': 'etapa_concluida', 'step_id': step_id})
+        return Response({'status': 'etapa_concluida', 'step_id': etapa_id})
+
+
+class StepNameViewSet(BaseModelViewSet):
+    queryset = StepName.objects.all()
+    serializer_class = StepNameSerializer
     
+
+class ProcessStepCountListView(generics.ListAPIView):
+    queryset = ProcessStepCount.objects.all()
+    serializer_class = ProcessStepCountSerializer
+    pagination_class = None
+    
+    
+class ContentTypeEndpointViewSet(BaseModelViewSet):
+    queryset = ContentTypeEndpoint.objects.all()
+    serializer_class = ContentTypeEndpointSerializer

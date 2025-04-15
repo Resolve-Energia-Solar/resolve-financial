@@ -79,10 +79,9 @@ class BaseModelViewSet(ModelViewSet):
 
 
 class GanttView(APIView):
-    permission_classes = []  # Remove authentication requirement
+    permission_classes = []
 
     def get(self, request):
-        # Colunas definidas no formato esperado
         columns = [
             {"type": "string", "label": "Task ID"},
             {"type": "string", "label": "Task Name"},
@@ -93,13 +92,12 @@ class GanttView(APIView):
             {"type": "string", "label": "Dependencies"},
         ]
 
-        # Dados das linhas no formato especificado
         rows = [
             [
                 "Research",
                 "Find sources",
-                datetime(2015, 1, 1).isoformat(),  # Envia a data como string ISO
-                datetime(2015, 1, 5).isoformat(),  # Envia a data como string ISO
+                datetime(2015, 1, 1).isoformat(),
+                datetime(2015, 1, 5).isoformat(),
                 None,
                 100,
                 None,

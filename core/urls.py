@@ -16,9 +16,12 @@ router.register('document-subtypes', DocumentSubTypeViewSet, basename='document-
 router.register('notifications', NotificationViewSet, basename='notification')
 router.register('tags', TagViewSet, basename='tag')
 router.register('processes', ProcessViewSet, basename='process')
+router.register('steps-names', StepNameViewSet, basename='step-name')
+router.register('content-types-endpoints', ContentTypeEndpointViewSet, basename='content-type-endpoint')
 
 urlpatterns = [
     path('process/<int:pk>/', ProcessDetailView.as_view(), name='detalhe-processo'),
-    path('process/<int:process_id>/etapas/<int:step_id>/finish/', FinishStepView.as_view(), name='finish-step'),
+    path('process/<int:process_id>/step/<int:id>/finish/', FinishStepView.as_view(), name='finish-step'),
     path('process/por-objeto/<str:app_label>/<str:model>/<int:object_id>/', ProcessByObjectView.as_view(), name='process-per-object'),
+    path('process-count-by-step/', ProcessStepCountListView.as_view(), name='process-count-by-step'),
 ]

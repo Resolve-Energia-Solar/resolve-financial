@@ -402,26 +402,22 @@ class ProjectViewSet(BaseModelViewSet):
                     )
                 )
 
-                # if is_released_to_engineering == 'true':
-                #     queryset = queryset.filter(Q(
-                #         # is_documentation_completed=True,
-                #         sale__status__in=['F'],
-                #         sale__payment_status__in=['L', 'C', 'CO'],
-                #         inspection__final_service_opinion__name__icontains='aprovado',
-                #         sale__is_pre_sale=False
-                #     ) & ~Q(status__in=['CO'])
-                #     )
-                # elif is_released_to_engineering == 'false':
-                #     queryset = queryset.filter(
-                #         # Q(is_documentation_completed=False) |
-                #         ~Q(sale__status__in=['F', 'CO']) |
-                #         Q(sale__payment_status__in=['P', 'CA']) |
-                #         ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                #         Q(sale__is_pre_sale=True)
-                #     )
-
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
+            
+        current_step_in = request.query_params.get('current_step__in')
+        if current_step_in:
+            steps_list = current_step_in.split(',')
+            project_ct = ContentType.objects.get_for_model(Project)
+            queryset = queryset.annotate(
+                has_current_step=Exists(
+                    Process.objects.filter(
+                        content_type=project_ct,
+                        object_id=OuterRef('pk'),
+                        current_step__id__in=steps_list
+                    )
+                )
+            ).filter(has_current_step=True)
 
         # Paginação
         page = self.paginate_queryset(queryset)
@@ -1084,7 +1080,11 @@ class GenerateContractView(APIView):
     def _generate_materials_list(self, sale):
         materials = []
         for project in sale.projects.all():
-            for pm in project.product.materials.filter(is_deleted=False):
+            product_materials = ProductMaterials.objects.filter(
+                product=project.product,
+                is_deleted=False
+            )
+            for pm in product_materials:
                 materials.append({
                     'name': pm.material.name,
                     'amount': round(pm.amount, 2),

@@ -65,7 +65,6 @@ class AnswerViewSet(BaseModelViewSet):
     serializer_class = AnswerSerializer
 
 
-
 class ScheduleViewSet(BaseModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
@@ -85,11 +84,11 @@ class ScheduleViewSet(BaseModelViewSet):
         user = self.request.user
 
         # 1. Filtros Globais
-        customer_icontains = self.request.query_params.get('customer_icontains')
-        if customer_icontains:
+        customer__icontains = self.request.query_params.get('customer__icontains')
+        if customer__icontains:
             qs = qs.filter(
-                Q(customer__complete_name__icontains=customer_icontains) |
-                Q(customer__first_document__icontains=customer_icontains)
+                Q(customer__complete_name__icontains=customer__icontains) |
+                Q(customer__first_document__icontains=customer__icontains)
             )
 
         final_services_opnions = self.request.query_params.get('final_services_opnions')
@@ -116,6 +115,15 @@ class ScheduleViewSet(BaseModelViewSet):
         service = self.request.query_params.get('service')
         if service:
             qs = qs.filter(service__id=service)
+
+        if self.request.query_params.get('customer_project_or') == 'true':
+            customer = self.request.query_params.get('customer')
+            project = self.request.query_params.get('project')
+            if customer and project:
+                qs = qs.filter(
+                    Q(customer=customer) |
+                    Q(project=project)
+                )
 
         # 2. Filtros por permissão
         if user.has_perm('field_services.view_all_schedule'):
