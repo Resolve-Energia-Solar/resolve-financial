@@ -49,6 +49,12 @@ class ProductSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Product
         fields = '__all__'
+        expandable_fields = {
+            'materials': (
+                'logistics.serializers.ProductMaterialsSerializer',
+                {'many': True, 'source': 'product_material'}
+            ),
+        }
 
     @transaction.atomic
     def create(self, validated_data):
