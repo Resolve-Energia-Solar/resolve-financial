@@ -1076,7 +1076,11 @@ class GenerateContractView(APIView):
     def _generate_materials_list(self, sale):
         materials = []
         for project in sale.projects.all():
-            for pm in project.product.materials.filter(is_deleted=False):
+            product_materials = ProductMaterials.objects.filter(
+                product=project.product,
+                is_deleted=False
+            )
+            for pm in product_materials:
                 materials.append({
                     'name': pm.material.name,
                     'amount': round(pm.amount, 2),
