@@ -1,6 +1,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
-
+from django.utils.functional import cached_property
 
 class MaterialAttributes(models.Model):
     key = models.CharField("Chave", max_length=50, null=True, blank=True)
@@ -38,7 +38,7 @@ class Materials(models.Model):
 
 
 class ProductMaterials(models.Model):
-    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True)
+    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True, related_name="product_material")
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="products", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
@@ -76,6 +76,11 @@ class Product(models.Model):
 
     # Logs
     history = HistoricalRecords()
+    
+    @cached_property
+    def product_material(self):
+        # Isso retorna o queryset do related manager definido no ProductMaterials
+        return self.__class__.objects.get(pk=self.pk).product_material.all()
 
     def __str__(self):
         return self.name

@@ -50,9 +50,9 @@ class ProductSerializer(BaseSerializer):
         model = Product
         fields = '__all__'
         expandable_fields = {
-            'materials': (
+            'product_material': (  # campo utilizado para expandir os dados do intermediário
                 'logistics.serializers.ProductMaterialsSerializer',
-                {'many': True, 'source': 'product_material'}
+                {'many': True}
             ),
         }
 
