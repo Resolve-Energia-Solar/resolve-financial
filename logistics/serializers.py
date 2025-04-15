@@ -49,12 +49,19 @@ class ProductSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Product
         fields = '__all__'
-        expandable_fields = {
-            'product_material': (  # campo utilizado para expandir os dados do intermediário
+
+    
+    @cached_property
+    def expandable_fields(self):
+        base_expandable = super().expandable_fields or {}
+        custom_expandable = {
+            'product_material': (
                 'logistics.serializers.ProductMaterialsSerializer',
                 {'many': True}
             ),
         }
+        base_expandable.update(custom_expandable)
+        return base_expandable
 
     @transaction.atomic
     def create(self, validated_data):
