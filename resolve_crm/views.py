@@ -154,6 +154,9 @@ class SaleViewSet(BaseModelViewSet):
 
         if invoice_status := query_params.get('invoice_status'):
             queryset = queryset.filter(payments__invoice_status__in=invoice_status.split(','))
+            
+        if query_params.get('payments_types__in'):
+            queryset = queryset.filter(payments__payment_type__in=query_params.get('payments_types__in').split(','))
 
         return queryset
 
@@ -866,10 +869,6 @@ class GeneratePreSaleView(APIView):
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _calculate_product_value(self, product):
-        """
-        Calcula o valor do produto somando o valor base e o custo agregado dos materiais,
-        utilizando funções de agregação do Django para otimizar a consulta.
-        """
         base_value = product.product_value
         aggregation = ProductMaterials.objects.filter(product=product, is_deleted=False).aggregate(
             total_cost=Sum(F('material__price') * F('amount'))
@@ -878,9 +877,6 @@ class GeneratePreSaleView(APIView):
         return base_value + materials_cost
 
     def _get_sale_related_ids(self, lead):
-        """
-        Recupera os IDs do vendedor, supervisor e gerente a partir do lead.
-        """
         try:
             seller = lead.seller
             seller_id = seller.id
