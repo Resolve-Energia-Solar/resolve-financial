@@ -9,12 +9,9 @@ from core.models import Attachment, DocumentType
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
-from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
-from django.core.exceptions import ValidationError
 from django.db import transaction, models
-from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
 
@@ -208,25 +205,20 @@ class Lead(models.Model):
         return self.name
 
     def save(self, current_user=None, *args, **kwargs):
-    # Se for uma atualização (o objeto já tem um ID)
         if self.pk:
             old_lead = Lead.objects.get(pk=self.pk)
             if old_lead.column != self.column:
                 self.moved_at = now()
         else:
-            # Se for uma criação (não tem um ID), definir moved_at
             self.moved_at = now()
 
-        # Salvar o objeto antes de associar o current_user ou outros campos
         super().save(*args, **kwargs)
 
-        # Atualizar os campos relacionados ao usuário
         if current_user is not None:
             if not self.id:
                 self.created_by = current_user
             self.updated_by = current_user
-            super().save(*args, **kwargs)  # Salvar novamente para atualizar os campos de auditoria
-
+            super().save(*args, **kwargs)
 
         
     def get_absolute_url(self):
@@ -389,7 +381,7 @@ class Sale(models.Model):
     total_value = models.DecimalField("Valor", max_digits=20, decimal_places=3, default=0.000)
     payment_status = models.CharField("Status do Pagamento", max_length=2, choices=PAYMENT_STATUS_CHOICES, default="P", db_index=True)
     contract_number = models.CharField("Número do Contrato", max_length=20, unique=True, editable=False, null=True, blank=True)
-    signature_date = models.DateTimeField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, editable=False, db_index=True)
+    signature_date = models.DateTimeField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, db_index=True)
     branch = models.ForeignKey('accounts.Branch', on_delete=models.PROTECT, verbose_name="Unidade", db_index=True)
     marketing_campaign = models.ForeignKey('MarketingCampaign', on_delete=models.PROTECT, verbose_name="Campanha de Marketing", null=True, blank=True)
     supplier = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
@@ -432,7 +424,6 @@ class Sale(models.Model):
 
 
     def user_can_edit(self, user):
-        print(f"User: {user}, Sale Status: {self.status}, Is Pre Sale: {self.is_pre_sale}")
         if self.is_pre_sale or self.status in ['P', 'EA']:
             return True
         return user.has_perm('resolve_crm.can_change_fineshed_sale')
@@ -704,8 +695,9 @@ class Project(models.Model):
         return [
             att for att in self.attachments.all()
             if (
-                ('TRT' in att.document_type.name.upper() or 'ART' in att.document_type.name.upper())
-                and att.content_type_id == self.content_type_id
+                att.document_type is not None and
+                att.document_type.name.strip() == 'ART/TRT' and
+                att.content_type_id == self.content_type_id
             )
         ]
     

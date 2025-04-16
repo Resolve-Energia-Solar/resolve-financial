@@ -5,6 +5,7 @@ from rest_framework.serializers import (
     RelatedField, 
     BooleanField
 )
+from rest_framework.serializers import ModelSerializer
 
 from accounts.models import User
 from api.serializers import BaseSerializer
@@ -119,3 +120,35 @@ class NotificationSerializer(BaseSerializer):
 
     def get_timesince(self, obj):
         return obj.timesince()
+
+
+class ProcessSerializer(BaseSerializer):
+    class Meta:
+        model = Process
+        fields = ['id', 'name', 'description', 'content_type', 'object_id', 'deadline', 'steps', 'created_at']
+
+    def validate_steps(self, value):
+        etapas = value.get("steps", [])
+        for etapa in etapas:
+            if "id" not in etapa or "nome" not in etapa:
+                raise ValidationError("Cada etapa deve conter 'step_id' e 'nome'.")
+        return value
+    
+
+class StepNameSerializer(BaseSerializer):
+    class Meta:
+        model = StepName
+        fields = ['id', 'name']
+
+
+class ProcessStepCountSerializer(ModelSerializer):
+    
+    class Meta:
+        model = ProcessStepCount
+        fields = ('step', 'total_processes')
+
+
+class ContentTypeEndpointSerializer(BaseSerializer):
+    class Meta:
+        model = ContentTypeEndpoint
+        fields = ('id', 'endpoint', 'label')

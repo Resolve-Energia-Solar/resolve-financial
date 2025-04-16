@@ -259,9 +259,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    # Definindo a expiração do token de acesso para uma hora
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    # Tempo de vida do token de atualização
     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
 }
 

@@ -171,6 +171,7 @@ class UserSerializer(BaseSerializer):
     employee_data = SerializerMethodField()
     groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
     phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True, required=False)
+    groups = SerializerMethodField()
 
     user_permissions = SerializerMethodField()
     distance = SerializerMethodField()
@@ -179,6 +180,9 @@ class UserSerializer(BaseSerializer):
     class Meta:
         model = User
         exclude = ['password']
+        
+    def get_groups(self, obj):
+        return obj.groups.values_list('id', flat=True)
         
     def validate(self, attrs):
         if 'first_document' in attrs:

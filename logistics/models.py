@@ -1,6 +1,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
-
+from django.utils.functional import cached_property
 
 class MaterialAttributes(models.Model):
     key = models.CharField("Chave", max_length=50, null=True, blank=True)
@@ -38,7 +38,7 @@ class Materials(models.Model):
 
 
 class ProductMaterials(models.Model):
-    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True)
+    product = models.ForeignKey("logistics.Product", on_delete=models.CASCADE, verbose_name="product de Energia Solar", null=True, blank=True, related_name="product_material")
     material = models.ForeignKey(Materials, on_delete=models.CASCADE, verbose_name="Material", related_name="products", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
@@ -76,6 +76,11 @@ class Product(models.Model):
 
     # Logs
     history = HistoricalRecords()
+    
+    @cached_property
+    def product_material(self):
+        # Isso retorna o queryset do related manager definido no ProductMaterials
+        return self.__class__.objects.get(pk=self.pk).product_material.all()
 
     def __str__(self):
         return self.name
@@ -111,8 +116,12 @@ class SaleProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto", related_name="sales", null=True, blank=True)
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     value = models.DecimalField("Valor do Produto", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
-    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=1, null=True, blank=True)
     cost_value = models.DecimalField("Valor de Custo", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    reference_value = models.DecimalField("Valor de Referência", max_digits=20, decimal_places=6, default=1, null=True, blank=True)
+    
+    average_consumption = models.DecimalField("Consumo Médio", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    estimated_consumption = models.DecimalField("Consumo Estimado", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
+    
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
 

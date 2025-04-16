@@ -1,5 +1,6 @@
 from engineering.models import *
 from api.serializers import BaseSerializer
+from rest_framework import serializers
 
 
 class SituationEnergyCompanySerializer(BaseSerializer):
@@ -49,12 +50,10 @@ class UnitsSerializer(BaseSerializer):
 
 
 class RequestsEnergyCompanySerializer(BaseSerializer):
+    str = serializers.SerializerMethodField()
     class Meta:
         model = RequestsEnergyCompany
         fields = '__all__'
-
-
-class ReadRequestsEnergyCompanySerializer(BaseSerializer):
-    class Meta:
-        model = RequestsEnergyCompany
-        fields = '__all__'
+        
+    def get_str(self, obj):
+        return str(obj)

@@ -1,16 +1,16 @@
-name: CI/CD Pipeline for RESOLVE-ERP-DEV Update Backend env v2
+name: CI/CD Pipeline for RESOLVE-ERP-API Homolog Backend  v1
   
 on:
   push:
     branches:
-      - development
+      - approval
 
 env:
-  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-dev
+  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-api-homolog
   AKS_CLUSTER_NAME: Resolve-AKS-Web
   AKS_RESOURCE_GROUP: Resolve
-  NAMESPACE: resolve-erp-dev
-  DEPLOYMENT_NAME: resolve-erp-api-dev
+  NAMESPACE: resolve-erp-api-homolog
+  DEPLOYMENT_NAME: resolve-erp-api-homolog
 
 jobs:
   build-and-deploy:
@@ -35,16 +35,16 @@ jobs:
           echo "CLICKSIGN_API_URL=${{ vars.CLICKSIGN_API_URL}}" >> .env
           echo "CLICKSIGN_ACCESS_TOKEN=${{ vars.CLICKSIGN_ACCESS_TOKEN}}" >> .env
           echo "SECRET_KEY=${{ vars.SECRET_KEY}}" >> .env
-          echo "DEBUG=${{ vars.DEBUG_DEV}}" >> .env
+          echo "DEBUG=${{ vars.DEBUG}}" >> .env
           echo "DB_USED=${{ vars.DB_USED }}" >> .env
-          echo "DB1_NAME=${{ vars.DB1_NAME_DEV }}" >> .env
-          echo "DB1_USER=${{ vars.DB1_USER_DEV }}" >> .env
-          echo "DB1_PASSWORD=${{ vars.DB1_PASSWORD_DEV }}" >> .env
-          echo "DB1_HOST=${{ vars.DB1_HOST_DEV }}" >> .env
+          echo "DB1_NAME=${{ vars.DB1_NAME }}" >> .env
+          echo "DB1_USER=${{ vars.DB1_USER }}" >> .env
+          echo "DB1_PASSWORD=${{ vars.DB1_PASSWORD }}" >> .env
+          echo "DB1_HOST=${{ vars.DB1_HOST }}" >> .env
           echo "DB1_PORT=${{ vars.DB1_PORT }}" >> .env
           echo "FINANCIAL_RECORD_APPROVAL_URL=${{ vars.FINANCIAL_RECORD_APPROVAL_URL }}" >> .env
-          echo "ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS_DEV }}" >> .env
-          echo "CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS_DEV }}" >> .env
+          echo "ALLOWED_HOSTS=${{ vars.ALLOWED_HOSTS }}" >> .env
+          echo "CSRF_TRUSTED_ORIGINS=${{ vars.CSRF_TRUSTED_ORIGINS }}" >> .env
           echo "CORS_ALLOW_ALL_ORIGINS=${{ vars.CORS_ALLOW_ALL_ORIGINS }}" >> .env
           echo "CORS_ALLOW_CREDENTIALS=${{ vars.CORS_ALLOW_CREDENTIALS }}" >> .env
           echo "CONTENT_TYPE_DOCUMENT=${{ vars.CONTENT_TYPE_DOCUMENT }}" >> .env
@@ -65,7 +65,6 @@ jobs:
           echo "OMIE_API_URL=${{ vars.OMIE_API_URL }}" >> .env
           echo "OMIE_ACESSKEY=${{ vars.OMIE_ACESSKEY }}" >> .env
           echo "OMIE_ACESSTOKEN=${{ vars.OMIE_ACESSTOKEN }}" >> .env
-          echo "CANCEL_FINANCIAL_RECORD_APPROVAL_URL=${{ vars.CANCEL_FINANCIAL_RECORD_APPROVAL_URL}}" >> .env 
           
           # Criar google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
@@ -91,5 +90,5 @@ jobs:
       # 7. Atualizar Deployment no AKS
       - name: Update Deployment on AKS
         run: |
-          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api-dev="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
+          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api-homolog="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
           kubectl rollout status deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"

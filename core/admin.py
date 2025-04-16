@@ -13,25 +13,31 @@ class SystemConfigAdmin(admin.ModelAdmin):
 
 @admin.register(DocumentType)
 class DocumentTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'reusable', 'required')
-    search_fields = ('name',)
-    list_filter = ('reusable', 'required')
-    ordering = ('name',)
+    list_display = ("name", "reusable", "required")
+    search_fields = ("name",)
+    list_filter = ("reusable", "required")
+    ordering = ("name",)
 
 
 @admin.register(DocumentSubType)
 class DocumentSubTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'document_type')
-    search_fields = ('name', 'document_type__name')
-    list_filter = ('document_type',)
-    ordering = ('name',)
+    list_display = ("name", "document_type")
+    search_fields = ("name", "document_type__name")
+    list_filter = ("document_type",)
+    ordering = ("name",)
 
 
 @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ("document_type", "document_subtype", "status", "file", "created_at")
     list_display_links = ("document_type",)
-    search_fields = ("file", "description", "status", "document_type__name", "document_subtype__name")
+    search_fields = (
+        "file",
+        "description",
+        "status",
+        "document_type__name",
+        "document_subtype__name",
+    )
     list_filter = ("status", "document_type", "document_subtype", "created_at")
     ordering = ("-created_at",)
 
@@ -52,12 +58,27 @@ class TaskTemplatesAdmin(admin.ModelAdmin):
     search_fields = ("title", "board__title", "column__name", "description")
     list_filter = ("board", "auto_create", "column")
     ordering = ("title",)
-    
+
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "description", "owner", "start_date", "due_date", "is_completed_date")
-    search_fields = ("title", "description", "owner", "board", "start_date", "due_date", "is_completed_date")
+    list_display = (
+        "title",
+        "description",
+        "owner",
+        "start_date",
+        "due_date",
+        "is_completed_date",
+    )
+    search_fields = (
+        "title",
+        "description",
+        "owner",
+        "board",
+        "start_date",
+        "due_date",
+        "is_completed_date",
+    )
 
 
 @admin.register(Webhook)
@@ -96,7 +117,7 @@ class PermissionAdmin(admin.ModelAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ("tag", "color")
-    
+
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
@@ -114,5 +135,63 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ("author", "content_type", "object_id", "text")
     list_filter = ("created_at",)
     ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
+
+
+@admin.register(ProcessBase)
+class ProcessBaseAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "created_at")
+    search_fields = ("name", "description")
+    list_filter = ("created_at",)
+    ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
+
+    class Media:
+        js = ("admin/js/edit-steps-json.js",)
+        css = {
+            "all": ("admin/css/form-check.css",),
+        }
+
+
+@admin.register(Process)
+class ProcessAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "description",
+        "content_type",
+        "object_id",
+        "deadline",
+        "created_at",
+    )
+    search_fields = ("name", "description", "content_type", "object_id")
+    list_filter = ("created_at",)
+    ordering = ("-created_at",)
+    list_per_page = 10
+    list_max_show_all = 100
+
+    class Media:
+        js = ("admin/js/edit-steps-json.js",)
+        css = {
+            "all": ("admin/css/form-check.css",),
+        }
+
+
+@admin.register(StepName)
+class StepNameAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("id", "name")
+    list_per_page = 10
+    list_max_show_all = 100
+
+
+@admin.register(ContentTypeEndpoint)
+class ContentTypeEndpointAdmin(admin.ModelAdmin):
+    list_display = (
+        "content_type",
+        "endpoint",
+    )
+    search_fields = ("endpoint",)
     list_per_page = 10
     list_max_show_all = 100

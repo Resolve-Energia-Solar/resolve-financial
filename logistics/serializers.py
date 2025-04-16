@@ -50,6 +50,19 @@ class ProductSerializer(BaseSerializer):
         model = Product
         fields = '__all__'
 
+    
+    @cached_property
+    def expandable_fields(self):
+        base_expandable = super().expandable_fields or {}
+        custom_expandable = {
+            'product_material': (
+                'logistics.serializers.ProductMaterialsSerializer',
+                {'many': True}
+            ),
+        }
+        base_expandable.update(custom_expandable)
+        return base_expandable
+
     @transaction.atomic
     def create(self, validated_data):
         # Extraímos os materiais com quantidade

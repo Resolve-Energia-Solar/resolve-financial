@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import timedelta
 from django.core.exceptions import FieldDoesNotExist
 from django.shortcuts import get_object_or_404
@@ -8,15 +9,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import ForeignKey, OneToOneField
 from django.apps import apps
-
 from accounts.serializers import ContentTypeSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from notifications.models import Notification
 from resolve_crm.models import Sale
-
+from django.utils import timezone
 from .models import *
 from .pagination import AttachmentPagination
 from .serializers import *
+from rest_framework import generics
 
 
 class SystemConfigView(APIView):
@@ -254,3 +255,97 @@ class TagViewSet(BaseModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     
+    
+class ProcessViewSet(BaseModelViewSet):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+
+
+class ProcessDetailView(generics.RetrieveAPIView):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+    
+
+class ProcessByObjectView(generics.RetrieveAPIView):
+    serializer_class = ProcessSerializer
+
+    def get(self, request, *args, **kwargs):
+        app_label = kwargs.get("app_label")
+        model_name = kwargs.get("model")
+        object_id = kwargs.get("object_id")
+
+        try:
+            content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+        except ContentType.DoesNotExist:
+            return Response({"error": "ContentType não encontrado"}, status=400)
+
+        process = get_object_or_404(Process, content_type=content_type, object_id=object_id)
+        serializer = self.get_serializer(process)
+        return Response(serializer.data)
+    
+
+
+class FinishStepView(APIView):
+    def patch(self, request, process_id, id):
+        process = get_object_or_404(Process, id=process_id)
+        user_id = request.data.get('user_id') or request.user.id
+
+        if user_id != request.user.id:
+            return Response({'error': 'Você não tem permissão para concluir esta etapa.'}, status=403)
+
+        steps = process.steps or []
+
+        if not steps:
+            return Response({'error': 'Nenhuma etapa encontrada.'}, status=404)
+
+        try:
+            etapa_id = int(id)
+        except ValueError:
+            return Response({'error': 'ID da etapa inválido.'}, status=400)
+
+        etapa_encontrada = next((et for et in steps if et.get("id") == etapa_id), None)
+
+        if not etapa_encontrada:
+            return Response({'error': 'Etapa não encontrada.'}, status=404)
+
+        if etapa_encontrada.get('is_completed'):
+            return Response({'error': 'Etapa já finalizada.'}, status=400)
+
+        # Verifica dependências
+        dependencias = etapa_encontrada.get('dependencies', [])
+        steps_concluidas = {et.get('id') for et in steps if et.get('is_completed')}
+
+        dependencias_pendentes = [dep for dep in dependencias if dep not in steps_concluidas]
+        if dependencias_pendentes:
+            return Response({
+                'error': 'Etapa não pode ser concluída. Existem dependências pendentes.',
+                'dependencias_pendentes': dependencias_pendentes
+            }, status=400)
+
+        # Marca como concluída
+        etapa_encontrada['is_completed'] = True
+        etapa_encontrada['completion_date'] = timezone.now().isoformat()
+        etapa_encontrada['user_id'] = user_id
+        etapa_encontrada['content_type_id'] = request.data.get('content_type_id')
+        etapa_encontrada['object_id'] = request.data.get('object_id')
+
+        process.steps = steps
+        process.save()
+
+        return Response({'status': 'etapa_concluida', 'step_id': etapa_id})
+
+
+class StepNameViewSet(BaseModelViewSet):
+    queryset = StepName.objects.all()
+    serializer_class = StepNameSerializer
+    
+
+class ProcessStepCountListView(generics.ListAPIView):
+    queryset = ProcessStepCount.objects.all()
+    serializer_class = ProcessStepCountSerializer
+    pagination_class = None
+    
+    
+class ContentTypeEndpointViewSet(BaseModelViewSet):
+    queryset = ContentTypeEndpoint.objects.all()
+    serializer_class = ContentTypeEndpointSerializer

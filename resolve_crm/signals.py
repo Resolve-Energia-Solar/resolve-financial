@@ -1,14 +1,13 @@
-from asyncio import Task
-import sys
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
-import requests
-
+from core.task import create_process_async
+from core.utils import create_process
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
-from core.models import Attachment,Webhook
+from core.models import Attachment, Process, ProcessBase,Webhook
 import logging
+from django.db import transaction
 
 
 logger = logging.getLogger(__name__)
@@ -98,17 +97,51 @@ def attachment_changed(sender, instance, **kwargs):
     ):
         if hasattr(instance.content_object, 'projects'):
             sale = instance.content_object
-            # logger.info(f"📌 Signal: Anexo salvo - Sale ID: {sale.id}")
-            # logger.info(f"📌 Signal: sale status - Sale ID: {sale.status}")
             check_projects_and_update_sale_tag.delay(sale.id, sale.status)
 
 
 @receiver(post_save, sender=Sale)
-def sale_changed(sender, instance, **kwargs):
-    # logger.info(f"📌 Signal: Venda salva - Sale ID: {instance.id}")
-    # logger.info(f"📌 Signal: sale status - Sale ID: {instance.status}")
-    check_projects_and_update_sale_tag.delay(instance.id, instance.status)
+def handle_sale_post_save(sender, instance, created, **kwargs):
+    def on_commit_all_tasks():
+        check_projects_and_update_sale_tag.delay(instance.id, instance.status)
+        
+        if not instance.signature_date:
+            return
 
+        try:
+            modelo = ProcessBase.objects.get(id=1)
+        except ProcessBase.DoesNotExist:
+            return
+
+        projects = Project.objects.filter(sale=instance)
+        if not projects.exists():
+            return
+
+        content_type = ContentType.objects.get_for_model(Project)
+        project_ids = list(projects.values_list('id', flat=True))
+        existing_processes = set(
+            Process.objects.filter(
+                content_type=content_type,
+                object_id__in=project_ids
+            ).values_list('object_id', flat=True)
+        )
+
+        for project in projects:
+            if project.id in existing_processes:
+                continue
+            
+            create_process(
+                process_base_id=modelo.id,
+                content_type_id=content_type.id,
+                object_id=project.id,
+                nome=f"Processo {modelo.name} {instance.contract_number} - {instance.customer.complete_name}",
+                descricao=modelo.description,
+                user_id=instance.customer.id if instance.customer else None,
+                completion_date=instance.signature_date.isoformat(),
+            )
+
+    transaction.on_commit(on_commit_all_tasks)
+    
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):

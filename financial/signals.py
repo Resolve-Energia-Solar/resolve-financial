@@ -37,7 +37,6 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
     
     if not created and instance.old_total_value is not None:
         if instance.old_total_value != instance.total_value or instance.old_transfer_percentage != instance.transfer_percentage:
-            # Recalcula o valor total esperado para cada parcela
             transfer_percentage = instance.transfer_percentage if instance.transfer_percentage else instance.branch.transfer_percentage
             franchise_installments = instance.franchise_installments.all()
             
@@ -56,7 +55,6 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
                     3
                 )
 
-                # Ajustar parcelas proporcionalmente
                 num_installments = franchise_installments.count()
                 installment_value = round(total_value / num_installments, 6)
 
@@ -88,7 +86,6 @@ def request_responsible_approval(sender, instance, created, **kwargs):
             
             if instance.responsible:
                 try:
-                    # Enviar notificação para o responsável
                     url = FINANCIAL_RECORD_APPROVAL_URL
                     body = {
                         'id': instance.id,
@@ -104,6 +101,11 @@ def request_responsible_approval(sender, instance, created, **kwargs):
                     }
                     response = requests.post(url, json=body)
                     response.raise_for_status()
+                    
+                    integration_code = response.headers.get('x-ms-workflow-run-id')
+                    if integration_code:
+                        instance.responsible_request_integration_code = integration_code
+                        instance.save()
                 except requests.RequestException as e:
                     logger.error(f"Erro ao solicitar aprovação: {e}")
                     raise ValidationError(f"Erro ao solicitar aprovação: {e}")
