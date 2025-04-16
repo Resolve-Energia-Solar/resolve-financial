@@ -68,6 +68,7 @@ class AnswerViewSet(BaseModelViewSet):
 
 
 class ScheduleViewSet(BaseModelViewSet):
+    queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
     def get_queryset(self):

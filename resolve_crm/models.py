@@ -9,12 +9,9 @@ from core.models import Attachment, DocumentType
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
-from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
-from django.core.exceptions import ValidationError
 from django.db import transaction, models
-from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
 
@@ -645,7 +642,7 @@ class Project(models.Model):
     def content_type_id(self):
         return ContentType.objects.get_for_model(self).id
     
-    @property
+    @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
@@ -754,6 +751,11 @@ class Project(models.Model):
     #                 })
     #         return missing_documents
     #     return None
+    
+    @cached_property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
     
     @cached_property
     def documents_under_analysis(self):
