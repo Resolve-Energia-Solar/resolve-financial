@@ -242,6 +242,7 @@ class ProjectViewSet(BaseModelViewSet):
             'attachments',
             'attachments__document_type',
             'units',
+            'requests_energy_company',
             Prefetch(
                 'sale__attachments',
                 queryset=Attachment.objects.filter(status='A').only('id', 'document_type_id', 'status', 'object_id'),
@@ -265,6 +266,11 @@ class ProjectViewSet(BaseModelViewSet):
         trt_status = request.query_params.get('trt_status')
         new_contract_number = request.query_params.get('new_contract_number')
         supply_adquance = request.query_params.get('supply_adquance')
+        request_energy_company_type = request.query_params.get('request_energy_company_type__in')
+        
+        if request_energy_company_type:
+            request_energy_company_type = request_energy_company_type.split(',')
+            queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type)
         
         if q:
             queryset = queryset.filter(Q(sale__customer__complete_name__icontains=q) | Q(sale__customer__first_document__icontains=q) | Q(project_number__icontains=q))
