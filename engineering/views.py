@@ -150,9 +150,9 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
                 # Prepare the data for serialization
                 data = {
                     "material_class": material_class,
-                    "material_id": id_material,
+                    "material": id_material,
                     "amount": amount,
-                    "project_id": project_id
+                    "project": project_id
                 }
 
                 # Validate and save using the serializer
