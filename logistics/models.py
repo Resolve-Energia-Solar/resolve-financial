@@ -82,7 +82,6 @@ class Product(models.Model):
     
     @cached_property
     def product_material(self):
-        # Isso retorna o queryset do related manager definido no ProductMaterials
         return self.__class__.objects.get(pk=self.pk).product_material.all()
 
     def __str__(self):
