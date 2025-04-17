@@ -1,3 +1,4 @@
+import time
 from django.forms import ValidationError
 from core.serializers import AttachmentSerializer
 from financial.models import FranchiseInstallment
@@ -9,6 +10,10 @@ from rest_framework.serializers import SerializerMethodField, ListField, DictFie
 import re
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
+from django.db import transaction
+from django.db.models import Sum, F
+
+import logging
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -47,8 +52,11 @@ class MarketingCampaignSerializer(BaseSerializer):
 
 
 class SaleSerializer(BaseSerializer):
-    products_ids = serializers.ListField(
-    child=serializers.IntegerField(), write_only=True, required=False
+    products_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
     )
 
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
@@ -75,14 +83,12 @@ class SaleSerializer(BaseSerializer):
         attachments = getattr(obj, 'attachments_under_analysis', [])
         return AttachmentSerializer(attachments, many=True, context=self.context).data
 
-
     def get_is_released_to_engineering(self, obj):
         return any(
             getattr(p, 'is_released_to_engineering', False)
             for p in obj.projects.all()
         )
-
-    
+ 
     def get_signature_status(self, obj):
         submissions = list(obj.contract_submissions.all())
         statuses = {s.status for s in submissions}
@@ -98,7 +104,6 @@ class SaleSerializer(BaseSerializer):
                 return 'Recusado'
         return 'Assinado'
   
-    
     def get_final_service_opinion(self, obj):
         opinions = [
             {
@@ -136,89 +141,123 @@ class SaleSerializer(BaseSerializer):
         
         return data
     
+    
     def create(self, validated_data):
-        products = validated_data.pop('products_ids', [])
+        products = validated_data.pop('products_ids', None)
         commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
-        sale = super().create(validated_data)
+        cancellation_reasons = validated_data.pop('cancellation_reasons', None)
 
-        print('criando venda com produtos:', products)
-        if commercial_proposal_id:
-            self._handle_products(sale, commercial_proposal_id=commercial_proposal_id)
-        else:
-            self._handle_products(sale, products_ids=products)
-            
+        try:
+            sale = super().create(validated_data)
+        except Exception as e:
+            logging.error(f"❌ erro ao criar Sale: {e}")
+            raise
+
+        try:
+            with transaction.atomic():
+                self._handle_products(
+                    sale,
+                    products=products,
+                    commercial_proposal_id=commercial_proposal_id
+                )
+                if cancellation_reasons is not None:
+                    sale.cancellation_reasons.set(cancellation_reasons)
+        except Exception as e:
+            print("❌ erro em _handle_products ou M2M:", e)
+            raise
+
         return sale
 
     def update(self, instance, validated_data):
-        request = self.context.get('request')
-        print('permissao:', instance.user_can_edit(request.user))
-        if not instance.user_can_edit(request.user):
-            raise PermissionDenied("Você não editar vendas finalizadas")
-        
+        request_user = self.context['request'].user
+        if not instance.user_can_edit(request_user):
+            raise PermissionDenied("Você não pode editar vendas finalizadas.")
+
         cancellation_reasons = validated_data.pop('cancellation_reasons', None)
+
+        # atualiza atributos simples
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        instance.save()
-
-        if cancellation_reasons is not None:
-            instance.cancellation_reasons.set(cancellation_reasons)
+        with transaction.atomic():
+            instance.save()
+            if cancellation_reasons is not None:
+                instance.cancellation_reasons.set(cancellation_reasons)
 
         return instance
 
-    def _handle_products(self, sale, products_ids=None, commercial_proposal_id=None):
+    from decimal import Decimal
+
+
+    def _handle_products(self, sale, products=None, commercial_proposal_id=None):
         products_list = []
 
-        if commercial_proposal_id:
+        if commercial_proposal_id is not None:
             try:
-                commercial_proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
-                sale_products = SaleProduct.objects.filter(commercial_proposal=commercial_proposal)
-
-                if not sale_products.exists():
-                    raise ValidationError({"detail": "Proposta comercial não possui produtos associados."})
-
-                if sale_products.filter(sale__isnull=False).exists():
-                    raise ValidationError({"detail": "Proposta comercial já vinculada a uma venda."})
-
-                for sale_product in sale_products:
-                    sale_product.sale = sale
-                    sale_product.save()
-                    products_list.append(sale_product)
-
+                proposal = ComercialProposal.objects.get(id=commercial_proposal_id)
             except ComercialProposal.DoesNotExist:
                 raise ValidationError({"detail": "Proposta comercial não encontrada."})
-        
-        elif products_ids:
-            validated_products = self.validate_products_ids(products_ids)
-            print(validated_products)
-            sale_products = [
+
+            sale_products_qs = SaleProduct.objects.filter(
+                commercial_proposal=proposal,
+                sale__isnull=True
+            )
+            if not sale_products_qs.exists():
+                raise ValidationError({"detail": "Proposta comercial não possui produtos disponíveis."})
+
+            sale_products_qs.update(sale=sale)
+            products_list = list(sale_products_qs)
+
+        elif products:
+            new_sale_products = [
                 SaleProduct(
                     sale=sale,
-                    product=product,
-                    value=product.cost_value or 0,
+                    product=prod,
+                    value=prod.product_value or Decimal('0'),
+                    reference_value=prod.reference_value or prod.product_value or Decimal('0'),
+                    cost_value=prod.cost_value or Decimal('0'),
                     amount=1
                 )
-                for product in validated_products
+                for prod in products
             ]
-            SaleProduct.objects.bulk_create(sale_products)
-            products_list.extend(sale_products)
-                
+            SaleProduct.objects.bulk_create(new_sale_products)
+            products_list = new_sale_products
 
-        self.create_projects(sale, products_list)
+        project_instances = [
+            Project(sale=sale, product=sp.product)
+            for sp in products_list
+        ]
+        if project_instances:
+            Project.objects.bulk_create(project_instances)
 
-        if sale.total_value is None or sale.total_value == 0:
-            total_value = self.calculate_total_value(products_list)
-            sale.total_value = total_value
-            sale.save()
+        aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(
+            total=Sum(F('value') * F('amount'))
+        )['total'] or Decimal('0')
+        sale.total_value = aggregate_total
+        sale.save(update_fields=['total_value'])
 
-        if sale.sale_products.exists():
-            total_installment_value = self.calculate_total_installment_value(sale, sale.sale_products.all())
-            if sale.total_value:
-                FranchiseInstallment.objects.create(
-                    sale=sale,
-                    installment_value=total_installment_value,
+        aggregate_reference = SaleProduct.objects.filter(sale=sale).aggregate(
+            reference_sum=Sum('reference_value')
+        )['reference_sum'] or Decimal('0')
+        difference = sale.total_value - aggregate_reference
+
+        tp = sale.transfer_percentage
+        if tp is None:
+            tp = sale.branch.transfer_percentage or Decimal('0')
+        tp = Decimal(str(tp))
+
+        if difference <= 0:
+            installment_value = aggregate_reference * (tp / Decimal('100')) - difference
+        else:
+            margin_seven = difference * Decimal('0.07')
+            installment_value = (aggregate_reference * (tp / Decimal('100'))) + difference - margin_seven
+
+        FranchiseInstallment.objects.create(
+            sale=sale,
+            installment_value=installment_value
         )
-
+    
+        
     def create_projects(self, sale, products):
         projects = [
             Project(sale=sale, product=sp.product)
@@ -246,23 +285,23 @@ class SaleSerializer(BaseSerializer):
         return total_value
 
     def calculate_total_installment_value(self, sale, products): 
-        from decimal import Decimal
+            from decimal import Decimal
 
-        reference_value = sum(Decimal(p.reference_value or 0) for p in products)
-        difference_value = Decimal(sale.total_value) - reference_value
+            reference_value = sum(Decimal(p.reference_value or 0) for p in products)
+            difference_value = Decimal(sale.total_value) - reference_value
 
-        transfer_percentage = sale.transfer_percentage
-        if transfer_percentage is None:
-            transfer_percentage = sale.branch.transfer_percentage or 0
-        transfer_percentage = Decimal(transfer_percentage)
+            transfer_percentage = sale.transfer_percentage
+            if transfer_percentage is None:
+                transfer_percentage = sale.branch.transfer_percentage or 0
+            transfer_percentage = Decimal(transfer_percentage)
 
-        if difference_value <= 0:
-            total_value = reference_value * (transfer_percentage / Decimal("100")) - difference_value
-        else:
-            margin_7 = difference_value * Decimal("0.07")
-            total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
+            if difference_value <= 0:
+                total_value = reference_value * (transfer_percentage / Decimal("100")) - difference_value
+            else:
+                margin_7 = difference_value * Decimal("0.07")
+                total_value = (reference_value * (transfer_percentage / Decimal("100"))) + difference_value - margin_7
 
-        return total_value
+            return total_value
 
 
 class ProjectSerializer(BaseSerializer):
