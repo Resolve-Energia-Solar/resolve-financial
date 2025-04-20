@@ -249,19 +249,21 @@ class ScheduleSerializer(BaseSerializer):
         schedule_date = validated_data.get("schedule_date")
         schedule_start_time = validated_data.get("schedule_start_time")
         schedule_end_time = validated_data.get("schedule_end_time")
+        service = validated_data.get("service")
         address = validated_data.get("address")
+        
+        if service.name == "Serviço de Vistoria":
+            disponibility = self.validate_agent_availability(
+                schedule_agent, schedule_date, schedule_start_time, schedule_end_time
+            )
 
-        disponibility = self.validate_agent_availability(
-            schedule_agent, schedule_date, schedule_start_time, schedule_end_time
-        )
+            existing_schedules = self.check_schedule_conflicts(
+                schedule_agent, schedule_date, schedule_start_time, schedule_end_time, disponibility=disponibility
+            )
 
-        existing_schedules = self.check_schedule_conflicts(
-            schedule_agent, schedule_date, schedule_start_time, schedule_end_time, disponibility=disponibility
-        )
-
-        self.find_available_slots(
-            disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
-        )
+            self.find_available_slots(
+                disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
+            )
 
         return super().create(validated_data)
 
@@ -271,18 +273,20 @@ class ScheduleSerializer(BaseSerializer):
         schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
         schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
         address = validated_data.get("address", instance.address)
+        service = validated_data.get("service", instance.service)
 
-        disponibility = self.validate_agent_availability(
-            schedule_agent, schedule_date, schedule_start_time, schedule_end_time
-        )
+        if service.name == "Serviço de Vistoria":
+            disponibility = self.validate_agent_availability(
+                schedule_agent, schedule_date, schedule_start_time, schedule_end_time
+            )
 
-        existing_schedules = self.check_schedule_conflicts(
-            schedule_agent, schedule_date, schedule_start_time, schedule_end_time, instance, disponibility=disponibility
-        )
+            existing_schedules = self.check_schedule_conflicts(
+                schedule_agent, schedule_date, schedule_start_time, schedule_end_time, instance, disponibility=disponibility
+            )
 
-        self.find_available_slots(
-            disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
-        )
+            self.find_available_slots(
+                disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
+            )
 
         return super().update(instance, validated_data)
 
