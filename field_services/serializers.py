@@ -62,6 +62,32 @@ class ScheduleSerializer(BaseSerializer):
                     "end": disponibility.end_time.strftime("%H:%M")
                 }]
             })
+
+        # Check for blocked time slots
+        blocked_time = BlockTimeAgent.objects.filter(
+            agent=schedule_agent,
+            start_date__lte=schedule_date,
+            end_date__gte=schedule_date,
+            is_deleted=False
+        ).filter(
+            models.Q(
+                start_time__lt=schedule_end_time,
+                end_time__gt=schedule_start_time
+            )
+        ).first()
+
+        if blocked_time:
+            raise serializers.ValidationError({
+                "message": f"O agente possui um bloqueio de horário neste período.",
+                "available_time": [{
+                    "start": disponibility.start_time.strftime("%H:%M"),
+                    "end": blocked_time.start_time.strftime("%H:%M")
+                }, {
+                    "start": blocked_time.end_time.strftime("%H:%M"),
+                    "end": disponibility.end_time.strftime("%H:%M")
+                }]
+            })
+
         return disponibility
 
     def check_schedule_conflicts(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time, instance=None, disponibility=None):
