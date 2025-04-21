@@ -138,18 +138,22 @@ class ScheduleSerializer(BaseSerializer):
         
         try:
             if position > 0:
-                origin = f"{all_schedules[position-1].address.latitude},{all_schedules[position-1].address.longitude}"
-                destination = f"{address.latitude},{address.longitude}"
-                route = gmaps.directions(origin, destination, mode="driving")
-                travel_time_previous = int(route[0]['legs'][0]['duration']['value'] / 60)
-                total_travel_time += travel_time_previous
+                previous_address = all_schedules[position-1].address
+                if previous_address.latitude and previous_address.longitude and address.latitude and address.longitude:
+                    origin = f"{previous_address.latitude},{previous_address.longitude}"
+                    destination = f"{address.latitude},{address.longitude}"
+                    route = gmaps.directions(origin, destination, mode="driving")
+                    travel_time_previous = int(route[0]['legs'][0]['duration']['value'] / 60)
+                    total_travel_time += travel_time_previous
             
             if position < len(all_schedules):
-                origin = f"{address.latitude},{address.longitude}"
-                destination = f"{all_schedules[position].address.latitude},{all_schedules[position].address.longitude}"
-                route = gmaps.directions(origin, destination, mode="driving")
-                travel_time_next = int(route[0]['legs'][0]['duration']['value'] / 60)
-                total_travel_time += travel_time_next
+                next_address = all_schedules[position].address
+                if address.latitude and address.longitude and next_address.latitude and next_address.longitude:
+                    origin = f"{address.latitude},{address.longitude}"
+                    destination = f"{next_address.latitude},{next_address.longitude}"
+                    route = gmaps.directions(origin, destination, mode="driving")
+                    travel_time_next = int(route[0]['legs'][0]['duration']['value'] / 60)
+                    total_travel_time += travel_time_next
         except Exception as e:
             print("error calculating travel times: ", e)
             raise serializers.ValidationError({
