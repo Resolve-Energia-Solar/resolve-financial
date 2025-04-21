@@ -250,13 +250,14 @@ class ScheduleSerializer(BaseSerializer):
 
     def create(self, validated_data):
         schedule_agent = validated_data.get("schedule_agent")
-        schedule_date = validated_data.get("schedule_date")
-        schedule_start_time = validated_data.get("schedule_start_time")
-        schedule_end_time = validated_data.get("schedule_end_time")
         service = validated_data.get("service")
-        address = validated_data.get("address")
         
-        if service.name == "Serviço de Vistoria":
+        if service.name == "Serviço de Vistoria" and schedule_agent:
+            schedule_date = validated_data.get("schedule_date")
+            schedule_start_time = validated_data.get("schedule_start_time")
+            schedule_end_time = validated_data.get("schedule_end_time")
+            address = validated_data.get("address")
+
             disponibility = self.validate_agent_availability(
                 schedule_agent, schedule_date, schedule_start_time, schedule_end_time
             )
@@ -273,13 +274,14 @@ class ScheduleSerializer(BaseSerializer):
 
     def update(self, instance, validated_data):
         schedule_agent = validated_data.get("schedule_agent", instance.schedule_agent)
-        schedule_date = validated_data.get("schedule_date", instance.schedule_date)
-        schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
-        schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
-        address = validated_data.get("address", instance.address)
         service = validated_data.get("service", instance.service)
 
-        if service.name == "Serviço de Vistoria":
+        if service.name == "Serviço de Vistoria" and schedule_agent:
+            schedule_date = validated_data.get("schedule_date", instance.schedule_date)
+            schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
+            schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
+            address = validated_data.get("address", instance.address)
+
             disponibility = self.validate_agent_availability(
                 schedule_agent, schedule_date, schedule_start_time, schedule_end_time
             )
