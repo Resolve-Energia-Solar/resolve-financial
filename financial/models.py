@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.core.validators import validate_email
 
 
 class Financier(models.Model):
@@ -450,3 +451,78 @@ class FinancialRecord(models.Model):
             ("view_all_department_payable_financial_records", "Can view all payable financial_records from the department"),
             ("view_financialrecord_attachment", "Can view financial record attachment"),
         ]
+
+
+class BankDetails(models.Model):
+    """
+    Modelo para armazenar os detalhes bancários de um cliente ou fornecedor.
+    """
+    ACCOUNT_TYPE_CHOICES = [
+        ("C", "Corrente"),
+        ("P", "Poupança"),
+        ("X", "PIX"),
+    ]
+
+    PIX_KEY_TYPE_CHOICES = [
+        ("CPF", "CPF"),
+        ("CNPJ", "CNPJ"),
+        ("EMAIL", "E-mail"),
+        ("PHONE", "Celular/Telefone"),
+        ("RANDOM", "Chave Aleatória"),
+    ]
+
+    client_supplier_code = models.BigIntegerField("Código do Cliente/Fornecedor")
+    financial_instituition = models.CharField("Instituição Financeira", max_length=100, blank=True, null=True)
+    agency_number = models.CharField("Número da Agência", max_length=20, blank=True, null=True)
+    account_number = models.CharField("Número da Conta", max_length=20, blank=True, null=True)
+    account_type = models.CharField(
+        "Tipo de Conta",
+        max_length=1,
+        choices=ACCOUNT_TYPE_CHOICES,
+    )
+    pix_key_type = models.CharField(
+        "Tipo de Chave PIX",
+        max_length=10,
+        choices=PIX_KEY_TYPE_CHOICES,
+        blank=True,
+        null=True,
+    )
+    pix_key = models.CharField("Chave PIX", max_length=100, blank=True, null=True)
+    history = HistoricalRecords()
+
+    def clean(self):
+        if self.account_type == "X":
+            if not self.pix_key or not self.pix_key_type:
+                raise ValidationError("A chave PIX e o tipo são obrigatórios para contas do tipo PIX.")
+            if self.agency_number or self.account_number:
+                raise ValidationError("Agência e conta não devem ser preenchidas para contas do tipo PIX.")
+            if self.pix_key_type == "CPF":
+                if not self.pix_key.isdigit() or len(self.pix_key) != 11:
+                    raise ValidationError("A chave PIX do tipo CPF deve conter 11 dígitos numéricos.")
+            elif self.pix_key_type == "CNPJ":
+                if not self.pix_key.isdigit() or len(self.pix_key) != 14:
+                    raise ValidationError("A chave PIX do tipo CNPJ deve conter 14 dígitos numéricos.")
+            elif self.pix_key_type == "EMAIL":
+                try:
+                    validate_email(self.pix_key)
+                except ValidationError:
+                    raise ValidationError("A chave PIX do tipo E-mail deve ser um e-mail válido.")
+            elif self.pix_key_type == "PHONE":
+                if not self.pix_key.isdigit() or len(self.pix_key) != 11:
+                    raise ValidationError("A chave PIX do tipo Celular/Telefone deve conter 11 dígitos numéricos, ex: 11999999999.")
+            elif self.pix_key_type == "RANDOM":
+                if len(self.pix_key) != 32:
+                    raise ValidationError("A chave PIX do tipo Aleatória deve conter 32 caracteres.")
+        else:
+            if not (self.financial_instituition and self.agency_number and self.account_number):
+                raise ValidationError("Instituição, agência e conta são obrigatórios para contas Corrente ou Poupança.")
+
+    def __str__(self):
+        if self.account_type == "X":
+            return f"PIX ({self.get_pix_key_type_display()}): {self.pix_key}"
+        return f"{self.financial_instituition} Ag: {self.agency_number} Conta: {self.account_number}"
+
+    class Meta:
+        verbose_name = "Dados Bancários"
+        verbose_name_plural = "Dados Bancários"
+        ordering = ["financial_instituition"]
