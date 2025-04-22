@@ -231,3 +231,6 @@ class BankDetailsAdmin(admin.ModelAdmin):
     )
     list_filter = ("account_type", "pix_key_type", "financial_instituition")
     ordering = ("financial_instituition",)
+
+    class Media:
+        js = ("admin/js/autocomplete_financial_instituition.js",)
