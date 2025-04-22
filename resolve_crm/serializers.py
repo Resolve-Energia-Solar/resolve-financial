@@ -328,8 +328,7 @@ class ProjectSerializer(BaseSerializer):
 
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis[:10]
-        return [{"id": d.id, "name": d.document_type.name, "status": d.status} for d in documents]
-
+        return [{"id": d.id, "name": d.document_type.name if d.document_type else None, "status": d.status} for d in documents]
 
     def get_access_opnion(self, obj):
         return obj.access_opnion
