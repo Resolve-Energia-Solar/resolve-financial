@@ -161,8 +161,18 @@ class FinancialRecordAdmin(admin.ModelAdmin):
         "status",
         "responsible_status",
         "payment_status",
+        "is_receivable",
+        "payment_method",
         "due_date",
+        "service_date",
         "created_at",
+        "paid_at",
+        "category_name",
+        "department_name",
+        "client_supplier_name",
+        "requesting_department",
+        "requester",
+        "responsible",
         ErrorRequestFilter,
     )
     ordering = ("-created_at",)
