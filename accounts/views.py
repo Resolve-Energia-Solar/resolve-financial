@@ -102,6 +102,11 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
+from django.utils.dateparse import parse_time
+from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Count, Value
+from django.db.models.functions import Coalesce
+
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -110,10 +115,9 @@ class UserViewSet(BaseModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        queryset = queryset.select_related(
-            'employee',
-        ).all()
+        queryset = queryset.select_related('employee').all()
         
+        # Parâmetros de filtro
         name = self.request.query_params.get('name')
         user_type = self.request.query_params.get('type')
         email = self.request.query_params.get('email')
@@ -125,6 +129,7 @@ class UserViewSet(BaseModelViewSet):
         date = self.request.query_params.get('date')
         start_time = self.request.query_params.get('start_time')
         end_time = self.request.query_params.get('end_time')
+        order_by_schedule_count = self.request.query_params.get('order_by_schedule_count')
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -146,9 +151,6 @@ class UserViewSet(BaseModelViewSet):
             )
 
         if date and start_time and end_time:
-            from django.db.models import OuterRef, Subquery, Count, Value
-            from django.db.models.functions import Coalesce
-
             blocked_agents = BlockTimeAgent.objects.filter(
                 start_date__lte=date,
                 end_date__gte=date,
@@ -173,6 +175,7 @@ class UserViewSet(BaseModelViewSet):
             ).values_list('schedule_agent_id', flat=True)
             queryset = queryset.exclude(id__in=overlapping_schedules)
 
+        if date and category and order_by_schedule_count:
             daily_schedules_subquery = Schedule.objects.filter(
                 schedule_agent=OuterRef('pk'),
                 schedule_date=date
@@ -181,6 +184,12 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.annotate(
                 daily_schedules_count=Coalesce(Subquery(daily_schedules_subquery), Value(0))
             )
+
+            if order_by_schedule_count == 'asc':
+                queryset = queryset.order_by('daily_schedules_count')
+            elif order_by_schedule_count == 'desc':
+                queryset = queryset.order_by('-daily_schedules_count')
+
         return queryset
 
 
