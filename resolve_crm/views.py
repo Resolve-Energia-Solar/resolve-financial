@@ -1,45 +1,39 @@
-from datetime import datetime
-from datetime import datetime
-import logging
-from django.shortcuts import redirect
 import re
-from django.db import transaction
+import logging
+from datetime import datetime
+from django.shortcuts import redirect
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from django.utils import formats
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
 from rest_framework.pagination import PageNumberPagination
-from accounts.models import PhoneNumber, User, UserType
+from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
+from engineering.models import Units
 from logistics.models import Product, ProductMaterials, SaleProduct
-from logistics.serializers import ProductSerializer
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum, Prefetch
 from django.db.models import Exists, OuterRef, Q, F
+from django.db import transaction
 from django.contrib import messages
 from django.http import HttpResponse
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny
-
-from django.db import transaction
-from django.db.models import Count, Sum, Q
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from .models import Sale
-from .serializers import SaleSerializer, AttachmentSerializer
 from django.core.cache import cache
 from hashlib import md5
 from rest_framework.decorators import api_view
 from django.contrib.contenttypes.models import ContentType
 from core.task import create_process_async
 from core.models import ProcessBase, Process
+from .serializers import *
+from .models import *
 
 
 logger = logging.getLogger(__name__)
@@ -128,6 +122,7 @@ class SaleViewSet(BaseModelViewSet):
 
         return qs.filter(stakeholder_filter)
 
+
     def apply_filters(self, queryset, query_params):
         if query_params.get('documents_under_analysis') == 'true':
             queryset = queryset.filter(attachments__document_type__required=True, attachments__status='EA')
@@ -154,12 +149,17 @@ class SaleViewSet(BaseModelViewSet):
 
         if invoice_status := query_params.get('invoice_status'):
             queryset = queryset.filter(payments__invoice_status__in=invoice_status.split(','))
+            
+        if query_params.get('payments_types__in'):
+            queryset = queryset.filter(payments__payment_type__in=query_params.get('payments_types__in').split(','))
 
         return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_filters(queryset, request.query_params)
+
+        queryset = queryset.distinct()
 
         indicators = queryset.aggregate(
             pending_count=Count('id', filter=Q(status="P")),
@@ -242,11 +242,17 @@ class ProjectViewSet(BaseModelViewSet):
             'attachments',
             'attachments__document_type',
             'units',
+            'requests_energy_company',
             Prefetch(
                 'sale__attachments',
                 queryset=Attachment.objects.filter(status='A').only('id', 'document_type_id', 'status', 'object_id'),
                 to_attr='approved_attachments'
-            )
+            ),
+            Prefetch(
+                'units',
+                queryset=Units.objects.filter(main_unit=True).select_related('address'),
+                to_attr='main_unit_prefetched'
+            ),
         )
 
         return queryset.order_by('-created_at')
@@ -265,6 +271,11 @@ class ProjectViewSet(BaseModelViewSet):
         trt_status = request.query_params.get('trt_status')
         new_contract_number = request.query_params.get('new_contract_number')
         supply_adquance = request.query_params.get('supply_adquance')
+        request_energy_company_type = request.query_params.get('request_energy_company_type__in')
+        
+        if request_energy_company_type:
+            request_energy_company_type = request_energy_company_type.split(',')
+            queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type)
         
         if q:
             queryset = queryset.filter(Q(sale__customer__complete_name__icontains=q) | Q(sale__customer__first_document__icontains=q) | Q(project_number__icontains=q))
@@ -422,7 +433,6 @@ class ProjectViewSet(BaseModelViewSet):
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
             return self.get_paginated_response(serialized_data)
-            return self.get_paginated_response(serialized_data)
 
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
@@ -467,6 +477,8 @@ class ProjectViewSet(BaseModelViewSet):
         ) & ~Q(status__in=['CO', 'D']) & Q(
             Q(units__bill_file__isnull=False) | Q(units__new_contract_number=True)
         )
+        
+        queryset = queryset.distinct()
 
         raw_indicators = queryset.aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
@@ -492,6 +504,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         cache.set(cache_key, raw_indicators, 60)
         return Response({"indicators": raw_indicators})
+
 
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
@@ -860,10 +873,6 @@ class GeneratePreSaleView(APIView):
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _calculate_product_value(self, product):
-        """
-        Calcula o valor do produto somando o valor base e o custo agregado dos materiais,
-        utilizando funções de agregação do Django para otimizar a consulta.
-        """
         base_value = product.product_value
         aggregation = ProductMaterials.objects.filter(product=product, is_deleted=False).aggregate(
             total_cost=Sum(F('material__price') * F('amount'))
@@ -872,9 +881,6 @@ class GeneratePreSaleView(APIView):
         return base_value + materials_cost
 
     def _get_sale_related_ids(self, lead):
-        """
-        Recupera os IDs do vendedor, supervisor e gerente a partir do lead.
-        """
         try:
             seller = lead.seller
             seller_id = seller.id

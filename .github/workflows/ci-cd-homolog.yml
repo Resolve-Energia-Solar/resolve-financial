@@ -1,16 +1,16 @@
-name: CI/CD Pipeline for RESOLVE-ERP-API Update Backend env v5
+name: CI/CD Pipeline for RESOLVE-ERP-API Homolog Backend  v1
   
 on:
   push:
     branches:
-      - main
+      - approval
 
 env:
-  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-api
+  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-api-homolog
   AKS_CLUSTER_NAME: Resolve-AKS-Web
   AKS_RESOURCE_GROUP: Resolve
-  NAMESPACE: resolve-erp
-  DEPLOYMENT_NAME: resolve-erp-api
+  NAMESPACE: resolve-erp-api-homolog
+  DEPLOYMENT_NAME: resolve-erp-api-homolog
 
 jobs:
   build-and-deploy:
@@ -65,7 +65,7 @@ jobs:
           echo "OMIE_API_URL=${{ vars.OMIE_API_URL }}" >> .env
           echo "OMIE_ACESSKEY=${{ vars.OMIE_ACESSKEY }}" >> .env
           echo "OMIE_ACESSTOKEN=${{ vars.OMIE_ACESSTOKEN }}" >> .env
-          echo "CANCEL_FINANCIAL_RECORD_APPROVAL_URL=${{ vars.CANCEL_FINANCIAL_RECORD_APPROVAL_URL}}" >> .env 
+          
           # Criar google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
 
@@ -90,5 +90,5 @@ jobs:
       # 7. Atualizar Deployment no AKS
       - name: Update Deployment on AKS
         run: |
-          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
+          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api-homolog="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
           kubectl rollout status deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"

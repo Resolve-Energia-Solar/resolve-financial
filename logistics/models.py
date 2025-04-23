@@ -43,6 +43,9 @@ class ProductMaterials(models.Model):
     amount = models.DecimalField("Quantidade", max_digits=20, decimal_places=6, default=0, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
+    
+    history = HistoricalRecords()
+
 
     def __str__(self):
         return f"product: {self.product}, Material: {self.material}"
@@ -79,7 +82,6 @@ class Product(models.Model):
     
     @cached_property
     def product_material(self):
-        # Isso retorna o queryset do related manager definido no ProductMaterials
         return self.__class__.objects.get(pk=self.pk).product_material.all()
 
     def __str__(self):
@@ -100,6 +102,9 @@ class ProjectMaterials(models.Model):
     serial_number = models.CharField("Número de Série", max_length=50, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField(verbose_name="Criado em", auto_now_add=True)
+    
+    history = HistoricalRecords()
+
 
     def __str__(self):
         return f"Projeto: {self.project}, Material: {self.material}, Quantidade: {self.amount}"
@@ -124,6 +129,8 @@ class SaleProduct(models.Model):
     
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
+    
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"Sale: {self.sale}, Product: {self.product}"

@@ -9,12 +9,9 @@ from core.models import Attachment, DocumentType
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
 from accounts.models import Branch
-from financial.models import PaymentInstallment
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
-from django.core.exceptions import ValidationError
 from django.db import transaction, models
-from django.db.models import Q
 import datetime
 from django.utils.functional import cached_property
 
@@ -208,25 +205,20 @@ class Lead(models.Model):
         return self.name
 
     def save(self, current_user=None, *args, **kwargs):
-    # Se for uma atualização (o objeto já tem um ID)
         if self.pk:
             old_lead = Lead.objects.get(pk=self.pk)
             if old_lead.column != self.column:
                 self.moved_at = now()
         else:
-            # Se for uma criação (não tem um ID), definir moved_at
             self.moved_at = now()
 
-        # Salvar o objeto antes de associar o current_user ou outros campos
         super().save(*args, **kwargs)
 
-        # Atualizar os campos relacionados ao usuário
         if current_user is not None:
             if not self.id:
                 self.created_by = current_user
             self.updated_by = current_user
-            super().save(*args, **kwargs)  # Salvar novamente para atualizar os campos de auditoria
-
+            super().save(*args, **kwargs)
 
         
     def get_absolute_url(self):
@@ -432,7 +424,6 @@ class Sale(models.Model):
 
 
     def user_can_edit(self, user):
-        print(f"User: {user}, Sale Status: {self.status}, Is Pre Sale: {self.is_pre_sale}")
         if self.is_pre_sale or self.status in ['P', 'EA']:
             return True
         return user.has_perm('resolve_crm.can_change_fineshed_sale')
@@ -651,7 +642,7 @@ class Project(models.Model):
     def content_type_id(self):
         return ContentType.objects.get_for_model(self).id
     
-    @property
+    @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
@@ -760,6 +751,11 @@ class Project(models.Model):
     #                 })
     #         return missing_documents
     #     return None
+    
+    @cached_property
+    def address(self):
+        main_unit = self.units.filter(main_unit=True).first()
+        return main_unit.address if main_unit else None
     
     @cached_property
     def documents_under_analysis(self):

@@ -5,6 +5,7 @@ import requests
 from django.utils import timezone
 from dotenv import load_dotenv
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -12,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import User
+from accounts.models import User, UserType
 from api.views import BaseModelViewSet
 from core.serializers import AttachmentSerializer
 from engineering.models import RequestsEnergyCompany
@@ -72,6 +73,17 @@ class CustomerLoginView(APIView):
         # Gerar e retornar os tokens JWT
         refresh = RefreshToken.for_user(user)
         
+        # Adicionar o usuário ao grupo "Cliente" e atribuir o tipo de usuário "Cliente"
+        # Isso deve ser feito apenas uma vez, então verifique se o usuário já está no grupo
+        if not user.groups.filter(name="Cliente").exists():
+            customer_group, _ = Group.objects.get_or_create(name="Cliente")
+            user.groups.add(customer_group)
+            customer_type, _ = UserType.objects.get_or_create(name="Cliente")
+            user.user_types.add(customer_type)
+        else:
+            # Se o usuário já estiver no grupo, não faça nada
+            pass
+
         # Atualizar o último login do usuário
         user.last_login = timezone.now()
         user.save()
