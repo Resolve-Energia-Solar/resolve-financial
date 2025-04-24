@@ -1,6 +1,12 @@
 from django.contrib.auth import get_user_model
+from rest_framework.authentication import (
+    TokenAuthentication,
+    BasicAuthentication,
+    SessionAuthentication,
+)
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from api.views import BaseModelViewSet
 from customer_service.models import CustomerService
@@ -12,6 +18,12 @@ User = get_user_model()
 class CustomerServiceViewSet(BaseModelViewSet):
     serializer_class = CustomerServiceSerializer
     queryset = CustomerService.objects.all()
+    authentication_classes = [
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+        JWTAuthentication,
+    ]
 
     def create(self, request, *args, **kwargs):
         document = request.data.get("document")
