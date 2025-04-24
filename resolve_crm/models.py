@@ -855,7 +855,7 @@ class Project(models.Model):
     @cached_property
     def new_contact_number_status(self):
         main_unit = self.units.filter(main_unit=True).first()
-        if main_unit and not main_unit.new_contract_number:
+        if (main_unit and not main_unit.new_contract_number) or not main_unit:
             return 'Não se aplica'
         if not self.is_released_to_engineering:
             return 'Bloqueado'
