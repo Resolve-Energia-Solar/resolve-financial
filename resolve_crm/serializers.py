@@ -312,6 +312,14 @@ class ProjectSerializer(BaseSerializer):
     trt_status = serializers.SerializerMethodField()
     request_requested = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
+    
+    #Homologation
+    supply_adquance = serializers.SerializerMethodField()
+    access_opnion_status = serializers.SerializerMethodField()
+    load_increase_status = serializers.SerializerMethodField()
+    branch_adjustment_status = serializers.SerializerMethodField()
+    new_contact_number_status = serializers.SerializerMethodField()
+    final_inspection_status = serializers.SerializerMethodField()
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
@@ -322,6 +330,27 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+        
+    def get_supply_adquance(self, obj):
+        supply_list = obj.supply_adquance
+        return [{"id": sa.id, "name": sa.name} for sa in supply_list]
+
+    
+    def get_access_opnion_status(self, obj):
+        return obj.access_opnion_status
+    
+    def get_load_increase_status(self, obj):
+        return obj.load_increase_status
+    
+    def get_branch_adjustment_status(self, obj):
+        return obj.branch_adjustment_status
+    
+    def get_new_contact_number_status(self, obj):
+        return obj.new_contact_number_status
+    
+    def get_final_inspection_status(self, obj):
+        return obj.final_inspection_status
+
 
     def get_is_released_to_engineering(self, obj):
         return obj.is_released_to_engineering
@@ -347,7 +376,6 @@ class ProjectSerializer(BaseSerializer):
         return AddressSerializer(main_unit.address).data if main_unit and main_unit.address else None
 
 
-    
     def update(self, instance, validated_data):
         materials_data = validated_data.pop('materials_data', [])
         

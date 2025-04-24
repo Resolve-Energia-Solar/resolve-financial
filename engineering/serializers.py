@@ -50,10 +50,8 @@ class UnitsSerializer(BaseSerializer):
 
 
 class RequestsEnergyCompanySerializer(BaseSerializer):
-    str = serializers.SerializerMethodField()
     class Meta:
         model = RequestsEnergyCompany
         fields = '__all__'
         
-    def get_str(self, obj):
-        return str(obj)
+        
