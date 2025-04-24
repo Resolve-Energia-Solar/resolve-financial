@@ -83,6 +83,8 @@ class ScheduleViewSet(BaseModelViewSet):
             "schedule_creator",
             "schedule_creator__employee",
             "schedule_agent",
+            "service",
+            "service__category",
         )
 
         user = self.request.user
@@ -97,6 +99,10 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(schedule_agent__complete_name__icontains=q)
                 | Q(protocol__icontains=q)
             )
+            
+        category = self.request.query_params.get("category__icontains")
+        if category:
+            qs = qs.filter(service__category__name__icontains=category)
 
         customer__icontains = self.request.query_params.get("customer__icontains")
         if customer__icontains:
