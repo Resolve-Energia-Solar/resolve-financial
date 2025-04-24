@@ -759,23 +759,23 @@ class Project(models.Model):
             return 'Bloqueado'
         if self.access_opnion == 'Liberado' and not self.requests_energy_company.filter(
             status='S',
-            request_type__name='Parecer de Acesso'
+            type__name='Parecer de Acesso'
         ).exists():
             return 'Pendente'
         
         elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
             status='S',
-            request_type__name='Parecer de Acesso'
+            type__name='Parecer de Acesso'
         ).exists():
             return 'Solicitado'
         elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
             status='D',
-            request_type__name='Parecer de Acesso'
+            type__name='Parecer de Acesso'
         ).exists():
             return 'Deferido'
         elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
             status='I',
-            request_type__name='Parecer de Acesso'
+            type__name='Parecer de Acesso'
         ).exists():
             return 'Indeferida'
         
@@ -886,19 +886,19 @@ class Project(models.Model):
             return 'Bloqueado'
         else:
             access_opnion = self.requests_energy_company.filter(
-                request_type__name='Parecer de Acesso'
+                type__name='Parecer de Acesso'
             ).first()
             if access_opnion and access_opnion.status == 'S':
                 if not self.last_installation.final_service_opinion == 'Concluído' or not self.last_installation.exists():
                     return 'Bloqueado'
                 else:
                     if not self.requests_energy_company.filter(
-                        request_type__name='Vistoria Final'
+                        type__name='Vistoria Final'
                     ).exists():
                         return 'Pendente'
                     else:
                         final_inspection = self.requests_energy_company.filter(
-                            request_type__name='Vistoria Final'
+                            type__name='Vistoria Final'
                         ).first()
                         if final_inspection.status == 'S':
                             return 'Solicitado'
