@@ -20,11 +20,6 @@ class EnergyCompanySerializer(BaseSerializer):
         model = EnergyCompany
         fields = '__all__'
 
-class ProjectReadSerializer(BaseSerializer):
-    class Meta:
-        model = Project
-        fields = '__all__'
-
 
 class SupplyAdequanceSerializer(BaseSerializer):
     class Meta:

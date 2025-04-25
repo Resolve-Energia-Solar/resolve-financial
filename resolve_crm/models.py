@@ -14,6 +14,10 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate
+from django.db.models.functions import Coalesce
+from field_services.models import Schedule
+from engineering.models import Units as EngineeringUnits
 
 def get_current_month():
     return datetime.date.today().month
@@ -581,6 +585,323 @@ class Step(models.Model):
         return self.name
 
 
+class GroupConcat(Aggregate):
+    function = 'GROUP_CONCAT'
+    template = "%(function)s(%(distinct)s%(expressions)s SEPARATOR '%(separator)s')"
+    allow_distinct = True
+
+    def __init__(self, expression, distinct=False, separator=', ', **extra):
+        super().__init__(
+            expression,
+            distinct='DISTINCT ' if distinct else '',
+            separator=separator,
+            output_field=CharField(),
+            **extra
+        )
+
+class ProjectQuerySet(models.QuerySet):
+    def with_is_released_to_engineering(self):
+        sale_ct = ContentType.objects.get_for_model(Sale)
+
+        has_contract = Exists(
+            Attachment.objects.filter(
+                content_type=sale_ct,
+                object_id=OuterRef('sale_id'),
+                status='A',
+                document_type__name__icontains='Contrato'
+            )
+        )
+
+        has_cnh_or_rg_homologador = Exists(
+            Attachment.objects.filter(
+                content_type=sale_ct,
+                object_id=OuterRef('sale_id'),
+                status='A'
+            ).filter(
+                Q(document_type__name__icontains='CNH') | Q(document_type__name__icontains='RG'),
+                document_type__name__icontains='homologador'
+            )
+        )
+
+        has_unit_with_bill_file = Exists(
+            EngineeringUnits.objects.filter(
+                project=OuterRef('pk'),
+                bill_file__isnull=False
+            )
+        )
+
+        has_new_contract_uc = Exists(
+            EngineeringUnits.objects.filter(
+                project=OuterRef('pk'),
+                new_contract_number=True
+            )
+        )
+
+        return self.annotate(
+            is_released_to_engineering=Case(
+                When(
+                    Q(sale__payment_status__in=['L', 'C', 'CO']) &
+                    Q(inspection__final_service_opinion__name__icontains='Aprovado') &
+                    Q(sale__is_pre_sale=False) &
+                    ~Q(status__in=['C', 'D']) &
+                    Q(sale__status__in=['EA', 'F']) &
+                    has_contract &
+                    has_cnh_or_rg_homologador &
+                    (has_unit_with_bill_file | has_new_contract_uc),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
+
+
+    def with_trt_status(self):
+        from core.models import Attachment 
+        from django.contrib.contenttypes.models import ContentType
+
+        project_content_type = ContentType.objects.get_for_model(Project)
+
+        return self.annotate(
+            trt_status=Subquery(
+                Attachment.objects.filter(
+                    object_id=OuterRef('pk'),
+                    content_type=project_content_type,
+                    document_type__name='ART/TRT'
+                ).order_by('-created_at').values('status')[:1],
+                output_field=CharField()
+            )
+        )
+
+
+    def with_pending_material_list(self):
+        return self.with_is_released_to_engineering().annotate(
+            pending_material_list=Case(
+                When(
+                    Q(is_released_to_engineering=True)
+                    & Q(material_list_is_completed=False),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
+
+    def with_access_opnion(self):
+        return self.with_trt_status().with_is_released_to_engineering().annotate(
+            access_opnion=Case(
+                When(
+                    Q(trt_status='A')
+                    & ~Q(units__new_contract_number=True)
+                    & Q(is_released_to_engineering=True),
+                    then=Value('Liberado')
+                ),
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        )
+
+    def with_trt_pending(self):
+        return self.with_is_released_to_engineering().with_trt_status().annotate(
+            trt_pending=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(Q(trt_status='R') & ~Q(trt_status='A'), then=Value('Reprovada')),
+                When(Q(trt_status='EA') & ~Q(trt_status='A'), then=Value('Em Andamento')),
+                When(Q(trt_status='A'), then=Value('Concluída')),
+                default=Value('Pendente'),
+                output_field=CharField(),
+            )
+        )
+
+
+    def with_request_requested(self):
+        return self.annotate(
+            request_requested=Case(
+                When(Q(requests_energy_company__isnull=False), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
+
+    def with_last_installation_final_service_opinion(self):
+        return self.annotate(
+            last_installation_final_service_opinion=Subquery(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__category__name='Instalação'
+                ).order_by('-created_at').values('final_service_opinion__name')[:1],
+                output_field=CharField()
+            )
+        )
+        
+    
+    def with_supply_adquance_names(self):
+        subquery = EngineeringUnits.objects.filter(
+            project=OuterRef('pk'),
+            main_unit=True,
+            supply_adquance__isnull=False
+        ).values_list('supply_adquance__name', flat=True)
+
+        return self.annotate(
+            supply_adquance_names=Coalesce(Subquery(
+                EngineeringUnits.objects
+                .filter(
+                    project=OuterRef('pk'),
+                    main_unit=True,
+                    supply_adquance__isnull=False
+                )
+                .order_by()
+                .annotate(names_concat=GroupConcat('supply_adquance__name'))
+                .values('names_concat')[:1]
+            ), Value(''))
+        )
+
+
+    def with_access_opnion_status(self):
+        return self.with_access_opnion().annotate(
+            access_opnion_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(
+                    Q(access_opnion='Liberado')
+                    & ~Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    then=Value('Pendente')
+                ),
+                When(
+                    Q(access_opnion='Liberado')
+                    & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    then=Value('Solicitado')
+                ),
+                When(
+                    Q(access_opnion='Liberado')
+                    & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='D'),
+                    then=Value('Deferido')
+                ),
+                When(
+                    Q(access_opnion='Liberado')
+                    & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='I'),
+                    then=Value('Indeferida')
+                ),
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        )
+
+
+    def with_load_increase_status(self):
+        return self.with_is_released_to_engineering().with_supply_adquance_names().with_last_installation_final_service_opinion().annotate(
+            load_increase_status=Case(
+                When(~Q(supply_adquance_names__icontains='Aumento de Carga'), then=Value('Não se aplica')),
+                When(
+                    Q(supply_adquance_names__icontains='Aumento de Carga')
+                    & (Q(is_released_to_engineering=False) | ~Q(last_installation_final_service_opinion__iexact='Concluído')),
+                    then=Value('Bloqueado')
+                ),
+                When(
+                    Q(supply_adquance_names__icontains='Aumento de Carga')
+                    & Q(last_installation_final_service_opinion__iexact='Concluído')
+                    & ~Q(requests_energy_company__isnull=False),
+                    then=Value('Pendente')
+                ),
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='S'), then=Value('Solicitado')),
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='D'), then=Value('Deferido')),
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='I'), then=Value('Indeferida')),
+                default=Value('Não se aplica'),
+                output_field=CharField(),
+            )
+        )
+
+
+    def with_branch_adjustment_status(self):
+        return (
+            self.with_is_released_to_engineering()
+                .with_supply_adquance_names()
+                .with_last_installation_final_service_opinion()
+                .annotate(
+                    branch_adjustment_status=Case(
+                        When(~Q(supply_adquance_names__icontains='Ajuste de Ramal'), then=Value('Não se aplica')),
+                        When(
+                            Q(supply_adquance_names__icontains='Ajuste de Ramal')
+                            & (
+                                Q(is_released_to_engineering=False)
+                                | ~Q(last_installation_final_service_opinion__iexact='Concluído')
+                            ),
+                            then=Value('Bloqueado')
+                        ),
+                        When(
+                            Q(supply_adquance_names__icontains='Ajuste de Ramal')
+                            & Q(last_installation_final_service_opinion__iexact='Concluído')
+                            & ~Q(requests_energy_company__isnull=False),
+                            then=Value('Pendente')
+                        ),
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='S'), then=Value('Solicitado')),
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='D'), then=Value('Deferido')),
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='I'), then=Value('Indeferida')),
+                        default=Value('Não se aplica'),
+                        output_field=CharField(),
+                    )
+                )
+        )
+
+
+    def with_new_contact_number_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            new_contact_number_status=Case(
+                When(~Q(units__main_unit=True) | Q(units__new_contract_number=False), then=Value('Não se aplica')),
+                When(Q(units__main_unit=True) & Q(units__new_contract_number=True) & Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(Q(units__main_unit=True) & Q(units__new_contract_number=True) & ~Q(designer_status='CO'), then=Value('Bloqueado')),
+                When(Q(units__main_unit=True) & Q(units__new_contract_number=True) & Q(designer_status='CO') & ~Q(requests_energy_company__isnull=False), then=Value('Pendente')),
+                When(Q(units__main_unit=True) & Q(requests_energy_company__status='S'), then=Value('Solicitado')),
+                When(Q(units__main_unit=True) & Q(requests_energy_company__status='D'), then=Value('Deferido')),
+                When(Q(units__main_unit=True) & Q(requests_energy_company__status='I'), then=Value('Indeferida')),
+                default=Value('Não se aplica'),
+                output_field=CharField(),
+            )
+        )
+
+    def with_final_inspection_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            final_inspection_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(
+                    Q(is_released_to_engineering=True)
+                    & ~Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    then=Value('Bloqueado')
+                ),
+                When(
+                    Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S')
+                    & Q(last_installation_final_service_opinion__iexact='Concluído')
+                    & ~Q(requests_energy_company__type__name='Vistoria Final'),
+                    then=Value('Pendente')
+                ),
+                When(Q(requests_energy_company__type__name='Vistoria Final',
+                    requests_energy_company__status='S'), then=Value('Solicitado')),
+                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='D'), then=Value('Deferido')),
+                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='I'), then=Value('Indeferida')),
+                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='A'), then=Value('Concluído')),
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        )
+
+    def with_status_annotations(self):
+        return (
+            self
+            .with_is_released_to_engineering()
+            .with_pending_material_list()
+            .with_access_opnion()
+            .with_request_requested()
+            .with_last_installation_final_service_opinion()
+            .with_supply_adquance_names()
+            .with_access_opnion_status()
+            .with_load_increase_status()
+            .with_branch_adjustment_status()
+            .with_new_contact_number_status()
+            .with_final_inspection_status()
+            .with_trt_pending()
+        )
+
+
+
 class Project(models.Model):
     sale = models.ForeignKey('resolve_crm.Sale', on_delete=models.PROTECT, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.PROTECT, verbose_name="Produto", blank=True, null=True)
@@ -638,279 +959,284 @@ class Project(models.Model):
         null=True,
         blank=True
     )
+    objects = ProjectQuerySet.as_manager()
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
 
-    @cached_property
-    def content_type_id(self):
-        return ContentType.objects.get_for_model(self).id
-    
     @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()
         return main_unit.address if main_unit else None
 
-    @cached_property
-    def is_released_to_engineering(self):
-    # Final service opinion
-        final_service_opinion = (
-            self.inspection.final_service_opinion.name
-            if self.inspection and self.inspection.final_service_opinion
-            else None
-        )
-        final_service_opinion_contains_approved = (
-            'aprovado' in final_service_opinion.lower()
-            if final_service_opinion else False
-        )
+    # @cached_property
+    # def is_released_to_engineering(self):
+    # # Final service opinion
+    #     final_service_opinion = (
+    #         self.inspection.final_service_opinion.name
+    #         if self.inspection and self.inspection.final_service_opinion
+    #         else None
+    #     )
+    #     final_service_opinion_contains_approved = (
+    #         'aprovado' in final_service_opinion.lower()
+    #         if final_service_opinion else False
+    #     )
 
-        attachments = getattr(self.sale, 'approved_attachments', [])
+    #     attachments = getattr(self.sale, 'approved_attachments', [])
 
-        has_contract = any(
-            'Contrato' in att.document_type.name for att in attachments
-        )
-        has_cnh_or_rg = any(
-            ('CNH' in att.document_type.name or 'RG' in att.document_type.name) and
-            'homologador' in att.document_type.name.lower()
-            for att in attachments
-        )
-        attachments_ok = has_contract and has_cnh_or_rg
+    #     has_contract = any(
+    #         'Contrato' in att.document_type.name for att in attachments
+    #     )
+    #     has_cnh_or_rg = any(
+    #         ('CNH' in att.document_type.name or 'RG' in att.document_type.name) and
+    #         'homologador' in att.document_type.name.lower()
+    #         for att in attachments
+    #     )
+    #     attachments_ok = has_contract and has_cnh_or_rg
 
-        # Units
-        units = list(self.units.all())
-        has_main_unit_with_file = any(u.main_unit and u.bill_file for u in units)
-        has_new_contract_uc = any(u.new_contract_number for u in units)
-        check_unit = has_main_unit_with_file or has_new_contract_uc
+    #     # Units
+    #     units = list(self.units.all())
+    #     has_main_unit_with_file = any(u.main_unit and u.bill_file for u in units)
+    #     has_new_contract_uc = any(u.new_contract_number for u in units)
+    #     check_unit = has_main_unit_with_file or has_new_contract_uc
 
-        # Condições finais
-        return (
-            check_unit and
-            attachments_ok and
-            self.sale.payment_status in ['L', 'C', 'CO'] and
-            final_service_opinion_contains_approved and
-            not self.sale.is_pre_sale and
-            self.status not in ['C', 'D'] and
-            self.sale.status in ['EA', 'F']
-        )
+    #     # Condições finais
+    #     return (
+    #         check_unit and
+    #         attachments_ok and
+    #         self.sale.payment_status in ['L', 'C', 'CO'] and
+    #         final_service_opinion_contains_approved and
+    #         not self.sale.is_pre_sale and
+    #         self.status not in ['C', 'D'] and
+    #         self.sale.status in ['EA', 'F']
+    #     )
 
     
-    @cached_property
-    def trt_attachments(self):
-        return [
-            att for att in self.attachments.all()
-            if (
-                att.document_type is not None and
-                att.document_type.name.strip() == 'ART/TRT' and
-                att.content_type_id == self.content_type_id
-            )
-        ]
+    # @cached_property
+    # def trt_attachments(self):
+    #     return [
+    #         att for att in self.attachments.all()
+    #         if (
+    #             att.document_type is not None and
+    #             att.document_type.name.strip() == 'ART/TRT' and
+    #             att.content_type_id == self.content_type_id
+    #         )
+    #     ]
     
 
-    def pending_material_list(self):
-        return (self.is_released_to_engineering and not self.material_list_is_completed)
+    # def pending_material_list(self):
+    #     return (self.is_released_to_engineering and not self.material_list_is_completed)
     
-    @cached_property
-    def access_opnion(self):
-        has_aprovado = any(att.status == 'A' for att in self.trt_attachments)
-        has_new_uc = any(u.new_contract_number for u in self.units.all())
-        if has_aprovado and not has_new_uc and self.is_released_to_engineering:
-            return 'Liberado'
-        return 'Bloqueado'
+    # @cached_property
+    # def access_opnion(self):
+    #     has_aprovado = any(att.status == 'A' for att in self.trt_attachments)
+    #     has_new_uc = any(u.new_contract_number for u in self.units.all())
+    #     if has_aprovado and not has_new_uc and self.is_released_to_engineering:
+    #         return 'Liberado'
+    #     return 'Bloqueado'
     
-    @cached_property
-    def trt_pending(self):
-        statuses = [att.status for att in self.trt_attachments]
-        if not self.is_released_to_engineering:
-            return 'Bloqueado'
-        if 'R' in statuses and 'A' not in statuses:
-            return 'Reprovada'
-        if 'EA' in statuses and 'A' not in statuses:
-            return 'Em Andamento'
-        if 'A' in statuses:
-            return 'Concluída'
-        return 'Pendente'
+    # @cached_property
+    # def trt_pending(self):
+    #     statuses = [att.status for att in self.trt_attachments]
+    #     if not self.is_released_to_engineering:
+    #         return 'Bloqueado'
+    #     if 'R' in statuses and 'A' not in statuses:
+    #         return 'Reprovada'
+    #     if 'EA' in statuses and 'A' not in statuses:
+    #         return 'Em Andamento'
+    #     if 'A' in statuses:
+    #         return 'Concluída'
+    #     return 'Pendente'
     
-    @cached_property
-    def trt_status(self):
-        if self.trt_attachments:
-            if len(self.trt_attachments) > 1 and self.trt_attachments[0].status:
-                return self.trt_attachments[0].status
-            return list({att.status for att in self.trt_attachments})
-        return []
+    # @cached_property
+    # def trt_status(self):
+    #     if self.trt_attachments:
+    #         if len(self.trt_attachments) > 1 and self.trt_attachments[0].status:
+    #             return self.trt_attachments[0].status
+    #         return list({att.status for att in self.trt_attachments})
+    #     return []
     
-    @cached_property
-    def request_requested(self):
-        return self.requests_energy_company.exists()
+    # @cached_property
+    # def request_requested(self):
+    #     return self.requests_energy_company.exists()
     
-    @cached_property
-    def last_installation(self):
-        last_installation = self.field_services.filter(
-            service__category__name='Instalação',
-        ).order_by('-created_at').first()
-        return last_installation
+    # @cached_property
+    # def last_installation(self):
+    #     last_installation = self.field_services.filter(
+    #         service__category__name='Instalação',
+    #     ).order_by('-created_at').first()
+    #     return last_installation
     
-    @cached_property
-    def supply_adquance(self):
-        main_unit = self.units.filter(main_unit=True).first()
-        if not main_unit:
-            return []
-        return list(main_unit.supply_adquance.all()) 
+    # @cached_property
+    # def supply_adquance(self):
+    #     main_unit = self.units.filter(main_unit=True).first()
+    #     if not main_unit:
+    #         return []
+    #     return list(main_unit.supply_adquance.all()) 
     
     
-    @cached_property
-    def access_opnion_status(self):
-        if not self.is_released_to_engineering:
-            return 'Bloqueado'
-        if self.access_opnion == 'Liberado' and not self.requests_energy_company.filter(
-            status='S',
-            type__name='Parecer de Acesso'
-        ).exists():
-            return 'Pendente'
+    # @cached_property
+    # def access_opnion_status(self):
+    #     if not self.is_released_to_engineering:
+    #         return 'Bloqueado'
+    #     if self.access_opnion == 'Liberado' and not self.requests_energy_company.filter(
+    #         status='S',
+    #         type__name='Parecer de Acesso'
+    #     ).exists():
+    #         return 'Pendente'
         
-        elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
-            status='S',
-            type__name='Parecer de Acesso'
-        ).exists():
-            return 'Solicitado'
-        elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
-            status='D',
-            type__name='Parecer de Acesso'
-        ).exists():
-            return 'Deferido'
-        elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
-            status='I',
-            type__name='Parecer de Acesso'
-        ).exists():
-            return 'Indeferida'
+    #     elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
+    #         status='S',
+    #         type__name='Parecer de Acesso'
+    #     ).exists():
+    #         return 'Solicitado'
+    #     elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
+    #         status='D',
+    #         type__name='Parecer de Acesso'
+    #     ).exists():
+    #         return 'Deferido'
+    #     elif self.access_opnion == 'Liberado' and self.requests_energy_company.filter(
+    #         status='I',
+    #         type__name='Parecer de Acesso'
+    #     ).exists():
+    #         return 'Indeferida'
         
-        else:
-            return 'Bloqueado'
+    #     else:
+    #         return 'Bloqueado'
 
     
-    @cached_property
-    def load_increase_status(self):
-        supplies = self.supply_adquance
+    # @cached_property
+    # def load_increase_status(self):
+    #     supplies = self.supply_adquance
 
-        has_load_increase = any(
-            str(getattr(supply, 'name', '')).strip().lower() == 'aumento de carga'
-            for supply in supplies
-        )
+    #     has_load_increase = any(
+    #         str(getattr(supply, 'name', '')).strip().lower() == 'aumento de carga'
+    #         for supply in supplies
+    #     )
 
-        if not has_load_increase:
-            return 'Não se aplica'
+    #     if not has_load_increase:
+    #         return 'Não se aplica'
 
-        if (
-            not self.is_released_to_engineering
-            and (
-                not getattr(self.last_installation, 'final_service_opinion', None) == 'Concluído'
-                or not getattr(self.last_installation, 'exists', lambda: False)()
-            )
-        ):
-            return 'Bloqueado'
+    #     if (
+    #         not self.is_released_to_engineering
+    #         and (
+    #             not getattr(self.last_installation, 'final_service_opinion', None) == 'Concluído'
+    #             or not getattr(self.last_installation, 'exists', lambda: False)()
+    #         )
+    #     ):
+    #         return 'Bloqueado'
 
-        final_opinion = getattr(self.last_installation, 'final_service_opinion', None)
-        has_request = self.requests_energy_company.exists() if hasattr(self.requests_energy_company, 'exists') else False
-        first_request = self.requests_energy_company.first() if has_request else None
-        first_request_status = getattr(first_request, 'status', None)
+    #     final_opinion = getattr(self.last_installation, 'final_service_opinion', None)
+    #     has_request = self.requests_energy_company.exists() if hasattr(self.requests_energy_company, 'exists') else False
+    #     first_request = self.requests_energy_company.first() if has_request else None
+    #     first_request_status = getattr(first_request, 'status', None)
 
-        if final_opinion == 'Concluído' and not has_request:
-            return 'Pendente'
+    #     if final_opinion == 'Concluído' and not has_request:
+    #         return 'Pendente'
 
-        if final_opinion == 'Concluído' and first_request_status == 'S':
-            return 'Solicitado'
+    #     if final_opinion == 'Concluído' and first_request_status == 'S':
+    #         return 'Solicitado'
 
-        if final_opinion == 'Concluído' and first_request_status == 'D':
-            return 'Deferido'
+    #     if final_opinion == 'Concluído' and first_request_status == 'D':
+    #         return 'Deferido'
 
-        if final_opinion == 'Concluído' and first_request_status == 'I':
-            return 'Indeferida'
+    #     if final_opinion == 'Concluído' and first_request_status == 'I':
+    #         return 'Indeferida'
 
-        return 'Não se aplica'
+    #     return 'Não se aplica'
 
             
-    @cached_property
-    def branch_adjustment_status(self):
-        supplies = self.supply_adquance
+    # @cached_property
+    # def branch_adjustment_status(self):
+    #     supplies = self.supply_adquance
 
-        has_load_increase = any(
-            str(getattr(supply, 'name', '')).strip().lower() == 'ajuste de ramal'
-            for supply in supplies
-        )
+    #     has_load_increase = any(
+    #         str(getattr(supply, 'name', '')).strip().lower() == 'ajuste de ramal'
+    #         for supply in supplies
+    #     )
 
-        if not has_load_increase:
-            return 'Não se aplica'
-        else:
-            if not self.is_released_to_engineering and (not self.last_installation.final_service_opinion == 'Concluído' or not self.last_installation.exists()):
-                return 'Bloqueado'
+    #     if not has_load_increase:
+    #         return 'Não se aplica'
+    #     else:
+    #         if not self.is_released_to_engineering and (not self.last_installation.final_service_opinion == 'Concluído' or not self.last_installation.exists()):
+    #             return 'Bloqueado'
             
-            if self.last_installation.final_service_opinion == 'Concluído' and not self.requests_energy_company.exists():
-                return 'Pendente'
+    #         if self.last_installation.final_service_opinion == 'Concluído' and not self.requests_energy_company.exists():
+    #             return 'Pendente'
             
-            if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'S':
-                return 'Solicitado'
+    #         if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'S':
+    #             return 'Solicitado'
             
-            if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'D':
-                return 'Deferido'
+    #         if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'D':
+    #             return 'Deferido'
             
-            if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'I':
-                return 'Indeferida'
+    #         if self.last_installation.final_service_opinion == 'Concluído' and self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'I':
+    #             return 'Indeferida'
 
 
-    @cached_property
-    def new_contact_number_status(self):
-        main_unit = self.units.filter(main_unit=True).first()
-        if (main_unit and not main_unit.new_contract_number) or not main_unit:
-            return 'Não se aplica'
-        if not self.is_released_to_engineering:
-            return 'Bloqueado'
-        main_unit = self.units.filter(main_unit=True).first()
-        if main_unit.new_contract_number:
-            if not self.designer_status == 'CO':
-                return 'Bloqueado'
-            else:
-                if not self.requests_energy_company.exists():
-                    return 'Pendente'
+    # @cached_property
+    # def new_contact_number_status(self):
+    #     main_unit = self.units.filter(main_unit=True).first()
+    #     if (main_unit and not main_unit.new_contract_number) or not main_unit:
+    #         return 'Não se aplica'
+    #     if not self.is_released_to_engineering:
+    #         return 'Bloqueado'
+    #     main_unit = self.units.filter(main_unit=True).first()
+    #     if main_unit.new_contract_number:
+    #         if not self.designer_status == 'CO':
+    #             return 'Bloqueado'
+    #         else:
+    #             if not self.requests_energy_company.exists():
+    #                 return 'Pendente'
                 
-                if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'S':
-                    return 'Solicitado'
+    #             if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'S':
+    #                 return 'Solicitado'
                 
-                if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'D':
-                    return 'Deferido'
+    #             if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'D':
+    #                 return 'Deferido'
                 
-                if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'I':
-                    return 'Indeferida'
-        else:
-            if self.requests_energy_company.exists():
-                return self.requests_energy_company.first().get_status_display()
+    #             if self.requests_energy_company.exists() and self.requests_energy_company.first().status == 'I':
+    #                 return 'Indeferida'
+    #     else:
+    #         if self.requests_energy_company.exists():
+    #             return self.requests_energy_company.first().get_status_display()
                 
        
-    @cached_property
-    def final_inspection_status(self):
-        if not self.is_released_to_engineering:
-            return 'Bloqueado'
-        else:
-            access_opnion = self.requests_energy_company.filter(
-                type__name='Parecer de Acesso'
-            ).first()
-            if access_opnion and access_opnion.status == 'S':
-                if not self.last_installation.final_service_opinion == 'Concluído' or not self.last_installation.exists():
-                    return 'Bloqueado'
-                else:
-                    if not self.requests_energy_company.filter(
-                        type__name='Vistoria Final'
-                    ).exists():
-                        return 'Pendente'
-                    else:
-                        final_inspection = self.requests_energy_company.filter(
-                            type__name='Vistoria Final'
-                        ).first()
-                        if final_inspection.status == 'S':
-                            return 'Solicitado'
-                        elif final_inspection.status == 'D':
-                            return 'Deferido'
-                        elif final_inspection.status == 'I':
-                            return 'Indeferida'
+    # @cached_property
+    # def final_inspection_status(self):
+    #     if not self.is_released_to_engineering:
+    #         return 'Bloqueado'
+    #     else:
+    #         access_opnion = self.requests_energy_company.filter(
+    #             type__name='Parecer de Acesso'
+    #         ).first()
+    #         if access_opnion and access_opnion.status == 'S':
+    #             if not self.last_installation.final_service_opinion == 'Concluído' or not self.last_installation.exists():
+    #                 return 'Bloqueado'
+    #             else:
+    #                 if not self.requests_energy_company.filter(
+    #                     type__name='Vistoria Final'
+    #                 ).exists():
+    #                     return 'Pendente'
+    #                 else:
+    #                     final_inspection = self.requests_energy_company.filter(
+    #                         type__name='Vistoria Final'
+    #                     ).first()
+    #                     if final_inspection.status == 'S':
+    #                         return 'Solicitado'
+    #                     elif final_inspection.status == 'D':
+    #                         return 'Deferido'
+    #                     elif final_inspection.status == 'I':
+    #                         return 'Indeferida'
     
             
+    
+    @cached_property
+    def documents_under_analysis(self):
+        return [
+            att for att in self.attachments.all()
+            if att.content_type_id == self.content_type_id and att.status == 'EA'
+        ]
+    
     # @property
     # def missing_documents(self):
     #     required_documents = DocumentType.objects.filter(required=True, app_label='contracts')
@@ -924,14 +1250,6 @@ class Project(models.Model):
     #                 })
     #         return missing_documents
     #     return None
-    
-    
-    @cached_property
-    def documents_under_analysis(self):
-        return [
-            att for att in self.attachments.all()
-            if att.content_type_id == self.content_type_id and att.status == 'EA'
-        ]
     
     def create_deadlines(self):
         steps = Step.objects.all()
