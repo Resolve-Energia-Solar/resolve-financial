@@ -683,3 +683,8 @@ class UpdateFinancialRecordPaymentStatus(APIView):
         financial_record.save()
         
         return Response({"message": "Financial record payment status updated"})
+
+
+class BankDetailsViewSet(BaseModelViewSet):
+    queryset = BankDetails.objects.all()
+    serializer_class = BankDetailsSerializer
