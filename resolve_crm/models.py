@@ -456,7 +456,10 @@ class Sale(models.Model):
         for project in qs:
             if project.installations_filtered:
                 installation = project.installations_filtered[0]
-                days = (installation.execution_finished_at - self.signature_date).days
+                if installation.execution_finished_at:
+                    days = (installation.execution_finished_at - self.signature_date).days
+                else:
+                    days = (now() - self.signature_date).days
             else:
                 days = (now() - self.signature_date).days
             counters[project.id] = days
