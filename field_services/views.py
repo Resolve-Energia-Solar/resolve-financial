@@ -99,6 +99,12 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(schedule_agent__complete_name__icontains=q)
                 | Q(protocol__icontains=q)
             )
+
+        schedule_agent__isnull = self.request.query_params.get("schedule_agent__isnull")
+        if schedule_agent__isnull == "true":
+            qs = qs.filter(schedule_agent__isnull=True)
+        elif schedule_agent__isnull == "false":
+            qs = qs.filter(schedule_agent__isnull=False)
             
         category = self.request.query_params.get("category__icontains")
         if category:
