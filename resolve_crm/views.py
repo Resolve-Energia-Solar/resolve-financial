@@ -254,7 +254,8 @@ class ProjectViewSet(BaseModelViewSet):
             ),
         )
 
-        return queryset.order_by('-created_at')
+        return queryset.order_by('-created_at').distinct()
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
