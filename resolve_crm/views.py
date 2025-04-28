@@ -310,19 +310,19 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(trt_pending__iexact=trt_pending)
             
         if access_opnion_status:
-            queryset = queryset.filter(access_opnion_status__iexact=access_opnion_status)
+            queryset = queryset.filter(access_opnion_status__icontains=access_opnion_status)
 
         if load_increase_status:
-            queryset = queryset.filter(load_increase_status__iexact=load_increase_status)
+            queryset = queryset.filter(load_increase_status__icontains=load_increase_status)
 
         if branch_adjustment_status:
-            queryset = queryset.filter(branch_adjustment_status__iexact=branch_adjustment_status)
+            queryset = queryset.filter(branch_adjustment_status__icontains=branch_adjustment_status)
 
         if final_inspection_status:
-            queryset = queryset.filter(final_inspection_status__iexact=final_inspection_status)
+            queryset = queryset.filter(final_inspection_status__icontains=final_inspection_status)
 
         if new_contact_number_status:
-            queryset = queryset.filter(new_contact_number_status__iexact=new_contact_number_status)
+            queryset = queryset.filter(new_contact_number_status__icontains=new_contact_number_status)
             
         
         if inspection_status:
