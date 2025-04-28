@@ -4,7 +4,7 @@ from accounts.serializers import BaseSerializer
 from rest_framework import serializers
 from resolve_erp.settings import GMAPS_API_KEY
 
-# gmaps = googlemaps.Client(key=GMAPS_API_KEY)
+gmaps = googlemaps.Client(key=GMAPS_API_KEY)
 
 class RoofTypeSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
