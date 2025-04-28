@@ -179,6 +179,7 @@ class FranchiseInstallment(models.Model):
     )
     is_paid = models.BooleanField("Pago", default=False)
     paid_at = models.DateTimeField("Pago em", null=True, blank=True)
+    observation = models.TextField("Observação", null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
     
