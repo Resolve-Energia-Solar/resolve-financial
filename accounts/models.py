@@ -208,6 +208,8 @@ class Address(models.Model):
         if self.zip_code:
             address += f" - {self.zip_code}"
         address += f", {self.country}"
+        if self.neighborhood:
+            address += f", {self.neighborhood}"
         return address
     
     class Meta:
