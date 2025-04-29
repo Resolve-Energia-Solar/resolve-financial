@@ -5,7 +5,7 @@ from core.task import create_process_async
 from core.utils import create_process
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
-from core.models import Attachment, Process, ProcessBase,Webhook
+from core.models import Attachment, Process, ProcessBase, SystemConfig,Webhook
 import logging
 from django.db import transaction
 
@@ -102,14 +102,25 @@ def attachment_changed(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sale)
 def handle_sale_post_save(sender, instance, created, **kwargs):
+    print(f"📌 Signal: Venda salva - ID: {instance.id} - Criada: {created}")
     def on_commit_all_tasks():
+        print(f"📌 Entrando na Func")
         check_projects_and_update_sale_tag.delay(instance.id, instance.status)
         
         if not instance.signature_date:
             return
+        
+        try:
+            system_config = SystemConfig.objects.get()
+            default_process = system_config.configs.get('default_process')
+            print(f"📌 Signal: default_process - {default_process}")
+        except SystemConfig.DoesNotExist:
+            logger.error("Configuração do sistema não encontrada.")
+            return
 
         try:
-            modelo = ProcessBase.objects.get(id=1)
+            modelo = ProcessBase.objects.get(name__exact=default_process)
+            print(f"📌 Signal: modelo - {modelo}")
         except ProcessBase.DoesNotExist:
             return
 
