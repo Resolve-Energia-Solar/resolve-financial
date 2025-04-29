@@ -433,6 +433,13 @@ class FinancialRecord(models.Model):
         choices=[("PG", "Pago"), ("P", "Pendente"), ("C", "Cancelado")],
         default="P"
     )
+    lost_reason = models.ForeignKey(
+        "customer_service.LostReason",
+        on_delete=models.PROTECT,
+        verbose_name="Motivo de Perda",
+        null=True,
+        blank=True,
+    )
     paid_at = models.DateTimeField("Data de Pagamento", null=True, blank=True)
 
     history = HistoricalRecords()

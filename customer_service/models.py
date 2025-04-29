@@ -17,3 +17,17 @@ class CustomerService(models.Model):
 
     def __str__(self):
         return f"{self.protocol} - {self.customer.complete_name}"
+
+
+
+class LostReason(models.Model):
+    name = models.CharField("Motivo", max_length=50)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Motivo de Perda"
+        verbose_name_plural = "Motivos de Perda"
+
+    def __str__(self):
+        return self.name

@@ -138,3 +138,50 @@ class SupplyAdequance(models.Model):
         
     def __str__(self):
         return self.name
+
+
+
+class CivilConstruction(models.Model):
+    project = models.ForeignKey(
+        'resolve_crm.Project',
+        on_delete=models.CASCADE,
+        verbose_name="Project",
+        null=True,
+        blank=True,
+        related_name="civil_construction"
+    )
+    work_responsibility = models.CharField(
+        "Work Responsibility",
+        max_length=1,
+        choices=[("C", "Cliente"), ("F", "Franquiado")],
+    )
+    repass_value = models.DecimalField(
+        "Repass Value",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    budget_value = models.DecimalField(
+        "Budget Value",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    service_description = models.TextField(
+        "Service Description",
+    )
+    shading_percentage = models.DecimalField(
+        "Shading Percentage",
+        max_digits=5,
+        decimal_places=2,
+    )
+    
+    class Meta:
+        verbose_name = "Civil Construction"
+        verbose_name_plural = "Civil Constructions"
+        ordering = ["project"]
+
+    def __str__(self):
+        return f"Civil Construction for {self.project}"

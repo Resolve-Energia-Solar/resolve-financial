@@ -50,3 +50,8 @@ class RequestsEnergyCompanySerializer(BaseSerializer):
         fields = '__all__'
         
         
+        
+class CivilConstructionSerializer(BaseSerializer):
+    class Meta:
+        model = CivilConstruction
+        fields = '__all__'
