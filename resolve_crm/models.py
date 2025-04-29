@@ -901,7 +901,6 @@ class ProjectQuerySet(models.QuerySet):
         )
 
 
-
 class Project(models.Model):
     sale = models.ForeignKey('resolve_crm.Sale', on_delete=models.PROTECT, verbose_name="Venda", related_name="projects")
     product = models.ForeignKey('logistics.Product', on_delete=models.PROTECT, verbose_name="Produto", blank=True, null=True)
@@ -946,6 +945,7 @@ class Project(models.Model):
     )
     # Utilize a referência em string caso Attachment esteja em outro app, por exemplo, 'core.Attachment'
     attachments = GenericRelation('core.Attachment', related_query_name='project_attachments')
+    processes = GenericRelation('core.Process', related_query_name='project_processes')
     materials = models.ManyToManyField('logistics.Materials', through='logistics.ProjectMaterials', related_name='projects')
     homologator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Homologador", related_name="homologator_projects", null=True, blank=True)
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
