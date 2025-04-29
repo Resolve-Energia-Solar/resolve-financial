@@ -280,6 +280,41 @@ class ProjectViewSet(BaseModelViewSet):
         final_inspection_status = request.query_params.get('final_inspection_status')
         new_contact_number_status = request.query_params.get('new_contact_number_status')
         
+        seller = request.query_params.get('seller')
+        sale_status = request.query_params.get('sale_status')
+        sale_branches = request.query_params.get('sale_branches')
+        state = request.query_params.get('state')
+        city = request.query_params.get('city')
+        invoice_status = request.query_params.get('invoice_status')
+        payment_types = request.query_params.get('payment_types')
+        financiers = request.query_params.get('financiers')
+        borrower = request.query_params.get('borrower')
+        
+        if borrower:
+            queryset = queryset.filter(sale__payments__borrower__id=borrower)
+        if payment_types:
+            payment_types = payment_types.split(',')
+            queryset = queryset.filter(sale__payments__payment_type__in=payment_types)
+        if financiers:
+            financiers = financiers.split(',')
+            queryset = queryset.filter(sale__payments__financier__id__in=financiers)
+        if seller:
+            queryset = queryset.filter(sale__seller__id=seller)
+        if sale_status:
+            sale_status = sale_status.split(',')
+            queryset = queryset.filter(sale__status__in=sale_status)
+        if sale_branches:
+            sale_branches = sale_branches.split(',')
+            queryset = queryset.filter(sale__branch__id__in=sale_branches)
+        if invoice_status:
+            invoice_status = invoice_status.split(',')
+            queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status)
+        if state:
+            queryset = queryset.filter(main_unit_prefetched__address__state__icontains=state)
+        if city:
+            queryset = queryset.filter(main_unit_prefetched__address__city__icontains=city)
+            
+        
         if request_energy_company_type:
             request_energy_company_type = request_energy_company_type.split(',')
             queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type)
