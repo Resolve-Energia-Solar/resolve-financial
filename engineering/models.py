@@ -145,43 +145,44 @@ class CivilConstruction(models.Model):
     project = models.ForeignKey(
         'resolve_crm.Project',
         on_delete=models.CASCADE,
-        verbose_name="Project",
+        verbose_name="Projeto",
         null=True,
         blank=True,
         related_name="civil_construction"
     )
     work_responsibility = models.CharField(
-        "Work Responsibility",
+        "Responsabilidade da Obra",
         max_length=1,
         choices=[("C", "Cliente"), ("F", "Franquiado")],
     )
     repass_value = models.DecimalField(
-        "Repass Value",
+        "Valor de Repasse",
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True
     )
     budget_value = models.DecimalField(
-        "Budget Value",
+        "Valor de Orçamento",
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True
     )
     service_description = models.TextField(
-        "Service Description",
+        "Descrição do Serviço",
     )
     shading_percentage = models.DecimalField(
-        "Shading Percentage",
+        "Percentual de Sombreamento",
         max_digits=5,
         decimal_places=2,
     )
     
     class Meta:
-        verbose_name = "Civil Construction"
-        verbose_name_plural = "Civil Constructions"
+        verbose_name = "Obra Civil"
+        verbose_name_plural = "Obras Civis"
         ordering = ["project"]
 
     def __str__(self):
-        return f"Civil Construction for {self.project}"
+        first_six = " ".join(self.service_description.split()[:6])
+        return f"Obra do Projeto {self.project} - {self.project.sale.customer.complete_name} | {first_six}"
