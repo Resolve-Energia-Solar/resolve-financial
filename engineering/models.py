@@ -150,6 +150,23 @@ class CivilConstruction(models.Model):
         blank=True,
         related_name="civil_construction"
     )
+    status = models.CharField(
+        "Status",
+        max_length=2,
+        choices=[("P", "Pendente"), ("F", "Finalizada"), ("C", "Cancelado"), ("EA", "Em Andamento")],
+        default="P"
+    )
+    deadline = models.DateField(
+        "Prazo",
+        null=True,
+        blank=True
+    )
+    financial_records = models.ManyToManyField(
+        "financial.FinancialRecord",
+        verbose_name="Financial Recordies",
+        blank=True,
+        related_name="civil_construction"
+    )
     work_responsibility = models.CharField(
         "Work Responsibility",
         max_length=1,
