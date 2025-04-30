@@ -186,8 +186,6 @@ class SaleSerializer(BaseSerializer):
 
         return instance
 
-    from decimal import Decimal
-
 
     def _handle_products(self, sale, products=None, commercial_proposal_id=None):
         products_list = []
@@ -202,6 +200,7 @@ class SaleSerializer(BaseSerializer):
                 commercial_proposal=proposal,
                 sale__isnull=True
             )
+
             if not sale_products_qs.exists():
                 raise ValidationError({"detail": "Proposta comercial não possui produtos disponíveis."})
 
@@ -223,6 +222,7 @@ class SaleSerializer(BaseSerializer):
             SaleProduct.objects.bulk_create(new_sale_products)
             products_list = new_sale_products
 
+        # cria os projetos baseados nos produtos
         project_instances = [
             Project(sale=sale, product=sp.product)
             for sp in products_list
@@ -230,34 +230,28 @@ class SaleSerializer(BaseSerializer):
         if project_instances:
             Project.objects.bulk_create(project_instances)
 
+        # atualiza total_value da venda
         aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(
             total=Sum(F('value') * F('amount'))
         )['total'] or Decimal('0')
         sale.total_value = aggregate_total
         sale.save(update_fields=['total_value'])
 
+        # calcula parcela do franqueado
         aggregate_reference = SaleProduct.objects.filter(sale=sale).aggregate(
             reference_sum=Sum('reference_value')
         )['reference_sum'] or Decimal('0')
-        difference = sale.total_value - aggregate_reference
 
-        tp = sale.transfer_percentage
-        if tp is None:
-            tp = sale.branch.transfer_percentage or Decimal('0')
-        tp = Decimal(str(tp))
-
-        if difference <= 0:
-            installment_value = aggregate_reference * (tp / Decimal('100')) - difference
-        else:
-            margin_seven = difference * Decimal('0.07')
-            installment_value = (aggregate_reference * (tp / Decimal('100'))) + difference - margin_seven
+        installment_value = sale.calculate_franchise_installment_value(aggregate_reference)
 
         FranchiseInstallment.objects.create(
             sale=sale,
-            installment_value=installment_value
+            installment_value=installment_value,
+            marketing_tax=sale.branch.marketing_tax,
+            margin=sale.branch.margin,
         )
-    
-        
+
+            
     def create_projects(self, sale, products):
         projects = [
             Project(sale=sale, product=sp.product)

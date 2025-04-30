@@ -7,6 +7,7 @@ from django.forms import ValidationError
 
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import SerializerMethodField
+from rest_framework import serializers
 
 from accounts.serializers import BaseSerializer
 
@@ -110,46 +111,26 @@ class PaymentSerializer(BaseSerializer):
         return instance
 
 
-class FranchiseInstallmentSerializer(BaseSerializer):
-    difference_value = SerializerMethodField()
-    total_value = SerializerMethodField()
-    transfer_percentage = SerializerMethodField()
-    percentage = SerializerMethodField()
-    margin_7 = SerializerMethodField()
-    is_payment_released = SerializerMethodField()
-    reference_value = SerializerMethodField()
-    payments_methods = SerializerMethodField()
+class FranchiseInstallmentSerializer(serializers.ModelSerializer):
+    difference_value = serializers.ReadOnlyField()
+    total_value = serializers.ReadOnlyField()
+    transfer_percentage = serializers.ReadOnlyField()
+    percentage = serializers.ReadOnlyField()
+    margin_7 = serializers.ReadOnlyField()
+    is_payment_released = serializers.ReadOnlyField()
+    reference_value = serializers.ReadOnlyField()
+    marketing_tax_value = serializers.ReadOnlyField()
+    remaining_percentage = serializers.ReadOnlyField()
+    total_reference_value = serializers.ReadOnlyField()
+
+    payments_methods = serializers.SerializerMethodField()
 
     class Meta:
         model = FranchiseInstallment
         fields = "__all__"
-
+        
     def get_payments_methods(self, obj):
         return obj.payments_methods()
-
-    def get_reference_value(self, obj):
-        return (
-            float(obj.reference_value()) if obj.reference_value() is not None else 0.0
-        )
-
-    def get_is_payment_released(self, obj):
-        return obj.is_payment_released
-
-    def get_difference_value(self, obj):
-        return float(obj.difference_value) if obj.difference_value is not None else 0.0
-
-    def get_total_value(self, obj):
-        return float(obj.total_value) if obj.total_value is not None else 0.0
-
-    def get_transfer_percentage(self, obj):
-        return f"{obj.transfer_percentage}" if obj.transfer_percentage else "0%"
-
-    def get_percentage(self, obj):
-        return f"{obj.percentage}" if obj.percentage else "0%"
-
-    def get_margin_7(self, obj):
-        return obj.margin_7
-
 
 class FinancialRecordSerializer(BaseSerializer):
     class Meta:

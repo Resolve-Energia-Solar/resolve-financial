@@ -246,6 +246,8 @@ class Branch(models.Model):
     )
     discount_allowed = models.DecimalField("Desconto Permitido", max_digits=5, decimal_places=2, blank=True, null=True)
     energy_company = models.ForeignKey("engineering.EnergyCompany", verbose_name="Companhia Elétrica", on_delete=models.CASCADE, blank=True, null=True)
+    margin = models.DecimalField("Margem de Repasse", max_digits=5, decimal_places=2, default=Decimal('20.00'))
+    marketing_tax = models.DecimalField("Taxa de Marketing", max_digits=5, decimal_places=2, default=Decimal('1.50'))
     history = HistoricalRecords()
     is_deleted = models.BooleanField("Deletado?", default=False)
 

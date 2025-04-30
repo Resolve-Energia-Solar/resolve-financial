@@ -425,6 +425,40 @@ class Sale(models.Model):
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True, db_index=True)
     history = HistoricalRecords()
+    
+    
+    def calculate_franchise_installment_value(self, reference_value: Decimal) -> Decimal:
+        if reference_value is None:
+            reference_value = Decimal("0.00")
+
+        total_value = self.total_value or Decimal("0.00")
+        difference = total_value - reference_value
+
+        transfer_percentage = self.transfer_percentage or (
+            self.branch.transfer_percentage if self.branch else Decimal("0.00")
+        )
+        
+        margin_percentage = self.branch.margin or Decimal("0.00")
+        margin = max(difference * (margin_percentage / Decimal("100")), Decimal("0.00"))
+        
+        transfer_percentage = Decimal(transfer_percentage) / Decimal("100")
+
+        marketing_tax = self.branch.marketing_tax or Decimal("0.00")
+        marketing_tax_value = total_value * (marketing_tax / Decimal("100"))
+        
+        print(f"marketing_tax_value: {marketing_tax_value}")
+
+        if difference <= 0:
+            installment_value = reference_value * transfer_percentage - margin - marketing_tax_value - abs(difference)
+        else:
+            installment_value = (
+                reference_value * transfer_percentage
+                - margin
+                + difference
+                - marketing_tax_value
+            )
+
+        return round(max(installment_value, Decimal("0.00")), 6)
 
 
     def user_can_edit(self, user):
