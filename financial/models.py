@@ -173,14 +173,12 @@ class FranchiseInstallmentQuerySet(QuerySet):
             sale=OuterRef('sale'),
             is_released_to_engineering=False
         )
-        # Subquery para valores de referência válidos
         sale_products = SaleProduct.objects.filter(
             sale=OuterRef('sale_id'), reference_value__isnull=False
         ).values('sale').annotate(
             total_reference=Sum('reference_value')
         ).values('total_reference')
 
-        # Subquery para soma das parcelas da venda
         installments_sum = FranchiseInstallment.objects.filter(
             sale=OuterRef('sale_id')
         ).exclude(id=OuterRef('id')).values('sale').annotate(

@@ -31,22 +31,25 @@ def get_model_data(instance):
     data = {}
     for field in instance._meta.get_fields():
         field_name = field.name
-        field_value = getattr(instance, field_name, None)
 
-        # Tratamento especial para relacionamentos
+        try:
+            field_value = getattr(instance, field_name, None)
+        except Exception:
+            continue
+
         if field.one_to_many or field.many_to_many:
-            # Exemplo: retornar lista de IDs relacionados
             field_value = [obj.id for obj in field_value.all()] if field_value else []
         elif field.is_relation:
-            # Exemplo: retornar apenas ID do objeto relacionado
             field_value = field_value.id if field_value else None
+        elif hasattr(field_value, 'url'):
+            field_value = field_value.url if field_value else None
         elif hasattr(field_value, 'isoformat'):
-            # Exemplo: datas e horários
             field_value = field_value.isoformat()
 
         data[field_name] = field_value
-    
+
     return data
+
 
 
 @receiver(post_save)
