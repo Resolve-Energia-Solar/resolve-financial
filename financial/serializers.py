@@ -111,7 +111,7 @@ class PaymentSerializer(BaseSerializer):
         return instance
 
 
-class FranchiseInstallmentSerializer(serializers.ModelSerializer):
+class FranchiseInstallmentSerializer(BaseSerializer):
     difference_value = serializers.ReadOnlyField()
     total_value = serializers.ReadOnlyField()
     transfer_percentage = serializers.ReadOnlyField()
