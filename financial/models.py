@@ -270,7 +270,7 @@ class FranchiseInstallment(models.Model):
     status = models.CharField(
         "Status",
         max_length=2,
-        choices=[("PE", "Pendente"), ("PG", "Pago")],
+        choices=[("PE", "Pendente"), ("PG", "Pago"), ("CA", "Cancelado")],
         default="PE",
     )
     installment_value = models.DecimalField(
