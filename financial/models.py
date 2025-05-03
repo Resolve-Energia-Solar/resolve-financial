@@ -260,6 +260,8 @@ class FranchiseInstallmentQuerySet(QuerySet):
         )
 
 
+
+
 class FranchiseInstallment(models.Model):
     sale = models.ForeignKey(
         "resolve_crm.Sale",
@@ -315,12 +317,12 @@ class FranchiseInstallment(models.Model):
             raise ValidationError("A venda associada a esta parcela é obrigatória.")
 
     def save(self, *args, **kwargs):
-        if self.is_paid:
-            self.status = "PG"
+        if self.status == "PG":
+            self.is_paid = True
             self.paid_at = timezone.now()
 
-        if not self.installment_value and not self.pk:
-            self.installment_value = self.total_value
+        # if not self.installment_value and not self.pk:
+        #     self.installment_value = self.total_value
 
         super().save(*args, **kwargs)
 
