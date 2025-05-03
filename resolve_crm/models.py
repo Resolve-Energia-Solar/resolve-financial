@@ -796,21 +796,25 @@ class ProjectQuerySet(models.QuerySet):
             access_opnion_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído'),
                     Q(access_opnion='Liberado')
                     & ~Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
                     then=Value('Pendente')
                 ),
                 When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído'),
                     Q(access_opnion='Liberado')
                     & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
                     then=Value('Solicitado')
                 ),
                 When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído'),
                     Q(access_opnion='Liberado')
                     & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='D'),
                     then=Value('Deferido')
                 ),
                 When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído'),
                     Q(access_opnion='Liberado')
                     & Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='I'),
                     then=Value('Indeferida')
