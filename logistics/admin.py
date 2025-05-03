@@ -40,6 +40,19 @@ class SaleProductInline(admin.TabularInline):
     autocomplete_fields = ['product', 'commercial_proposal']
     extra = 1
     
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = ('id','project', 'supplier', 'is_deleted', 'created_at')
+    search_fields = ('supplier__name', 'project__project_number', 'project__customer__name')
+    list_filter = ('is_deleted', 'created_at')
+    
+@admin.register(DeliveryType)
+class DeliveryTypeAdmin(admin.ModelAdmin):
+    list_display = ('id','name', 'is_deleted', 'created_at')
+    search_fields = ('name',)
+    list_filter = ('is_deleted', 'created_at')
+    
     
 # @admin.register(ProjectMaterials)
 # class ProjectMaterialsAdmin(admin.ModelAdmin):

@@ -139,3 +139,43 @@ class SaleProduct(models.Model):
         verbose_name = "Produto da Venda"
         verbose_name_plural = "Produtos das Vendas"
         ordering = ["-created_at"]
+
+
+
+class Purchase(models.Model):
+    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
+    supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto")
+    purchase_date = models.DateTimeField("Data do Pedido", auto_now_add=True)
+    delivery_type = models.ForeignKey('logistics.DeliveryType', on_delete=models.CASCADE, verbose_name="Tipo de Entrega", null=True, blank=True)
+    status = models.CharField("Status", max_length=50, null=True, blank=True)
+    delivery_number = models.CharField("Número de Entrega", max_length=50, null=True, blank=True)
+    is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
+    # Logs
+    
+    history = HistoricalRecords()
+    
+    def __str__(self):
+        return f"Projeto: {self.project}, Produto: {self.product}, Fornecedor: {self.supplier}"
+
+    class Meta:
+        verbose_name = "Compra"
+        verbose_name_plural = "Compras"
+        ordering = ["-purchase_date"]
+        
+
+class DeliveryType(models.Model):
+    name = models.CharField("Nome", max_length=50, null=False, blank=False)
+    description = models.CharField("Descrição", max_length=80, null=True, blank=True)
+    is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Tipo de Entrega"
+        verbose_name_plural = "Tipos de Entrega"
+        ordering = ["-created_at"]
