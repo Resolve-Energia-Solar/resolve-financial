@@ -87,7 +87,3 @@ class SaleProductViewSet(BaseModelViewSet):
 class PurchaseViewSet(BaseModelViewSet):
     queryset = Purchase.objects.all()
     serializer_class = PurchaseSerializer
-    
-class DeliveryTypeViewSet(BaseModelViewSet):
-    queryset = DeliveryType.objects.all()
-    serializer_class = DeliveryTypeSerializer
