@@ -38,6 +38,11 @@ class ResquestType(models.Model):
 
 
 class RequestsEnergyCompany(models.Model):
+    STATUS_CHOICES = [
+        ("S", "Solicitado"),
+        ("D", "Deferido"),
+        ("I", "Indeferido"),
+    ]
     company = models.ForeignKey(EnergyCompany, on_delete=models.CASCADE, verbose_name="Distribuidora de Energia")
     project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto", related_name="requests_energy_company")
     unit = models.ForeignKey("Units", on_delete=models.CASCADE, verbose_name="Unidade", null=True, blank=True)
@@ -46,7 +51,8 @@ class RequestsEnergyCompany(models.Model):
     requested_by = models.ForeignKey("accounts.User", on_delete=models.CASCADE, verbose_name="Solicitado por", null=True, blank=True)
     request = models.ForeignKey("RequestsEnergyCompany", on_delete=models.CASCADE, verbose_name="Solicitação", null=True, blank=True)
     request_date = models.DateField("Data da Solicitação")
-    status = models.CharField("Status", max_length=2, choices=[("S", "Solicitado"), ("D", "Deferido"), ("I", "Indeferido")])
+    status = models.CharField("Status", max_length=2, choices=STATUS_CHOICES, default="S")
+    debit_value = models.DecimalField("Valor do Débito", max_digits=10, decimal_places=2, null=True, blank=True)
     conclusion_date = models.DateField("Data da Conclusão", null=True, blank=True)
     interim_protocol = models.CharField("Protocolo Provisório", max_length=100, null=True, blank=True)
     final_protocol = models.CharField("Protocolo Definitivo", max_length=100, null=True, blank=True)
