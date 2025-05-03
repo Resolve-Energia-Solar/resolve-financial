@@ -82,3 +82,12 @@ class ProjectMaterialsViewSet(BaseModelViewSet):
 class SaleProductViewSet(BaseModelViewSet):
     queryset = SaleProduct.objects.all()
     serializer_class = SaleProductSerializer
+    
+    
+class PurchaseViewSet(BaseModelViewSet):
+    queryset = Purchase.objects.all()
+    serializer_class = PurchaseSerializer
+    
+class DeliveryTypeViewSet(BaseModelViewSet):
+    queryset = DeliveryType.objects.all()
+    serializer_class = DeliveryTypeSerializer

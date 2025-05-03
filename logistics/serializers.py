@@ -246,3 +246,17 @@ class ProjectMaterialsSerializer(BaseSerializer):
     class Meta:
         model = ProjectMaterials
         fields = '__all__'
+
+
+class PurchaseSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = Purchase
+        fields = '__all__'
+        
+
+class DeliveryTypeSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = DeliveryType
+        fields = '__all__'
+        
+        
