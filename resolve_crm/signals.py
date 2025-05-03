@@ -1,93 +1,96 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+import requests
+import sys
 from django.contrib.contenttypes.models import ContentType
 from core.task import create_process_async
 from core.utils import create_process
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
-from core.models import Attachment, Process, ProcessBase,Webhook
+from core.models import Attachment, Process, ProcessBase, SystemConfig,Webhook
 import logging
 from django.db import transaction
 
 
 logger = logging.getLogger(__name__)
 
-# def send_webhook_request(web_hook_url, data, secret):
-#     headers = {
-#         'Content-Type': 'application/json',
-#         'X-Hook-Secret': secret
-#     }
-#     try:
-#         response = requests.post(web_hook_url, json=data, headers=headers)
-#         response.raise_for_status()
-#         logger.info(f"Webhook enviado com sucesso: {response.status_code}")
-#     except requests.exceptions.RequestException as e:
-#         logger.error(f"Erro ao enviar o webhook: {e}")
+def send_webhook_request(web_hook_url, data, secret):
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Hook-Secret': secret
+    }
+    try:
+        response = requests.post(web_hook_url, json=data, headers=headers)
+        response.raise_for_status()
+        logger.info(f"Webhook enviado com sucesso: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro ao enviar o webhook: {e}")
 
 
-# def get_model_data(instance):
-#     data = {}
-#     for field in instance._meta.get_fields():
-#         field_name = field.name
-#         field_value = getattr(instance, field_name, None)
+def get_model_data(instance):
+    data = {}
+    for field in instance._meta.get_fields():
+        field_name = field.name
 
-#         # Tratamento especial para relacionamentos
-#         if field.one_to_many or field.many_to_many:
-#             # Exemplo: retornar lista de IDs relacionados
-#             field_value = [obj.id for obj in field_value.all()] if field_value else []
-#         elif field.is_relation:
-#             # Exemplo: retornar apenas ID do objeto relacionado
-#             field_value = field_value.id if field_value else None
-#         elif hasattr(field_value, 'isoformat'):
-#             # Exemplo: datas e horários
-#             field_value = field_value.isoformat()
+        try:
+            field_value = getattr(instance, field_name, None)
+        except Exception:
+            continue
 
-#         data[field_name] = field_value
-    
-#     return data
+        if field.one_to_many or field.many_to_many:
+            field_value = [obj.id for obj in field_value.all()] if field_value else []
+        elif field.is_relation:
+            field_value = field_value.id if field_value else None
+        elif hasattr(field_value, 'url'):
+            field_value = field_value.url if field_value else None
+        elif hasattr(field_value, 'isoformat'):
+            field_value = field_value.isoformat()
+
+        data[field_name] = field_value
+
+    return data
 
 
-# @receiver(post_save)
-# def send_webhook_on_save(sender, instance, created, **kwargs):
-#     # Ignora o sinal durante as migrações
-#     if 'migrate' in sys.argv or 'test' in sys.argv:
-#         return
 
-#     try:
-#         content_type = ContentType.objects.get_for_model(sender)
-#     except ContentType.DoesNotExist:
-#         # Retorna caso o ContentType ainda não exista
-#         return
+@receiver(post_save)
+def send_webhook_on_save(sender, instance, created, **kwargs):
+    if 'migrate' in sys.argv or 'test' in sys.argv:
+        return
 
-#     event_type = 'C' if created else 'U'
-#     webhooks = Webhook.objects.filter(
-#         content_type=content_type,
-#         event=event_type,
-#         is_active=True
-#     )
+    try:
+        content_type = ContentType.objects.get_for_model(sender)
+    except ContentType.DoesNotExist:
+        return
 
-#     if webhooks.exists():
-#         data = get_model_data(instance)
+    event_type = 'C' if created else 'U'
+    webhooks = Webhook.objects.filter(
+        content_type=content_type,
+        event=event_type,
+        is_active=True
+    )
+
+    if webhooks.exists():
+        data = get_model_data(instance)
         
-#         for webhook in webhooks:
-#             send_webhook_request(webhook.url, data, webhook.secret)
+        for webhook in webhooks:
+            send_webhook_request(webhook.url, data, webhook.secret)
 
 
-# @receiver(post_delete)
-# def send_webhook_on_delete(sender, instance, **kwargs):
-#     content_type = ContentType.objects.get_for_model(sender)
+@receiver(post_delete)
+def send_webhook_on_delete(sender, instance, **kwargs):
+    content_type = ContentType.objects.get_for_model(sender)
 
-#     webhooks = Webhook.objects.filter(
-#         content_type=content_type,
-#         event='D',
-#         is_active=True
-#     )
+    webhooks = Webhook.objects.filter(
+        content_type=content_type,
+        event='D',
+        is_active=True
+    )
 
-#     if webhooks.exists():
-#         data = get_model_data(instance)
+    if webhooks.exists():
+        data = get_model_data(instance)
         
-#         for webhook in webhooks:
-#             send_webhook_request(webhook.url, data, webhook.secret)
+        for webhook in webhooks:
+            send_webhook_request(webhook.url, data, webhook.secret)
 
 
 @receiver(post_save, sender=Attachment)
@@ -102,14 +105,25 @@ def attachment_changed(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sale)
 def handle_sale_post_save(sender, instance, created, **kwargs):
+    print(f"📌 Signal: Venda salva - ID: {instance.id} - Criada: {created}")
     def on_commit_all_tasks():
+        print(f"📌 Entrando na Func")
         check_projects_and_update_sale_tag.delay(instance.id, instance.status)
         
         if not instance.signature_date:
             return
+        
+        try:
+            system_config = SystemConfig.objects.get()
+            default_process = system_config.configs.get('default_process')
+            print(f"📌 Signal: default_process - {default_process}")
+        except SystemConfig.DoesNotExist:
+            logger.error("Configuração do sistema não encontrada.")
+            return
 
         try:
-            modelo = ProcessBase.objects.get(id=1)
+            modelo = ProcessBase.objects.get(name__exact=default_process)
+            print(f"📌 Signal: modelo - {modelo}")
         except ProcessBase.DoesNotExist:
             return
 

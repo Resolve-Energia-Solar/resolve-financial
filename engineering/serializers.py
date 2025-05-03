@@ -20,11 +20,6 @@ class EnergyCompanySerializer(BaseSerializer):
         model = EnergyCompany
         fields = '__all__'
 
-class ProjectReadSerializer(BaseSerializer):
-    class Meta:
-        model = Project
-        fields = '__all__'
-
 
 class SupplyAdequanceSerializer(BaseSerializer):
     class Meta:
@@ -50,10 +45,13 @@ class UnitsSerializer(BaseSerializer):
 
 
 class RequestsEnergyCompanySerializer(BaseSerializer):
-    str = serializers.SerializerMethodField()
     class Meta:
         model = RequestsEnergyCompany
         fields = '__all__'
         
-    def get_str(self, obj):
-        return str(obj)
+        
+        
+class CivilConstructionSerializer(BaseSerializer):
+    class Meta:
+        model = CivilConstruction
+        fields = '__all__'

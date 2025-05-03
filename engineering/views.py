@@ -169,3 +169,9 @@ class ProjectMaterialsCSVUploadAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class CivilConstructionViewSet(BaseModelViewSet):
+    queryset = CivilConstruction.objects.all()
+    serializer_class = CivilConstructionSerializer

@@ -34,6 +34,7 @@ import financial.urls
 import field_services.urls
 import logistics.urls
 import resolve_crm.urls
+import customer_service.urls
 
 api_schema_view = get_schema_view(
     openapi.Info(

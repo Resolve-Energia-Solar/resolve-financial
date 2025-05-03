@@ -27,41 +27,34 @@ def store_old_total_value(sender, instance, **kwargs):
         instance.old_total_value = None 
 
 
-@receiver(post_save, sender=Sale) 
+@receiver(post_save, sender=Sale)
 def adjust_franchise_installments_on_sale_update(sender, instance, created, **kwargs):
-    """
-    Ajusta as parcelas do franquiado se o valor total da venda foi alterado.
-    """
+    print("Ajustando parcelas de franquia após atualização da venda...")
+    if created:
+        return
+
     if not instance.branch or not instance.branch.transfer_percentage and not instance.transfer_percentage:
         raise ValidationError("Percentual de Repasse não configurado para a filial ou para a venda.")
-    
-    if not created and instance.old_total_value is not None:
-        if instance.old_total_value != instance.total_value or instance.old_transfer_percentage != instance.transfer_percentage:
-            transfer_percentage = instance.transfer_percentage if instance.transfer_percentage else instance.branch.transfer_percentage
-            franchise_installments = instance.franchise_installments.all()
-            
-            if franchise_installments.exists():
-                reference_value = sum(
-                    product.reference_value if product.reference_value is not None else product.value
-                    for product in instance.sale_products.all()
-                )
-                
-                difference_value = instance.total_value - reference_value
-                margin_7 = max(difference_value * Decimal("0.07"), Decimal("0.00"))
-                transfer_percentage = transfer_percentage / 100
-                
-                total_value = round(
-                    (reference_value * transfer_percentage) - margin_7 + difference_value,
-                    3
-                )
 
-                num_installments = franchise_installments.count()
-                installment_value = round(total_value / num_installments, 6)
+    if instance.old_total_value != instance.total_value or instance.old_transfer_percentage != instance.transfer_percentage:
+        franchise_installments = instance.franchise_installments.all()
+        if not franchise_installments.exists():
+            return
 
-                for installment in franchise_installments:
-                    installment.installment_value = installment_value
-                    installment.full_clean()
-                    installment.save()
+        reference_value = sum(
+            p.reference_value or Decimal("0.00")
+            for p in instance.sale_products.all()
+        )
+
+        total_value = instance.calculate_franchise_installment_value(reference_value)
+        num_installments = franchise_installments.count()
+        installment_value = round(total_value / num_installments, 6)
+
+        for installment in franchise_installments:
+            installment.installment_value = installment_value
+            installment.full_clean()
+            installment.save()
+
 
 
 @receiver(post_save, sender=FinancialRecord)

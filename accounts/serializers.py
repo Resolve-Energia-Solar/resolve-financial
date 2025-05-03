@@ -50,6 +50,8 @@ class AddressSerializer(BaseSerializer):
         if obj.zip_code:
             address += f" - {obj.zip_code}"
         address += f", {obj.country}"
+        if obj.neighborhood:
+            address += f", {obj.neighborhood}"
         return address
 
     def create(self, validated_data):

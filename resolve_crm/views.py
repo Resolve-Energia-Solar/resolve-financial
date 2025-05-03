@@ -230,11 +230,10 @@ class SaleViewSet(BaseModelViewSet):
     
     
 class ProjectViewSet(BaseModelViewSet):
-    queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     
     def get_queryset(self):
-        queryset = Project.objects.all()
+        queryset = Project.objects.with_status_annotations()
 
         queryset = queryset.select_related(
             'sale', 'inspection__final_service_opinion'
@@ -245,7 +244,7 @@ class ProjectViewSet(BaseModelViewSet):
             'requests_energy_company',
             Prefetch(
                 'sale__attachments',
-                queryset=Attachment.objects.filter(status='A').only('id', 'document_type_id', 'status', 'object_id'),
+                queryset=Attachment.objects.filter(status='A'),
                 to_attr='approved_attachments'
             ),
             Prefetch(
@@ -255,7 +254,8 @@ class ProjectViewSet(BaseModelViewSet):
             ),
         )
 
-        return queryset.order_by('-created_at')
+        return queryset.order_by('-created_at').distinct()
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -272,6 +272,48 @@ class ProjectViewSet(BaseModelViewSet):
         new_contract_number = request.query_params.get('new_contract_number')
         supply_adquance = request.query_params.get('supply_adquance')
         request_energy_company_type = request.query_params.get('request_energy_company_type__in')
+        
+        access_opnion_status = request.query_params.get('access_opnion_status')
+        trt_pending = request.query_params.get('trt_pending')
+        load_increase_status = request.query_params.get('load_increase_status')
+        branch_adjustment_status = request.query_params.get('branch_adjustment_status')
+        final_inspection_status = request.query_params.get('final_inspection_status')
+        new_contact_number_status = request.query_params.get('new_contact_number_status')
+        
+        seller = request.query_params.get('seller')
+        sale_status = request.query_params.get('sale_status')
+        sale_branches = request.query_params.get('sale_branches')
+        state = request.query_params.get('state')
+        city = request.query_params.get('city')
+        invoice_status = request.query_params.get('invoice_status')
+        payment_types = request.query_params.get('payment_types')
+        financiers = request.query_params.get('financiers')
+        borrower = request.query_params.get('borrower')
+        
+        if borrower:
+            queryset = queryset.filter(sale__payments__borrower__id=borrower)
+        if payment_types:
+            payment_types = payment_types.split(',')
+            queryset = queryset.filter(sale__payments__payment_type__in=payment_types)
+        if financiers:
+            financiers = financiers.split(',')
+            queryset = queryset.filter(sale__payments__financier__id__in=financiers)
+        if seller:
+            queryset = queryset.filter(sale__seller__id=seller)
+        if sale_status:
+            sale_status = sale_status.split(',')
+            queryset = queryset.filter(sale__status__in=sale_status)
+        if sale_branches:
+            sale_branches = sale_branches.split(',')
+            queryset = queryset.filter(sale__branch__id__in=sale_branches)
+        if invoice_status:
+            invoice_status = invoice_status.split(',')
+            queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status)
+        if state:
+            queryset = queryset.filter(main_unit_prefetched__address__state__icontains=state)
+        if city:
+            queryset = queryset.filter(main_unit_prefetched__address__city__icontains=city)
+            
         
         if request_energy_company_type:
             request_energy_company_type = request_energy_company_type.split(',')
@@ -290,49 +332,35 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance)
 
         if access_opnion == 'liberado':
-            queryset = queryset.filter(Q
-                (Q(attachments__document_type__name__icontains='ART') |
-                 
-                Q(attachments__document_type__name__icontains='TRT')) &
-                
-                (Q(sale__status__in=['F'],
-                sale__payment_status__in=['L', 'C', 'CO'],
-                inspection__final_service_opinion__name__icontains='aprovado',
-                sale__is_pre_sale=False) & ~Q(status__in=['CO'])) &
-
-                Q(attachments__status__in=['A']) &
-                Q(units__account_number__isnull=False)
-            ).distinct()
+            queryset = queryset.filter(access_opnion__icontains='Liberado')
         elif access_opnion == 'bloqueado':
-            queryset = queryset.exclude(Q
-                (Q(attachments__document_type__name__icontains='ART') |
-                 
-                Q(attachments__document_type__name__icontains='TRT')) &
-                
-                (Q(sale__status__in=['F'],
-                sale__payment_status__in=['L', 'C', 'CO'],
-                inspection__final_service_opinion__name__icontains='aprovado',
-                sale__is_pre_sale=False) & ~Q(status__in=['CO'])) &
-
-                Q(attachments__status__in=['A']) &
-                Q(units__account_number__isnull=False)
-            ).distinct()
+            queryset = queryset.filter(access_opnion__icontains='Bloqueado')
             
-        if trt_status == 'P':
-            queryset = queryset.filter(
-            ~Q(
-                Q(attachments__document_type__name__icontains='ART/TRT') &
-                Q(attachments__status__in=['A', 'EA', 'R'])
-            )
-        )
-        elif trt_status:
+        if trt_status:
             trt_status_list = trt_status.split(',')
-            queryset = queryset.filter(Q(
-                Q(attachments__document_type__name__icontains='ART/TRT')
-            ) &
-                Q(attachments__status__in=trt_status_list)
+            queryset = queryset.filter(
+                Q(trt_status__in=trt_status_list)
             )
+
+        if trt_pending:
+            queryset = queryset.filter(trt_pending__iexact=trt_pending)
             
+        if access_opnion_status:
+            queryset = queryset.filter(access_opnion_status__icontains=access_opnion_status)
+
+        if load_increase_status:
+            queryset = queryset.filter(load_increase_status__icontains=load_increase_status)
+
+        if branch_adjustment_status:
+            queryset = queryset.filter(branch_adjustment_status__icontains=branch_adjustment_status)
+
+        if final_inspection_status:
+            queryset = queryset.filter(final_inspection_status__icontains=final_inspection_status)
+
+        if new_contact_number_status:
+            queryset = queryset.filter(new_contact_number_status__icontains=new_contact_number_status)
+            
+        
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
 
@@ -353,63 +381,10 @@ class ProjectViewSet(BaseModelViewSet):
             except ValueError:
                 return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if is_released_to_engineering in ['true', 'false']:
-            sale_content_type = ContentType.objects.get_for_model(Sale)
-            queryset = queryset.annotate(
-                has_contract=Exists(
-                    Attachment.objects.filter(
-                        content_type=sale_content_type,
-                        object_id=OuterRef('sale_id'),
-                        document_type__name__icontains='Contrato',
-                        status='A'
-                    )
-                ),
-                has_rg_or_cnh=Exists(
-                    Attachment.objects.filter(
-                        content_type=sale_content_type,
-                        object_id=OuterRef('sale_id'),
-                        status='A'
-                    ).filter(
-                        Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
-                    )
-                ),
-                homologator_rg_or_cnh=Exists(
-                    Attachment.objects.filter(
-                        content_type=sale_content_type,
-                        object_id=OuterRef('sale_id'),
-                        status='A'
-                    ).filter(Q(
-                        Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH')
-                    ) & Q(document_type__name__icontains='homologador'))
-                ),
-            )
-
-            if is_released_to_engineering == 'true':
-                queryset = queryset.filter(Q(
-                    sale__status__in=['F', 'EA'],
-                    sale__payment_status__in=['L', 'C', 'CO'],
-                    sale__is_pre_sale=False,
-                    inspection__final_service_opinion__name__icontains='aprovado',
-                    homologator_rg_or_cnh=True,
-                ) &
-                    ~Q(status__in=['CO', 'D']) & Q(
-                        Q(units__bill_file__isnull=False) |
-                        Q(units__new_contract_number=True)
-                        )
-                )
-            elif is_released_to_engineering == 'false':
-                queryset = queryset.filter(
-                    Q(
-                        ~Q(sale__status__in=['F', 'EA']) |
-                        ~Q(homologator_rg_or_cnh=True) |
-                        ~Q(sale__payment_status__in=['L', 'C', 'CO']) |
-                        ~Q(inspection__final_service_opinion__name__icontains='aprovado') |
-                        Q(sale__is_pre_sale=True)
-                    ) | Q(status__in=['CO', 'D']) & Q(
-                        Q(units__bill_file__isnull=True) |
-                        Q(units__new_contract_number=False)
-                    )
-                )
+        if is_released_to_engineering == 'true':
+            queryset = queryset.filter(is_released_to_engineering=True)
+        elif is_released_to_engineering == 'false':
+            queryset = queryset.filter(is_released_to_engineering=False)
 
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
@@ -437,46 +412,18 @@ class ProjectViewSet(BaseModelViewSet):
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
 
+
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
         filter_params = request.GET.dict()
         filter_hash = md5(str(filter_params).encode()).hexdigest()
-        cache_key = f'sale_indicators_{filter_hash}'
+        cache_key = f'project_indicators_{filter_hash}'
 
         indicators = cache.get(cache_key)
         if indicators:
             return Response({"indicators": indicators})
 
         queryset = self.filter_queryset(self.get_queryset())
-
-        queryset = queryset.annotate(
-            has_contract=Exists(
-                Attachment.objects.filter(
-                    content_type=sale_content_type,
-                    object_id=OuterRef('sale_id'),
-                    document_type__name__icontains='Contrato',
-                    status='A'
-                )
-            ),
-            homologator_rg_or_cnh=Exists(
-                Attachment.objects.filter(
-                    content_type=sale_content_type,
-                    object_id=OuterRef('sale_id'),
-                    status='A',
-                    document_type__name__icontains='homologador'
-                ).filter(Q(document_type__name__icontains='RG') | Q(document_type__name__icontains='CNH'))
-            )
-        )
-
-        is_released_to_engineering_filter = Q(
-            sale__status__in=['F', 'EA'],
-            sale__payment_status__in=['L', 'C', 'CO'],
-            sale__is_pre_sale=False,
-            inspection__final_service_opinion__name__icontains='aprovado',
-            homologator_rg_or_cnh=True
-        ) & ~Q(status__in=['CO', 'D']) & Q(
-            Q(units__bill_file__isnull=False) | Q(units__new_contract_number=True)
-        )
         
         queryset = queryset.distinct()
 
@@ -493,12 +440,12 @@ class ProjectViewSet(BaseModelViewSet):
             canceled_count=Count('id', filter=Q(status="C")),
             termination_count=Count('id', filter=Q(status="D")),
 
-            is_released_to_engineering_count=Count('id', filter=is_released_to_engineering_filter),
-            pending_material_list=Count('id', filter=is_released_to_engineering_filter & Q(
+            is_released_to_engineering_count=Count('id', filter=Q(is_released_to_engineering=True)),
+            pending_material_list=Count('id', filter=Q(is_released_to_engineering=True) & Q(
                 designer_status="CO",
                 material_list_is_completed=False
             )),
-            blocked_to_engineering=Count('id', filter=~is_released_to_engineering_filter |
+            blocked_to_engineering=Count('id', filter=~Q(is_released_to_engineering=True) |
                 Q(units__bill_file__isnull=True, units__new_contract_number=False))
         )
 

@@ -16,6 +16,8 @@ DEBUG = (os.environ.get('DEBUG') == 'True')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',') if os.environ.get('CSRF_TRUSTED_ORIGINS') else []
 
+GMAPS_API_KEY = os.environ.get('GMAPS_API_KEY')
+
 # if not DEBUG:
 #     SESSION_COOKIE_SECURE = True
 #     CSRF_COOKIE_SECURE = True
@@ -46,10 +48,12 @@ INSTALLED_APPS = [
     'engineering.apps.EngineeringConfig',
     'financial.apps.FinancialConfig',
     'mobile_app.apps.MobileAppConfig',
+    'customer_service.apps.CustomerServiceConfig',
     'notifications',
     'simple_history',
     'api.apps.ApiConfig',
     'rest_framework',
+    "rest_framework.authtoken",
     'drf_yasg',
     'django_filters',
     'corsheaders',
@@ -243,8 +247,9 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',

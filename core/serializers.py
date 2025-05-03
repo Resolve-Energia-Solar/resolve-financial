@@ -125,7 +125,7 @@ class NotificationSerializer(BaseSerializer):
 class ProcessSerializer(BaseSerializer):
     class Meta:
         model = Process
-        fields = ['id', 'name', 'description', 'content_type', 'object_id', 'deadline', 'steps', 'created_at']
+        fields = '__all__'
 
     def validate_steps(self, value):
         etapas = value.get("steps", [])

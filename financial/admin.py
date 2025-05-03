@@ -3,6 +3,7 @@ from django.contrib import admin
 import requests
 from django.db.models import Q
 from .models import (
+    BankDetails,
     Financier,
     FranchiseInstallment,
     Payment,
@@ -160,8 +161,18 @@ class FinancialRecordAdmin(admin.ModelAdmin):
         "status",
         "responsible_status",
         "payment_status",
+        "is_receivable",
+        "payment_method",
         "due_date",
+        "service_date",
         "created_at",
+        "paid_at",
+        "category_name",
+        "department_name",
+        "client_supplier_name",
+        "requesting_department",
+        "requester",
+        "responsible",
         ErrorRequestFilter,
     )
     ordering = ("-created_at",)
@@ -208,3 +219,28 @@ class FinancialRecordAdmin(admin.ModelAdmin):
     resend_approval_request_to_responsible.short_description = (
         "Reenviar solicitação ao responsável"
     )
+
+
+@admin.register(BankDetails)
+class BankDetailsAdmin(admin.ModelAdmin):
+    list_display = (
+        "client_supplier_code",
+        "financial_instituition",
+        "agency_number",
+        "account_number",
+        "account_type",
+        "pix_key_type",
+        "pix_key",
+    )
+    search_fields = (
+        "client_supplier_code",
+        "financial_instituition",
+        "agency_number",
+        "account_number",
+        "pix_key",
+    )
+    list_filter = ("account_type", "pix_key_type", "financial_instituition")
+    ordering = ("financial_instituition",)
+
+    class Media:
+        js = ("admin/js/autocomplete_financial_instituition.js",)

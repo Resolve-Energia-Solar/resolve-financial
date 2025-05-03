@@ -178,6 +178,7 @@ class Schedule(models.Model):
             ("view_agent_info", "Can view agent info"),
             ("view_service_opinion", "Can view service opinion"),
             ("can_change_service", "Can change service"),
+            ('can_see_admin_schedules', 'Can see admin schedules'),
         ]
         indexes = [
             models.Index(fields=['schedule_date']),

@@ -1,6 +1,5 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
-from resolve_crm.models import Project
 from django.core.exceptions import ValidationError
 
 
@@ -40,7 +39,7 @@ class ResquestType(models.Model):
 
 class RequestsEnergyCompany(models.Model):
     company = models.ForeignKey(EnergyCompany, on_delete=models.CASCADE, verbose_name="Distribuidora de Energia")
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", related_name="requests_energy_company")
+    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto", related_name="requests_energy_company")
     unit = models.ForeignKey("Units", on_delete=models.CASCADE, verbose_name="Unidade", null=True, blank=True)
     type = models.ForeignKey("ResquestType", on_delete=models.CASCADE, verbose_name="Tipo de Solicitação")
     situation = models.ManyToManyField("SituationEnergyCompany", verbose_name="Situação", blank=True)
@@ -86,7 +85,7 @@ class Units(models.Model):
         ("T", "Trifásico"),
     ]
     
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True, related_name="units")
+    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto", null=True, blank=True, related_name="units")
     name = models.CharField("Nome", max_length=200, null=True, blank=True)
     supply_adquance = models.ManyToManyField("SupplyAdequance", verbose_name="Adequação de Fornecimento", blank=True)
     main_unit = models.BooleanField("Geradora", default=False)
@@ -139,3 +138,68 @@ class SupplyAdequance(models.Model):
         
     def __str__(self):
         return self.name
+
+
+
+class CivilConstruction(models.Model):
+    project = models.ForeignKey(
+        'resolve_crm.Project',
+        on_delete=models.CASCADE,
+        verbose_name="Projeto",
+        null=True,
+        blank=True,
+        related_name="civil_construction"
+    )
+    status = models.CharField(
+        "Status",
+        max_length=2,
+        choices=[("P", "Pendente"), ("F", "Finalizada"), ("C", "Cancelado"), ("EA", "Em Andamento")],
+        default="P"
+    )
+    deadline = models.DateField(
+        "Prazo",
+        null=True,
+        blank=True
+    )
+    financial_records = models.ManyToManyField(
+        "financial.FinancialRecord",
+        verbose_name="Financial Recordies",
+        blank=True,
+        related_name="civil_construction"
+    )
+    work_responsibility = models.CharField(
+        "Responsabilidade da Obra",
+        max_length=1,
+        choices=[("C", "Cliente"), ("F", "Franquiado")],
+    )
+    repass_value = models.DecimalField(
+        "Valor de Repasse",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    budget_value = models.DecimalField(
+        "Valor de Orçamento",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    service_description = models.TextField(
+        "Descrição do Serviço",
+    )
+    shading_percentage = models.DecimalField(
+        "Percentual de Sombreamento",
+        max_digits=5,
+        decimal_places=2,
+    )
+    
+    class Meta:
+        verbose_name = "Obra Civil"
+        verbose_name_plural = "Obras Civis"
+        ordering = ["project"]
+
+    def __str__(self):
+        first_six = " ".join(self.service_description.split()[:6])
+        return f"Obra do Projeto {self.project} - {self.project.sale.customer.complete_name} | {first_six}"

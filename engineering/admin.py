@@ -29,3 +29,40 @@ class ResquestTypeAdmin(admin.ModelAdmin):
 class EnergyCompanyAdmin(admin.ModelAdmin):
     list_display = ("name",)
     
+
+@admin.register(CivilConstruction)
+class CivilConstructionAdmin(admin.ModelAdmin):
+    list_display = (
+        "project",
+        "work_responsibility",
+        "repass_value",
+        "budget_value",
+        "shading_percentage",
+    )
+    list_display_links = ("project",)
+    list_editable = (
+        "work_responsibility",
+        "repass_value",
+        "budget_value",
+        "shading_percentage",
+    )
+    list_filter = ("project", "work_responsibility")
+    search_fields = ("project__name", "service_description")
+    autocomplete_fields = ("project",)
+    ordering = ("project",)
+    fieldsets = (
+        ("Informações Gerais", {
+            "fields": (
+                "project",
+                "work_responsibility",
+                "service_description",
+                "shading_percentage",
+            ),
+        }),
+        ("Valores", {
+            "fields": (
+                "repass_value",
+                "budget_value",
+            ),
+        }),
+    )

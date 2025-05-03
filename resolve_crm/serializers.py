@@ -186,8 +186,6 @@ class SaleSerializer(BaseSerializer):
 
         return instance
 
-    from decimal import Decimal
-
 
     def _handle_products(self, sale, products=None, commercial_proposal_id=None):
         products_list = []
@@ -202,6 +200,7 @@ class SaleSerializer(BaseSerializer):
                 commercial_proposal=proposal,
                 sale__isnull=True
             )
+
             if not sale_products_qs.exists():
                 raise ValidationError({"detail": "Proposta comercial não possui produtos disponíveis."})
 
@@ -223,6 +222,7 @@ class SaleSerializer(BaseSerializer):
             SaleProduct.objects.bulk_create(new_sale_products)
             products_list = new_sale_products
 
+        # cria os projetos baseados nos produtos
         project_instances = [
             Project(sale=sale, product=sp.product)
             for sp in products_list
@@ -230,34 +230,28 @@ class SaleSerializer(BaseSerializer):
         if project_instances:
             Project.objects.bulk_create(project_instances)
 
+        # atualiza total_value da venda
         aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(
             total=Sum(F('value') * F('amount'))
         )['total'] or Decimal('0')
         sale.total_value = aggregate_total
         sale.save(update_fields=['total_value'])
 
+        # calcula parcela do franqueado
         aggregate_reference = SaleProduct.objects.filter(sale=sale).aggregate(
             reference_sum=Sum('reference_value')
         )['reference_sum'] or Decimal('0')
-        difference = sale.total_value - aggregate_reference
 
-        tp = sale.transfer_percentage
-        if tp is None:
-            tp = sale.branch.transfer_percentage or Decimal('0')
-        tp = Decimal(str(tp))
-
-        if difference <= 0:
-            installment_value = aggregate_reference * (tp / Decimal('100')) - difference
-        else:
-            margin_seven = difference * Decimal('0.07')
-            installment_value = (aggregate_reference * (tp / Decimal('100'))) + difference - margin_seven
+        installment_value = sale.calculate_franchise_installment_value(aggregate_reference)
 
         FranchiseInstallment.objects.create(
             sale=sale,
-            installment_value=installment_value
+            installment_value=installment_value,
+            marketing_tax=sale.branch.marketing_tax,
+            margin=sale.branch.margin,
         )
-    
-        
+
+            
     def create_projects(self, sale, products):
         projects = [
             Project(sale=sale, product=sp.product)
@@ -305,13 +299,19 @@ class SaleSerializer(BaseSerializer):
 
 
 class ProjectSerializer(BaseSerializer):
-    is_released_to_engineering = serializers.SerializerMethodField()
-    documents_under_analysis = serializers.SerializerMethodField()
-    access_opnion = serializers.SerializerMethodField()
-    trt_pending = serializers.SerializerMethodField()
-    trt_status = serializers.SerializerMethodField()
-    request_requested = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
+    access_opnion = serializers.CharField(read_only=True)
+    trt_pending = serializers.CharField(read_only=True)
+    access_opnion_status = serializers.CharField(read_only=True)
+    load_increase_status = serializers.CharField(read_only=True)
+    branch_adjustment_status = serializers.CharField(read_only=True)
+    new_contact_number_status = serializers.CharField(read_only=True)
+    final_inspection_status = serializers.CharField(read_only=True)
+    request_requested = serializers.BooleanField(read_only=True)
+    pending_material_list = serializers.BooleanField(read_only=True)
+    is_released_to_engineering = serializers.BooleanField(read_only=True)
+    trt_status = serializers.CharField(read_only=True)
+    supply_adquance_names = serializers.CharField(read_only=True)
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
@@ -322,33 +322,53 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+        
+        
+    # def get_supply_adquance(self, obj):
+    #     supply_list = obj.supply_adquance
+    #     return [{"id": sa.id, "name": sa.name} for sa in supply_list]
 
-    def get_is_released_to_engineering(self, obj):
-        return obj.is_released_to_engineering
+    
+    # def get_access_opnion_status(self, obj):
+    #     return obj.access_opnion_status
+    
+    # def get_load_increase_status(self, obj):
+    #     return obj.load_increase_status
+    
+    # def get_branch_adjustment_status(self, obj):
+    #     return obj.branch_adjustment_status
+    
+    # def get_new_contact_number_status(self, obj):
+    #     return obj.new_contact_number_status
+    
+    # def get_final_inspection_status(self, obj):
+    #     return obj.final_inspection_status
+
+
+    # def get_is_released_to_engineering(self, obj):
+    #     return obj.is_released_to_engineering
 
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis[:10]
-        return [{"id": d.id, "name": d.document_type.name, "status": d.status} for d in documents]
+        return [{"id": d.id, "name": d.document_type.name if d.document_type else None, "status": d.status} for d in documents]
 
+    # def get_access_opnion(self, obj):
+    #     return obj.access_opnion
 
-    def get_access_opnion(self, obj):
-        return obj.access_opnion
+    # def get_trt_pending(self, obj):
+    #     return obj.trt_pending
 
-    def get_trt_pending(self, obj):
-        return obj.trt_pending
+    # def get_trt_status(self, obj):
+    #     return obj.trt_status
 
-    def get_trt_status(self, obj):
-        return obj.trt_status
-
-    def get_request_requested(self, obj):
-        return obj.request_requested
+    # def get_request_requested(self, obj):
+    #     return obj.request_requested
 
     def get_address(self, obj):
         main_unit = obj.main_unit_prefetched[0] if hasattr(obj, 'main_unit_prefetched') and obj.main_unit_prefetched else None
         return AddressSerializer(main_unit.address).data if main_unit and main_unit.address else None
 
 
-    
     def update(self, instance, validated_data):
         materials_data = validated_data.pop('materials_data', [])
         

@@ -235,8 +235,10 @@ class PaymentInstallmentViewSet(BaseModelViewSet):
 
 
 class FranchiseInstallmentViewSet(BaseModelViewSet):
-    queryset = FranchiseInstallment.objects.all()
     serializer_class = FranchiseInstallmentSerializer
+    
+    def get_queryset(self):
+        return FranchiseInstallment.objects.with_annotations()
 
 
 class FinancialRecordViewSet(BaseModelViewSet):
@@ -683,3 +685,8 @@ class UpdateFinancialRecordPaymentStatus(APIView):
         financial_record.save()
         
         return Response({"message": "Financial record payment status updated"})
+
+
+class BankDetailsViewSet(BaseModelViewSet):
+    queryset = BankDetails.objects.all()
+    serializer_class = BankDetailsSerializer
