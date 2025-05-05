@@ -1061,21 +1061,6 @@ class Project(models.Model):
         return self.project_number if self.project_number else f'Projeto {self.id}'
 
     def save(self, current_user=None, *args, **kwargs):
-        if not self.project_number:
-            with transaction.atomic():
-                last_project = Project.objects.select_for_update().order_by('-project_number').exclude(project_number__icontains='ProjMig').first()
-                last_number = 0
-                if last_project and last_project.project_number:
-                    try:
-                        last_number = int(last_project.project_number.replace('PROJ', ''))
-                    except ValueError:
-                        last_number = 0
-                while True:
-                    last_number += 1
-                    new_project_number = f'PROJ{last_number:02}'
-                    if not Project.objects.filter(project_number=new_project_number).exists():
-                        self.project_number = new_project_number
-                        break
         if self.is_documentation_completed and not self.documention_completion_date:
             self.documention_completion_date = now()
         if not self.designer_coclusion_date and self.designer_status == 'CO':

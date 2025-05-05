@@ -131,6 +131,7 @@ class FranchiseInstallmentSerializer(BaseSerializer):
         
     def get_payments_methods(self, obj):
         return obj.payments_methods()
+    
 
 class FinancialRecordSerializer(BaseSerializer):
     class Meta:

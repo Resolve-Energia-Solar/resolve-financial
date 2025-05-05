@@ -43,27 +43,6 @@ class SaleProductInline(admin.TabularInline):
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ('id','project', 'supplier', 'is_deleted', 'created_at')
-    search_fields = ('supplier__name', 'project__project_number', 'project__customer__name')
-    list_filter = ('is_deleted', 'created_at')
-    
-@admin.register(DeliveryType)
-class DeliveryTypeAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'is_deleted', 'created_at')
-    search_fields = ('name',)
-    list_filter = ('is_deleted', 'created_at')
-    
-    
-# @admin.register(ProjectMaterials)
-# class ProjectMaterialsAdmin(admin.ModelAdmin):
-#     list_display = ('project', 'material', 'amount', 'is_deleted', 'created_at')
-#     search_fields = ('project__name', 'material__description')
-#     list_filter = ('is_deleted', 'created_at')
-    
-
-# @admin.register(ProductMaterials)
-# class ProductMaterialsAdmin(admin.ModelAdmin):
-#     list_display = ('product', 'material', 'amount', 'is_deleted', 'created_at')
-#     search_fields = ('product__name', 'material__description')
-#     list_filter = ('is_deleted', 'created_at')
-    
+    list_display = ('id', 'project', 'supplier', 'purchase_date', 'delivery_type', 'status', 'delivery_number', 'is_deleted')
+    search_fields = ('project__project_number', 'project__customer__name', 'supplier__name', 'delivery_number')
+    list_filter = ('status', 'delivery_type', 'is_deleted', 'purchase_date')

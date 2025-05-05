@@ -17,7 +17,6 @@ class MaterialAttributes(models.Model):
         verbose_name_plural = "Atributos dos Materiais"
         ordering = ["-created_at"]
 
-#ITEM
 class Materials(models.Model):
     name = models.CharField("Nome", max_length=100, null=False, blank=False)
     price = models.DecimalField("Preço", max_digits=20, decimal_places=3, default=0, null=False, blank=False)
@@ -25,7 +24,6 @@ class Materials(models.Model):
     is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
     
-    # Logs
     history = HistoricalRecords()
 
     def __str__(self):
@@ -141,19 +139,22 @@ class SaleProduct(models.Model):
         ordering = ["-created_at"]
 
 
-
 class Purchase(models.Model):
     project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
     supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Produto")
     purchase_date = models.DateTimeField("Data do Pedido", auto_now_add=True)
-    delivery_type = models.ForeignKey('logistics.DeliveryType', on_delete=models.CASCADE, verbose_name="Tipo de Entrega", null=True, blank=True)
-    status = models.CharField("Status", max_length=50, null=True, blank=True)
+    delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")])
+    status = models.CharField("Status", max_length=1, choices=[
+        ('R', 'Compra realizada'),
+        ('C', 'Cancelada'),
+        ('D', 'Distrato'),
+        ('A', 'Aguardando pagamento'),
+        ('P', 'Pendente')
+    ], default='P')
     delivery_number = models.CharField("Número de Entrega", max_length=50, null=True, blank=True)
-    is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
-    # Logs
+    is_deleted = models.BooleanField("Deletado", default=False)
     
+    # Logs
     history = HistoricalRecords()
     
     def __str__(self):
@@ -163,19 +164,3 @@ class Purchase(models.Model):
         verbose_name = "Compra"
         verbose_name_plural = "Compras"
         ordering = ["-purchase_date"]
-        
-
-class DeliveryType(models.Model):
-    name = models.CharField("Nome", max_length=50, null=False, blank=False)
-    description = models.CharField("Descrição", max_length=80, null=True, blank=True)
-    is_deleted = models.BooleanField("Deletado", default=False, null=True, blank=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True, null=True, blank=True)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Tipo de Entrega"
-        verbose_name_plural = "Tipos de Entrega"
-        ordering = ["-created_at"]

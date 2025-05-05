@@ -3,7 +3,7 @@ from django.dispatch import receiver
 import requests
 import sys
 from django.contrib.contenttypes.models import ContentType
-from core.task import create_process_async
+from .task import generate_project_number
 from core.utils import create_process
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
@@ -49,6 +49,12 @@ def get_model_data(instance):
         data[field_name] = field_value
 
     return data
+
+
+@receiver(post_save, sender=Project)
+def post_create_project(sender, instance, created, **kwargs):
+    if created and not instance.project_number:
+        generate_project_number.delay(instance.pk)
 
 
 @receiver(post_save)

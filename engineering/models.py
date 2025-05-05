@@ -42,6 +42,7 @@ class RequestsEnergyCompany(models.Model):
         ("S", "Solicitado"),
         ("D", "Deferido"),
         ("I", "Indeferido"),
+        ("ID", "Indeferido com Débito"),
     ]
     company = models.ForeignKey(EnergyCompany, on_delete=models.CASCADE, verbose_name="Distribuidora de Energia")
     project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto", related_name="requests_energy_company")
