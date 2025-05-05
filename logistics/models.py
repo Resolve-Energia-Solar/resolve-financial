@@ -152,7 +152,7 @@ class Purchase(models.Model):
         ('P', 'Pendente'),
         ('F', 'Aguardando Previsão de Entrega'),
     ], default='P')
-    purchase_value = models.DecimalField("Valor da Compra", max_digits=20, decimal_places=6, default=0)
+    purchase_value = models.DecimalField("Valor da Compra", max_digits=20, decimal_places=2, default=0)
     delivery_forecast= models.DateField("Previsão de Entrega", null=True, blank=True)
     delivery_number = models.CharField("Número de Entrega", max_length=50, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
