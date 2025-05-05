@@ -206,8 +206,6 @@ class SaleSerializer(BaseSerializer):
             products_list = list(sale_products_qs)
 
         elif products:
-            product_objs = Product.objects.filter(id__in=products)
-
             new_sale_products = [
                 SaleProduct(
                     sale=sale,
@@ -217,7 +215,7 @@ class SaleSerializer(BaseSerializer):
                     cost_value=prod.cost_value or Decimal('0'),
                     amount=1
                 )
-                for prod in product_objs
+                for prod in products
             ]
             SaleProduct.objects.bulk_create(new_sale_products)
 
