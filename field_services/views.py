@@ -54,7 +54,7 @@ class ServiceViewSet(BaseModelViewSet):
         if not self.request.user.is_superuser:
             user_groups = self.request.user.groups.values_list("id", flat=True)
             queryset = queryset.filter(groups__id__in=user_groups)
-        return queryset.filter()
+        return queryset.distinct()
 
 
 class FormsViewSet(BaseModelViewSet):
