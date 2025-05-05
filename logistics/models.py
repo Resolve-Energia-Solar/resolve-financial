@@ -142,15 +142,18 @@ class SaleProduct(models.Model):
 class Purchase(models.Model):
     project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
     supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor")
-    purchase_date = models.DateTimeField("Data do Pedido", auto_now_add=True)
+    purchase_date = models.DateField("Data do Pedido")
     delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")])
     status = models.CharField("Status", max_length=1, choices=[
         ('R', 'Compra realizada'),
         ('C', 'Cancelada'),
         ('D', 'Distrato'),
         ('A', 'Aguardando pagamento'),
-        ('P', 'Pendente')
+        ('P', 'Pendente'),
+        ('F', 'Aguardando Previsão de Entrega'),
     ], default='P')
+    purchase_value = models.DecimalField("Valor da Compra", max_digits=20, decimal_places=2, default=0)
+    delivery_forecast= models.DateField("Previsão de Entrega", null=True, blank=True)
     delivery_number = models.CharField("Número de Entrega", max_length=50, null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     
