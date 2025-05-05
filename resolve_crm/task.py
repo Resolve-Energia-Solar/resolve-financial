@@ -7,6 +7,7 @@ from django.db import connection, transaction
 from django.utils import timezone
 
 from core.models import Tag
+from logistics.models import SaleProduct
 
 from .clicksign import (
     activate_envelope,
@@ -205,3 +206,15 @@ def save_all_sales():
     for sale in sales:
         sale.save()
     return {"status": "success", "message": "Vendas salvas com sucesso."}
+
+
+# tasks.py
+
+@shared_task
+def create_projects_for_sale(sale_id):
+    sale_products = SaleProduct.objects.filter(sale_id=sale_id)
+    project_instances = [
+        Project(sale_id=sale_id, product=sp.product) for sp in sale_products
+    ]
+    if project_instances:
+        Project.objects.bulk_create(project_instances)

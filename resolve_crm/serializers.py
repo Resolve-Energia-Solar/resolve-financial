@@ -15,6 +15,8 @@ from django.db.models import Sum, F
 
 import logging
 
+from resolve_crm.task import create_projects_for_sale
+
 class OriginSerializer(BaseSerializer):
     class Meta:
         model = Origin
@@ -52,13 +54,9 @@ class MarketingCampaignSerializer(BaseSerializer):
 
 
 class SaleSerializer(BaseSerializer):
-    products_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(),
-        many=True,
-        write_only=True,
-        required=False
+    products_ids = serializers.ListField(
+    child=serializers.IntegerField(), required=False
     )
-
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
     
     documents_under_analysis = SerializerMethodField()
@@ -143,7 +141,7 @@ class SaleSerializer(BaseSerializer):
     
     
     def create(self, validated_data):
-        products = validated_data.pop('products_ids', None)
+        products = validated_data.pop('products_ids', [])
         commercial_proposal_id = validated_data.pop('commercial_proposal_id', None)
         cancellation_reasons = validated_data.pop('cancellation_reasons', None)
 
@@ -208,6 +206,8 @@ class SaleSerializer(BaseSerializer):
             products_list = list(sale_products_qs)
 
         elif products:
+            product_objs = Product.objects.filter(id__in=products)
+
             new_sale_products = [
                 SaleProduct(
                     sale=sale,
@@ -217,18 +217,11 @@ class SaleSerializer(BaseSerializer):
                     cost_value=prod.cost_value or Decimal('0'),
                     amount=1
                 )
-                for prod in products
+                for prod in product_objs
             ]
             SaleProduct.objects.bulk_create(new_sale_products)
-            products_list = new_sale_products
 
-        # cria os projetos baseados nos produtos
-        project_instances = [
-            Project(sale=sale, product=sp.product)
-            for sp in products_list
-        ]
-        if project_instances:
-            Project.objects.bulk_create(project_instances)
+        create_projects_for_sale.delay(sale.id)
 
         # atualiza total_value da venda
         aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(
