@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from core.models import Process, ProcessBase
 from core.task import create_process_async
 from financial.admin import PaymentInline
+from logistics.models import SaleProduct
 from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Reason, Step, Task, Project, Sale, Origin
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
 
@@ -68,6 +69,27 @@ class ComercialProposalAdmin(admin.ModelAdmin):
     search_fields = ("lead__name", "status", "created_by__username", "lead__name")
     list_filter = ("status", "due_date", "created_at")
     inlines = [SaleProductInline]
+    
+
+@admin.action(description="Criar projetos para as vendas selecionadas")
+def criar_projetos_para_venda(modeladmin, request, queryset):
+    created_count = 0
+
+    for sale in queryset:
+        sale_products = SaleProduct.objects.filter(sale=sale)
+
+        existing_projects = Project.objects.filter(sale=sale).values_list('product_id', flat=True)
+        projects_to_create = [
+            Project(sale=sale, product=sp.product)
+            for sp in sale_products
+            if sp.product_id not in existing_projects
+        ]
+
+        if projects_to_create:
+            Project.objects.bulk_create(projects_to_create)
+            created_count += len(projects_to_create)
+
+    messages.success(request, f"✅ {created_count} projeto(s) criado(s) com sucesso.")
 
 
 @admin.register(Sale)
@@ -78,7 +100,7 @@ class SaleAdmin(admin.ModelAdmin):
     search_fields = ("contract_number", "customer__complete_name", "seller__username")
     list_filter = ("payment_status", "status", "created_at")
     ordering = ("-created_at",)
-    actions = [criar_processos_para_venda]
+    actions = [criar_processos_para_venda, criar_projetos_para_venda]
 
 
 @admin.register(Task)
