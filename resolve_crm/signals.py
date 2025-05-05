@@ -51,7 +51,6 @@ def get_model_data(instance):
     return data
 
 
-
 @receiver(post_save)
 def send_webhook_on_save(sender, instance, created, **kwargs):
     if 'migrate' in sys.argv or 'test' in sys.argv:
@@ -159,8 +158,12 @@ def handle_sale_post_save(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
-    sale = instance.sale
-    # logger.info(f"📌 Signal: Projeto salvo - Sale ID: {sale.id}")
-    # logger.info(f"📌 Signal: sale status - Sale ID: {sale.status}")
-    if instance.is_released_to_engineering:
-        update_or_create_sale_tag.delay(sale.id, sale.status)
+    annotated = (
+        Project.objects
+        .filter(pk=instance.pk)
+        .with_is_released_to_engineering()
+        .first()
+    )
+
+    if annotated and annotated.is_released_to_engineering:
+        update_or_create_sale_tag.delay(annotated.sale.id, annotated.sale.status)
