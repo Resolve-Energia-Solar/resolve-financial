@@ -1,22 +1,46 @@
-from celery import shared_task
-from django.contrib.contenttypes.models import ContentType
-from core.models import Tag
-from celery import shared_task
-from django.utils import timezone
 import datetime
-from resolve_crm.models import Sale, ContractSubmission
-from resolve_crm.clicksign import (
-    create_clicksign_envelope,
-    create_clicksign_document,
-    update_clicksign_document,
-    create_signer,
-    add_envelope_requirements,
-    activate_envelope,
-    send_notification,
-)
 import logging
 
+from celery import shared_task
+from django.contrib.contenttypes.models import ContentType
+from django.db import connection, transaction
+from django.utils import timezone
+
+from core.models import Tag
+
+from .clicksign import (
+    activate_envelope,
+    add_envelope_requirements,
+    create_clicksign_document,
+    create_clicksign_envelope,
+    create_signer,
+    send_notification,
+    update_clicksign_document,
+)
+from .models import ContractSubmission, Project, Sale
+
 logger = logging.getLogger(__name__)
+
+
+@shared_task
+def generate_project_number(project_id):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT GET_LOCK('project_number_lock', 10)")
+        try:
+            cursor.execute("""
+              SELECT MAX(CAST(SUBSTRING(project_number,5) AS UNSIGNED))
+              FROM resolve_crm_project
+              WHERE project_number NOT LIKE '%ProjMig%'
+            """)
+            last = cursor.fetchone()[0] or 0
+            new = last + 1
+            proj_num = f'PROJ{new:02}'
+            cursor.execute(
+              "UPDATE resolve_crm_project SET project_number=%s WHERE id=%s",
+              [proj_num, project_id]
+            )
+        finally:
+            cursor.execute("SELECT RELEASE_LOCK('project_number_lock')")
 
 
 @shared_task
