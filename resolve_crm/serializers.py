@@ -219,7 +219,14 @@ class SaleSerializer(BaseSerializer):
             ]
             SaleProduct.objects.bulk_create(new_sale_products)
 
-        create_projects_for_sale.delay(sale.id)
+        # cria projetos diretamente
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        project_instances = [
+            Project(sale=sale, product=sp.product)
+            for sp in sale_products
+        ]
+        if project_instances:
+            Project.objects.bulk_create(project_instances)
 
         # atualiza total_value da venda
         aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(
