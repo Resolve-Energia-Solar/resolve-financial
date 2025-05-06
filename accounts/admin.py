@@ -9,6 +9,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import EmailMessage
 
 from accounts.forms import CustomUserCreationForm
+from django.contrib.auth.models import Group
 
 from .models import *
 from .task import send_invitation_email
@@ -17,6 +18,16 @@ from .task import send_invitation_email
 admin.site.site_header = "Administração do CRM"
 admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
+
+
+admin.site.unregister(Group)
+
+@admin.register(Group)
+class GroupAdmin(admin.ModelAdmin):
+    list_display = ("id","name")
+    search_fields = ("id","name")
+    list_per_page = 10
+    list_max_show_all = 100
 
 
 class PhoneNumberInline(admin.TabularInline):
