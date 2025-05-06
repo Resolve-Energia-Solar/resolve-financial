@@ -765,7 +765,7 @@ class ProjectQuerySet(models.QuerySet):
             last_installation_final_service_opinion=Subquery(
                 Schedule.objects.filter(
                     project=OuterRef('pk'),
-                    service__category__name='Instalação'
+                    service__category__name__icontains='Instalação'
                 ).order_by('-created_at').values('final_service_opinion__name')[:1],
                 output_field=CharField()
             )
@@ -828,31 +828,47 @@ class ProjectQuerySet(models.QuerySet):
         ).distinct()
 
 
-
+    # AUMENTO DE CARGA
     def with_load_increase_status(self):
         return self.with_is_released_to_engineering().with_supply_adquance_names().with_last_installation_final_service_opinion().annotate(
             load_increase_status=Case(
                 When(~Q(supply_adquance_names__icontains='Aumento de Carga'), then=Value('Não se aplica')),
                 When(
-                    Q(supply_adquance_names__icontains='Aumento de Carga')
-                    & (Q(is_released_to_engineering=False) | ~Q(last_installation_final_service_opinion__iexact='Concluído')),
+                    Q(supply_adquance_names__icontains='Aumento de Carga') &
+                    ~Q(last_installation_final_service_opinion__iexact='Concluído'),
                     then=Value('Bloqueado')
                 ),
                 When(
                     Q(supply_adquance_names__icontains='Aumento de Carga')
                     & Q(last_installation_final_service_opinion__iexact='Concluído')
-                    & ~Q(requests_energy_company__isnull=False),
+                    & Q(requests_energy_company__isnull=True),
                     then=Value('Pendente')
                 ),
-                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='S'), then=Value('Solicitado')),
-                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='D'), then=Value('Deferido')),
-                When(Q(supply_adquance_names__icontains='Aumento de Carga') & Q(requests_energy_company__status='I'), then=Value('Indeferida')),
-                default=Value('Não se aplica'),
+                When(
+                    Q(supply_adquance_names__icontains='Aumento de Carga') &
+                    Q(requests_energy_company__isnull=False) &
+                    ~Q(requests_energy_company__type__name='Aumento de Carga'),
+                    then=Value('Pendente')
+                ),
+                
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') &
+                     Q(requests_energy_company__status='S') &
+                     Q(requests_energy_company__type__name='Aumento de Carga')
+                      , then=Value('Solicitado')),
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') &
+                     Q(requests_energy_company__status='D') &
+                     Q(requests_energy_company__type__name='Aumento de Carga')
+                     , then=Value('Deferido')),
+                When(Q(supply_adquance_names__icontains='Aumento de Carga') &
+                     Q(requests_energy_company__status='I') & 
+                     Q(requests_energy_company__type__name='Aumento de Carga')
+                     , then=Value('Indeferida')),
+                default=Value('Bloqueado'),
                 output_field=CharField(),
             )
         ).distinct()
 
-
+    # AJUSTE DE RAMAL
     def with_branch_adjustment_status(self):
         return (
             self.with_is_released_to_engineering()
@@ -862,23 +878,35 @@ class ProjectQuerySet(models.QuerySet):
                     branch_adjustment_status=Case(
                         When(~Q(supply_adquance_names__icontains='Ajuste de Ramal'), then=Value('Não se aplica')),
                         When(
-                            Q(supply_adquance_names__icontains='Ajuste de Ramal')
-                            & (
-                                Q(is_released_to_engineering=False)
-                                | ~Q(last_installation_final_service_opinion__iexact='Concluído')
-                            ),
+                            Q(supply_adquance_names__icontains='Ajuste de Ramal') & 
+                            ~Q(last_installation_final_service_opinion__iexact='Concluído'),
                             then=Value('Bloqueado')
                         ),
                         When(
                             Q(supply_adquance_names__icontains='Ajuste de Ramal')
                             & Q(last_installation_final_service_opinion__iexact='Concluído')
-                            & ~Q(requests_energy_company__isnull=False),
+                            & Q(requests_energy_company__isnull=True),
                             then=Value('Pendente')
                         ),
-                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='S'), then=Value('Solicitado')),
-                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='D'), then=Value('Deferido')),
-                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & Q(requests_energy_company__status='I'), then=Value('Indeferida')),
-                        default=Value('Não se aplica'),
+                        
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
+                                Q(requests_energy_company__isnull=False) &
+                                ~Q(requests_energy_company__type__name='Ajuste de Ramal')
+                                , then=Value('Pendente')),
+                        
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
+                             Q(requests_energy_company__status='S') &
+                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             , then=Value('Solicitado')),
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & 
+                             Q(requests_energy_company__status='D') & 
+                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             , then=Value('Deferido')),
+                        When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
+                             Q(requests_energy_company__status='I') & 
+                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             , then=Value('Indeferida')),
+                        default=Value('Bloqueado'),
                         output_field=CharField(),
                     )
                 )
@@ -886,26 +914,22 @@ class ProjectQuerySet(models.QuerySet):
 
 
     def with_new_contact_number_status(self):
-        # Subconsulta para pegar os valores relevantes de 'Units' para cada 'Project'
         units_queryset = Units.objects.filter(
             project=OuterRef('pk'),
             main_unit=True
-        ).order_by('id').values('new_contract_number')[:1]  # Pega apenas o primeiro valor relevante de 'new_contract_number'
+        ).order_by('id').values('new_contract_number')[:1]
 
-        # Realiza a anotação com a lógica já existente, agora usando Subquery corretamente
         return self.annotate(
             new_contact_number_status=Case(
-                # Condição 1: Se não for unidade principal ou o número de contrato for False
                 When(
-                    ~Q(units__main_unit=True) |
-                    Q(units__new_contract_number=Subquery(units_queryset)),
+                    Q(units__main_unit=True) |
+                    Q(units__new_contract_number=False),
                     then=Value('Não se aplica')
                 ),
                 
-                # Condição 2: Se for unidade principal, número de contrato True, e o projeto não foi liberado para engenharia
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
+                    Q(units__new_contract_number=True) &
                     Q(is_released_to_engineering=False),
                     then=Value('Bloqueado')
                 ),
@@ -913,7 +937,7 @@ class ProjectQuerySet(models.QuerySet):
                 # Condição 3: Se for unidade principal, número de contrato True, e designer_status do projeto não for 'CO'
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
+                    Q(units__new_contract_number=True) &
                     ~Q(designer_status='CO'),
                     then=Value('Bloqueado')
                 ),
@@ -921,34 +945,46 @@ class ProjectQuerySet(models.QuerySet):
                 # Condição 4: Se for unidade principal, número de contrato True, e designer_status do projeto for 'CO' e o parecer da companhia de energia for não solicitado
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
+                    Q(units__new_contract_number=True) &
                     Q(designer_status='CO') &
-                    ~Q(requests_energy_company__isnull=False),
+                    Q(requests_energy_company__isnull=True),
+                    then=Value('Pendente')
+                ),
+                
+                When(
+                    Q(units__main_unit=True) &
+                    Q(units__new_contract_number=True) &
+                    Q(requests_energy_company__isnull=False) &
+                    ~Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Pendente')
                 ),
                 
                 # Condição 5: Se for unidade principal e o status da companhia de energia for 'S'
                 When(
                     Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='S'),
+                    Q(requests_energy_company__status='S') &
+                    Q(requests_energy_company__type__name='Nova UC')
+                    ,
                     then=Value('Solicitado')
                 ),
                 
                 # Condição 6: Se for unidade principal e o status da companhia de energia for 'D'
                 When(
                     Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='D'),
+                    Q(requests_energy_company__status='D') &
+                    Q(requests_energy_company__type__name='Nova UC')
+                    ,
                     then=Value('Deferido')
                 ),
                 
                 # Condição 7: Se for unidade principal e o status da companhia de energia for 'I'
                 When(
                     Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='I'),
+                    Q(requests_energy_company__status='I')&
+                    Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Indeferida')
                 ),
                 
-                # Caso padrão
                 default=Value('Não se aplica'),
                 output_field=CharField(),
             )
