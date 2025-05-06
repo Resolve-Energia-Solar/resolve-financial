@@ -82,11 +82,8 @@ class SaleSerializer(BaseSerializer):
         return AttachmentSerializer(attachments, many=True, context=self.context).data
 
     def get_is_released_to_engineering(self, obj):
-        return any(
-            getattr(p, 'is_released_to_engineering', False)
-            for p in obj.projects.all()
-        )
- 
+        return any(p.is_released_to_engineering for p in obj.projects.all())
+    
     def get_signature_status(self, obj):
         submissions = list(obj.contract_submissions.all())
         statuses = {s.status for s in submissions}
