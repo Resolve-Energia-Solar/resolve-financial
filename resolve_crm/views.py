@@ -84,11 +84,17 @@ class SaleViewSet(BaseModelViewSet):
             "attachments",
             "tags",
             "payments",
-            "projects",
-            "projects__units",
-            "projects__inspection__final_service_opinion",
-            "projects__homologator",
             "contract_submissions",
+            Prefetch(
+                "projects",
+                queryset=Project.objects
+                    .with_is_released_to_engineering()
+                    .prefetch_related(
+                        "units",
+                        "inspection__final_service_opinion",
+                        "homologator",
+                    )
+            ),
             Prefetch(
                 "attachments",
                 queryset=Attachment.objects.filter(

@@ -82,11 +82,8 @@ class SaleSerializer(BaseSerializer):
         return AttachmentSerializer(attachments, many=True, context=self.context).data
 
     def get_is_released_to_engineering(self, obj):
-        return any(
-            getattr(p, 'is_released_to_engineering', False)
-            for p in obj.projects.all()
-        )
- 
+        return any(p.is_released_to_engineering for p in obj.projects.all())
+    
     def get_signature_status(self, obj):
         submissions = list(obj.contract_submissions.all())
         statuses = {s.status for s in submissions}
@@ -219,7 +216,14 @@ class SaleSerializer(BaseSerializer):
             ]
             SaleProduct.objects.bulk_create(new_sale_products)
 
-        create_projects_for_sale.delay(sale.id)
+        # cria projetos diretamente
+        sale_products = SaleProduct.objects.filter(sale=sale)
+        project_instances = [
+            Project(sale=sale, product=sp.product)
+            for sp in sale_products
+        ]
+        if project_instances:
+            Project.objects.bulk_create(project_instances)
 
         # atualiza total_value da venda
         aggregate_total = SaleProduct.objects.filter(sale=sale).aggregate(

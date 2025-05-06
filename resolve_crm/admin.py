@@ -77,8 +77,13 @@ def criar_projetos_para_venda(modeladmin, request, queryset):
 
     for sale in queryset:
         sale_products = SaleProduct.objects.filter(sale=sale)
+        
+        if not sale_products.exists():
+            messages.warning(request, f"Venda {sale.id} não possui produtos.")
+            continue
 
         existing_projects = Project.objects.filter(sale=sale).values_list('product_id', flat=True)
+        
         projects_to_create = [
             Project(sale=sale, product=sp.product)
             for sp in sale_products

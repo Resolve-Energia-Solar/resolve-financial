@@ -208,8 +208,6 @@ def save_all_sales():
     return {"status": "success", "message": "Vendas salvas com sucesso."}
 
 
-# tasks.py
-
 @shared_task
 def create_projects_for_sale(sale_id):
     sale_products = SaleProduct.objects.filter(sale_id=sale_id)
