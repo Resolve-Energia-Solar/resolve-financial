@@ -914,15 +914,10 @@ class ProjectQuerySet(models.QuerySet):
 
 
     def with_new_contact_number_status(self):
-        units_queryset = Units.objects.filter(
-            project=OuterRef('pk'),
-            main_unit=True
-        ).order_by('id').values('new_contract_number')[:1]
-
         return self.annotate(
             new_contact_number_status=Case(
                 When(
-                    Q(units__main_unit=True) |
+                    Q(units__main_unit=True) &
                     Q(units__new_contract_number=False),
                     then=Value('Não se aplica')
                 ),
@@ -985,7 +980,7 @@ class ProjectQuerySet(models.QuerySet):
                     then=Value('Indeferida')
                 ),
                 
-                default=Value('Não se aplica'),
+                default=Value('Bloqueado'),
                 output_field=CharField(),
             )
         )
