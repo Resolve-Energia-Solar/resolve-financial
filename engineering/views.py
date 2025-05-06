@@ -16,12 +16,15 @@ from django.db.models import Count, Q, Sum
 class SupplyAdequanceViewSet(BaseModelViewSet):
     queryset = SupplyAdequance.objects.all()
     serializer_class = SupplyAdequanceSerializer
-
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
 
 class ResquestTypeViewSet(BaseModelViewSet):
     queryset = ResquestType.objects.all()
     serializer_class = ResquestTypeSerializer
-    
+
     
 class SituationEnergyCompanyViewSet(BaseModelViewSet):
     queryset = SituationEnergyCompany.objects.all()
