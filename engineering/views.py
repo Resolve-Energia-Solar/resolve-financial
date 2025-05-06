@@ -24,11 +24,17 @@ class SupplyAdequanceViewSet(BaseModelViewSet):
 class ResquestTypeViewSet(BaseModelViewSet):
     queryset = ResquestType.objects.all()
     serializer_class = ResquestTypeSerializer
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
 
     
 class SituationEnergyCompanyViewSet(BaseModelViewSet):
     queryset = SituationEnergyCompany.objects.all()
     serializer_class = SituationEnergyCompanySerializer
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
 
 
 class EnergyCompanyViewSet(BaseModelViewSet):
