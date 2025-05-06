@@ -103,11 +103,6 @@ class SaleViewSet(BaseModelViewSet):
                 ),
                 to_attr="attachments_under_analysis"
             ),
-            Prefetch(
-                "attachments",
-                queryset=Attachment.objects.filter(status='A'),
-                to_attr="approved_attachments"
-            ),
         ).annotate(
             total_paid=Sum(
                 'payments__installments__installment_value',
@@ -237,29 +232,26 @@ class SaleViewSet(BaseModelViewSet):
     
 class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
+
     
     def get_queryset(self):
         queryset = Project.objects.with_status_annotations()
 
         queryset = queryset.select_related(
-            'sale', 'inspection__final_service_opinion'
+            'sale', 
+            'inspection__final_service_opinion'
         ).prefetch_related(
             'attachments',
             'attachments__document_type',
             'units',
             'requests_energy_company',
             Prefetch(
-                'sale__attachments',
-                queryset=Attachment.objects.filter(status='A'),
-                to_attr='approved_attachments'
-            ),
-            Prefetch(
                 'units',
                 queryset=Units.objects.filter(main_unit=True).select_related('address'),
                 to_attr='main_unit_prefetched'
             ),
         )
-
+        
         return queryset.order_by('-created_at').distinct()
 
 
