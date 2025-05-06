@@ -80,9 +80,12 @@ class SaleSerializer(BaseSerializer):
     def get_documents_under_analysis(self, obj):
         attachments = getattr(obj, 'attachments_under_analysis', [])
         return AttachmentSerializer(attachments, many=True, context=self.context).data
-
+    
     def get_is_released_to_engineering(self, obj):
-        return any(p.is_released_to_engineering for p in obj.projects.all())
+        return any(
+            getattr(p, 'is_released_to_engineering', False)
+            for p in obj.projects.all()
+        )
     
     def get_signature_status(self, obj):
         submissions = list(obj.contract_submissions.all())
