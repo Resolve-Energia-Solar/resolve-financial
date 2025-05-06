@@ -14,10 +14,17 @@ class CustomUserCreationForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         complete_name = self.cleaned_data['complete_name']
-        if len(complete_name.split()) < 2:
-            raise ValueError("O nome completo deve ter pelo menos dois nomes.")
-        user.first_name = complete_name.split()[0]
-        user.last_name = ' '.join(complete_name.split()[1:])
+        name_parts = complete_name.split()
+        
+        if not name_parts:
+            raise ValueError("O nome completo não pode estar vazio.")
+
+        user.first_name = name_parts[0]
+        if len(name_parts) > 1:
+            user.last_name = ' '.join(name_parts[1:])
+        else:
+            user.last_name = ''
+            
         password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
         user.password = make_password(password)
         if commit:
