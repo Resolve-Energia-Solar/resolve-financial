@@ -1,12 +1,5 @@
-import os
-import random
-import string
-from django.contrib.auth.hashers import make_password
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.template.loader import render_to_string
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.mail import EmailMessage
 
 from accounts.forms import CustomUserCreationForm
 from django.contrib.auth.models import Group
@@ -80,7 +73,13 @@ class UserAdmin(UserAdmin):
         "employee__department",
         "employee__role",
     )
-    search_fields = ("username", "complete_name", "email", "first_document", "second_document")
+    search_fields = (
+        "username",
+        "complete_name",
+        "email",
+        "first_document",
+        "second_document",
+    )
     autocomplete_fields = ["addresses"]
     readonly_fields = ("last_login", "date_joined")
     inlines = [PhoneNumberInline, EmployeeInline]
