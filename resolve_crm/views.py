@@ -233,10 +233,43 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
 
-    
     def get_queryset(self):
-        queryset = Project.objects.with_status_annotations()
+        # Pegando os parâmetros 'metrics' da query string
+        metrics = self.request.query_params.get('metrics')
+        
+        # Se 'metrics' for passado, dividimos ele em uma lista de métodos a serem aplicados
+        if metrics:
+            metrics = metrics.split(',')
+            queryset = Project.objects.all()  # Iniciamos o queryset com todos os objetos de Project
 
+            # Dicionário que mapeia o nome do método para o próprio método
+            method_map = {
+                'is_released_to_engineering': Project.objects.with_is_released_to_engineering,
+                'delivery_status': Project.objects.with_delivery_status,
+                'trt_status': Project.objects.with_trt_status,
+                'pending_material_list': Project.objects.with_pending_material_list,
+                'access_opnion': Project.objects.with_access_opnion,
+                'trt_pending': Project.objects.with_trt_pending,
+                'request_requested': Project.objects.with_request_requested,
+                'last_installation_final_service_opinion': Project.objects.with_last_installation_final_service_opinion,
+                'supply_adquance_names': Project.objects.with_supply_adquance_names,
+                'access_opnion_status': Project.objects.with_access_opnion_status,
+                'load_increase_status': Project.objects.with_load_increase_status,
+                'branch_adjustment_status': Project.objects.with_branch_adjustment_status,
+                'new_contact_number_status': Project.objects.with_new_contact_number_status,
+                'final_inspection_status': Project.objects.with_final_inspection_status,
+                'purchase_status': Project.objects.with_purchase_status,
+            }
+
+            # Itera sobre os métodos solicitados e aplica cada um no queryset
+            for metric in metrics:
+                if metric in method_map:
+                    queryset = method_map[metric]()  # Corrigido para chamar o método corretamente
+
+        else:
+            queryset = Project.objects.all()  # Caso nenhum 'metrics' seja passado, retorna todos os projetos
+
+        # Realiza o 'select_related' e 'prefetch_related' como você já tinha antes
         queryset = queryset.select_related(
             'sale', 
             'inspection__final_service_opinion'
@@ -251,8 +284,9 @@ class ProjectViewSet(BaseModelViewSet):
                 to_attr='main_unit_prefetched'
             ),
         )
-        
+
         return queryset.order_by('-created_at').distinct()
+
 
 
     def list(self, request, *args, **kwargs):

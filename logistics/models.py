@@ -140,7 +140,7 @@ class SaleProduct(models.Model):
 
 
 class Purchase(models.Model):
-    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto")
+    project = models.ForeignKey('resolve_crm.Project', on_delete=models.CASCADE, verbose_name="Projeto", related_name="purchases")
     supplier = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name="Fornecedor")
     purchase_date = models.DateField("Data do Pedido")
     delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")])

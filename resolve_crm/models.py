@@ -1007,24 +1007,90 @@ class ProjectQuerySet(models.QuerySet):
         ).distinct()
 
 
-    # STATUS LOGISTICA
-    
-    def logistics_status(self):
+    # STATUS LOGISTICA -  PERGUNTAR - QUANDO NÃO É ENTREGA DIRETA O STATUS DE LIBERADO DEPENDE DA ENTREGA?
+    def with_delivery_status(self):
         return self.with_is_released_to_engineering().annotate(
-            logistics_status=Case(
+            # Subquery para pegar o nome do parecer final do último agendamento
+            last_service_opinion_name=Subquery(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),  # Refere-se ao projeto atual
+                    service__name__icontains='Entrega',  # Serviço com nome contendo 'Entrega'
+                ).order_by('-created_at').values('final_service_opinion__name')[:1],  # Retorna o nome do parecer final do último agendamento
+            ),
+            delivery_status=Case(
+                # CASO NÃO ESTEJA LIBERADO PARA ENGENHARIA
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+
+                # CASO NÃO TENHA COMPRA
+                When(Q(purchases__isnull=True), then=Value('Bloqueado')),
+
+                # CONDIÇÕES PARA "BLOQUEADO"
                 When(
-                    Q(is_released_to_engineering=True)
-                    & Q(last_installation_final_service_opinion__iexact='Concluído')
-                    & Q(requests_energy_company__isnull=True),
-                    then=Value('Pendente')
+                    Q(purchases__isnull=False) &
+                    (
+                        # ENTREGA DIRETA E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)'
+                        (Q(purchases__delivery_type='D') & ~Q(purchases__status='R')) |
+                        # ENTREGA CD E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)' E LISTA DE MATERIAIS NÃO FINALIZADA
+                        (Q(purchases__delivery_type='C') & ~Q(purchases__status='R') & ~Q(material_list_is_completed=True)) |
+                        # ENTREGA CD E STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO NÃO 'CO' E LISTA DE MATERIAIS NÃO FINALIZADA
+                        (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(design_status__in=['CO']) & ~Q(material_list_is_completed=True))
+                    ),
+                    then=Value('Bloqueado')
                 ),
+
+                # CASO ENTREGA DIRETA E STATUS 'COMPRA REALIZADA (R)'
                 When(
-                    Q(is_released_to_engineering=True)
-                    & Q(last_installation_final_service_opinion__iexact='Concluído')
-                    & Q(requests_energy_company__isnull=False),
-                    then=Value('Solicitado')
+                    Q(purchases__isnull=False) &
+                    Q(purchases__delivery_type='D') &
+                    Q(purchases__status='R'),
+                    then=Value('Liberado')
                 ),
+
+                # CASO ENTREGA CD COM STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO 'CO' E LISTA DE MATERIAIS FINALIZADA
+                When(
+                    Q(purchases__isnull=False) &
+                    Q(purchases__delivery_type='C') &
+                    Q(purchases__status='R') &
+                    Q(design_status__in=['CO']) &
+                    Q(material_list_is_completed=True),
+                    then=Value('Liberado')
+                ),
+
+                # AGENDADO: Verifica se o último agendamento com serviço contendo 'Entrega' existe
+                When(
+                    Q(last_service_opinion_name='Pendente'),
+                    then=Value('Agendado')
+                ),
+
+                # ENTREGUE: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Entregue'
+                When(
+                    Q(last_service_opinion_name='Entregue'),
+                    then=Value('Entregue')
+                ),
+
+                # CANCELADO: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Cancelado'
+                When(
+                    Q(last_service_opinion_name='Cancelado'),
+                    then=Value('Cancelado')
+                ),
+
+                # Caso padrão
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        ).distinct()
+        
+        
+    def with_purchase_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            purchase_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(Q(purchases__isnull=True), then=Value('Pendente')),
+                When(Q(purchases__status='R'), then=Value('Compra Realizada')),
+                When(Q(purchases__status='C'), then=Value('Cancelado')),
+                When(Q(purchases__status='D'), then=Value('Distrato')),
+                When(Q(purchases__status='F'), then=Value('Aguardando Previsão de Entrega')),
+                When(Q(purchases__status='A'), then=Value('Aguardando Pagamento')),
                 default=Value('Bloqueado'),
                 output_field=CharField(),
             )
@@ -1034,8 +1100,10 @@ class ProjectQuerySet(models.QuerySet):
     def with_status_annotations(self):
         return (
             self
+            # default
             .with_is_released_to_engineering()
             .with_pending_material_list()
+            # Homologation
             .with_access_opnion()
             .with_request_requested()
             .with_last_installation_final_service_opinion()
@@ -1046,6 +1114,9 @@ class ProjectQuerySet(models.QuerySet):
             .with_new_contact_number_status()
             .with_final_inspection_status()
             .with_trt_pending()
+            # Logistics
+            .with_delivery_status()
+            .with_purchase_status()
         ).distinct()
 
 

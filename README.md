@@ -170,6 +170,45 @@ GET /api/services/?fields=id,name,category&expand=category&omit=created_at
 
 ---
 
+/**
+ * @endpoint GET /projeto?metricas
+ *
+ * @descricao
+ * Este endpoint recupera informações do projeto, aprimoradas com métricas anotadas.
+ * O parâmetro de consulta "metricas" permite que os clientes especifiquem quais
+ * anotações adicionais devem ser incluídas na resposta. Cada métrica corresponde a um 
+ * método de anotação ORM do Django definido no gerenciador personalizado do modelo Projeto.
+ *
+ * @parametros metricas (string de consulta)
+ * Uma lista separada por vírgulas de identificadores de métricas que determinam quais anotações
+ * incluir. Os identificadores de métricas disponíveis e suas respectivas anotações são:
+ *
+ * - is_released_to_engineering: Adiciona uma anotação usando "Projeto.objects.with_is_released_to_engineering".
+ * - delivery_status: Adiciona uma anotação usando "Projeto.objects.with_delivery_status".
+ * - trt_status: Adiciona uma anotação usando "Projeto.objects.with_trt_status".
+ * - pending_material_list: Adiciona uma anotação usando "Projeto.objects.with_pending_material_list".
+ * - access_opnion: Adiciona uma anotação usando "Projeto.objects.with_access_opnion".
+ * - trt_pending: Adiciona uma anotação usando "Projeto.objects.with_trt_pending".
+ * - request_requested: Adiciona uma anotação usando "Projeto.objects.with_request_requested".
+ * - last_installation_final_service_opinion: Adiciona uma anotação usando "Projeto.objects.with_last_installation_final_service_opinion".
+ * - supply_adquance_names: Adiciona uma anotação usando "Projeto.objects.with_supply_adquance_names".
+ * - access_opnion_status: Adiciona uma anotação usando "Projeto.objects.with_access_opnion_status".
+ * - load_increase_status: Adiciona uma anotação usando "Projeto.objects.with_load_increase_status".
+ * - branch_adjustment_status: Adiciona uma anotação usando "Projeto.objects.with_branch_adjustment_status".
+ * - new_contact_number_status: Adiciona uma anotação usando "Projeto.objects.with_new_contact_number_status".
+ * - final_inspection_status: Adiciona uma anotação usando "Projeto.objects.with_final_inspection_status".
+ * - purchase_status: Adiciona uma anotação usando "Projeto.objects.with_purchase_status".
+ *
+ * @exemplo
+ * Para solicitar múltiplas anotações, liste os identificadores de métricas separados por vírgulas.
+ *
+ * Exemplo:
+ * GET /api/projects?metricas=is_released_to_engineering,delivery_status,trt_status
+ *
+ * O endpoint processará esses identificadores de métricas e incluirá as respectivas anotações
+ * nos dados do projeto retornados.
+ */
+
 ## Conclusão
 
 A biblioteca `drf-flex-fields` facilita a personalização das respostas da API, permitindo que os clientes escolham quais dados precisam. Isso melhora a performance da API e reduz a transferência de dados desnecessários.
