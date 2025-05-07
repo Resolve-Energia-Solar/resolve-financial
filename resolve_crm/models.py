@@ -914,76 +914,68 @@ class ProjectQuerySet(models.QuerySet):
 
 
     def with_new_contact_number_status(self):
+        # Subconsulta para pegar o primeiro valor de 'new_contract_number' relacionado ao projeto
+        units_queryset = Units.objects.filter(
+            project=OuterRef('pk'),
+            main_unit=True
+        ).order_by('id').values('new_contract_number')[:1]  # Pega apenas o primeiro valor relevante de 'new_contract_number'
+
         return self.annotate(
+            # Usando a subconsulta para definir o campo 'new_contact_number_status'
             new_contact_number_status=Case(
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=False),
+                    Q(units__new_contract_number=Subquery(units_queryset)),
                     then=Value('Não se aplica')
                 ),
-                
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=True) &
+                    Q(units__new_contract_number=Subquery(units_queryset)) &
                     Q(is_released_to_engineering=False),
                     then=Value('Bloqueado')
                 ),
-                
-                # Condição 3: Se for unidade principal, número de contrato True, e designer_status do projeto não for 'CO'
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=True) &
+                    Q(units__new_contract_number=Subquery(units_queryset)) &
                     ~Q(designer_status='CO'),
                     then=Value('Bloqueado')
                 ),
-                
-                # Condição 4: Se for unidade principal, número de contrato True, e designer_status do projeto for 'CO' e o parecer da companhia de energia for não solicitado
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=True) &
+                    Q(units__new_contract_number=Subquery(units_queryset)) &
                     Q(designer_status='CO') &
                     Q(requests_energy_company__isnull=True),
                     then=Value('Pendente')
                 ),
-                
                 When(
                     Q(units__main_unit=True) &
-                    Q(units__new_contract_number=True) &
+                    Q(units__new_contract_number=Subquery(units_queryset)) &
                     Q(requests_energy_company__isnull=False) &
                     ~Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Pendente')
                 ),
-                
-                # Condição 5: Se for unidade principal e o status da companhia de energia for 'S'
                 When(
                     Q(units__main_unit=True) &
                     Q(requests_energy_company__status='S') &
-                    Q(requests_energy_company__type__name='Nova UC')
-                    ,
+                    Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Solicitado')
                 ),
-                
-                # Condição 6: Se for unidade principal e o status da companhia de energia for 'D'
                 When(
                     Q(units__main_unit=True) &
                     Q(requests_energy_company__status='D') &
-                    Q(requests_energy_company__type__name='Nova UC')
-                    ,
+                    Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Deferido')
                 ),
-                
-                # Condição 7: Se for unidade principal e o status da companhia de energia for 'I'
                 When(
                     Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='I')&
+                    Q(requests_energy_company__status='I') &
                     Q(requests_energy_company__type__name='Nova UC'),
                     then=Value('Indeferida')
                 ),
-                
                 default=Value('Bloqueado'),
                 output_field=CharField(),
             )
-        )
+        ).distinct()
 
 
     def with_final_inspection_status(self):
@@ -1023,7 +1015,7 @@ class ProjectQuerySet(models.QuerySet):
             .with_access_opnion_status()
             .with_load_increase_status()
             .with_branch_adjustment_status()
-            .with_new_contact_number_status()
+            # .with_new_contact_number_status()
             .with_final_inspection_status()
             .with_trt_pending()
         ).distinct()
