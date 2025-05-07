@@ -303,7 +303,7 @@ class ProjectSerializer(BaseSerializer):
     access_opnion_status = serializers.CharField(read_only=True)
     load_increase_status = serializers.CharField(read_only=True)
     branch_adjustment_status = serializers.CharField(read_only=True)
-    # new_contact_number_status = serializers.CharField(read_only=True)
+    new_contact_number_status = serializers.CharField(read_only=True)
     final_inspection_status = serializers.CharField(read_only=True)
     request_requested = serializers.BooleanField(read_only=True)
     pending_material_list = serializers.BooleanField(read_only=True)
