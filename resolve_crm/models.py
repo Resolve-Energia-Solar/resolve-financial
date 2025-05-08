@@ -14,10 +14,13 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F
+from django.db.models.functions import Cast
+from django.db.models import Func
 from django.db.models.functions import Coalesce
 from field_services.models import Schedule
 from engineering.models import Units
+from django.db.models.functions import TruncDate
 
 def get_current_month():
     return datetime.date.today().month
@@ -1095,6 +1098,30 @@ class ProjectQuerySet(models.QuerySet):
                 output_field=CharField(),
             )
         ).distinct()
+        
+
+    def with_expected_delivery_date(self):
+        return self.annotate(
+            expected_delivery_date=Case(
+                When(
+                    sale__signature_date__isnull=False,
+                    then=Cast(
+                        ExpressionWrapper(
+                            F('sale__signature_date') + timedelta(days=15),
+                            output_field=DateField()
+                        ),
+                        output_field=DateField()
+                    )
+                ),
+                default=None,
+                output_field=DateField()
+            ),
+            expected_delivery_status=Case(
+                When(sale__signature_date__isnull=True, then=Value('Sem contrato')),
+                default=Value('Com contrato'),
+                output_field=CharField()
+            )
+        )
 
 
     def with_status_annotations(self):
@@ -1117,6 +1144,7 @@ class ProjectQuerySet(models.QuerySet):
             # Logistics
             .with_delivery_status()
             .with_purchase_status()
+            .with_expected_delivery_date()
         ).distinct()
 
 

@@ -253,6 +253,7 @@ class ProjectViewSet(BaseModelViewSet):
             'final_inspection_status': lambda qs: qs.with_final_inspection_status(),
             'purchase_status': lambda qs: qs.with_purchase_status(),
             'delivery_status': lambda qs: qs.with_delivery_status(),
+            'expected_delivery_date': lambda qs: qs.with_expected_delivery_date(),
         }
 
         if metrics:
@@ -311,6 +312,27 @@ class ProjectViewSet(BaseModelViewSet):
         payment_types = request.query_params.get('payment_types')
         financiers = request.query_params.get('financiers')
         borrower = request.query_params.get('borrower')
+        # Logistics
+        purchase_status = request.query_params.get('purchase_status')
+        delivery_status = request.query_params.get('delivery_status')
+        expected_delivery_date = request.query_params.get('expected_delivery_date')
+
+        
+        if 'purchase_status' in queryset.query.annotations and purchase_status:
+            purchase_status_list = purchase_status.split(',')
+            queryset = queryset.filter(purchase_status__in=purchase_status_list)
+
+        if 'delivery_status' in queryset.query.annotations and delivery_status:
+            delivery_status_list = delivery_status.split(',')
+            queryset = queryset.filter(delivery_status__in=delivery_status_list)
+
+        if 'expected_delivery_date' in queryset.query.annotations and expected_delivery_date:
+            date_range = expected_delivery_date.split(',')
+            if len(date_range) == 2:
+                start_date, end_date = date_range
+                queryset = queryset.filter(expected_delivery_date__range=[start_date, end_date])
+            else:
+                queryset = queryset.filter(expected_delivery_date=expected_delivery_date)
         
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
@@ -475,6 +497,49 @@ class ProjectViewSet(BaseModelViewSet):
         return Response({"indicators": raw_indicators})
 
 
+    @action(detail=False, methods=["get"], url_path="logistics-indicators")
+    def logistics_indicators(self, request, *args, **kwargs):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f"logistics_indicators_{filter_hash}"
+
+        indicators = cache.get(cache_key)
+        if indicators:
+            return Response({"indicators": indicators})
+
+        queryset = self.filter_queryset(self.get_queryset()).distinct()
+        queryset = queryset.with_is_released_to_engineering().with_purchase_status().with_delivery_status()
+
+        # Define todos os status possíveis
+        PURCHASE_STATUSES = [
+            "Bloqueado", "Pendente", "Compra Realizada", "Cancelado", "Distrato",
+            "Aguardando Previsão de Entrega", "Aguardando Pagamento"
+        ]
+        DELIVERY_STATUSES = [
+            "Bloqueado", "Liberado", "Agendado", "Entregue", "Cancelado"
+        ]
+
+        purchase_result = {status: 0 for status in PURCHASE_STATUSES}
+        delivery_result = {status: 0 for status in DELIVERY_STATUSES}
+        total_count = queryset.count()
+
+        # Itera direto no queryset — sem usar `.only(...)`
+        for project in queryset:
+            if hasattr(project, 'purchase_status') and project.purchase_status in purchase_result:
+                purchase_result[project.purchase_status] += 1
+            if hasattr(project, 'delivery_status') and project.delivery_status in delivery_result:
+                delivery_result[project.delivery_status] += 1
+
+        indicators = {
+            "purchase_status": purchase_result,
+            "delivery_status": delivery_result,
+            "total_count": total_count,
+        }
+
+        cache.set(cache_key, indicators, 60)
+        return Response({"indicators": indicators})
+
+                    
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
     serializer_class = ContractSubmissionSerializer

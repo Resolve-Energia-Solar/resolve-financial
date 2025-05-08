@@ -312,6 +312,8 @@ class ProjectSerializer(BaseSerializer):
     supply_adquance_names = serializers.CharField(read_only=True)
     delivery_status = serializers.CharField(read_only=True)
     purchase_status = serializers.CharField(read_only=True)
+    expected_delivery_date = serializers.DateField(read_only=True)
+    expected_delivery_status = serializers.CharField(read_only=True)
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
