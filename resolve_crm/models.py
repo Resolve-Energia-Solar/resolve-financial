@@ -1033,7 +1033,7 @@ class ProjectQuerySet(models.QuerySet):
                         # ENTREGA CD E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)' E LISTA DE MATERIAIS NÃO FINALIZADA
                         (Q(purchases__delivery_type='C') & ~Q(purchases__status='R') & ~Q(material_list_is_completed=True)) |
                         # ENTREGA CD E STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO NÃO 'CO' E LISTA DE MATERIAIS NÃO FINALIZADA
-                        (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(design_status__in=['CO']) & ~Q(material_list_is_completed=True))
+                        (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(designer_status__in=['CO']) & ~Q(material_list_is_completed=True))
                     ),
                     then=Value('Bloqueado')
                 ),
@@ -1051,7 +1051,7 @@ class ProjectQuerySet(models.QuerySet):
                     Q(purchases__isnull=False) &
                     Q(purchases__delivery_type='C') &
                     Q(purchases__status='R') &
-                    Q(design_status__in=['CO']) &
+                    Q(designer_status__in=['CO']) &
                     Q(material_list_is_completed=True),
                     then=Value('Liberado')
                 ),
