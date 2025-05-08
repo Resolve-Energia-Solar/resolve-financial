@@ -234,44 +234,35 @@ class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
-        # Pegando os parâmetros 'metrics' da query string
         metrics = self.request.query_params.get('metrics')
-        
-        # Se 'metrics' for passado, dividimos ele em uma lista de métodos a serem aplicados
+        queryset = Project.objects.all()
+
+        method_map = {
+            'is_released_to_engineering': lambda qs: qs.with_is_released_to_engineering(),
+            'trt_status': lambda qs: qs.with_trt_status(),
+            'pending_material_list': lambda qs: qs.with_pending_material_list(),
+            'access_opnion': lambda qs: qs.with_access_opnion(),
+            'trt_pending': lambda qs: qs.with_trt_pending(),
+            'request_requested': lambda qs: qs.with_request_requested(),
+            'last_installation_final_service_opinion': lambda qs: qs.with_last_installation_final_service_opinion(),
+            'supply_adquance_names': lambda qs: qs.with_supply_adquance_names(),
+            'access_opnion_status': lambda qs: qs.with_access_opnion_status(),
+            'load_increase_status': lambda qs: qs.with_load_increase_status(),
+            'branch_adjustment_status': lambda qs: qs.with_branch_adjustment_status(),
+            'new_contact_number_status': lambda qs: qs.with_new_contact_number_status(),
+            'final_inspection_status': lambda qs: qs.with_final_inspection_status(),
+            'purchase_status': lambda qs: qs.with_purchase_status(),
+            'delivery_status': lambda qs: qs.with_delivery_status(),
+        }
+
         if metrics:
-            metrics = metrics.split(',')
-            queryset = Project.objects.all()  # Iniciamos o queryset com todos os objetos de Project
-
-            # Dicionário que mapeia o nome do método para o próprio método
-            method_map = {
-                'is_released_to_engineering': Project.objects.with_is_released_to_engineering,
-                'delivery_status': Project.objects.with_delivery_status,
-                'trt_status': Project.objects.with_trt_status,
-                'pending_material_list': Project.objects.with_pending_material_list,
-                'access_opnion': Project.objects.with_access_opnion,
-                'trt_pending': Project.objects.with_trt_pending,
-                'request_requested': Project.objects.with_request_requested,
-                'last_installation_final_service_opinion': Project.objects.with_last_installation_final_service_opinion,
-                'supply_adquance_names': Project.objects.with_supply_adquance_names,
-                'access_opnion_status': Project.objects.with_access_opnion_status,
-                'load_increase_status': Project.objects.with_load_increase_status,
-                'branch_adjustment_status': Project.objects.with_branch_adjustment_status,
-                'new_contact_number_status': Project.objects.with_new_contact_number_status,
-                'final_inspection_status': Project.objects.with_final_inspection_status,
-                'purchase_status': Project.objects.with_purchase_status,
-            }
-
-            # Itera sobre os métodos solicitados e aplica cada um no queryset
-            for metric in metrics:
+            for metric in metrics.split(','):
+                metric = metric.strip()
                 if metric in method_map:
-                    queryset = method_map[metric]()  # Corrigido para chamar o método corretamente
+                    queryset = method_map[metric](queryset)
 
-        else:
-            queryset = Project.objects.all()  # Caso nenhum 'metrics' seja passado, retorna todos os projetos
-
-        # Realiza o 'select_related' e 'prefetch_related' como você já tinha antes
         queryset = queryset.select_related(
-            'sale', 
+            'sale',
             'inspection__final_service_opinion'
         ).prefetch_related(
             'attachments',
@@ -286,7 +277,6 @@ class ProjectViewSet(BaseModelViewSet):
         )
 
         return queryset.order_by('-created_at').distinct()
-
 
 
     def list(self, request, *args, **kwargs):
