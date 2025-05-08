@@ -798,7 +798,7 @@ class ProjectQuerySet(models.QuerySet):
             ), Value(''))
         ).distinct()
 
-
+    # PARECER DE ACESSO
     def with_access_opnion_status(self):
         return self.with_access_opnion().annotate(
             access_opnion_status=Case(
@@ -806,7 +806,14 @@ class ProjectQuerySet(models.QuerySet):
                 When(
                     Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
-                    ~Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='S'),
+                    Q(requests_energy_company__isnull=True),
+                    then=Value('Pendente'),
+                ),
+                When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    Q(access_opnion='Liberado') &
+                    Q(requests_energy_company__isnull=False) &
+                    ~Q(requests_energy_company__type__name__icontains='Parecer de Acesso'),
                     then=Value('Pendente')
                 ),
                 When(
@@ -918,7 +925,7 @@ class ProjectQuerySet(models.QuerySet):
                 )
         ).distinct()
 
-
+    # NOVA UC
     def with_new_contact_number_status(self):
         units_queryset = Units.objects.filter(
             project=OuterRef('pk'),
@@ -983,7 +990,7 @@ class ProjectQuerySet(models.QuerySet):
             )
         ).distinct()
 
-
+    # VISTORIA FINAL
     def with_final_inspection_status(self):
         return self.with_is_released_to_engineering().annotate(
             final_inspection_status=Case(
@@ -994,7 +1001,7 @@ class ProjectQuerySet(models.QuerySet):
                     then=Value('Bloqueado')
                 ),
                 When(
-                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='S')
+                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='D')
                     & Q(last_installation_final_service_opinion__iexact='Concluído')
                     & ~Q(requests_energy_company__type__name__icontains='Vistoria Final'),
                     then=Value('Pendente')
@@ -1018,7 +1025,7 @@ class ProjectQuerySet(models.QuerySet):
                 Schedule.objects.filter(
                     project=OuterRef('pk'),  # Refere-se ao projeto atual
                     service__name__icontains='Entrega',  # Serviço com nome contendo 'Entrega'
-                ).order_by('-created_at').values('final_service_opinion__name')[:1],  # Retorna o nome do parecer final do último agendamento
+                ).order_by('-created_at').values('final_service_opinion__name')[:1], 
             ),
             delivery_status=Case(
                 # CASO NÃO ESTEJA LIBERADO PARA ENGENHARIA
