@@ -1270,6 +1270,7 @@ class Project(models.Model):
         ]
         permissions = [
             ('can_change_unready_project', 'Can change unready project'),
+            ('can_view_journey', 'Can view journey'),
         ]
     
     def __str__(self):
