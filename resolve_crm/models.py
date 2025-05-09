@@ -922,73 +922,65 @@ class ProjectQuerySet(models.QuerySet):
                         default=Value('Bloqueado'),
                         output_field=CharField(),
                     )
-                )
-        ).distinct()
+                ).distinct()
+        )
 
     # NOVA UC
     def with_new_contact_number_status(self):
-        units_queryset = Units.objects.filter(
+        main_unit_has_new_contract = Units.objects.filter(
             project=OuterRef('pk'),
-            main_unit=True
-        ).order_by('id').values('new_contract_number')[:1]
-        
+            main_unit=True,
+            new_contract_number=True
+        )
 
-        return self.annotate(
-            new_contact_number_status=Case(
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)),
-                    then=Value('Não se aplica')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(is_released_to_engineering=False),
-                    then=Value('Bloqueado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    ~Q(designer_status='CO'),
-                    then=Value('Bloqueado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(designer_status='CO') &
-                    Q(requests_energy_company__isnull=True) &
-                    Q(requests_energy_company__type__name__icontains='Nova UC'),
-                    then=Value('Pendente')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(requests_energy_company__isnull=False) &
-                    ~Q(requests_energy_company__type__name__icontains='Nova UC'),
-                    then=Value('Pendente')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='S') &
-                    Q(requests_energy_company__type__name__icontains='Nova UC'),
-                    then=Value('Solicitado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='D') &
-                    Q(requests_energy_company__type__name__icontains='Nova UC'),
-                    then=Value('Deferido')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='I') &
-                    Q(requests_energy_company__type__name__icontains='Nova UC'),
-                    then=Value('Indeferida')
-                ),
-                default=Value('Bloqueado'),
-                output_field=CharField(),
+        return (
+            self.with_is_released_to_engineering()
+            .annotate(
+                has_main_unit_new_contract=Exists(main_unit_has_new_contract)
             )
-        ).distinct()
+            .annotate(
+                new_contact_number_status=Case(
+                    When(
+                        has_main_unit_new_contract=False,
+                        then=Value('Não se aplica')
+                    ),
+                    When(
+                        has_main_unit_new_contract=True,
+                        then=Case(
+                            When(is_released_to_engineering=False, then=Value('Bloqueado')),
+                            When(~Q(designer_status='CO'), then=Value('Bloqueado')),
+                            When(
+                                Q(requests_energy_company__isnull=True) &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Pendente')
+                            ),
+                            When(
+                                Q(requests_energy_company__isnull=False) &
+                                ~Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Pendente')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='S') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Solicitado')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='D') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Deferido')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='I') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Indeferida')
+                            ),
+                            default=Value('Bloqueado')
+                        )
+                    )
+                )
+            )
+        )
+
 
     # VISTORIA FINAL
     def with_final_inspection_status(self):
@@ -1010,7 +1002,6 @@ class ProjectQuerySet(models.QuerySet):
                     requests_energy_company__status='S'), then=Value('Solicitado')),
                 When(Q(requests_energy_company__type__name__icontains='Vistoria Final', requests_energy_company__status='D'), then=Value('Deferido')),
                 When(Q(requests_energy_company__type__name__icontains='Vistoria Final', requests_energy_company__status='I'), then=Value('Indeferida')),
-                When(Q(requests_energy_company__type__name__icontains='Vistoria Final', requests_energy_company__status='A'), then=Value('Concluído')),
                 default=Value('Bloqueado'),
                 output_field=CharField(),
             )
