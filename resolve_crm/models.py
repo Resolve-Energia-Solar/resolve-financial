@@ -800,7 +800,7 @@ class ProjectQuerySet(models.QuerySet):
 
     # PARECER DE ACESSO
     def with_access_opnion_status(self):
-        return self.with_access_opnion().annotate(
+        return self.with_access_opnion().with_last_installation_final_service_opinion().annotate(
             access_opnion_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(

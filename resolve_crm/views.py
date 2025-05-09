@@ -254,6 +254,7 @@ class ProjectViewSet(BaseModelViewSet):
             'purchase_status': lambda qs: qs.with_purchase_status(),
             'delivery_status': lambda qs: qs.with_delivery_status(),
             'expected_delivery_date': lambda qs: qs.with_expected_delivery_date(),
+            'all_status_annotations': lambda qs: qs.with_status_annotations(),
         }
 
         if metrics:
@@ -315,7 +316,7 @@ class ProjectViewSet(BaseModelViewSet):
         # Logistics
         purchase_status = request.query_params.get('purchase_status')
         delivery_status = request.query_params.get('delivery_status')
-        expected_delivery_date = request.query_params.get('expected_delivery_date')
+        expected_delivery_date = request.query_params.get('expected_delivery_date__range')
 
         
         if 'purchase_status' in queryset.query.annotations and purchase_status:
