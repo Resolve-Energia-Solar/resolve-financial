@@ -373,3 +373,9 @@ class PasswordResetConfirmView(GenericAPIView):
         user.save()
 
         return Response({"detail": "Senha alterada com sucesso."}, status=status.HTTP_200_OK)
+    
+    
+class UserTypeViewSet(BaseModelViewSet):
+    queryset = UserType.objects.all()
+    serializer_class = UserTypeSerializer
+    http_method_names = ['get', 'post', 'put', 'delete', 'patch']

@@ -14,13 +14,15 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField
 from django.db.models.functions import Cast
 from django.db.models import Func
 from django.db.models.functions import Coalesce
 from field_services.models import Schedule
 from engineering.models import Units
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate,Coalesce
+from django.utils import timezone
+
 
 def get_current_month():
     return datetime.date.today().month
@@ -1086,7 +1088,8 @@ class ProjectQuerySet(models.QuerySet):
         return self.with_is_released_to_engineering().annotate(
             purchase_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
-                When(Q(purchases__isnull=True), then=Value('Pendente')),
+                When(Q(purchases__isnull=True), then=Value('Liberado')),
+                When(Q(purchases__status='P'), then=Value('Pendente')),
                 When(Q(purchases__status='R'), then=Value('Compra Realizada')),
                 When(Q(purchases__status='C'), then=Value('Cancelado')),
                 When(Q(purchases__status='D'), then=Value('Distrato')),
@@ -1105,7 +1108,7 @@ class ProjectQuerySet(models.QuerySet):
                     sale__signature_date__isnull=False,
                     then=Cast(
                         ExpressionWrapper(
-                            F('sale__signature_date') + timedelta(days=15),
+                            F('sale__signature_date') + timedelta(days=20),
                             output_field=DateField()
                         ),
                         output_field=DateField()
@@ -1121,6 +1124,75 @@ class ProjectQuerySet(models.QuerySet):
             )
         )
 
+    
+    # FINANCEIRO
+    def with_installments_indicators(self):
+        now = timezone.now()
+
+        return self.annotate(
+            overdue_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(
+                    sale__payments__installments__is_paid=False,
+                    sale__payments__installments__due_date__lte=now
+                ),
+                distinct=True
+            ),
+            overdue_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(
+                        sale__payments__installments__is_paid=False,
+                        sale__payments__installments__due_date__lte=now
+                    ),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            on_time_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(
+                    sale__payments__installments__is_paid=False,
+                    sale__payments__installments__due_date__gt=now
+                ),
+                distinct=True
+            ),
+            on_time_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(
+                        sale__payments__installments__is_paid=False,
+                        sale__payments__installments__due_date__gt=now
+                    ),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            paid_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(sale__payments__installments__is_paid=True),
+                distinct=True
+            ),
+            paid_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(sale__payments__installments__is_paid=True),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            total_installments=Count(
+                'sale__payments__installments',
+                distinct=True
+            ),
+            total_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            )
+        )
 
     def with_status_annotations(self):
         return (

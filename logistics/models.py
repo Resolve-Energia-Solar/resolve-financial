@@ -161,7 +161,7 @@ class Purchase(models.Model):
     history = HistoricalRecords()
     
     def __str__(self):
-        return f"Projeto: {self.project}, Produto: {self.product}, Fornecedor: {self.supplier}"
+        return f"Projeto: {self.project}"
 
     class Meta:
         verbose_name = "Compra"

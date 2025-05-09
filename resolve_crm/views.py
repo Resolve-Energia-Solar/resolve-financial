@@ -19,7 +19,7 @@ from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum, Prefetch
-from django.db.models import Exists, OuterRef, Q, F
+from django.db.models import Exists, OuterRef, Q, F, DecimalField
 from django.db import transaction
 from django.contrib import messages
 from django.http import HttpResponse
@@ -34,6 +34,7 @@ from core.task import create_process_async
 from core.models import ProcessBase, Process
 from .serializers import *
 from .models import *
+from django.utils import timezone
 
 
 logger = logging.getLogger(__name__)
@@ -254,6 +255,7 @@ class ProjectViewSet(BaseModelViewSet):
             'purchase_status': lambda qs: qs.with_purchase_status(),
             'delivery_status': lambda qs: qs.with_delivery_status(),
             'expected_delivery_date': lambda qs: qs.with_expected_delivery_date(),
+            'installments_indicators': lambda qs: qs.with_installments_indicators(),
             'all_status_annotations': lambda qs: qs.with_status_annotations(),
         }
 
@@ -513,7 +515,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         # Define todos os status possíveis
         PURCHASE_STATUSES = [
-            "Bloqueado", "Pendente", "Compra Realizada", "Cancelado", "Distrato",
+            "Bloqueado", "Liberado", "Pendente", "Compra Realizada", "Cancelado", "Distrato",
             "Aguardando Previsão de Entrega", "Aguardando Pagamento"
         ]
         DELIVERY_STATUSES = [
@@ -541,6 +543,100 @@ class ProjectViewSet(BaseModelViewSet):
         return Response({"indicators": indicators})
 
                     
+    @action(detail=False, methods=['get'], url_path='installments-indicators')
+    def installments_indicators(self, request, *args, **kwargs):
+        # --- cache key ---
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f'payments_indicators_{filter_hash}'
+        combined = cache.get(cache_key)
+        if combined:
+            return Response({"indicators": combined})
+
+        # --- aplica o annotate que já define os campos ---
+        qs = self.filter_queryset(self.get_queryset()) \
+                 .with_installments_indicators()
+
+        # --- mapeia tipo de cada anotação ---
+        installment_fields = {
+            'overdue_installments_count': IntegerField(),
+            'overdue_installments_value': DecimalField(),
+            'on_time_installments_count': IntegerField(),
+            'on_time_installments_value': DecimalField(),
+            'paid_installments_count': IntegerField(),
+            'paid_installments_value': DecimalField(),
+            'total_installments': IntegerField(),
+            'total_installments_value': DecimalField(),
+        }
+
+        # --- monta as agregações usando Sum(F(...)) para referenciar a anotação ---
+        aggregations = {
+            name: Coalesce(
+                Sum(F(name), output_field=field_type),
+                Value(0, output_field=field_type),
+                output_field=field_type
+            )
+            for name, field_type in installment_fields.items()
+        }
+        installments_indicators = qs.aggregate(**aggregations)
+
+        # --- bloco de consistência (idem de antes) ---
+        qs_consistency = (
+            qs
+            .annotate(
+                total_installments_value=Coalesce(
+                    Sum('installments__installment_value', output_field=DecimalField()),
+                    Value(0, output_field=DecimalField()),
+                    output_field=DecimalField()
+                ),
+                total_installments_count=Count('installments'),
+                paid_installments_count=Count(
+                    'installments',
+                    filter=Q(sale__payments__installments__is_paid=True)
+                )
+            )
+            .annotate(
+                is_consistent=Case(
+                    When(
+                        Q(total_installments_count=F('paid_installments_count')) &
+                        Q(value=F('total_installments_value')),
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField()
+                )
+            )
+        )
+        consistency_indicators = qs_consistency.aggregate(
+            total_payments=Count('id'),
+            total_payments_value=Coalesce(
+                Sum('value', output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            ),
+            consistent_payments=Count('id', filter=Q(is_consistent=True)),
+            consistent_payments_value=Coalesce(
+                Sum('value', filter=Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            ),
+            inconsistent_payments_value=Coalesce(
+                Sum('value', filter=~Q(is_consistent=True), output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            ),
+            inconsistent_payments=Count('id', filter=~Q(is_consistent=True))
+        )
+
+        # --- une, cache e retorna ---
+        combined = {
+            "installments": installments_indicators,
+            "consistency": consistency_indicators
+        }
+        cache.set(cache_key, combined, 60)
+        return Response({"indicators": combined})
+   
+    
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
     serializer_class = ContractSubmissionSerializer
