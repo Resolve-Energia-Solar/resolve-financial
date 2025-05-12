@@ -157,6 +157,7 @@ class Schedule(models.Model):
     observation = models.TextField("Observação", blank=True, null=True)
     step = models.IntegerField("Etapa", default=1)
     arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
+    value = models.DecimalField("Valor", max_digits=10, decimal_places=2, blank=True, null=True)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     

@@ -250,3 +250,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     token = serializers.CharField()
     uid = serializers.IntegerField()
     new_password = serializers.CharField(min_length=8)
+    
+    
+class UserTypeSerializer(BaseSerializer):
+    class Meta:
+        model = UserType
+        fields = '__all__'

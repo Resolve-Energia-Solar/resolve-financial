@@ -14,10 +14,15 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField
+from django.db.models.functions import Cast
+from django.db.models import Func
 from django.db.models.functions import Coalesce
 from field_services.models import Schedule
 from engineering.models import Units
+from django.db.models.functions import TruncDate,Coalesce
+from django.utils import timezone
+
 
 def get_current_month():
     return datetime.date.today().month
@@ -710,7 +715,6 @@ class ProjectQuerySet(models.QuerySet):
         ).distinct()
 
 
-
     def with_pending_material_list(self):
         return self.with_is_released_to_engineering().annotate(
             pending_material_list=Case(
@@ -723,6 +727,7 @@ class ProjectQuerySet(models.QuerySet):
                 output_field=BooleanField(),
             )
         ).distinct()
+
 
     def with_access_opnion(self):
         return self.with_trt_status().with_is_released_to_engineering().annotate(
@@ -737,6 +742,7 @@ class ProjectQuerySet(models.QuerySet):
                 output_field=CharField(),
             )
         ).distinct()
+
 
     def with_trt_pending(self):
         return self.with_is_released_to_engineering().with_trt_status().annotate(
@@ -759,6 +765,7 @@ class ProjectQuerySet(models.QuerySet):
                 output_field=BooleanField(),
             )
         )
+
 
     def with_last_installation_final_service_opinion(self):
         return self.annotate(
@@ -793,33 +800,40 @@ class ProjectQuerySet(models.QuerySet):
             ), Value(''))
         ).distinct()
 
-
+    # PARECER DE ACESSO
     def with_access_opnion_status(self):
-        return self.with_access_opnion().annotate(
+        return self.with_access_opnion().with_last_installation_final_service_opinion().annotate(
             access_opnion_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(
                     Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
-                    ~Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    Q(requests_energy_company__isnull=True),
+                    then=Value('Pendente'),
+                ),
+                When(
+                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    Q(access_opnion='Liberado') &
+                    Q(requests_energy_company__isnull=False) &
+                    ~Q(requests_energy_company__type__name__icontains='Parecer de Acesso'),
                     then=Value('Pendente')
                 ),
                 When(
                     Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
-                    Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='S'),
                     then=Value('Solicitado')
                 ),
                 When(
                     Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
-                    Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='D'),
+                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='D'),
                     then=Value('Deferido')
                 ),
                 When(
                     Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
-                    Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='I'),
+                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='I'),
                     then=Value('Indeferida')
                 ),
                 default=Value('Bloqueado'),
@@ -847,26 +861,27 @@ class ProjectQuerySet(models.QuerySet):
                 When(
                     Q(supply_adquance_names__icontains='Aumento de Carga') &
                     Q(requests_energy_company__isnull=False) &
-                    ~Q(requests_energy_company__type__name='Aumento de Carga'),
+                    ~Q(requests_energy_company__type__name__icontains='Aumento de Carga'),
                     then=Value('Pendente')
                 ),
                 
                 When(Q(supply_adquance_names__icontains='Aumento de Carga') &
                      Q(requests_energy_company__status='S') &
-                     Q(requests_energy_company__type__name='Aumento de Carga')
+                     Q(requests_energy_company__type__name__icontains='Aumento de Carga')
                       , then=Value('Solicitado')),
                 When(Q(supply_adquance_names__icontains='Aumento de Carga') &
                      Q(requests_energy_company__status='D') &
-                     Q(requests_energy_company__type__name='Aumento de Carga')
+                     Q(requests_energy_company__type__name__icontains='Aumento de Carga')
                      , then=Value('Deferido')),
                 When(Q(supply_adquance_names__icontains='Aumento de Carga') &
                      Q(requests_energy_company__status='I') & 
-                     Q(requests_energy_company__type__name='Aumento de Carga')
+                     Q(requests_energy_company__type__name__icontains='Aumento de Carga')
                      , then=Value('Indeferida')),
                 default=Value('Bloqueado'),
                 output_field=CharField(),
             )
         ).distinct()
+
 
     # AJUSTE DE RAMAL
     def with_branch_adjustment_status(self):
@@ -891,123 +906,309 @@ class ProjectQuerySet(models.QuerySet):
                         
                         When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
                                 Q(requests_energy_company__isnull=False) &
-                                ~Q(requests_energy_company__type__name='Ajuste de Ramal')
+                                ~Q(requests_energy_company__type__name__icontains='Ajuste de Ramal')
                                 , then=Value('Pendente')),
                         
                         When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
                              Q(requests_energy_company__status='S') &
-                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             Q(requests_energy_company__type__name__icontains='Ajuste de Ramal')
                              , then=Value('Solicitado')),
                         When(Q(supply_adquance_names__icontains='Ajuste de Ramal') & 
                              Q(requests_energy_company__status='D') & 
-                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             Q(requests_energy_company__type__name__icontains='Ajuste de Ramal')
                              , then=Value('Deferido')),
                         When(Q(supply_adquance_names__icontains='Ajuste de Ramal') &
                              Q(requests_energy_company__status='I') & 
-                             Q(requests_energy_company__type__name='Ajuste de Ramal')
+                             Q(requests_energy_company__type__name__icontains='Ajuste de Ramal')
                              , then=Value('Indeferida')),
                         default=Value('Bloqueado'),
                         output_field=CharField(),
                     )
-                )
-        ).distinct()
+                ).distinct()
+        )
 
-
+    # NOVA UC
     def with_new_contact_number_status(self):
-        units_queryset = Units.objects.filter(
+        main_unit_has_new_contract = Units.objects.filter(
             project=OuterRef('pk'),
-            main_unit=True
-        ).order_by('id').values('new_contract_number')[:1]
-        
+            main_unit=True,
+            new_contract_number=True
+        )
 
-        return self.annotate(
-            new_contact_number_status=Case(
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)),
-                    then=Value('Não se aplica')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(is_released_to_engineering=False),
-                    then=Value('Bloqueado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    ~Q(designer_status='CO'),
-                    then=Value('Bloqueado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(designer_status='CO') &
-                    Q(requests_energy_company__isnull=True) &
-                    Q(requests_energy_company__type__name='Nova UC'),
-                    then=Value('Pendente')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(units__new_contract_number=Subquery(units_queryset)) &
-                    Q(requests_energy_company__isnull=False) &
-                    ~Q(requests_energy_company__type__name='Nova UC'),
-                    then=Value('Pendente')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='S') &
-                    Q(requests_energy_company__type__name='Nova UC'),
-                    then=Value('Solicitado')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='D') &
-                    Q(requests_energy_company__type__name='Nova UC'),
-                    then=Value('Deferido')
-                ),
-                When(
-                    # Q(units__main_unit=True) &
-                    Q(requests_energy_company__status='I') &
-                    Q(requests_energy_company__type__name='Nova UC'),
-                    then=Value('Indeferida')
-                ),
-                default=Value('Bloqueado'),
-                output_field=CharField(),
+        return (
+            self.with_is_released_to_engineering()
+            .annotate(
+                has_main_unit_new_contract=Exists(main_unit_has_new_contract)
             )
-        ).distinct()
+            .annotate(
+                new_contact_number_status=Case(
+                    When(
+                        has_main_unit_new_contract=False,
+                        then=Value('Não se aplica')
+                    ),
+                    When(
+                        has_main_unit_new_contract=True,
+                        then=Case(
+                            When(is_released_to_engineering=False, then=Value('Bloqueado')),
+                            When(~Q(designer_status='CO'), then=Value('Bloqueado')),
+                            When(
+                                Q(requests_energy_company__isnull=True) &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Pendente')
+                            ),
+                            When(
+                                Q(requests_energy_company__isnull=False) &
+                                ~Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Pendente')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='S') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Solicitado')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='D') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Deferido')
+                            ),
+                            When(
+                                Q(requests_energy_company__status='I') &
+                                Q(requests_energy_company__type__name__icontains='Nova UC'),
+                                then=Value('Indeferida')
+                            ),
+                            default=Value('Bloqueado')
+                        )
+                    )
+                )
+            )
+        )
 
 
+    # VISTORIA FINAL
     def with_final_inspection_status(self):
         return self.with_is_released_to_engineering().annotate(
             final_inspection_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(
                     Q(is_released_to_engineering=True)
-                    & ~Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S'),
+                    & ~Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='S'),
                     then=Value('Bloqueado')
                 ),
                 When(
-                    Q(requests_energy_company__type__name='Parecer de Acesso', requests_energy_company__status='S')
+                    Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='D')
                     & Q(last_installation_final_service_opinion__iexact='Concluído')
-                    & ~Q(requests_energy_company__type__name='Vistoria Final'),
+                    & ~Q(requests_energy_company__type__name__icontains='Vistoria Final'),
                     then=Value('Pendente')
                 ),
-                When(Q(requests_energy_company__type__name='Vistoria Final',
+                When(Q(requests_energy_company__type__name__icontains='Vistoria Final',
                     requests_energy_company__status='S'), then=Value('Solicitado')),
-                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='D'), then=Value('Deferido')),
-                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='I'), then=Value('Indeferida')),
-                When(Q(requests_energy_company__type__name='Vistoria Final', requests_energy_company__status='A'), then=Value('Concluído')),
+                When(Q(requests_energy_company__type__name__icontains='Vistoria Final', requests_energy_company__status='D'), then=Value('Deferido')),
+                When(Q(requests_energy_company__type__name__icontains='Vistoria Final', requests_energy_company__status='I'), then=Value('Indeferida')),
                 default=Value('Bloqueado'),
                 output_field=CharField(),
             )
         ).distinct()
 
+
+    # STATUS LOGISTICA -  PERGUNTAR - QUANDO NÃO É ENTREGA DIRETA O STATUS DE LIBERADO DEPENDE DA ENTREGA?
+    def with_delivery_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            # Subquery para pegar o nome do parecer final do último agendamento
+            last_service_opinion_name=Subquery(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),  # Refere-se ao projeto atual
+                    service__name__icontains='Entrega',  # Serviço com nome contendo 'Entrega'
+                ).order_by('-created_at').values('final_service_opinion__name')[:1], 
+            ),
+            has_delivery=Exists(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__name__icontains='Entrega'
+                ).values('id')
+            ),
+            delivery_status=Case(
+                # CASO NÃO ESTEJA LIBERADO PARA ENGENHARIA
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+
+                # CASO NÃO TENHA COMPRA
+                When(Q(purchases__isnull=True), then=Value('Bloqueado')),
+
+                # CONDIÇÕES PARA "BLOQUEADO"
+                When(
+                    Q(purchases__isnull=False) &
+                    (
+                        # ENTREGA DIRETA E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)'
+                        (Q(purchases__delivery_type='D') & ~Q(purchases__status='R')) |
+                        # ENTREGA CD E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)' E LISTA DE MATERIAIS NÃO FINALIZADA
+                        (Q(purchases__delivery_type='C') & ~Q(purchases__status='R') & ~Q(material_list_is_completed=True)) |
+                        # ENTREGA CD E STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO NÃO 'CO' E LISTA DE MATERIAIS NÃO FINALIZADA
+                        (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(designer_status__in=['CO']) & ~Q(material_list_is_completed=True))
+                    ),
+                    then=Value('Bloqueado')
+                ),
+
+                # CASO ENTREGA DIRETA E STATUS 'COMPRA REALIZADA (R)'
+                When(
+                    Q(purchases__isnull=False) &
+                    Q(purchases__delivery_type='D') &
+                    Q(purchases__status='R') &
+                    Q(has_delivery=False),
+                    then=Value('Liberado')
+                ),
+
+                # CASO ENTREGA CD COM STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO 'CO' E LISTA DE MATERIAIS FINALIZADA
+                When(
+                    Q(purchases__isnull=False) &
+                    Q(purchases__delivery_type='C') &
+                    Q(purchases__status='R') &
+                    Q(designer_status__in=['CO']) &
+                    Q(material_list_is_completed=True) &
+                    Q(has_delivery=False),
+                    then=Value('Liberado')
+                ),
+
+                # AGENDADO: Verifica se o último agendamento com serviço contendo 'Entrega' existe
+                When(
+                    Q(last_service_opinion_name__isnull=True),
+                    then=Value('Agendado')
+                ),
+
+                # ENTREGUE: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Entregue'
+                When(
+                    Q(last_service_opinion_name__icontains='Entregue'),
+                    then=Value('Entregue')
+                ),
+
+                # CANCELADO: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Cancelado'
+                When(
+                    Q(last_service_opinion_name__icontains='Cancelado'),
+                    then=Value('Cancelado')
+                ),
+
+                # Caso padrão
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        ).distinct()
+        
+        
+    def with_purchase_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            purchase_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(Q(purchases__isnull=True), then=Value('Liberado')),
+                When(Q(purchases__status='P'), then=Value('Pendente')),
+                When(Q(purchases__status='R'), then=Value('Compra Realizada')),
+                When(Q(purchases__status='C'), then=Value('Cancelado')),
+                When(Q(purchases__status='D'), then=Value('Distrato')),
+                When(Q(purchases__status='F'), then=Value('Aguardando Previsão de Entrega')),
+                When(Q(purchases__status='A'), then=Value('Aguardando Pagamento')),
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        ).distinct()
+        
+
+    def with_expected_delivery_date(self):
+        return self.annotate(
+            expected_delivery_date=Case(
+                When(
+                    sale__signature_date__isnull=False,
+                    then=Cast(
+                        ExpressionWrapper(
+                            F('sale__signature_date') + timedelta(days=20),
+                            output_field=DateField()
+                        ),
+                        output_field=DateField()
+                    )
+                ),
+                default=None,
+                output_field=DateField()
+            ),
+            expected_delivery_status=Case(
+                When(sale__signature_date__isnull=True, then=Value('Sem contrato')),
+                default=Value('Com contrato'),
+                output_field=CharField()
+            )
+        )
+
+    
+    # FINANCEIRO
+    def with_installments_indicators(self):
+        now = timezone.now()
+
+        return self.annotate(
+            overdue_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(
+                    sale__payments__installments__is_paid=False,
+                    sale__payments__installments__due_date__lte=now
+                ),
+                distinct=True
+            ),
+            overdue_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(
+                        sale__payments__installments__is_paid=False,
+                        sale__payments__installments__due_date__lte=now
+                    ),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            on_time_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(
+                    sale__payments__installments__is_paid=False,
+                    sale__payments__installments__due_date__gt=now
+                ),
+                distinct=True
+            ),
+            on_time_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(
+                        sale__payments__installments__is_paid=False,
+                        sale__payments__installments__due_date__gt=now
+                    ),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            paid_installments_count=Count(
+                'sale__payments__installments',
+                filter=Q(sale__payments__installments__is_paid=True),
+                distinct=True
+            ),
+            paid_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    filter=Q(sale__payments__installments__is_paid=True),
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            ),
+            total_installments=Count(
+                'sale__payments__installments',
+                distinct=True
+            ),
+            total_installments_value=Coalesce(
+                Sum(
+                    'sale__payments__installments__installment_value',
+                    output_field=DecimalField()
+                ),
+                Value(0)
+            )
+        )
+
     def with_status_annotations(self):
         return (
             self
+            # default
             .with_is_released_to_engineering()
             .with_pending_material_list()
+            # Homologation
             .with_access_opnion()
             .with_request_requested()
             .with_last_installation_final_service_opinion()
@@ -1018,6 +1219,10 @@ class ProjectQuerySet(models.QuerySet):
             .with_new_contact_number_status()
             .with_final_inspection_status()
             .with_trt_pending()
+            # Logistics
+            .with_delivery_status()
+            .with_purchase_status()
+            .with_expected_delivery_date()
         ).distinct()
 
 
@@ -1137,6 +1342,7 @@ class Project(models.Model):
         permissions = [
             ('can_change_unready_project', 'Can change unready project'),
             ('can_view_journey', 'Can view journey'),
+            ('can_manage_journey', 'Can manage journey'),
         ]
     
     def __str__(self):
