@@ -284,29 +284,32 @@ class ProjectViewSet(BaseModelViewSet):
         return queryset.order_by('-created_at').distinct()
 
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        
+    def apply_additional_filters(self, queryset, request):
+        from django.db.models import Q, Exists, OuterRef
+        from django.contrib.contenttypes.models import ContentType
+        from rest_framework.response import Response
+        from rest_framework import status
+
         q = request.query_params.get('q')
         customer = request.query_params.get('customer')
         is_released_to_engineering = request.query_params.get('is_released_to_engineering')
         inspection_status = request.query_params.get('inspection_status')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
-        
+
         access_opnion = request.query_params.get('access_opnion')
         trt_status = request.query_params.get('trt_status')
         new_contract_number = request.query_params.get('new_contract_number')
         supply_adquance = request.query_params.get('supply_adquance')
         request_energy_company_type = request.query_params.get('request_energy_company_type__in')
-        
+
         access_opnion_status = request.query_params.get('access_opnion_status')
         trt_pending = request.query_params.get('trt_pending')
         load_increase_status = request.query_params.get('load_increase_status')
         branch_adjustment_status = request.query_params.get('branch_adjustment_status')
         final_inspection_status = request.query_params.get('final_inspection_status')
         new_contact_number_status = request.query_params.get('new_contact_number_status')
-        
+
         seller = request.query_params.get('seller')
         sale_status = request.query_params.get('sale_status')
         sale_branches = request.query_params.get('sale_branches')
@@ -316,122 +319,105 @@ class ProjectViewSet(BaseModelViewSet):
         payment_types = request.query_params.get('payment_types')
         financiers = request.query_params.get('financiers')
         borrower = request.query_params.get('borrower')
-        # Logistics
         purchase_status = request.query_params.get('purchase_status')
         delivery_status = request.query_params.get('delivery_status')
         expected_delivery_date = request.query_params.get('expected_delivery_date__range')
-        
         attachments_status = request.query_params.get('attachments_status')
-        
+
         if attachments_status:
             queryset = queryset.filter(attachments__status__in=attachments_status.split(','))
-        
+
         if 'purchase_status' in queryset.query.annotations and purchase_status:
-            purchase_status_list = purchase_status.split(',')
-            queryset = queryset.filter(purchase_status__in=purchase_status_list)
+            queryset = queryset.filter(purchase_status__in=purchase_status.split(','))
 
         if 'delivery_status' in queryset.query.annotations and delivery_status:
-            delivery_status_list = delivery_status.split(',')
-            queryset = queryset.filter(delivery_status__in=delivery_status_list)
+            queryset = queryset.filter(delivery_status__in=delivery_status.split(','))
 
         if 'expected_delivery_date' in queryset.query.annotations and expected_delivery_date:
             date_range = expected_delivery_date.split(',')
             if len(date_range) == 2:
-                start_date, end_date = date_range
-                queryset = queryset.filter(expected_delivery_date__range=[start_date, end_date])
+                queryset = queryset.filter(expected_delivery_date__range=date_range)
             else:
                 queryset = queryset.filter(expected_delivery_date=expected_delivery_date)
-        
+
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
         if payment_types:
-            payment_types = payment_types.split(',')
-            queryset = queryset.filter(sale__payments__payment_type__in=payment_types)
+            queryset = queryset.filter(sale__payments__payment_type__in=payment_types.split(','))
         if financiers:
-            financiers = financiers.split(',')
-            queryset = queryset.filter(sale__payments__financier__id__in=financiers)
+            queryset = queryset.filter(sale__payments__financier__id__in=financiers.split(','))
         if seller:
             queryset = queryset.filter(sale__seller__id=seller)
         if sale_status:
-            sale_status = sale_status.split(',')
-            queryset = queryset.filter(sale__status__in=sale_status)
+            queryset = queryset.filter(sale__status__in=sale_status.split(','))
         if sale_branches:
-            sale_branches = sale_branches.split(',')
-            queryset = queryset.filter(sale__branch__id__in=sale_branches)
+            queryset = queryset.filter(sale__branch__id__in=sale_branches.split(','))
         if invoice_status:
-            invoice_status = invoice_status.split(',')
-            queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status)
+            queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status.split(','))
         if state:
             queryset = queryset.filter(main_unit_prefetched__address__state__icontains=state)
         if city:
             queryset = queryset.filter(main_unit_prefetched__address__city__icontains=city)
-            
-        
+
         if request_energy_company_type:
-            request_energy_company_type = request_energy_company_type.split(',')
-            queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type)
-        
+            queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type.split(','))
+
         if q:
-            queryset = queryset.filter(Q(sale__customer__complete_name__icontains=q) | Q(sale__customer__first_document__icontains=q) | Q(project_number__icontains=q))
+            queryset = queryset.filter(
+                Q(sale__customer__complete_name__icontains=q) |
+                Q(sale__customer__first_document__icontains=q) |
+                Q(project_number__icontains=q)
+            )
 
         if new_contract_number == 'true':
             queryset = queryset.filter(units__new_contract_number=True)
         elif new_contract_number == 'false':
             queryset = queryset.filter(units__new_contract_number=False)
-            
+
         if supply_adquance:
-            supply_adquance = supply_adquance.split(',')
-            queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance)
+            queryset = queryset.filter(units__supply_adquance__id__in=supply_adquance.split(','))
 
         if access_opnion == 'liberado':
             queryset = queryset.filter(access_opnion__icontains='Liberado')
         elif access_opnion == 'bloqueado':
             queryset = queryset.filter(access_opnion__icontains='Bloqueado')
-            
+
         if trt_status:
-            trt_status_list = trt_status.split(',')
-            queryset = queryset.filter(
-                Q(trt_status__in=trt_status_list)
-            )
+            queryset = queryset.filter(trt_status__in=trt_status.split(','))
 
         if trt_pending:
             queryset = queryset.filter(trt_pending__iexact=trt_pending)
-            
+
         if access_opnion_status:
             queryset = queryset.filter(access_opnion_status__icontains=access_opnion_status)
-
         if load_increase_status:
             queryset = queryset.filter(load_increase_status__icontains=load_increase_status)
-
         if branch_adjustment_status:
             queryset = queryset.filter(branch_adjustment_status__icontains=branch_adjustment_status)
-
         if final_inspection_status:
             queryset = queryset.filter(final_inspection_status__icontains=final_inspection_status)
-
         if new_contact_number_status:
             queryset = queryset.filter(new_contact_number_status__icontains=new_contact_number_status)
-            
-        
+
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
 
         if signature_date:
             date_range = signature_date.split(',')
             if len(date_range) == 2:
-                start_date, end_date = date_range
-                queryset = queryset.filter(sale__signature_date__range=[start_date, end_date])
+                queryset = queryset.filter(sale__signature_date__range=date_range)
             else:
                 queryset = queryset.filter(sale__signature_date=signature_date)
 
         if product_kwp:
             try:
                 product_kwp_value = float(product_kwp)
-                lower_bound = product_kwp_value - 2.5
-                upper_bound = product_kwp_value + 2.5
-                queryset = queryset.filter(product__params__gte=lower_bound, product__params__lte=upper_bound)
+                queryset = queryset.filter(
+                    product__params__gte=product_kwp_value - 2.5,
+                    product__params__lte=product_kwp_value + 2.5
+                )
             except ValueError:
-                return Response({'message': 'Valor inválido para KWP.'}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError({'product_kwp': 'Valor inválido para KWP.'})
 
         if is_released_to_engineering == 'true':
             queryset = queryset.filter(is_released_to_engineering=True)
@@ -440,7 +426,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         if customer:
             queryset = queryset.filter(sale__customer__id=customer)
-            
+
         current_step_in = request.query_params.get('current_step__in')
         if current_step_in:
             steps_list = current_step_in.split(',')
@@ -455,7 +441,13 @@ class ProjectViewSet(BaseModelViewSet):
                 )
             ).filter(has_current_step=True)
 
-        # Paginação
+        return queryset
+
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.apply_additional_filters(queryset, request)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serialized_data = self.get_serializer(page, many=True).data
@@ -467,19 +459,14 @@ class ProjectViewSet(BaseModelViewSet):
 
     @action(detail=False, methods=['get'])
     def indicators(self, request, *args, **kwargs):
-        filter_params = request.GET.dict()
-        filter_hash = md5(str(filter_params).encode()).hexdigest()
-        cache_key = f'project_indicators_{filter_hash}'
+        request.query_params._mutable = True
+        request.query_params['metrics'] = 'is_released_to_engineering,trt_status,pending_material_list'
+        request.query_params._mutable = False
 
-        indicators = cache.get(cache_key)
-        if indicators:
-            return Response({"indicators": indicators})
+        queryset = self.get_queryset()
+        queryset = self.apply_additional_filters(queryset, request)
 
-        queryset = self.filter_queryset(self.get_queryset())
-        
-        queryset = queryset.distinct()
-
-        raw_indicators = queryset.aggregate(
+        raw_indicators = queryset.distinct().aggregate(
             designer_pending_count=Count('id', filter=Q(designer_status="P")),
             designer_in_progress_count=Count('id', filter=Q(designer_status="EA")),
             designer_complete_count=Count('id', filter=Q(designer_status="CO")),
@@ -501,7 +488,6 @@ class ProjectViewSet(BaseModelViewSet):
                 Q(units__bill_file__isnull=True, units__new_contract_number=False))
         )
 
-        cache.set(cache_key, raw_indicators, 60)
         return Response({"indicators": raw_indicators})
 
 
@@ -515,10 +501,14 @@ class ProjectViewSet(BaseModelViewSet):
         if indicators:
             return Response({"indicators": indicators})
 
-        queryset = self.filter_queryset(self.get_queryset()).distinct()
+        request.query_params._mutable = True
+        request.query_params['metrics'] = 'is_released_to_engineering,purchase_status,delivery_status'
+        request.query_params._mutable = False
+
+        queryset = self.get_queryset()
+        queryset = self.apply_additional_filters(queryset, request)
         queryset = queryset.with_is_released_to_engineering().with_purchase_status().with_delivery_status()
 
-        # Define todos os status possíveis
         PURCHASE_STATUSES = [
             "Bloqueado", "Liberado", "Pendente", "Compra Realizada", "Cancelado", "Distrato",
             "Aguardando Previsão de Entrega", "Aguardando Pagamento"
@@ -531,7 +521,6 @@ class ProjectViewSet(BaseModelViewSet):
         delivery_result = {status: 0 for status in DELIVERY_STATUSES}
         total_count = queryset.count()
 
-        # Itera direto no queryset — sem usar `.only(...)`
         for project in queryset:
             if hasattr(project, 'purchase_status') and project.purchase_status in purchase_result:
                 purchase_result[project.purchase_status] += 1
@@ -547,7 +536,7 @@ class ProjectViewSet(BaseModelViewSet):
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
 
-                    
+                
     # @action(detail=False, methods=['get'], url_path='installments-indicators')
     # def installments_indicators(self, request, *args, **kwargs):
     #     # 1) monta a cache key
