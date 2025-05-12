@@ -320,7 +320,11 @@ class ProjectViewSet(BaseModelViewSet):
         purchase_status = request.query_params.get('purchase_status')
         delivery_status = request.query_params.get('delivery_status')
         expected_delivery_date = request.query_params.get('expected_delivery_date__range')
-
+        
+        attachments_status = request.query_params.get('attachments_status')
+        
+        if attachments_status:
+            queryset = queryset.filter(attachments__status__in=attachments_status.split(','))
         
         if 'purchase_status' in queryset.query.annotations and purchase_status:
             purchase_status_list = purchase_status.split(',')
