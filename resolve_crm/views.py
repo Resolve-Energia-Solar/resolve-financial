@@ -13,13 +13,14 @@ from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from engineering.models import Units
+from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
 from django.db.models import Count, Q, Sum, Prefetch
-from django.db.models import Exists, OuterRef, Q, F
+from django.db.models import Exists, OuterRef, Q, F, DecimalField
 from django.db import transaction
 from django.contrib import messages
 from django.http import HttpResponse
@@ -34,6 +35,7 @@ from core.task import create_process_async
 from core.models import ProcessBase, Process
 from .serializers import *
 from .models import *
+from django.utils import timezone
 
 
 logger = logging.getLogger(__name__)
@@ -233,12 +235,39 @@ class SaleViewSet(BaseModelViewSet):
 class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
 
-    
     def get_queryset(self):
-        queryset = Project.objects.with_status_annotations()
+        metrics = self.request.query_params.get('metrics')
+        queryset = Project.objects.all()
+
+        method_map = {
+            'is_released_to_engineering': lambda qs: qs.with_is_released_to_engineering(),
+            'trt_status': lambda qs: qs.with_trt_status(),
+            'pending_material_list': lambda qs: qs.with_pending_material_list(),
+            'access_opnion': lambda qs: qs.with_access_opnion(),
+            'trt_pending': lambda qs: qs.with_trt_pending(),
+            'request_requested': lambda qs: qs.with_request_requested(),
+            'last_installation_final_service_opinion': lambda qs: qs.with_last_installation_final_service_opinion(),
+            'supply_adquance_names': lambda qs: qs.with_supply_adquance_names(),
+            'access_opnion_status': lambda qs: qs.with_access_opnion_status(),
+            'load_increase_status': lambda qs: qs.with_load_increase_status(),
+            'branch_adjustment_status': lambda qs: qs.with_branch_adjustment_status(),
+            'new_contact_number_status': lambda qs: qs.with_new_contact_number_status(),
+            'final_inspection_status': lambda qs: qs.with_final_inspection_status(),
+            'purchase_status': lambda qs: qs.with_purchase_status(),
+            'delivery_status': lambda qs: qs.with_delivery_status(),
+            'expected_delivery_date': lambda qs: qs.with_expected_delivery_date(),
+            'installments_indicators': lambda qs: qs.with_installments_indicators(),
+            'all_status_annotations': lambda qs: qs.with_status_annotations(),
+        }
+
+        if metrics:
+            for metric in metrics.split(','):
+                metric = metric.strip()
+                if metric in method_map:
+                    queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            'sale', 
+            'sale',
             'inspection__final_service_opinion'
         ).prefetch_related(
             'attachments',
@@ -251,7 +280,7 @@ class ProjectViewSet(BaseModelViewSet):
                 to_attr='main_unit_prefetched'
             ),
         )
-        
+
         return queryset.order_by('-created_at').distinct()
 
 
@@ -287,6 +316,31 @@ class ProjectViewSet(BaseModelViewSet):
         payment_types = request.query_params.get('payment_types')
         financiers = request.query_params.get('financiers')
         borrower = request.query_params.get('borrower')
+        # Logistics
+        purchase_status = request.query_params.get('purchase_status')
+        delivery_status = request.query_params.get('delivery_status')
+        expected_delivery_date = request.query_params.get('expected_delivery_date__range')
+        
+        attachments_status = request.query_params.get('attachments_status')
+        
+        if attachments_status:
+            queryset = queryset.filter(attachments__status__in=attachments_status.split(','))
+        
+        if 'purchase_status' in queryset.query.annotations and purchase_status:
+            purchase_status_list = purchase_status.split(',')
+            queryset = queryset.filter(purchase_status__in=purchase_status_list)
+
+        if 'delivery_status' in queryset.query.annotations and delivery_status:
+            delivery_status_list = delivery_status.split(',')
+            queryset = queryset.filter(delivery_status__in=delivery_status_list)
+
+        if 'expected_delivery_date' in queryset.query.annotations and expected_delivery_date:
+            date_range = expected_delivery_date.split(',')
+            if len(date_range) == 2:
+                start_date, end_date = date_range
+                queryset = queryset.filter(expected_delivery_date__range=[start_date, end_date])
+            else:
+                queryset = queryset.filter(expected_delivery_date=expected_delivery_date)
         
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
@@ -451,6 +505,165 @@ class ProjectViewSet(BaseModelViewSet):
         return Response({"indicators": raw_indicators})
 
 
+    @action(detail=False, methods=["get"], url_path="logistics-indicators")
+    def logistics_indicators(self, request, *args, **kwargs):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f"logistics_indicators_{filter_hash}"
+
+        indicators = cache.get(cache_key)
+        if indicators:
+            return Response({"indicators": indicators})
+
+        queryset = self.filter_queryset(self.get_queryset()).distinct()
+        queryset = queryset.with_is_released_to_engineering().with_purchase_status().with_delivery_status()
+
+        # Define todos os status possíveis
+        PURCHASE_STATUSES = [
+            "Bloqueado", "Liberado", "Pendente", "Compra Realizada", "Cancelado", "Distrato",
+            "Aguardando Previsão de Entrega", "Aguardando Pagamento"
+        ]
+        DELIVERY_STATUSES = [
+            "Bloqueado", "Liberado", "Agendado", "Entregue", "Cancelado"
+        ]
+
+        purchase_result = {status: 0 for status in PURCHASE_STATUSES}
+        delivery_result = {status: 0 for status in DELIVERY_STATUSES}
+        total_count = queryset.count()
+
+        # Itera direto no queryset — sem usar `.only(...)`
+        for project in queryset:
+            if hasattr(project, 'purchase_status') and project.purchase_status in purchase_result:
+                purchase_result[project.purchase_status] += 1
+            if hasattr(project, 'delivery_status') and project.delivery_status in delivery_result:
+                delivery_result[project.delivery_status] += 1
+
+        indicators = {
+            "purchase_status": purchase_result,
+            "delivery_status": delivery_result,
+            "total_count": total_count,
+        }
+
+        cache.set(cache_key, indicators, 60)
+        return Response({"indicators": indicators})
+
+                    
+    # @action(detail=False, methods=['get'], url_path='installments-indicators')
+    # def installments_indicators(self, request, *args, **kwargs):
+    #     # 1) monta a cache key
+    #     filter_params = request.GET.dict()
+    #     filter_hash   = md5(str(filter_params).encode()).hexdigest()
+    #     cache_key     = f"payments_indicators_{filter_hash}"
+    #     cached        = cache.get(cache_key)
+    #     if cached:
+    #         return Response({"indicators": cached})
+
+    #     # 2) pega apenas os projetos filtrados pela view
+    #     qs_projects = self.filter_queryset(self.get_queryset())
+    #     project_ids = qs_projects.values_list("id", flat=True)
+
+    #     # 3) monta um queryset de parcelas que pertençam a esses projetos
+    #     now = timezone.now()
+    #     qs_inst = PaymentInstallment.objects.filter(
+    #         payment__sale__projects__id__in=project_ids
+    #     )
+
+    #     # 4) agrega tudo numa única query sobre Installment
+    #     installments_indicators = qs_inst.aggregate(
+    #         overdue_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=False, due_date__lte=now)
+    #         ),
+    #         overdue_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=False, due_date__lte=now),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         on_time_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=False, due_date__gt=now)
+    #         ),
+    #         on_time_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=False, due_date__gt=now),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         paid_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=True)
+    #         ),
+    #         paid_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=True),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         total_installments=Count("id"),
+    #         total_installments_value=Coalesce(
+    #             Sum("installment_value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #     )
+
+    #     # 5) mantém seu bloco de consistência (idem antes)
+    #     qs_consistency = qs_projects.annotate(
+    #         total_installments_value=Coalesce(
+    #             Sum("installments__installment_value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         total_installments_count=Count("installments"),
+    #         paid_installments_count=Count(
+    #             "installments",
+    #             filter=Q(sale__payments__installments__is_paid=True)
+    #         ),
+    #     ).annotate(
+    #         is_consistent=Case(
+    #             When(
+    #                 Q(total_installments_count=F("paid_installments_count")) &
+    #                 Q(value=F("total_installments_value")),
+    #                 then=Value(True)
+    #             ),
+    #             default=Value(False),
+    #             output_field=BooleanField()
+    #         )
+    #     )
+    #     consistency_indicators = qs_consistency.aggregate(
+    #         total_payments=Count("id"),
+    #         total_payments_value=Coalesce(
+    #             Sum("value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         consistent_payments=Count("id", filter=Q(is_consistent=True)),
+    #         consistent_payments_value=Coalesce(
+    #             Sum("value", filter=Q(is_consistent=True), output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         inconsistent_payments_value=Coalesce(
+    #             Sum("value", filter=~Q(is_consistent=True), output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         inconsistent_payments=Count("id", filter=~Q(is_consistent=True))
+    #     )
+
+    #     # 6) combina, cacheia e retorna
+    #     combined = {
+    #         "installments": installments_indicators,
+    #         "consistency": consistency_indicators
+    #     }
+    #     cache.set(cache_key, combined, 60)
+    #     return Response({"indicators": combined})
+
+    
+    
+    
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
     serializer_class = ContractSubmissionSerializer

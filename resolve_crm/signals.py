@@ -53,7 +53,7 @@ def get_model_data(instance):
 
 @receiver(post_save, sender=Project)
 def post_create_project(sender, instance, created, **kwargs):
-    if created and not instance.project_number:
+    if not instance.project_number:
         generate_project_number.delay(instance.pk)
 
 

@@ -44,6 +44,12 @@ def generate_project_number(project_id):
             cursor.execute("SELECT RELEASE_LOCK('project_number_lock')")
 
 
+def generate_project_number_for_all():
+    projects = Project.objects.filter(project_number__isnull=True)
+    for project in projects:
+        generate_project_number.delay(project.id)
+
+
 @shared_task
 def update_or_create_sale_tag(sale_id, sale_status):
     logger.info(f"📌 Task: Atualizando tag para sale {sale_id} com status {sale_status}")

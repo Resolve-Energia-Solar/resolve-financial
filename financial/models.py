@@ -53,6 +53,7 @@ class Payment(models.Model):
         ("DI", "Dinheiro"),
         ("PA", "Poste auxiliar"),
         ("RO", "Repasse de Obra"),
+        ("ND", "Nota de Débito"),
     ]
 
     INVOICE_STATUS_CHOICES = [

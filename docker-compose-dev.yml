@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/app
-    command: celery -A resolve_erp worker --loglevel=info
+    command: sh -c "celery -A resolve_erp worker --loglevel=info & celery -A resolve_erp flower --basic-auth=admin@resolvenergiasolar.com:gr6tV9BZ6"
     depends_on:
       - rabbitmq
     environment:

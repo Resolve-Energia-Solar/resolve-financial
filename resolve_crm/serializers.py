@@ -310,6 +310,10 @@ class ProjectSerializer(BaseSerializer):
     is_released_to_engineering = serializers.BooleanField(read_only=True)
     trt_status = serializers.CharField(read_only=True)
     supply_adquance_names = serializers.CharField(read_only=True)
+    delivery_status = serializers.CharField(read_only=True)
+    purchase_status = serializers.CharField(read_only=True)
+    expected_delivery_date = serializers.DateField(read_only=True)
+    expected_delivery_status = serializers.CharField(read_only=True)
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
