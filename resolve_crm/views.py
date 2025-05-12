@@ -13,6 +13,7 @@ from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from engineering.models import Units
+from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
@@ -543,99 +544,121 @@ class ProjectViewSet(BaseModelViewSet):
         return Response({"indicators": indicators})
 
                     
-    @action(detail=False, methods=['get'], url_path='installments-indicators')
-    def installments_indicators(self, request, *args, **kwargs):
-        # --- cache key ---
-        filter_params = request.GET.dict()
-        filter_hash = md5(str(filter_params).encode()).hexdigest()
-        cache_key = f'payments_indicators_{filter_hash}'
-        combined = cache.get(cache_key)
-        if combined:
-            return Response({"indicators": combined})
+    # @action(detail=False, methods=['get'], url_path='installments-indicators')
+    # def installments_indicators(self, request, *args, **kwargs):
+    #     # 1) monta a cache key
+    #     filter_params = request.GET.dict()
+    #     filter_hash   = md5(str(filter_params).encode()).hexdigest()
+    #     cache_key     = f"payments_indicators_{filter_hash}"
+    #     cached        = cache.get(cache_key)
+    #     if cached:
+    #         return Response({"indicators": cached})
 
-        # --- aplica o annotate que já define os campos ---
-        qs = self.filter_queryset(self.get_queryset()) \
-                 .with_installments_indicators()
+    #     # 2) pega apenas os projetos filtrados pela view
+    #     qs_projects = self.filter_queryset(self.get_queryset())
+    #     project_ids = qs_projects.values_list("id", flat=True)
 
-        # --- mapeia tipo de cada anotação ---
-        installment_fields = {
-            'overdue_installments_count': IntegerField(),
-            'overdue_installments_value': DecimalField(),
-            'on_time_installments_count': IntegerField(),
-            'on_time_installments_value': DecimalField(),
-            'paid_installments_count': IntegerField(),
-            'paid_installments_value': DecimalField(),
-            'total_installments': IntegerField(),
-            'total_installments_value': DecimalField(),
-        }
+    #     # 3) monta um queryset de parcelas que pertençam a esses projetos
+    #     now = timezone.now()
+    #     qs_inst = PaymentInstallment.objects.filter(
+    #         payment__sale__projects__id__in=project_ids
+    #     )
 
-        # --- monta as agregações usando Sum(F(...)) para referenciar a anotação ---
-        aggregations = {
-            name: Coalesce(
-                Sum(F(name), output_field=field_type),
-                Value(0, output_field=field_type),
-                output_field=field_type
-            )
-            for name, field_type in installment_fields.items()
-        }
-        installments_indicators = qs.aggregate(**aggregations)
+    #     # 4) agrega tudo numa única query sobre Installment
+    #     installments_indicators = qs_inst.aggregate(
+    #         overdue_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=False, due_date__lte=now)
+    #         ),
+    #         overdue_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=False, due_date__lte=now),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         on_time_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=False, due_date__gt=now)
+    #         ),
+    #         on_time_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=False, due_date__gt=now),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         paid_installments_count=Count(
+    #             "id",
+    #             filter=Q(is_paid=True)
+    #         ),
+    #         paid_installments_value=Coalesce(
+    #             Sum(
+    #                 "installment_value",
+    #                 filter=Q(is_paid=True),
+    #                 output_field=DecimalField()
+    #             ),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         total_installments=Count("id"),
+    #         total_installments_value=Coalesce(
+    #             Sum("installment_value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #     )
 
-        # --- bloco de consistência (idem de antes) ---
-        qs_consistency = (
-            qs
-            .annotate(
-                total_installments_value=Coalesce(
-                    Sum('installments__installment_value', output_field=DecimalField()),
-                    Value(0, output_field=DecimalField()),
-                    output_field=DecimalField()
-                ),
-                total_installments_count=Count('installments'),
-                paid_installments_count=Count(
-                    'installments',
-                    filter=Q(sale__payments__installments__is_paid=True)
-                )
-            )
-            .annotate(
-                is_consistent=Case(
-                    When(
-                        Q(total_installments_count=F('paid_installments_count')) &
-                        Q(value=F('total_installments_value')),
-                        then=Value(True)
-                    ),
-                    default=Value(False),
-                    output_field=BooleanField()
-                )
-            )
-        )
-        consistency_indicators = qs_consistency.aggregate(
-            total_payments=Count('id'),
-            total_payments_value=Coalesce(
-                Sum('value', output_field=DecimalField()),
-                Value(0, output_field=DecimalField()),
-                output_field=DecimalField()
-            ),
-            consistent_payments=Count('id', filter=Q(is_consistent=True)),
-            consistent_payments_value=Coalesce(
-                Sum('value', filter=Q(is_consistent=True), output_field=DecimalField()),
-                Value(0, output_field=DecimalField()),
-                output_field=DecimalField()
-            ),
-            inconsistent_payments_value=Coalesce(
-                Sum('value', filter=~Q(is_consistent=True), output_field=DecimalField()),
-                Value(0, output_field=DecimalField()),
-                output_field=DecimalField()
-            ),
-            inconsistent_payments=Count('id', filter=~Q(is_consistent=True))
-        )
+    #     # 5) mantém seu bloco de consistência (idem antes)
+    #     qs_consistency = qs_projects.annotate(
+    #         total_installments_value=Coalesce(
+    #             Sum("installments__installment_value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         total_installments_count=Count("installments"),
+    #         paid_installments_count=Count(
+    #             "installments",
+    #             filter=Q(sale__payments__installments__is_paid=True)
+    #         ),
+    #     ).annotate(
+    #         is_consistent=Case(
+    #             When(
+    #                 Q(total_installments_count=F("paid_installments_count")) &
+    #                 Q(value=F("total_installments_value")),
+    #                 then=Value(True)
+    #             ),
+    #             default=Value(False),
+    #             output_field=BooleanField()
+    #         )
+    #     )
+    #     consistency_indicators = qs_consistency.aggregate(
+    #         total_payments=Count("id"),
+    #         total_payments_value=Coalesce(
+    #             Sum("value", output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         consistent_payments=Count("id", filter=Q(is_consistent=True)),
+    #         consistent_payments_value=Coalesce(
+    #             Sum("value", filter=Q(is_consistent=True), output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         inconsistent_payments_value=Coalesce(
+    #             Sum("value", filter=~Q(is_consistent=True), output_field=DecimalField()),
+    #             Value(0, output_field=DecimalField())
+    #         ),
+    #         inconsistent_payments=Count("id", filter=~Q(is_consistent=True))
+    #     )
 
-        # --- une, cache e retorna ---
-        combined = {
-            "installments": installments_indicators,
-            "consistency": consistency_indicators
-        }
-        cache.set(cache_key, combined, 60)
-        return Response({"indicators": combined})
-   
+    #     # 6) combina, cacheia e retorna
+    #     combined = {
+    #         "installments": installments_indicators,
+    #         "consistency": consistency_indicators
+    #     }
+    #     cache.set(cache_key, combined, 60)
+    #     return Response({"indicators": combined})
+
+    
+    
     
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()

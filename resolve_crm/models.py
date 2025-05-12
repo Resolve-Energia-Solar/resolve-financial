@@ -1020,6 +1020,12 @@ class ProjectQuerySet(models.QuerySet):
                     service__name__icontains='Entrega',  # Serviço com nome contendo 'Entrega'
                 ).order_by('-created_at').values('final_service_opinion__name')[:1], 
             ),
+            has_delivery=Exists(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__name__icontains='Entrega'
+                ).values('id')
+            ),
             delivery_status=Case(
                 # CASO NÃO ESTEJA LIBERADO PARA ENGENHARIA
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
@@ -1045,7 +1051,8 @@ class ProjectQuerySet(models.QuerySet):
                 When(
                     Q(purchases__isnull=False) &
                     Q(purchases__delivery_type='D') &
-                    Q(purchases__status='R'),
+                    Q(purchases__status='R') &
+                    Q(has_delivery=False),
                     then=Value('Liberado')
                 ),
 
@@ -1055,25 +1062,26 @@ class ProjectQuerySet(models.QuerySet):
                     Q(purchases__delivery_type='C') &
                     Q(purchases__status='R') &
                     Q(designer_status__in=['CO']) &
-                    Q(material_list_is_completed=True),
+                    Q(material_list_is_completed=True) &
+                    Q(has_delivery=False),
                     then=Value('Liberado')
                 ),
 
                 # AGENDADO: Verifica se o último agendamento com serviço contendo 'Entrega' existe
                 When(
-                    Q(last_service_opinion_name='Pendente'),
+                    Q(last_service_opinion_name__isnull=True),
                     then=Value('Agendado')
                 ),
 
                 # ENTREGUE: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Entregue'
                 When(
-                    Q(last_service_opinion_name='Entregue'),
+                    Q(last_service_opinion_name__icontains='Entregue'),
                     then=Value('Entregue')
                 ),
 
                 # CANCELADO: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Cancelado'
                 When(
-                    Q(last_service_opinion_name='Cancelado'),
+                    Q(last_service_opinion_name__icontains='Cancelado'),
                     then=Value('Cancelado')
                 ),
 
