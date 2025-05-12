@@ -287,8 +287,6 @@ class ProjectViewSet(BaseModelViewSet):
     def apply_additional_filters(self, queryset, request):
         from django.db.models import Q, Exists, OuterRef
         from django.contrib.contenttypes.models import ContentType
-        from rest_framework.response import Response
-        from rest_framework import status
 
         q = request.query_params.get('q')
         customer = request.query_params.get('customer')
@@ -445,7 +443,7 @@ class ProjectViewSet(BaseModelViewSet):
 
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
 
         page = self.paginate_queryset(queryset)
@@ -463,7 +461,7 @@ class ProjectViewSet(BaseModelViewSet):
         request.query_params['metrics'] = 'is_released_to_engineering,trt_status,pending_material_list'
         request.query_params._mutable = False
 
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
 
         raw_indicators = queryset.distinct().aggregate(
@@ -505,7 +503,7 @@ class ProjectViewSet(BaseModelViewSet):
         request.query_params['metrics'] = 'is_released_to_engineering,purchase_status,delivery_status'
         request.query_params._mutable = False
 
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
         queryset = queryset.with_is_released_to_engineering().with_purchase_status().with_delivery_status()
 
