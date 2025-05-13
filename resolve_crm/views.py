@@ -326,6 +326,12 @@ class ProjectViewSet(BaseModelViewSet):
         delivery_status = request.query_params.get('delivery_status')
         expected_delivery_date = request.query_params.get('expected_delivery_date__range')
         attachments_status = request.query_params.get('attachments_status')
+        
+        delivery_type__in = request.query_params.get('delivery_type__in')
+        
+        if delivery_type__in:
+            delivery_type_list = delivery_type__in.split(',')
+            queryset = queryset.filter(purchases__delivery_type__in=delivery_type_list)
 
         if attachments_status:
             queryset = queryset.filter(attachments__status__in=attachments_status.split(','))
