@@ -363,12 +363,14 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(sale__branch__id__in=sale_branches.split(','))
         if invoice_status:
             queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status.split(','))
-        if states:
-            state_list = [s.strip() for s in states.split(',') if s.strip()]
-            q_objects = [Q(main_unit_prefetched__address__state__icontains=state) for state in state_list]
-            queryset = queryset.filter(reduce(operator.or_, q_objects))
+            
         if city:
-            queryset = queryset.filter(main_unit_prefetched__address__city__icontains=city)
+            queryset = queryset.filter(units__main_unit=True, units__address__city__icontains=city)
+
+        if states:
+            states = states.split(',')
+            queryset = queryset.filter(units__main_unit=True, units__address__state__in=states)
+
 
         if request_energy_company_type:
             queryset = queryset.filter(requests_energy_company__id__in=request_energy_company_type.split(','))
