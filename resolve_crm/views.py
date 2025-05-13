@@ -140,6 +140,9 @@ class SaleViewSet(BaseModelViewSet):
 
         if borrower := query_params.get('borrower__in'):
             queryset = queryset.filter(payments__borrower__id__in=borrower.split(','))
+            
+        if borrower := query_params.get('borrower'):
+            queryset = queryset.filter(payments__borrower__id=borrower)
 
         if homologator := query_params.get('homologator'):
             queryset = queryset.filter(projects__homologator__id=homologator)
