@@ -36,6 +36,8 @@ from core.models import ProcessBase, Process
 from .serializers import *
 from .models import *
 from django.utils import timezone
+from functools import reduce
+import operator
 
 
 logger = logging.getLogger(__name__)
@@ -314,7 +316,7 @@ class ProjectViewSet(BaseModelViewSet):
         seller = request.query_params.get('seller')
         sale_status = request.query_params.get('sale_status')
         sale_branches = request.query_params.get('sale_branches')
-        state = request.query_params.get('state')
+        states = request.query_params.get('state__in')
         city = request.query_params.get('city')
         invoice_status = request.query_params.get('invoice_status')
         payment_types = request.query_params.get('payment_types')
@@ -355,8 +357,10 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(sale__branch__id__in=sale_branches.split(','))
         if invoice_status:
             queryset = queryset.filter(sale__payments__invoice_status__in=invoice_status.split(','))
-        if state:
-            queryset = queryset.filter(main_unit_prefetched__address__state__icontains=state)
+        if states:
+            state_list = [s.strip() for s in states.split(',') if s.strip()]
+            q_objects = [Q(main_unit_prefetched__address__state__icontains=state) for state in state_list]
+            queryset = queryset.filter(reduce(operator.or_, q_objects))
         if city:
             queryset = queryset.filter(main_unit_prefetched__address__city__icontains=city)
 
