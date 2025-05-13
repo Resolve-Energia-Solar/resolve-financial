@@ -138,8 +138,8 @@ class SaleViewSet(BaseModelViewSet):
         if final_ops := query_params.get('final_service_options'):
             queryset = queryset.filter(projects__inspection__final_service_opinion__id__in=final_ops.split(','))
 
-        if borrower := query_params.get('borrower'):
-            queryset = queryset.filter(payments__borrower__id=borrower)
+        if borrower := query_params.get('borrower__in'):
+            queryset = queryset.filter(payments__borrower__id__in=borrower.split(','))
 
         if homologator := query_params.get('homologator'):
             queryset = queryset.filter(projects__homologator__id=homologator)
