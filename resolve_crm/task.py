@@ -42,12 +42,22 @@ def generate_project_number(project_id):
             )
         finally:
             cursor.execute("SELECT RELEASE_LOCK('project_number_lock')")
+        
+        return (
+            "success",
+            f"Project number {proj_num} generated for project {project_id}."
+        )
 
 @shared_task
 def generate_project_number_for_all():
     projects = Project.objects.filter(project_number__isnull=True)
     for project in projects:
         generate_project_number.delay(project.id)
+    
+    return (
+        "success",
+        f"Project numbers generated for all projects."
+    )
 
 
 @shared_task
@@ -76,10 +86,18 @@ def update_or_create_sale_tag(sale_id, sale_status):
             if tag_qs.exists():
                 tag_qs.delete()
                 logger.info(f"📌 Tag removida para sale {sale.id}")
+                
+        return (
+            "success",
+            f"Tag {new_tag} atualizada para venda {sale.contract_number} com sucesso."
+        )
 
     except Sale.DoesNotExist:
         logger.error(f"📌Sale com ID {sale_id} não encontrada.")
-        return
+        return (
+            "error",
+            f"Sale com ID {sale_id} não encontrada."
+        )
     
 
 @shared_task
@@ -94,9 +112,18 @@ def remove_tag_from_sale(sale_id, tag_name):
             logger.info(f"📌 Tag removida para sale {sale.id}")
         else:
             logger.info(f"📌 Tag não encontrada para sale {sale.id}")
+        
+        return (
+            "success",
+            f"Tag {tag_name} removida da venda {sale.contract_number} com sucesso."
+        )
+        
     except Sale.DoesNotExist:
         logger.error(f"📌Sale com ID {sale_id} não encontrada.")
-        return
+        return (
+            "error",
+            f"Sale com ID {sale_id} não encontrada."
+        )
 
 
 @shared_task
@@ -105,7 +132,10 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
         sale = Sale.objects.get(pk=sale_id)
     except Sale.DoesNotExist:
         logger.error(f"📌 Sale com ID {sale_id} não encontrada.")
-        return
+        return (
+            "error",
+            f"Sale com ID {sale_id} não encontrada."
+        )
 
     logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
 
@@ -120,6 +150,11 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
         else:
             logger.info(f"📌 Projeto {project.id} não liberado para engenharia.")
             remove_tag_from_sale.delay(sale.id, "documentação parcial")
+            
+    return (
+        "success",
+        f"Tag atualizada para venda {sale.contract_number} com sucesso."
+    )
 
 
 @shared_task
@@ -227,3 +262,5 @@ def create_projects_for_sale(sale_id):
     ]
     if project_instances:
         Project.objects.bulk_create(project_instances)
+        
+    return {"status": "success", "message": f"Projetos criados para a venda {sale_id}."}
