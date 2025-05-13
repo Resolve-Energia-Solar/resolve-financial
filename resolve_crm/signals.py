@@ -3,7 +3,7 @@ from django.dispatch import receiver
 import requests
 import sys
 from django.contrib.contenttypes.models import ContentType
-from .task import generate_project_number
+from .task import generate_project_number, remove_tag_from_sale
 from core.utils import create_process
 from resolve_crm.task import check_projects_and_update_sale_tag, update_or_create_sale_tag
 from .models import Project, Sale
@@ -112,58 +112,77 @@ def attachment_changed(sender, instance, **kwargs):
 def handle_sale_post_save(sender, instance, created, **kwargs):
     print(f"📌 Signal: Venda salva - ID: {instance.id} - Criada: {created}")
     def on_commit_all_tasks():
-        print(f"📌 Entrando na Func")
-        check_projects_and_update_sale_tag.delay(instance.id, instance.status)
         
-        if not instance.signature_date:
-            return
-        
-        try:
-            system_config = SystemConfig.objects.get()
-            default_process = system_config.configs.get('default_process')
-            print(f"📌 Signal: default_process - {default_process}")
-        except SystemConfig.DoesNotExist:
-            logger.error("Configuração do sistema não encontrada.")
-            return
-
-        try:
-            modelo = ProcessBase.objects.get(name__exact=default_process)
-            print(f"📌 Signal: modelo - {modelo}")
-        except ProcessBase.DoesNotExist:
-            return
-
-        projects = Project.objects.filter(sale=instance)
-        if not projects.exists():
-            return
-
-        content_type = ContentType.objects.get_for_model(Project)
-        project_ids = list(projects.values_list('id', flat=True))
-        existing_processes = set(
-            Process.objects.filter(
-                content_type=content_type,
-                object_id__in=project_ids
-            ).values_list('object_id', flat=True)
+        annotated = (
+            Project.objects
+            .filter(sale=instance)
+            .with_is_released_to_engineering()
         )
+        
+        if not annotated.exists():
+            print(f"📌 Signal: Venda não possui projetos - ID: {instance.id}")
+            return
+        
+        if annotated.filter(is_released_to_engineering=True).exists():
+            print(f"📌 Signal: Venda possui projetos liberados para engenharia - ID: {instance.id}")
+            update_or_create_sale_tag.delay(instance.id, instance.status)
+        elif annotated.filter(is_released_to_engineering=False).exists():
+            print(f"📌 Signal: Venda não possui projetos liberados para engenharia - ID: {instance.id}")
+            remove_tag_from_sale.delay(instance.id, "documentação parcial")
+        
+        # print(f"📌 Entrando na Func")
+        # check_projects_and_update_sale_tag.delay(instance.id, instance.status)
+        
+        # if not instance.signature_date:
+        #     return
+        
+        # try:
+        #     system_config = SystemConfig.objects.get()
+        #     default_process = system_config.configs.get('default_process')
+        #     print(f"📌 Signal: default_process - {default_process}")
+        # except SystemConfig.DoesNotExist:
+        #     logger.error("Configuração do sistema não encontrada.")
+        #     return
 
-        for project in projects:
-            if project.id in existing_processes:
-                continue
+        # try:
+        #     modelo = ProcessBase.objects.get(name__exact=default_process)
+        #     print(f"📌 Signal: modelo - {modelo}")
+        # except ProcessBase.DoesNotExist:
+        #     return
+
+        # projects = Project.objects.filter(sale=instance)
+        # if not projects.exists():
+        #     return
+
+        # content_type = ContentType.objects.get_for_model(Project)
+        # project_ids = list(projects.values_list('id', flat=True))
+        # existing_processes = set(
+        #     Process.objects.filter(
+        #         content_type=content_type,
+        #         object_id__in=project_ids
+        #     ).values_list('object_id', flat=True)
+        # )
+
+        # for project in projects:
+        #     if project.id in existing_processes:
+        #         continue
             
-            create_process(
-                process_base_id=modelo.id,
-                content_type_id=content_type.id,
-                object_id=project.id,
-                nome=f"Processo {modelo.name} {instance.contract_number} - {instance.customer.complete_name}",
-                descricao=modelo.description,
-                user_id=instance.customer.id if instance.customer else None,
-                completion_date=instance.signature_date.isoformat(),
-            )
+        #     create_process(
+        #         process_base_id=modelo.id,
+        #         content_type_id=content_type.id,
+        #         object_id=project.id,
+        #         nome=f"Processo {modelo.name} {instance.contract_number} - {instance.customer.complete_name}",
+        #         descricao=modelo.description,
+        #         user_id=instance.customer.id if instance.customer else None,
+        #         completion_date=instance.signature_date.isoformat(),
+        #     )
 
     transaction.on_commit(on_commit_all_tasks)
     
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
+    print(f"📌 Signal: Projeto salvo - ID: {instance.id}")
     annotated = (
         Project.objects
         .filter(pk=instance.pk)

@@ -43,7 +43,7 @@ def generate_project_number(project_id):
         finally:
             cursor.execute("SELECT RELEASE_LOCK('project_number_lock')")
 
-
+@shared_task
 def generate_project_number_for_all():
     projects = Project.objects.filter(project_number__isnull=True)
     for project in projects:
@@ -102,19 +102,24 @@ def remove_tag_from_sale(sale_id, tag_name):
 @shared_task
 def check_projects_and_update_sale_tag(sale_id, sale_status):
     try:
-        sale = Sale.objects.get(id=sale_id)
-        logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
-        for project in sale.projects.all():
-            if project.is_released_to_engineering:
-                logger.info(f"📌 Task: Projeto {project.id} liberado para engenharia.")
-                update_or_create_sale_tag.delay(sale.id, sale_status)
-                break
-            else:
-                logger.info(f"📌 Task: Projeto {project.id} não liberado para engenharia.")
-                remove_tag_from_sale.delay(sale.id, "documentação parcial")
-                
+        sale = Sale.objects.get(pk=sale_id)
     except Sale.DoesNotExist:
-        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        logger.error(f"📌 Sale com ID {sale_id} não encontrada.")
+        return
+
+    logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")
+
+    # usa o annotate definido em ProjectQuerySet
+    projects = sale.projects.with_is_released_to_engineering()
+
+    for project in projects:
+        if project.is_released_to_engineering:
+            logger.info(f"📌 Projeto {project.id} liberado para engenharia.")
+            update_or_create_sale_tag.delay(sale.id, sale_status)
+            break
+        else:
+            logger.info(f"📌 Projeto {project.id} não liberado para engenharia.")
+            remove_tag_from_sale.delay(sale.id, "documentação parcial")
 
 
 @shared_task
