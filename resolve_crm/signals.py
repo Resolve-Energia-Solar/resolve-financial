@@ -104,8 +104,17 @@ def attachment_changed(sender, instance, **kwargs):
         key in instance.document_type.name for key in ['CPF', 'RG', 'Contrato', 'CNH', 'homologador']
     ):
         if hasattr(instance.content_object, 'projects'):
-            sale = instance.content_object
-            check_projects_and_update_sale_tag.delay(sale.id, sale.status)
+            annotated = (
+                Project.objects
+                .filter(pk__in=instance.content_object.projects.all())
+                .with_is_released_to_engineering()
+            )
+            if annotated.exists():
+                for project in annotated:
+                    if project.is_released_to_engineering:
+                        update_or_create_sale_tag.delay(project.sale.id, project.sale.status)
+                    else:
+                        remove_tag_from_sale.delay(project.sale.id, "documentação parcial")
 
 
 @receiver(post_save, sender=Sale)
@@ -124,10 +133,8 @@ def handle_sale_post_save(sender, instance, created, **kwargs):
             return
         
         if annotated.filter(is_released_to_engineering=True).exists():
-            print(f"📌 Signal: Venda possui projetos liberados para engenharia - ID: {instance.id}")
             update_or_create_sale_tag.delay(instance.id, instance.status)
         elif annotated.filter(is_released_to_engineering=False).exists():
-            print(f"📌 Signal: Venda não possui projetos liberados para engenharia - ID: {instance.id}")
             remove_tag_from_sale.delay(instance.id, "documentação parcial")
         
         # print(f"📌 Entrando na Func")
@@ -182,7 +189,6 @@ def handle_sale_post_save(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Project)
 def project_changed(sender, instance, **kwargs):
-    print(f"📌 Signal: Projeto salvo - ID: {instance.id}")
     annotated = (
         Project.objects
         .filter(pk=instance.pk)
