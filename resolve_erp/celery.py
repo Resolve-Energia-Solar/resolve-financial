@@ -7,4 +7,4 @@ app = Celery("resolve_erp", broker='pyamqp://guest:guest@rabbitmq//')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
-shared_task = app.task  # Permite importar o decorator shared_task
+shared_task = app.task

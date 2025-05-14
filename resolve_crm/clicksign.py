@@ -6,7 +6,7 @@ import os
 import requests
 
 from datetime import datetime, timedelta
-from resolve_crm.models import Sale
+from .models import Sale
 
 # Configuração do logger
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +22,7 @@ def decimal_default(obj):
     raise TypeError
 
 
-def create_clicksign_envelope(sale_number, customer_name):
+def create_clicksign_envelope(sale_number, customer_name, seller_name):
     if not API_URL or not ACCESS_TOKEN:
         logger.error("API_URL ou ACCESS_TOKEN não configurados.")
         return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
@@ -59,6 +59,17 @@ def create_clicksign_envelope(sale_number, customer_name):
                 "message": f"Envelope {envelope_id} criado com sucesso!",
                 "envelope_id": envelope_id
             }))
+            try:
+                from .task import send_clicksign_url_to_teams
+                logger.info("Enviando link para o Teams")
+                send_clicksign_url_to_teams.delay(
+                    customer_name=customer_name,
+                    seller_name=seller_name,
+                    clicksign_url=f"https://app.clicksign.com/envelopes/{envelope_id}",
+                )
+                logger.info("Link enviado para o Teams com sucesso")
+            except Exception as e:
+                logger.error("Erro ao enviar link para o Teams", str(e))
             return {"status": "success", "envelope_id": envelope_id}
         else:
             error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
@@ -394,7 +405,7 @@ def send_notification(envelope_id, message="Olá! O contrato está disponível p
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
-def update_clicksign_document(envelope_id, document_id, sale_number, customer, signer_id, pdf_bytes):
+def update_clicksign_document(envelope_id, document_id, sale_number, customer, seller_name, signer_id, pdf_bytes):
     if not API_URL or not ACCESS_TOKEN:
         logger.error("API_URL ou ACCESS_TOKEN não configurados.")
         return {"status": "error", "message": "API_URL or ACCESS_TOKEN not configured."}
@@ -495,4 +506,15 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
         "status": "success",
         "new_document_id": new_document_id
     }))
+    try:
+        from .task import send_clicksign_url_to_teams
+        logger.info("Enviando link para o Teams")
+        send_clicksign_url_to_teams.delay(
+            customer_name=customer.complete_name,
+            seller_name=seller_name,
+            clicksign_url=f"https://app.clicksign.com/envelopes/{envelope_id}",
+        )
+        logger.info("Link enviado para o Teams com sucesso")
+    except Exception as e:
+        logger.error("Erro ao enviar link para o Teams", str(e))
     return {"status": "success", "new_document_id": new_document_id}
