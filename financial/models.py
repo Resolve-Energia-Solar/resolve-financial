@@ -269,6 +269,8 @@ class FranchiseInstallment(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Venda",
         related_name="franchise_installments",
+        blank=True,
+        null=True,
     )
     status = models.CharField(
         "Status",

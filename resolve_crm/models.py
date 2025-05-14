@@ -2,7 +2,6 @@ from decimal import Decimal
 from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models
 from django.urls import reverse_lazy
 from django.utils.timezone import now
 from core.models import Attachment, DocumentType
@@ -14,14 +13,14 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField
-from django.db.models.functions import Cast
-from django.db.models import Func
-from django.db.models.functions import Coalesce
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField, DurationField, Func
 from field_services.models import Schedule
-from engineering.models import Units
+from engineering.models import RequestsEnergyCompany, Units
 from django.db.models.functions import TruncDate,Coalesce
 from django.utils import timezone
+from django.db.models.functions import Now, Cast, Round, Coalesce
+
+
 
 
 def get_current_month():
@@ -637,6 +636,13 @@ class GroupConcat(Aggregate):
             output_field=CharField(),
             **extra
         )
+        
+
+class TimestampDiff(Func):
+    function = 'TIMESTAMPDIFF'
+    template = "%(function)s(DAY, %(expressions)s)"
+    output_field = IntegerField()
+    
 
 class ProjectQuerySet(models.QuerySet):
     def with_is_released_to_engineering(self):
@@ -778,7 +784,24 @@ class ProjectQuerySet(models.QuerySet):
             )
         ).distinct()
         
-    
+        
+    def with_request_days_since_requested(self, type_name: str, annotation_name: str):
+        request_subquery = RequestsEnergyCompany.objects.filter(
+            project=OuterRef('pk'),
+            status='S',
+            type__name__icontains=type_name
+        ).order_by('-request_date').values('request_date')[:1]
+
+        return self.annotate(
+            **{
+                f"{annotation_name}_int": TimestampDiff(
+                    Subquery(request_subquery),
+                    Func(function='NOW')
+                )
+            }
+        )
+
+
     def with_supply_adquance_names(self):
         subquery = Units.objects.filter(
             project=OuterRef('pk'),
@@ -802,7 +825,7 @@ class ProjectQuerySet(models.QuerySet):
 
     # PARECER DE ACESSO
     def with_access_opnion_status(self):
-        return self.with_access_opnion().with_last_installation_final_service_opinion().annotate(
+        return self.with_access_opnion().with_last_installation_final_service_opinion().with_request_days_since_requested('Parecer de Acesso', 'access_opnion_days').annotate(
             access_opnion_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(
@@ -844,7 +867,7 @@ class ProjectQuerySet(models.QuerySet):
 
     # AUMENTO DE CARGA
     def with_load_increase_status(self):
-        return self.with_is_released_to_engineering().with_supply_adquance_names().with_last_installation_final_service_opinion().annotate(
+        return self.with_is_released_to_engineering().with_supply_adquance_names().with_last_installation_final_service_opinion().with_request_days_since_requested('Aumento de Carga', 'load_increase_days').annotate(
             load_increase_status=Case(
                 When(~Q(supply_adquance_names__icontains='Aumento de Carga'), then=Value('Não se aplica')),
                 When(
@@ -889,6 +912,7 @@ class ProjectQuerySet(models.QuerySet):
             self.with_is_released_to_engineering()
                 .with_supply_adquance_names()
                 .with_last_installation_final_service_opinion()
+                .with_request_days_since_requested('Ajuste de Ramal', 'branch_adjustment_days')
                 .annotate(
                     branch_adjustment_status=Case(
                         When(~Q(supply_adquance_names__icontains='Ajuste de Ramal'), then=Value('Não se aplica')),
@@ -927,6 +951,7 @@ class ProjectQuerySet(models.QuerySet):
                 ).distinct()
         )
 
+
     # NOVA UC
     def with_new_contact_number_status(self):
         main_unit_has_new_contract = Units.objects.filter(
@@ -937,6 +962,7 @@ class ProjectQuerySet(models.QuerySet):
 
         return (
             self.with_is_released_to_engineering()
+            .with_request_days_since_requested('Nova UC', 'new_contact_number_days')
             .annotate(
                 has_main_unit_new_contract=Exists(main_unit_has_new_contract)
             )
@@ -986,7 +1012,7 @@ class ProjectQuerySet(models.QuerySet):
 
     # VISTORIA FINAL
     def with_final_inspection_status(self):
-        return self.with_is_released_to_engineering().annotate(
+        return self.with_is_released_to_engineering().with_request_days_since_requested('Vistoria Final', 'final_inspection_days').annotate(
             final_inspection_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(

@@ -314,6 +314,12 @@ class ProjectSerializer(BaseSerializer):
     purchase_status = serializers.CharField(read_only=True)
     expected_delivery_date = serializers.DateField(read_only=True)
     expected_delivery_status = serializers.CharField(read_only=True)
+    
+    access_opnion_days_int = serializers.IntegerField(read_only=True)
+    load_increase_days_int = serializers.IntegerField(read_only=True)
+    branch_adjustment_days_int = serializers.IntegerField(read_only=True)
+    new_contact_number_days_int = serializers.IntegerField(read_only=True)
+    final_inspection_days_int = serializers.IntegerField(read_only=True)
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),

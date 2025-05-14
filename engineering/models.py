@@ -101,7 +101,7 @@ class Units(models.Model):
     type = models.CharField("Tipo de Fornecimento", max_length=100, null=True, blank=True, choices=TYPE_CHOICES)
     unit_number = models.CharField("Conta contrato", max_length=100, null=True, blank=True)
     new_contract_number = models.BooleanField("Nova UC", default=False)
-    #Trocar nome para meter_number
+    change_ownership = models.BooleanField("Troca de Titularidade", default=False)
     account_number = models.CharField("Número do medidor", max_length=100, null=True, blank=True)
     bill_file = models.FileField("Arquivo da Fatura", upload_to="units-bills/", null=True, blank=True)
     is_deleted = models.BooleanField("Deletado", default=False)
