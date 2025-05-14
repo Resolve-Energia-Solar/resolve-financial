@@ -122,6 +122,8 @@ class Comment(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, verbose_name="Tipo de Conteúdo")
     author = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='comments', verbose_name="Autor", blank=True, null=True)
     text = models.TextField("Comentário")
+    mentioned_users = models.ManyToManyField('accounts.User', related_name='mentioned_comments', blank=True, verbose_name="Usuários Mencionados")
+    mentioned_departments = models.ManyToManyField('accounts.Department', related_name='mentioned_comments', blank=True, verbose_name="Setores Mencionados")
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_system_generated = models.BooleanField("Gerado pelo Sistema", default=False)

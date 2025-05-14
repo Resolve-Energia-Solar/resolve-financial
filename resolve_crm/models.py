@@ -786,17 +786,19 @@ class ProjectQuerySet(models.QuerySet):
         
         
     def with_request_days_since_requested(self, type_name: str, annotation_name: str):
-        request_subquery = RequestsEnergyCompany.objects.filter(
+        base_qs = RequestsEnergyCompany.objects.filter(
             project=OuterRef('pk'),
-            status='S',
             type__name__icontains=type_name
-        ).order_by('-request_date').values('request_date')[:1]
+        ).order_by('-request_date')
+
+        request_date_subquery = base_qs.values('request_date')[:1]
+        conclusion_date_subquery = base_qs.values('conclusion_date')[:1]
 
         return self.annotate(
             **{
                 f"{annotation_name}_int": TimestampDiff(
-                    Subquery(request_subquery),
-                    Func(function='NOW')
+                    Subquery(request_date_subquery),
+                    Coalesce(Subquery(conclusion_date_subquery), Func(function='NOW'))
                 )
             }
         )
