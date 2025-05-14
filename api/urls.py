@@ -10,7 +10,7 @@ from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, U
 from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView, SystemConfigView
 from engineering.views import ProjectMaterialsCSVUploadAPIView
-from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus
+from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus, SendFinancialRecordsToOmieView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
 from .views import GanttView, StatusView
 from resolve_crm.views import save_all_sales_func
@@ -50,7 +50,6 @@ api_schema_view = get_schema_view(
 app_name = 'api'
 urlpatterns = [
     path('', include(core.urls)),
-    
     path('login/', UserLoginView.as_view(), name='login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('generate-pre-sale/', GeneratePreSaleView.as_view(), name='generate_pre_sale'),
@@ -73,12 +72,8 @@ urlpatterns = [
     path('status/', StatusView.as_view(), name='status'),
     path('financial/omie/', OmieIntegrationView.as_view(), name='omie_integration'),
     path('financial/approve-financial-record/', FinancialRecordApprovalView.as_view(), name='approve_financial_record'),
+    path('financial/omie/send-financial-records/', SendFinancialRecordsToOmieView.as_view() , name='send_financial_records_to_omie'),
     path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
-    
-    path('save-sales/', save_all_sales_func , name='save_sales'),
-    
-    #Simple Serializer
-    
+    path('save-sales/', save_all_sales_func , name='save_sales'),    
     path('list-sale/', list_sales_func , name='simple_serializer'),
-    
 ]
