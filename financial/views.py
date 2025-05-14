@@ -533,6 +533,15 @@ class OmieIntegrationView(APIView):
 
     def create_payment_request(self, financial_record, manager_status="Aprovado", manager_note=None):
         if manager_status == "Aprovado":
+            financial_record_description = (
+                f"Solicitação de Pagamento - nº {financial_record.protocol}\n"
+                f"Requisitante: {financial_record.requester.complete_name}\n"
+                f"Responsável: {financial_record.responsible.complete_name}\n"
+                f"Setor Solicitante: {financial_record.requesting_department.name}\n"
+                f"Departamento Causador: {financial_record.department_name}"
+                f"Descrição: {financial_record.notes}\n"
+                f"Observação do Gestor: {manager_note}"
+            )
             url = f"{self.OMIE_API_URL}/financas/contapagar/"
             headers = {
                 'Content-Type': 'application/json',
@@ -551,7 +560,7 @@ class OmieIntegrationView(APIView):
                         "data_previsao": financial_record.due_date.strftime('%d/%m/%Y'),
                         "numero_documento_fiscal": financial_record.invoice_number if financial_record.invoice_number else '',
                         "data_emissao": financial_record.service_date.strftime('%d/%m/%Y'),
-                        "observacao": f'nº {financial_record.protocol}: {financial_record.notes}',
+                        "observacao": financial_record_description,
                         "distribuicao": [
                             {
                                 "cCodDep": financial_record.department_code,
