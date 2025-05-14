@@ -171,15 +171,16 @@ def send_clicksign_url_to_teams(customer_name, seller_name, clicksign_url):
         logger.error("Webhook do Teams não configurado. Mensagem não enviada.")
         return {"status": "error", "message": "Webhook do Teams não configurado."}
 
-    message = (
-        f"O contrato do cliente **{customer_name}**, com vendedor **{seller_name}**, "
-        f"está disponível para assinatura no Clicksign: {clicksign_url}"
-    )
+    payload = {
+        "customer": customer_name,
+        "seller": seller_name,
+        "clicksign_url": clicksign_url
+    }
 
     logger.info(f"📌 Task: Enviando mensagem para o Teams")
 
     try:
-        response = requests.post(webhook_url, json={"text": message}, timeout=10)
+        response = requests.post(webhook_url, json=payload, timeout=10)
         response.raise_for_status()
         logger.info("Mensagem enviada para o Teams com sucesso.")
         return {"status": "success", "message": "Mensagem enviada para o Teams."}
