@@ -423,6 +423,36 @@ class FinancialRecordViewSet(BaseModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"], url_path="financial-record-indicators")
+    def financial_record_indicators(self, request, *args, **kwargs):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f"financial_record_indicators_{filter_hash}"
+
+        indicators = cache.get(cache_key)
+        if indicators:
+            return Response({"indicators": indicators})
+
+        request.query_params._mutable = True
+        request.query_params._mutable = False
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        indicators = queryset.aggregate(
+            total_records=Count("id"),
+            total_value=Coalesce(
+                Sum("value", output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+            ),
+            total_in_progress=Count("id", filter=Q(responsible_status="A", payment_status="P")),
+            total_with_error=Count("id", filter=Q(responsible_status="A", payment_status="P", integration_code__isnull=True)),
+        )
+
+        cache.set(cache_key, indicators, 60)
+        return Response({"indicators": indicators})
+
+
 
 
 class OmieIntegrationView(APIView):
