@@ -831,32 +831,32 @@ class ProjectQuerySet(models.QuerySet):
             access_opnion_status=Case(
                 When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
                 When(
-                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    # Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
                     Q(requests_energy_company__isnull=True),
                     then=Value('Pendente'),
                 ),
                 When(
-                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    # Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
                     Q(requests_energy_company__isnull=False) &
                     ~Q(requests_energy_company__type__name__icontains='Parecer de Acesso'),
                     then=Value('Pendente')
                 ),
                 When(
-                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    # Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
                     Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='S'),
                     then=Value('Solicitado')
                 ),
                 When(
-                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    # Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
                     Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='D'),
                     then=Value('Deferido')
                 ),
                 When(
-                    Q(last_installation_final_service_opinion__iexact='Concluído') &
+                    # Q(last_installation_final_service_opinion__iexact='Concluído') &
                     Q(access_opnion='Liberado') &
                     Q(requests_energy_company__type__name__icontains='Parecer de Acesso', requests_energy_company__status='I'),
                     then=Value('Indeferida')
@@ -1013,6 +1013,10 @@ class ProjectQuerySet(models.QuerySet):
 
 
     # VISTORIA FINAL
+    # instalacao completa
+    # parecer de acesso concluido
+    # se nao precisa de adequacao de fornecimento liberado
+    
     def with_final_inspection_status(self):
         return self.with_is_released_to_engineering().with_request_days_since_requested('Vistoria Final', 'final_inspection_days').annotate(
             final_inspection_status=Case(

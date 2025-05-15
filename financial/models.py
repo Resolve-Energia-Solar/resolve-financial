@@ -84,6 +84,13 @@ class Payment(models.Model):
         blank=True,
         null=True,
     )
+    executor_work = models.CharField(
+        "Executor da Obra", max_length=200, null=True, blank=True, choices=[
+            ("C", "Cliente"),
+            ("F", "Franquia"),
+            ("CO", "Centro de Operações"),
+        ]
+    )
     due_date = models.DateField("Data de Vencimento")
     observation = models.TextField("Observação", null=True, blank=True)
     invoice_status = models.CharField(
@@ -259,8 +266,6 @@ class FranchiseInstallmentQuerySet(QuerySet):
                 output_field=DecimalField(max_digits=5, decimal_places=2)
             )
         )
-
-
 
 
 class FranchiseInstallment(models.Model):
