@@ -318,6 +318,7 @@ class ProjectViewSet(BaseModelViewSet):
         seller = request.query_params.get('seller')
         sale_status = request.query_params.get('sale_status')
         sale_branches = request.query_params.get('sale_branches')
+        is_pre_sale = request.query_params.get('is_pre_sale')
         states = request.query_params.get('state__in')
         city = request.query_params.get('city')
         invoice_status = request.query_params.get('invoice_status')
@@ -328,8 +329,12 @@ class ProjectViewSet(BaseModelViewSet):
         delivery_status = request.query_params.get('delivery_status')
         expected_delivery_date = request.query_params.get('expected_delivery_date__range')
         attachments_status = request.query_params.get('attachments_status')
-        
         delivery_type__in = request.query_params.get('delivery_type__in')
+        
+        if is_pre_sale == 'true':
+            queryset = queryset.filter(sale__is_pre_sale=True)
+        elif is_pre_sale == 'false':
+            queryset = queryset.filter(sale__is_pre_sale=False)
         
         if delivery_type__in:
             delivery_type_list = delivery_type__in.split(',')
