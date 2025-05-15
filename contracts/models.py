@@ -14,6 +14,7 @@ class SicoobRequest(models.Model):
     status = models.CharField(max_length=2, default='P', choices=[('P', 'Pendente'), ('A', 'Aprovado'), ('R', 'Reprovado'), ('PA', 'Pré-Aprovado')])
     requested_by = models.ForeignKey('accounts.User', on_delete=models.CASCADE, verbose_name='Solicitado por', related_name='sicoob_requests_requested_by')
     attachments = GenericRelation("core.Attachment", related_query_name='sicoob_request_attachments')
+    branch = models.ForeignKey('accounts.Branch', on_delete=models.CASCADE, verbose_name='Unidade', related_name='sicoob_requests', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     history = HistoricalRecords()
