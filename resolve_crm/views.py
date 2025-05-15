@@ -312,6 +312,8 @@ class ProjectViewSet(BaseModelViewSet):
         branch_adjustment_status = request.query_params.get('branch_adjustment_status')
         final_inspection_status = request.query_params.get('final_inspection_status')
         new_contact_number_status = request.query_params.get('new_contact_number_status')
+        inspection_is_finished = request.query_params.get('inspection_is_finished')
+        inspection_is_pending = request.query_params.get('inspection_is_pending')
 
         seller = request.query_params.get('seller')
         sale_status = request.query_params.get('sale_status')
@@ -411,9 +413,12 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(final_inspection_status__icontains=final_inspection_status)
         if new_contact_number_status:
             queryset = queryset.filter(new_contact_number_status__icontains=new_contact_number_status)
-
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
+        if inspection_is_finished:
+            queryset = queryset.filter(inspection__final_service_opinion__name__icontains='Aprovado')
+        if inspection_is_pending:
+            queryset = queryset.filter(~Q(inspection__final_service_opinion__name__icontains='Aprovado'))
 
         if signature_date:
             date_range = signature_date.split(',')
@@ -503,6 +508,28 @@ class ProjectViewSet(BaseModelViewSet):
 
         return Response({"indicators": raw_indicators})
 
+    @action(detail=False, methods=["get"], url_path="inspections-indicators")
+    def inspections_indicators(self, request):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f"inspections_indicators_{filter_hash}"
+
+        cached_indicators = cache.get(cache_key)
+        if cached_indicators:
+            return Response({"indicators": cached_indicators})
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        indicators = queryset.aggregate(
+            total_finished=Count('id', filter=Q(inspection__final_service_opinion__name__icontains="Aprovado")),
+            total_pending=Count('id', filter=
+                      ~Q(inspection__final_service_opinion__name__icontains="Aprovado") |
+                      Q(inspection__final_service_opinion__isnull=True)),
+            total_not_scheduled=Count('id', filter=Q(inspection__isnull=True)),
+        )
+
+        cache.set(cache_key, indicators, 60)
+        return Response({"indicators": indicators})
 
     @action(detail=False, methods=["get"], url_path="logistics-indicators")
     def logistics_indicators(self, request, *args, **kwargs):
@@ -548,8 +575,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-
-                
+          
     # @action(detail=False, methods=['get'], url_path='installments-indicators')
     # def installments_indicators(self, request, *args, **kwargs):
     #     # 1) monta a cache key
