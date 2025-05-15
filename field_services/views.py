@@ -179,6 +179,13 @@ class ScheduleViewSet(BaseModelViewSet):
             branch_qs = qs.none()
 
         return stakeholder_qs | branch_qs
+        
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        if instance.final_service_opinion is None and serializer.validated_data.get('final_service_opinion') is not None:
+            serializer.save(final_service_opinion_user=self.request.user)
+        else:
+            serializer.save()
 
     @action(detail=False, methods=["get"])
     def get_timeline(self, request):

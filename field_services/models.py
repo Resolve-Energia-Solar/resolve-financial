@@ -154,6 +154,8 @@ class Schedule(models.Model):
     agent_status = models.CharField("Status do Agente", max_length=50, choices=AGENT_STATUS_CHOICES, default="P")
     service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer do Serviço", on_delete=models.PROTECT, blank=True, null=True)
     final_service_opinion = models.ForeignKey("ServiceOpinion", verbose_name="Parecer Final do Serviço", on_delete=models.SET_NULL, related_name='final_service_opinion', blank=True, null=True)
+    final_service_opinion_date = models.DateTimeField("Data do Parecer Final", blank=True, null=True)
+    final_service_opinion_user = models.ForeignKey("accounts.User", verbose_name="Usuário do Parecer Final", on_delete=models.SET_NULL, blank=True, null=True, related_name='final_service_opinions')
     observation = models.TextField("Observação", blank=True, null=True)
     step = models.IntegerField("Etapa", default=1)
     arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
@@ -167,7 +169,14 @@ class Schedule(models.Model):
     def save(self, *args, **kwargs):
         now = datetime.datetime.now()
         if not self.protocol:
-            self.protocol = f"{now.strftime('%Y%m%d%H%M%S')}"
+            self.protocol = f"{now.strftime('%Y%m%d%H%M%S')}"        
+        try:
+            old_instance = Schedule.objects.get(pk=self.pk)
+            if old_instance.final_service_opinion != self.final_service_opinion and self.final_service_opinion is not None:
+                self.final_service_opinion_date = now
+        except Schedule.DoesNotExist:
+            pass
+        
         super(Schedule, self).save(*args, **kwargs)
     
     class Meta:
