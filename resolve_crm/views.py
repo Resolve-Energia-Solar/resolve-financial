@@ -295,8 +295,10 @@ class ProjectViewSet(BaseModelViewSet):
 
         q = request.query_params.get('q')
         customer = request.query_params.get('customer')
+        remove_termination_cancelled_and_pre_sale = request.query_params.get('remove_termination_cancelled_and_pre_sale')
         is_released_to_engineering = request.query_params.get('is_released_to_engineering')
         inspection_status = request.query_params.get('inspection_status')
+        inspection_isnull = request.query_params.get('inspection_isnull')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
 
@@ -420,10 +422,19 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(new_contact_number_status__icontains=new_contact_number_status)
         if inspection_status:
             queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
-        if inspection_is_finished:
+        if inspection_is_finished and inspection_is_finished.lower() == 'true':
             queryset = queryset.filter(inspection__final_service_opinion__name__icontains='Aprovado')
-        if inspection_is_pending:
+        elif inspection_is_finished and inspection_is_finished.lower() == 'false':
             queryset = queryset.filter(~Q(inspection__final_service_opinion__name__icontains='Aprovado'))
+        if inspection_is_pending and inspection_is_pending.lower() == 'true':
+            queryset = queryset.filter(Q(inspection__isnull=False) & ~Q(inspection__final_service_opinion__name__icontains='Aprovado'))
+        elif inspection_is_pending and inspection_is_pending.lower() == 'false':
+            queryset = queryset.filter(Q(inspection__final_service_opinion__name__icontains='Aprovado') | Q(inspection__isnull=True))
+        if inspection_isnull:
+            inspection_isnull_bool = inspection_isnull.lower() == 'true'
+            queryset = queryset.filter(inspection__isnull=inspection_isnull_bool)
+        if remove_termination_cancelled_and_pre_sale:
+            queryset = queryset.exclude(sale__status__in=['C', 'D']).exclude(sale__is_pre_sale=True)
 
         if signature_date:
             date_range = signature_date.split(',')
@@ -522,14 +533,18 @@ class ProjectViewSet(BaseModelViewSet):
         cached_indicators = cache.get(cache_key)
         if cached_indicators:
             return Response({"indicators": cached_indicators})
+        
+        request.query_params._mutable = True
 
         queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.apply_additional_filters(queryset, request)
 
         indicators = queryset.aggregate(
             total_finished=Count('id', filter=Q(inspection__final_service_opinion__name__icontains="Aprovado")),
-            total_pending=Count('id', filter=
+            total_pending=Count('id', filter=(
                       ~Q(inspection__final_service_opinion__name__icontains="Aprovado") |
-                      Q(inspection__final_service_opinion__isnull=True)),
+                      Q(inspection__final_service_opinion__isnull=True)) &
+                      Q(inspection__isnull=False)),
             total_not_scheduled=Count('id', filter=Q(inspection__isnull=True)),
         )
 
@@ -539,6 +554,7 @@ class ProjectViewSet(BaseModelViewSet):
     @action(detail=False, methods=["get"], url_path="logistics-indicators")
     def logistics_indicators(self, request, *args, **kwargs):
         filter_params = request.GET.dict()
+
         filter_hash = md5(str(filter_params).encode()).hexdigest()
         cache_key = f"logistics_indicators_{filter_hash}"
 
