@@ -30,4 +30,4 @@ class SicoobRequest(models.Model):
     class Meta:
         verbose_name = 'Solicitação Sicoob'
         verbose_name_plural = 'Solicitações Sicoob'
-        ordering = ['customer__complete_name']
+        ordering = ['-created_at']

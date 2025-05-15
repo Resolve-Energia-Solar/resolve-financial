@@ -18,6 +18,7 @@ import logging
 from django.core.files.base import ContentFile
 from api.views import BaseModelViewSet
 
+logger = logging.getLogger(__name__)
 
 class InformacaoFaturaAPIView(APIView):
     parser_classes = [MultiPartParser]
@@ -42,7 +43,6 @@ class InformacaoFaturaAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-logger = logging.getLogger(__name__)
 
 class ReciveContractInfomation(APIView):
     http_method_names = ['post']
