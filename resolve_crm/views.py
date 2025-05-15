@@ -1143,6 +1143,9 @@ class GenerateContractView(APIView):
         sale = self._get_sale(sale_id)
         if isinstance(sale, Response):
             return sale
+        
+        if sale.status in ['C', 'D']:
+            return Response({'message': 'Não é possível gerar contrato para vendas canceladas ou distratadas.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Valida campos obrigatórios da venda e do cliente
         missing_fields_response = self._validate_sale_data(sale)
