@@ -89,6 +89,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware',
     'silk.middleware.SilkyMiddleware',
 ]
 
