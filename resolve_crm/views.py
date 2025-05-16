@@ -149,6 +149,11 @@ class SaleViewSet(BaseModelViewSet):
             queryset = queryset.exclude(
                 attachments__document_type__required=True, attachments__status="EA"
             )
+        
+        if query_params.get("delivery_type__in"):
+            queryset = queryset.filter(
+                projects__purchases__delivery_type__in=query_params.get("delivery_type__in").split(",")
+            )
 
         if tag := query_params.get("tag_name__exact"):
             queryset = queryset.filter(tags__tag__exact=tag)
@@ -323,7 +328,7 @@ class ProjectViewSet(BaseModelViewSet):
             ),
         )
 
-        return queryset.order_by("-created_at").distinct()
+        return queryset.order_by("-created_at")
 
     def apply_additional_filters(self, queryset, request):
         from django.db.models import Q, Exists, OuterRef

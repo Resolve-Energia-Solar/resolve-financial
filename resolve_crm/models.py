@@ -654,7 +654,7 @@ class ProjectQuerySet(models.QuerySet):
                 object_id=OuterRef('sale_id'),
                 status='A',
                 document_type__name__icontains='Contrato'
-            ).values('id')  # Adicionando .values('id') para garantir que só um valor seja retornado
+            ).values('id')
         )
 
         # Subconsulta para verificar se há CNH ou RG do homologador
@@ -666,7 +666,7 @@ class ProjectQuerySet(models.QuerySet):
             ).filter(
                 Q(document_type__name__icontains='CNH') | Q(document_type__name__icontains='RG'),
                 document_type__name__icontains='homologador'
-            ).values('id')  # Limita a subconsulta para retornar apenas 'id'
+            ).values('id')
         )
 
         # Restante das subconsultas
