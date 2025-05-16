@@ -28,6 +28,8 @@ GMAPS_API_KEY = os.environ.get('GMAPS_API_KEY')
 #     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 #     USE_X_FORWARDED_HOST = True
 
+ENABLE_SILK = os.getenv("ENABLE_SILK", "false") == "true"
+
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -58,6 +60,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'channels',
+    'silk'
 ]
 
 ASGI_APPLICATION = 'resolve_erp.asgi.application'
@@ -87,7 +90,20 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+
 ]
+
+
+if ENABLE_SILK:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE = ['silk.middleware.SilkyMiddleware'] + MIDDLEWARE
+
+
+SILKY_META = True
+SILKY_MAX_REQUEST_BODY_SIZE = -1
+SILKY_MAX_RESPONSE_BODY_SIZE = -1
+SILKY_INTERCEPT_PERCENT = 10
+
 
 INTERNAL_IPS = [
     "127.0.0.1",
