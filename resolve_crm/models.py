@@ -1071,8 +1071,6 @@ class ProjectQuerySet(models.QuerySet):
                     (
                         # ENTREGA DIRETA E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)'
                         (Q(purchases__delivery_type='D') & ~Q(purchases__status='R')) |
-                        # ENTREGA CD E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)' E LISTA DE MATERIAIS NÃO FINALIZADA
-                        (Q(purchases__delivery_type='C') & ~Q(purchases__status='R') & ~Q(material_list_is_completed=True)) |
                         # ENTREGA CD E STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO NÃO 'CO' E LISTA DE MATERIAIS NÃO FINALIZADA
                         (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(designer_status__in=['CO']) & ~Q(material_list_is_completed=True))
                     ),
@@ -1101,19 +1099,22 @@ class ProjectQuerySet(models.QuerySet):
 
                 # AGENDADO: Verifica se o último agendamento com serviço contendo 'Entrega' existe
                 When(
+                    Q(has_delivery=True) &
                     Q(last_service_opinion_name__isnull=True),
                     then=Value('Agendado')
                 ),
 
                 # ENTREGUE: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Entregue'
                 When(
-                    Q(last_service_opinion_name__icontains='Entregue'),
+                    Q(last_service_opinion_name__icontains='Entregue') &
+                    Q(has_delivery=True),
                     then=Value('Entregue')
                 ),
 
                 # CANCELADO: Verifica o parecer final do último agendamento com serviço contendo 'Entrega' e com parecer final 'Cancelado'
                 When(
-                    Q(last_service_opinion_name__icontains='Cancelado'),
+                    Q(last_service_opinion_name__icontains='Cancelado') & 
+                    Q(has_delivery=True),
                     then=Value('Cancelado')
                 ),
 
