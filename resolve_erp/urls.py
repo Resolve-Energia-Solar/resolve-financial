@@ -4,6 +4,7 @@ from . import settings
 from django.conf.urls.static import static
 from notifications import urls as notifications_urls
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.cache import never_cache
 
 
 
@@ -15,9 +16,10 @@ urlpatterns = [
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
 ]
 
-urlpatterns += [
-    path('silk/', staff_member_required(include('silk.urls', namespace='silk'))),
-]
+if settings.ENABLE_SILK:
+    urlpatterns += [
+        path('silk/', include('silk.urls', namespace='silk')),
+    ]
 
 if settings.DEBUG:
     import debug_toolbar
