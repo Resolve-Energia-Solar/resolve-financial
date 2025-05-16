@@ -13,7 +13,7 @@ from datetime import timedelta
 from django.db import transaction, models
 import datetime
 from django.utils.functional import cached_property
-from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField, DurationField, Func
+from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField, DurationField, Func, Avg, DateTimeField
 from field_services.models import Schedule
 from engineering.models import RequestsEnergyCompany, Units
 from django.db.models.functions import TruncDate,Coalesce
@@ -1257,6 +1257,64 @@ class ProjectQuerySet(models.QuerySet):
             .with_expected_delivery_date()
         ).distinct()
 
+
+    def with_avg_time_installation(self):
+        entrega_finished_at_subquery = Schedule.objects.filter(
+            project=OuterRef('pk'),
+            service__name__icontains='entrega',
+            execution_finished_at__isnull=False,
+        ).order_by('-execution_finished_at').values('execution_finished_at')[:1]
+
+        installation_schedules = Schedule.objects.filter(
+            project=OuterRef('pk'),
+            service__name__icontains='instalação',
+            execution_started_at__isnull=False,
+            execution_finished_at__isnull=False,
+        ).annotate(
+            entrega_finished_at=Subquery(entrega_finished_at_subquery, output_field=DateTimeField())
+        ).annotate(
+            duration=ExpressionWrapper(
+                F('execution_finished_at') - F('entrega_finished_at'),
+                output_field=DurationField()
+            )
+        ).values('project').annotate(
+            avg_duration=Avg('duration')
+        ).values('avg_duration')[:1]
+
+        return self.annotate(
+            avg_time_installation=Subquery(installation_schedules, output_field=DurationField())
+        )
+
+
+    def with_customer_released_flag(self):
+        inspection_done = Schedule.objects.filter(
+            project=OuterRef("pk"),
+            service__name__icontains="vistoria",
+            agent_status="C",
+        )
+
+        delivery_done = Schedule.objects.filter(
+            project=OuterRef("pk"),
+            service__name__icontains="entrega",
+            agent_status="C",
+        )
+
+        return self.annotate(
+            customer_released=Exists(inspection_done) & Exists(delivery_done)
+        )
+
+    def with_number_of_installations(self):
+        return self.annotate(
+            number_of_installations=Count(
+                'field_services',
+                filter=Q(
+                    field_services__service__name__icontains='instalação',
+                    field_services__execution_finished_at__isnull=False,
+                    field_services__schedule_date__isnull=False
+                ),
+                distinct=True
+            )
+        )
 
 
 
