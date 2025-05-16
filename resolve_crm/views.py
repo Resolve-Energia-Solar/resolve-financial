@@ -1430,7 +1430,7 @@ class GenerateContractView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        total_payments_value = sum(payment.value for payment in sale.payments.all())
+        total_payments_value = sum(payment.value for payment in sale.payments.exclude(payment_type__in=["PA", "RO"]))
         if total_payments_value != sale.total_value:
             return Response(
                 {
