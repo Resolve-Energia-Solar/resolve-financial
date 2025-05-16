@@ -33,6 +33,7 @@ jobs:
         run: |
           # Criar .env
           echo "CLICKSIGN_API_URL=${{ vars.CLICKSIGN_API_URL}}" >> .env
+          echo "ENABLE_SILK=${{ vars.ENABLE_SILK}}" >> .env
           echo "CLICKSIGN_ACCESS_TOKEN=${{ vars.CLICKSIGN_ACCESS_TOKEN}}" >> .env
           echo "TEAMS_CLICKSIGN_WEBHOOK_URL=${{ vars.TEAMS_CLICKSIGN_WEBHOOK_URL}}" >> .env
           echo "SECRET_KEY=${{ vars.SECRET_KEY}}" >> .env
