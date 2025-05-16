@@ -667,7 +667,7 @@ class ProjectViewSet(BaseModelViewSet):
         }
 
         cache.set(cache_key, indicators, 60)
-        return Response(indicators)
+        return Response({"indicators": indicators})
 
 
 
