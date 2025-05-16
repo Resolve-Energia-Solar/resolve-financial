@@ -156,6 +156,13 @@ class User(AbstractUser):
         verbose_name = "Usuário"
         verbose_name_plural = "Usuários"
         ordering = ['complete_name', 'first_name', 'email']
+        indexes = [
+            models.Index(fields=['first_document']),
+            models.Index(fields=['second_document']),
+            models.Index(fields=['email']),
+            models.Index(fields=['complete_name']),
+            models.Index(fields=['username']),
+        ]
 
 
 class PhoneNumber(models.Model):
