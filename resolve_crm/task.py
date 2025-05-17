@@ -236,6 +236,18 @@ def send_contract_to_clicksign(sale_id, pdf_content):
                 "message": "Erro ao enviar notificação após atualização do documento.",
             }
 
+        try:
+            from .task import send_clicksign_url_to_teams
+            logger.info("Enviando link para o Teams")
+            send_clicksign_url_to_teams.delay(
+                customer_name=sale.customer.complete_name,
+                seller_name=sale.seller.complete_name,
+                clicksign_url=f"https://app.clicksign.com/widget/notarial/{existing_submission.request_signature_key}/documents/{document_key}",
+            )
+            logger.info("Link enviado para o Teams com sucesso")
+        except Exception as e:
+            logger.error("Erro ao enviar link para o Teams", str(e))
+
         return {"status": "success", "submission_id": existing_submission.id}
 
     # Fluxo de criação de envelope, documento, signatário e requisitos (novo envio)
