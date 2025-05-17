@@ -306,6 +306,7 @@ class ProjectViewSet(BaseModelViewSet):
             "avg_time_installation": lambda qs: qs.with_avg_time_installation(),
             "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
+            "installation_status": lambda qs: qs.with_installation_status(),
         }
 
         if metrics:
@@ -379,6 +380,7 @@ class ProjectViewSet(BaseModelViewSet):
         )
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
+        installation_status = request.query_params.get("installation_status")
 
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
@@ -397,9 +399,6 @@ class ProjectViewSet(BaseModelViewSet):
         if "purchase_status" in queryset.query.annotations and purchase_status:
             queryset = queryset.filter(purchase_status__in=purchase_status.split(","))
 
-        if "delivery_status" in queryset.query.annotations and delivery_status:
-            queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
-
         if (
             "expected_delivery_date" in queryset.query.annotations
             and expected_delivery_date
@@ -412,6 +411,13 @@ class ProjectViewSet(BaseModelViewSet):
                     expected_delivery_date=expected_delivery_date
                 )
 
+        if "delivery_status" in queryset.query.annotations and delivery_status:
+            queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
+
+        if "installation_status" in queryset.query.annotations and installation_status:
+            queryset = queryset.filter(
+                installation_status__in=installation_status.split(",")
+            )
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
         if payment_types:
@@ -631,8 +637,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-
-
+    
     @action(detail=False, methods=["get"], url_path="installations-indicators")
     def installation_indicators(self, request, *args, **kwargs):
         filter_params = request.GET.dict()
@@ -644,13 +649,14 @@ class ProjectViewSet(BaseModelViewSet):
             return Response(cached_data)
 
         request.query_params._mutable = True
-        request.query_params["metrics"] = "avg_time_installation"
+        request.query_params["metrics"] = "avg_time_installation,installation_status"
         request.query_params._mutable = False
 
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
         queryset = queryset.with_avg_time_installation()
         queryset = queryset.with_customer_released_flag()
+        queryset = queryset.with_installation_status()
 
         avg_timedelta = queryset.aggregate(
             avg_time=Avg("avg_time_installation")
@@ -664,11 +670,23 @@ class ProjectViewSet(BaseModelViewSet):
             service__name__icontains='instalação',
             execution_finished_at__isnull=False
         ).count()
+        
+        # Count projects by installation status
+        status_counts = queryset.values('installation_status').annotate(
+            count=Count('id')
+        ).order_by('installation_status')
+        
+        installation_status_dict = {
+            status['installation_status']: status['count'] 
+            for status in status_counts
+            if status['installation_status'] is not None
+        }
 
         indicators = {
             "avg_time_installation_hours": avg_duration,
             "released_clients_count": released_clients_count,
             "number_of_installations": number_of_installations,
+            "installations_status_count": installation_status_dict
         }
 
         cache.set(cache_key, indicators, 60)
