@@ -289,6 +289,18 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         due_date=timezone.now() + datetime.timedelta(days=7),
         link=f"https://app.clicksign.com/envelopes/{envelope_id}",
     )
+
+    try:
+        from .task import send_clicksign_url_to_teams
+        logger.info("Enviando link para o Teams")
+        send_clicksign_url_to_teams.delay(
+            customer_name=sale.customer.complete_name,
+            seller_name=sale.seller.complete_name,
+            clicksign_url=f"https://app.clicksign.com/widget/notarial/{signer_key}/documents/{document_key}",
+        )
+        logger.info("Link enviado para o Teams com sucesso")
+    except Exception as e:
+        logger.error("Erro ao enviar link para o Teams", str(e))
         
     logger.info(
         f"📌 Task: Envio de contrato para Clicksign concluído. ID da submissão: {submission.id}"
