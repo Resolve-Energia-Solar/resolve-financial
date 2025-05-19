@@ -10,13 +10,11 @@ from resolve_crm.task import (
     update_or_create_sale_tag,
 )
 from .models import Project, Sale
-from core.models import Attachment, Process, ProcessBase, SystemConfig, Webhook
+from core.models import Attachment
 import logging
 from django.db import transaction
 
-
 logger = logging.getLogger(__name__)
-
 
 @receiver(post_save, sender=Project)
 def post_create_project(sender, instance, created, **kwargs):
@@ -64,53 +62,6 @@ def handle_sale_post_save(sender, instance, created, **kwargs):
             update_or_create_sale_tag.delay(instance.id, instance.status)
         elif annotated.filter(is_released_to_engineering=False).exists():
             remove_tag_from_sale.delay(instance.id, "documentação parcial")
-
-        # print(f"📌 Entrando na Func")
-        # check_projects_and_update_sale_tag.delay(instance.id, instance.status)
-
-        # if not instance.signature_date:
-        #     return
-
-        # try:
-        #     system_config = SystemConfig.objects.get()
-        #     default_process = system_config.configs.get('default_process')
-        #     print(f"📌 Signal: default_process - {default_process}")
-        # except SystemConfig.DoesNotExist:
-        #     logger.error("Configuração do sistema não encontrada.")
-        #     return
-
-        # try:
-        #     modelo = ProcessBase.objects.get(name__exact=default_process)
-        #     print(f"📌 Signal: modelo - {modelo}")
-        # except ProcessBase.DoesNotExist:
-        #     return
-
-        # projects = Project.objects.filter(sale=instance)
-        # if not projects.exists():
-        #     return
-
-        # content_type = ContentType.objects.get_for_model(Project)
-        # project_ids = list(projects.values_list('id', flat=True))
-        # existing_processes = set(
-        #     Process.objects.filter(
-        #         content_type=content_type,
-        #         object_id__in=project_ids
-        #     ).values_list('object_id', flat=True)
-        # )
-
-        # for project in projects:
-        #     if project.id in existing_processes:
-        #         continue
-
-        #     create_process(
-        #         process_base_id=modelo.id,
-        #         content_type_id=content_type.id,
-        #         object_id=project.id,
-        #         nome=f"Processo {modelo.name} {instance.contract_number} - {instance.customer.complete_name}",
-        #         descricao=modelo.description,
-        #         user_id=instance.customer.id if instance.customer else None,
-        #         completion_date=instance.signature_date.isoformat(),
-        #     )
 
     transaction.on_commit(on_commit_all_tasks)
 

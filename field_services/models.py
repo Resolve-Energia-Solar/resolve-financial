@@ -20,7 +20,7 @@ class RoofType(models.Model):
 
 class Category(models.Model):
     name = models.CharField("Nome da Categoria", max_length=50, unique=True)
-    members = models.ManyToManyField("accounts.User", verbose_name="Membros", blank=True)
+    members = models.ManyToManyField("accounts.User", verbose_name="Membros", blank=True, related_name='categories')
     main_category = models.ForeignKey("self", verbose_name="Categoria Principal", on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     is_deleted = models.BooleanField("Deletado", default=False)
