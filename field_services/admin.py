@@ -27,6 +27,7 @@ class FormsAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ("form", "created_at")
+    autocomplete_fields = ("form", "answerer", "schedule")
 
 @admin.register(Deadline)
 class DeadlineAdmin(admin.ModelAdmin):
@@ -77,6 +78,7 @@ class FreeTimeAgentAdmin(admin.ModelAdmin):
 @admin.register(FormFile)
 class FormFileAdmin(admin.ModelAdmin):
     list_display = ("created_at", 'answer', 'field_id')
+    search_fields = ("answer__form__name",)
 
 @admin.register(ServiceOpinion)
 class ServiceOpinionAdmin(admin.ModelAdmin):
