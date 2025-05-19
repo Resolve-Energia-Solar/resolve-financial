@@ -1,4 +1,5 @@
 from decimal import Decimal
+import hashlib
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericRelation
@@ -6,6 +7,7 @@ from django.db import models
 from django.forms import ValidationError
 from simple_history.models import HistoricalRecords
 from django.urls import reverse_lazy
+from django.utils.text import slugify
 
 
 class UserType(models.Model):
@@ -125,21 +127,21 @@ class User(AbstractUser):
                 raise ValidationError("Já existe um usuário com este CPF/CNPJ.")
         return super().clean()
 
-    def save(self, current_user=None, *args, **kwargs):
-        
-        name_parts = self.get_full_name().split(" ")
-        
-        if not self.first_name or not self.last_name and self.get_full_name():
-            self.first_name = name_parts[0]
-            self.last_name = name_parts[-1]
-        if not self.username:
-            base_username = name_parts[0].lower() + '.' + name_parts[-1].lower()
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-            self.username = username
+    def save(self, *args, **kwargs):
+        if self.complete_name:
+            parts = self.complete_name.strip().split()
+            # force overwrite para garantir só o primeiro e o último
+            self.first_name = parts[0]
+            self.last_name  = parts[-1]
+
+        if not self.username and self.complete_name:
+            first = slugify(self.first_name)
+            last  = slugify(self.last_name)
+            base  = f"{first}.{last}"
+            # hash de 6 chars separado por "-"
+            suffix = hashlib.sha1(self.complete_name.encode('utf-8')).hexdigest()[:6]
+            self.username = f"{base}-{suffix}"
+
         super().save(*args, **kwargs)
         
 

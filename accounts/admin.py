@@ -145,9 +145,11 @@ class UserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
 
     def save_model(self, request, obj, form, change):
-        if not change:
-            self.send_invitation(request, [obj])
         super().save_model(request, obj, form, change)
+        
+        if not change:
+            if obj.user_types.filter(name="Funcionário").exists():
+                self.send_invitation(request, [obj])
 
     actions = ["send_invitation"]
 

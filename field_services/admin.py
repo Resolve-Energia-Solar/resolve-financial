@@ -27,6 +27,7 @@ class FormsAdmin(admin.ModelAdmin):
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ("form", "created_at")
+    search_fields = ("form__name", "answerer__complete_name", "schedule__customer__complete_name")
     autocomplete_fields = ("form", "answerer", "schedule")
 
 @admin.register(Deadline)
@@ -69,6 +70,7 @@ class ScheduleAdmin(admin.ModelAdmin):
 @admin.register(BlockTimeAgent)
 class BlockTimeAgentAdmin(admin.ModelAdmin):
     list_display = ("agent", 'start_time', 'end_time', 'start_date', 'end_date')
+    autocomplete_fields = ("agent",)
 
 @admin.register(FreeTimeAgent)
 class FreeTimeAgentAdmin(admin.ModelAdmin):
@@ -79,6 +81,7 @@ class FreeTimeAgentAdmin(admin.ModelAdmin):
 class FormFileAdmin(admin.ModelAdmin):
     list_display = ("created_at", 'answer', 'field_id')
     search_fields = ("answer__form__name",)
+    autocomplete_fields = ("answer",)
 
 @admin.register(ServiceOpinion)
 class ServiceOpinionAdmin(admin.ModelAdmin):
