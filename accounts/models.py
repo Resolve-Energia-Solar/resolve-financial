@@ -130,15 +130,17 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if self.complete_name:
             parts = self.complete_name.strip().split()
-            if not self.first_name:
-                self.first_name = parts[0]
-            if not self.last_name:
-                self.last_name = parts[-1]
+            # force overwrite para garantir só o primeiro e o último
+            self.first_name = parts[0]
+            self.last_name  = parts[-1]
 
         if not self.username and self.complete_name:
-            base = f"{slugify(self.first_name)}.{slugify(self.last_name)}"
-            hash_suffix = hashlib.sha1(self.complete_name.encode('utf-8')).hexdigest()[:6]
-            self.username = f"{base}.{hash_suffix}"
+            first = slugify(self.first_name)
+            last  = slugify(self.last_name)
+            base  = f"{first}.{last}"
+            # hash de 6 chars separado por "-"
+            suffix = hashlib.sha1(self.complete_name.encode('utf-8')).hexdigest()[:6]
+            self.username = f"{base}-{suffix}"
 
         super().save(*args, **kwargs)
         
