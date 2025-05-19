@@ -159,7 +159,9 @@ class Schedule(models.Model):
     observation = models.TextField("Observação", blank=True, null=True)
     step = models.IntegerField("Etapa", default=1)
     arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
+    deadline = models.DurationField("Prazo", blank=True, null=True)
     value = models.DecimalField("Valor", max_digits=10, decimal_places=2, blank=True, null=True)
+    is_paid = models.BooleanField("Pago", default=False)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
     
@@ -176,7 +178,17 @@ class Schedule(models.Model):
                 self.final_service_opinion_date = now
         except Schedule.DoesNotExist:
             pass
-        
+        if not self.deadline:
+            try:
+                hours_str = self.service.deadline.hours
+                if hours_str:
+                    time_parts = hours_str.split(':')
+                    hours = int(time_parts[0])
+                    minutes = int(time_parts[1]) if len(time_parts) > 1 else 0
+                    seconds = int(time_parts[2]) if len(time_parts) > 2 else 0
+                    self.deadline = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
+            except (AttributeError, ValueError, IndexError):
+                self.deadline = None
         super(Schedule, self).save(*args, **kwargs)
     
     class Meta:
