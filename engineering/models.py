@@ -177,7 +177,7 @@ class CivilConstruction(models.Model):
     work_responsibility = models.CharField(
         "Responsabilidade da Obra",
         max_length=1,
-        choices=[("C", "Cliente"), ("F", "Franquiado")],
+        choices=[("C", "Cliente"), ("F", "Franquia"), ("O", "Centro de Operações")],
     )
     repass_value = models.DecimalField(
         "Valor de Repasse",

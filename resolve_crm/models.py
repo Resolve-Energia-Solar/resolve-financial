@@ -15,7 +15,7 @@ import datetime
 from django.utils.functional import cached_property
 from django.db.models import Case, When, Value, CharField, Q, BooleanField, Exists, OuterRef, Subquery, Aggregate, DateField, ExpressionWrapper, F, Sum, DecimalField, Count, IntegerField, DurationField, Func, Avg, DateTimeField
 from field_services.models import Schedule
-from engineering.models import RequestsEnergyCompany, Units
+from engineering.models import CivilConstruction, RequestsEnergyCompany, Units
 from django.db.models.functions import TruncDate,Coalesce
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round, Coalesce
@@ -1041,6 +1041,44 @@ class ProjectQuerySet(models.QuerySet):
             )
         ).distinct()
 
+    def with_purchase_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            purchase_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
+                When(Q(purchases__isnull=True), then=Value('Liberado')),
+                When(Q(purchases__status='P'), then=Value('Pendente')),
+                When(Q(purchases__status='R'), then=Value('Compra Realizada')),
+                When(Q(purchases__status='C'), then=Value('Cancelado')),
+                When(Q(purchases__status='D'), then=Value('Distrato')),
+                When(Q(purchases__status='F'), then=Value('Aguardando Previsão de Entrega')),
+                When(Q(purchases__status='A'), then=Value('Aguardando Pagamento')),
+                default=Value('Bloqueado'),
+                output_field=CharField(),
+            )
+        ).distinct()
+
+    def with_expected_delivery_date(self):
+        return self.annotate(
+            expected_delivery_date=Case(
+                When(
+                    sale__signature_date__isnull=False,
+                    then=Cast(
+                        ExpressionWrapper(
+                            F('sale__signature_date') + timedelta(days=20),
+                            output_field=DateField()
+                        ),
+                        output_field=DateField()
+                    )
+                ),
+                default=None,
+                output_field=DateField()
+            ),
+            expected_delivery_status=Case(
+                When(sale__signature_date__isnull=True, then=Value('Sem contrato')),
+                default=Value('Com contrato'),
+                output_field=CharField()
+            )
+        )
 
     # STATUS LOGISTICA -  PERGUNTAR - QUANDO NÃO É ENTREGA DIRETA O STATUS DE LIBERADO DEPENDE DA ENTREGA?
     def with_delivery_status(self):
@@ -1123,48 +1161,68 @@ class ProjectQuerySet(models.QuerySet):
                 output_field=CharField(),
             )
         ).distinct()
-        
-        
-    def with_purchase_status(self):
-        return self.with_is_released_to_engineering().annotate(
-            purchase_status=Case(
-                When(Q(is_released_to_engineering=False), then=Value('Bloqueado')),
-                When(Q(purchases__isnull=True), then=Value('Liberado')),
-                When(Q(purchases__status='P'), then=Value('Pendente')),
-                When(Q(purchases__status='R'), then=Value('Compra Realizada')),
-                When(Q(purchases__status='C'), then=Value('Cancelado')),
-                When(Q(purchases__status='D'), then=Value('Distrato')),
-                When(Q(purchases__status='F'), then=Value('Aguardando Previsão de Entrega')),
-                When(Q(purchases__status='A'), then=Value('Aguardando Pagamento')),
-                default=Value('Bloqueado'),
-                output_field=CharField(),
-            )
-        ).distinct()
-        
-
-    def with_expected_delivery_date(self):
-        return self.annotate(
-            expected_delivery_date=Case(
-                When(
-                    sale__signature_date__isnull=False,
-                    then=Cast(
-                        ExpressionWrapper(
-                            F('sale__signature_date') + timedelta(days=20),
-                            output_field=DateField()
-                        ),
-                        output_field=DateField()
+    
+    def with_installation_status(self):
+        return (
+            self.with_delivery_status()
+            .annotate(
+                # último parecer de instalação
+                latest_installation_opinion_name=Subquery(
+                    Schedule.objects.filter(
+                        project=OuterRef('pk'),
+                        service__category__name__icontains='Instalação',
+                    )
+                    .order_by('-created_at')
+                    .values('final_service_opinion__name')[:1]
+                ),
+                # existe agendamento de instalação?
+                has_installation=Exists(
+                    Schedule.objects.filter(
+                        project=OuterRef('pk'),
+                        service__category__name__icontains='Instalação',
                     )
                 ),
-                default=None,
-                output_field=DateField()
-            ),
-            expected_delivery_status=Case(
-                When(sale__signature_date__isnull=True, then=Value('Sem contrato')),
-                default=Value('Com contrato'),
-                output_field=CharField()
+                # existe vistoria com parecer contendo obra?
+                has_construction_schedule=Exists(
+                    Schedule.objects.filter(
+                        project=OuterRef('pk'),
+                        service__category__name__icontains='Vistoria',
+                        final_service_opinion__name__icontains='Obra',
+                    )
+                ),
+                # status da obra mais recente (P, EA, F, C)
+                latest_construction_status=Subquery(
+                    CivilConstruction.objects.filter(
+                        project=OuterRef('pk')
+                    )
+                    .order_by('-id')
+                    .values('status')[:1]
+                ),
             )
+            .annotate(
+                installation_status=Case(
+                    # 1) instalado ou cancelado
+                    When(Q(latest_installation_opinion_name__icontains='Instalado'),
+                        then=Value('Instalado')),
+                    When(Q(latest_installation_opinion_name__icontains='Cancelada'),
+                        then=Value('Cancelado')),
+                    # 2) agendado: tem agendamento mas sem parecer final ainda
+                    When(Q(has_installation=True) & Q(latest_installation_opinion_name__isnull=True),
+                        then=Value('Agendado')),
+                    # 3) em obra: teve vistoria “Obra” e obra não finalizada (status != 'F')
+                    When(Q(has_construction_schedule=True) & ~Q(latest_construction_status='F'),
+                        then=Value('Em obra')),
+                    # 4) se não entregue → bloqueado
+                    When(~Q(delivery_status='Entregue'), then=Value('Bloqueado')),
+                    # 5) liberado: entregue e sem agendamento de instalação
+                    When(Q(delivery_status='Entregue') & Q(has_installation=False),
+                        then=Value('Liberado')),
+                    default=Value('Bloqueado'),
+                    output_field=CharField(),
+                )
+            )
+            .distinct()
         )
-
     
     # FINANCEIRO
     def with_installments_indicators(self):
@@ -1256,6 +1314,8 @@ class ProjectQuerySet(models.QuerySet):
             .with_delivery_status()
             .with_purchase_status()
             .with_expected_delivery_date()
+            # Installation
+            .with_installation_status()
         ).distinct()
 
 

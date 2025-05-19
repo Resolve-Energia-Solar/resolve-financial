@@ -27,7 +27,10 @@ from accounts.serializers import *
 from api.views import BaseModelViewSet
 from accounts.serializers import PasswordResetConfirmSerializer
 from field_services.models import BlockTimeAgent, Category, FreeTimeAgent, Schedule
-
+from django.utils.dateparse import parse_time
+from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Count, Value
+from django.db.models.functions import Coalesce
 # Accounts views
 
 class UserLoginView(APIView):
@@ -102,11 +105,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
-from django.utils.dateparse import parse_time
-from django.utils import timezone
-from django.db.models import OuterRef, Subquery, Count, Value
-from django.db.models.functions import Coalesce
-
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -114,8 +112,18 @@ class UserViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        queryset = queryset.select_related('employee').all()
+        
+        queryset = User.objects.all().select_related(
+            'employee',
+        ).prefetch_related(
+            'groups',
+            'phone_numbers',
+            'user_permissions',
+            'user_types',
+            'addresses',
+            'attachments',
+            'employee__related_branches',
+        )
         
         # Parâmetros de filtro
         name = self.request.query_params.get('name')
@@ -191,6 +199,8 @@ class UserViewSet(BaseModelViewSet):
                 queryset = queryset.order_by('-daily_schedules_count')
 
         return queryset
+
+
 
 
 class EmployeeViewSet(BaseModelViewSet):
