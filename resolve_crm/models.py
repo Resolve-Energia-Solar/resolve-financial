@@ -392,7 +392,7 @@ class Sale(models.Model):
     signature_date = models.DateTimeField("Data da Assinatura", auto_now=False, auto_now_add=False, null=True, blank=True, db_index=True)
     branch = models.ForeignKey('accounts.Branch', on_delete=models.PROTECT, verbose_name="Unidade", db_index=True)
     marketing_campaign = models.ForeignKey('MarketingCampaign', on_delete=models.PROTECT, verbose_name="Campanha de Marketing", null=True, blank=True)
-    supplier = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True)
+    supplier = models.ForeignKey(get_user_model(), on_delete=models.PROTECT, verbose_name="Fornecedor", related_name="supplier_sales", null=True, blank=True) 
     is_pre_sale = models.BooleanField("Pré-venda", default=True, db_index=True) 
     status = models.CharField(
         "Status da Venda", 
@@ -539,18 +539,6 @@ class Sale(models.Model):
     #     super().clean()
 
     def save(self, *args, **kwargs):
-        if not self.contract_number:
-            with transaction.atomic():
-                last_sale = Sale.objects.select_for_update().order_by('-contract_number').first()
-                last_number = 0
-                if last_sale and last_sale.contract_number:
-                    last_number = int(last_sale.contract_number.replace('RESOL', ''))
-                while True:
-                    last_number += 1
-                    new_contract_number = f'RESOL{last_number:02}'
-                    if not Sale.objects.filter(contract_number=new_contract_number).exists():
-                        self.contract_number = new_contract_number
-                        break
         if not self.billing_date and self.signature_date:
             self.billing_date = self.signature_date
         if (self.payment_status == 'C' or self.payment_status == 'L') and not self.financial_completion_date:
