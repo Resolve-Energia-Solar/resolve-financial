@@ -5,12 +5,26 @@ from core.models import Process, ProcessBase
 from core.task import create_process_async
 from financial.admin import PaymentInline
 from logistics.models import SaleProduct
-from .models import ComercialProposal, ContractSubmission, ContractTemplate, Lead, MarketingCampaign, ProjectStep, Reason, Step, Task, Project, Sale, Origin
+from .models import (
+    ComercialProposal,
+    ContractSubmission,
+    ContractTemplate,
+    Lead,
+    MarketingCampaign,
+    ProjectStep,
+    Reason,
+    Step,
+    Task,
+    Project,
+    Sale,
+    Origin,
+)
 from logistics.admin import ProjectMaterialsInline, SaleProductInline
+
 
 @admin.action(description="Criar processos para os projetos dessa venda")
 def criar_processos_para_venda(modeladmin, request, queryset):
-    modelo_id = 1 
+    modelo_id = 1
 
     try:
         modelo = ProcessBase.objects.get(id=modelo_id)
@@ -29,8 +43,8 @@ def criar_processos_para_venda(modeladmin, request, queryset):
         existing_process_ids = set(
             Process.objects.filter(
                 content_type=content_type,
-                object_id__in=projects.values_list('id', flat=True)
-            ).values_list('object_id', flat=True)
+                object_id__in=projects.values_list("id", flat=True),
+            ).values_list("object_id", flat=True)
         )
 
         for project in projects:
@@ -44,10 +58,11 @@ def criar_processos_para_venda(modeladmin, request, queryset):
                 nome=f"Processo {modelo.name} {venda.contract_number} - {venda.customer.complete_name}",
                 descricao=modelo.description,
                 user_id=venda.customer.id if venda.customer else None,
-                completion_date=venda.signature_date.isoformat()
+                completion_date=venda.signature_date.isoformat(),
             )
 
     messages.success(request, "Processos sendo criados em segundo plano.")
+
 
 @admin.register(Origin)
 class OriginAdmin(admin.ModelAdmin):
@@ -57,19 +72,27 @@ class OriginAdmin(admin.ModelAdmin):
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
-    
+
     def save_model(self, request, obj, form, change):
         obj.save(current_user=request.user)
-        form.save_m2m()  
+        form.save_m2m()
 
 
 @admin.register(ComercialProposal)
 class ComercialProposalAdmin(admin.ModelAdmin):
-    list_display = ("id", "lead", "due_date", "value", "status", "created_by", "created_at")
+    list_display = (
+        "id",
+        "lead",
+        "due_date",
+        "value",
+        "status",
+        "created_by",
+        "created_at",
+    )
     search_fields = ("lead__name", "status", "created_by__username", "lead__name")
     list_filter = ("status", "due_date", "created_at")
     inlines = [SaleProductInline]
-    
+
 
 @admin.action(description="Criar projetos para as vendas selecionadas")
 def criar_projetos_para_venda(modeladmin, request, queryset):
@@ -77,13 +100,15 @@ def criar_projetos_para_venda(modeladmin, request, queryset):
 
     for sale in queryset:
         sale_products = SaleProduct.objects.filter(sale=sale)
-        
+
         if not sale_products.exists():
             messages.warning(request, f"Venda {sale.id} não possui produtos.")
             continue
 
-        existing_projects = Project.objects.filter(sale=sale).values_list('product_id', flat=True)
-        
+        existing_projects = Project.objects.filter(sale=sale).values_list(
+            "product_id", flat=True
+        )
+
         projects_to_create = [
             Project(sale=sale, product=sp.product)
             for sp in sale_products
@@ -99,10 +124,23 @@ def criar_projetos_para_venda(modeladmin, request, queryset):
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("customer" ,"contract_number", "total_value","signature_date", "billing_date", "created_at")
-    autocomplete_fields = ["customer", "seller", "sales_supervisor","sales_manager", "supplier"]
+    list_display = (
+        "customer",
+        "contract_number",
+        "total_value",
+        "signature_date",
+        "billing_date",
+        "created_at",
+    )
+    autocomplete_fields = [
+        "customer",
+        "seller",
+        "sales_supervisor",
+        "sales_manager",
+        "supplier",
+    ]
     inlines = [SaleProductInline, PaymentInline]
-    search_fields = ("contract_number", "customer__complete_name", "seller__username")
+    search_fields = ("contract_number", "customer__complete_name", "seller__complete_name")
     list_filter = ("payment_status", "status", "created_at")
     ordering = ("-created_at",)
     actions = [criar_processos_para_venda, criar_projetos_para_venda]
@@ -110,23 +148,48 @@ class SaleAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("lead", "title", "delivery_date", "description", "status", "task_type")
+    list_display = (
+        "lead",
+        "title",
+        "delivery_date",
+        "description",
+        "status",
+        "task_type",
+    )
 
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("sale", "product", "created_at")
-    autocomplete_fields = ["sale", "product", "designer", "inspection", "homologator", "materials", "registered_circuit_breaker"]
-    search_fields = ("sale__contract_number", "product__name", "sale__customer__complete_name", "project_number")
+    autocomplete_fields = [
+        "sale",
+        "product",
+        "designer",
+        "inspection",
+        "homologator",
+        "materials",
+        "registered_circuit_breaker",
+    ]
+    search_fields = (
+        "sale__contract_number",
+        "product__name",
+        "sale__customer__complete_name",
+        "project_number",
+    )
     inlines = [ProjectMaterialsInline]
 
 
 @admin.register(ContractSubmission)
 class ContractSubmissionAdmin(admin.ModelAdmin):
     list_display = ("sale", "status", "key_number", "finished_at", "submit_datetime")
-    search_fields = ("sale__contract_number", "key_number", "sale__customer__complete_name")
+    search_fields = (
+        "sale__contract_number",
+        "key_number",
+        "sale__customer__complete_name",
+    )
     list_filter = ("finished_at",)
     ordering = ("-finished_at",)
+    autocomplete_fields = ["sale"]
 
 
 @admin.register(Step)
@@ -149,9 +212,9 @@ class ProjectStepAdmin(admin.ModelAdmin):
 class ContractTemplateAdmin(admin.ModelAdmin):
     list_display = ("name", "is_active", "person_type")
     list_filter = ("is_active", "person_type")
-    search_fields = ("name","template")
+    search_fields = ("name", "template")
     ordering = ("name",)
-    
+
 
 @admin.register(MarketingCampaign)
 class MarketingCampaignAdmin(admin.ModelAdmin):
@@ -159,12 +222,10 @@ class MarketingCampaignAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     list_filter = ("start_datetime", "end_datetime")
     ordering = ("-start_datetime",)
-    
+
 
 @admin.register(Reason)
 class ReasonAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
     ordering = ("name",)
-    
-    

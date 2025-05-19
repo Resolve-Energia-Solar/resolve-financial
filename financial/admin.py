@@ -167,16 +167,22 @@ class FinancialRecordAdmin(admin.ModelAdmin):
         "service_date",
         "created_at",
         "paid_at",
-        "category_name",
-        "department_name",
-        "client_supplier_name",
+        # "category_name",
+        # "department_name",
+        # "client_supplier_name",
         "requesting_department",
-        "requester",
-        "responsible",
+        # "requester",
+        # "responsible",
         ErrorRequestFilter,
     )
     ordering = ("-created_at",)
     actions = ["send_to_omie", "resend_approval_request_to_responsible"]
+    autocomplete_fields = [
+        "responsible",
+        "requester",
+        "requesting_department",
+        "project",
+    ]
 
     def send_to_omie(self, request, queryset):
         for record in queryset:
