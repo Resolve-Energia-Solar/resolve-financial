@@ -25,6 +25,7 @@ class DocumentSubTypeAdmin(admin.ModelAdmin):
     search_fields = ("name", "document_type__name")
     list_filter = ("document_type",)
     ordering = ("name",)
+    autocomplete_fields = ("document_type",)
 
 
 @admin.register(Attachment)
@@ -40,11 +41,13 @@ class AttachmentAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "document_type", "document_subtype", "created_at")
     ordering = ("-created_at",)
+    autocomplete_fields = ("document_type", "document_subtype", "content_type",  )
 
 
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
     list_display = ("title", "description")
+    autocomplete_fields = ("branch",)
 
 
 @admin.register(Column)
@@ -59,6 +62,7 @@ class TaskTemplatesAdmin(admin.ModelAdmin):
     search_fields = ("title", "board__title", "column__name", "description")
     list_filter = ("board", "auto_create", "column")
     ordering = ("title",)
+    autocomplete_fields = ("column", "content_type", "depends_on",)
 
 
 @admin.register(Task)
@@ -80,11 +84,14 @@ class TaskAdmin(admin.ModelAdmin):
         "due_date",
         "is_completed_date",
     )
+    autocomplete_fields = ("task_template", "project", "column", "owner", "depends_on",)
 
 
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):
     list_display = ("url", "content_type", "event", "is_active")
+    autocomplete_fields = ("content_type",)
+    search_fields = ("url", "event")
 
 
 @admin.register(ContentType)
@@ -118,6 +125,8 @@ class PermissionAdmin(admin.ModelAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ("tag", "color")
+    autocomplete_fields = ("content_type",)
+    search_fields = ("tag", "color")
 
 
 @admin.register(Session)
@@ -138,6 +147,7 @@ class CommentAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+    autocomplete_fields = ("content_type", "author", "mentioned_users", "mentioned_departments",)
 
 
 @admin.register(ProcessBase)
@@ -148,6 +158,7 @@ class ProcessBaseAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+    autocomplete_fields = ("content_type",)
 
     class Media:
         js = ("admin/js/edit-steps-json.js",)
@@ -171,6 +182,7 @@ class ProcessAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     list_per_page = 10
     list_max_show_all = 100
+    autocomplete_fields = ("content_type","current_step",)
 
     class Media:
         js = ("admin/js/edit-steps-json.js",)
