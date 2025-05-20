@@ -13,12 +13,13 @@ class RoofTypeAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
+    autocomplete_fields = ["members", "main_category"]
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "form")
     search_fields = ("name", "category__name")
-    autocomplete_fields = ("category", "form")
+    autocomplete_fields = ("category", "form", "deadline", "groups")
 
 @admin.register(Forms)
 class FormsAdmin(admin.ModelAdmin):
@@ -34,13 +35,14 @@ class AnswerAdmin(admin.ModelAdmin):
 @admin.register(Deadline)
 class DeadlineAdmin(admin.ModelAdmin):
     list_display = ("name",)
+    search_fields = ("name",)
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ("customer", "schedule_date", "project", "service", "protocol", "schedule_creator", "status", "created_at")
     search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name", "customer__complete_name", "project__sale__customer__complete_name")
     readonly_fields = ("display_leads",)
-    autocomplete_fields = ("project", "service", "schedule_creator", "parent_schedules", "attachments", "address", "schedule_agent", "branch", "service_opinion", "final_service_opinion", "customer")
+    autocomplete_fields = ("project", "service", "schedule_creator", "parent_schedules", "attachments", "address", "schedule_agent", "branch", "service_opinion", "final_service_opinion", "customer", "products", "leads", "final_service_opinion_user")
 
     def display_leads(self, obj):
         leads = obj.lead_inspections.all()
@@ -77,6 +79,7 @@ class BlockTimeAgentAdmin(admin.ModelAdmin):
 class FreeTimeAgentAdmin(admin.ModelAdmin):
     list_display = ("agent", 'start_time', 'end_time', 'day_of_week')
     search_fields = ('agent__complete_name',)
+    autocomplete_fields = ("agent",)
 
 @admin.register(FormFile)
 class FormFileAdmin(admin.ModelAdmin):
@@ -88,3 +91,11 @@ class FormFileAdmin(admin.ModelAdmin):
 class ServiceOpinionAdmin(admin.ModelAdmin):
     list_display = ("name", "service", "is_final_opinion")
     search_fields = ("name", "service__name")
+    autocomplete_fields = ("service",)
+    
+
+@admin.register(Route)
+class RouteAdmin(admin.ModelAdmin):
+    list_display = ("schedule", "agent", "start_time", "end_time", "status")
+    search_fields = ("schedule__protocol", "agent__complete_name", "status")
+    autocomplete_fields = ("schedule", "agent")
