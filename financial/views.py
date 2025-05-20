@@ -21,6 +21,7 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
+from django.core.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML
@@ -71,6 +72,16 @@ class PaymentViewSet(BaseModelViewSet):
         # Criar parcelas se solicitado
         if create_installments and num_installments > 0:
             self.create_installments(instance, num_installments)
+    
+    
+    def perform_update(self, serializer):
+        user = self.request.user
+        invoice_status = self.request.data.get("invoice_status", "").upper()
+
+        if invoice_status == "E" and not user.has_perm("financial.can_change_payments_after_issued"):
+            raise PermissionDenied("Você não tem permissão para editar este pagamento.")
+
+        serializer.save()
 
     def create_installments(self, payment, num_installments):
         # Garantir que due_date seja um objeto datetime
