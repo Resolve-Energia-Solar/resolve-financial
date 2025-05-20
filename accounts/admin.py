@@ -208,6 +208,7 @@ class BranchAdmin(admin.ModelAdmin):
     )
     search_fields = ("name",)
     list_filter = ("owners",)
+    autocomplete_fields = ["owners", "address", "energy_company"]
     list_per_page = 10
     list_max_show_all = 100
 
