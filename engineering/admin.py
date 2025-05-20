@@ -46,7 +46,7 @@ class CivilConstructionAdmin(admin.ModelAdmin):
         "budget_value",
         "shading_percentage",
     )
-    list_filter = ("project", "work_responsibility")
+    list_filter = ("project", "work_responsibility", "is_customer_aware")
     search_fields = ("project__name", "service_description")
     autocomplete_fields = ("project",)
     ordering = ("project",)
@@ -55,6 +55,7 @@ class CivilConstructionAdmin(admin.ModelAdmin):
             "fields": (
                 "project",
                 "work_responsibility",
+                "is_customer_aware",
                 "service_description",
                 "shading_percentage",
             ),
