@@ -67,12 +67,14 @@ def criar_processos_para_venda(modeladmin, request, queryset):
 @admin.register(Origin)
 class OriginAdmin(admin.ModelAdmin):
     list_display = ("name",)
+    search_fields = ("name",)
 
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
     search_fields = ("name",)
+    autocomplete_fields = ("addresses", "customer", "origin", "seller", "sdr", "column", )
 
     def save_model(self, request, obj, form, change):
         obj.save(current_user=request.user)
@@ -91,6 +93,7 @@ class ComercialProposalAdmin(admin.ModelAdmin):
         "created_at",
     )
     search_fields = ("lead__name", "status", "created_by__username", "lead__name")
+    autocomplete_fields = ("lead", "products", "created_by")
     list_filter = ("status", "due_date", "created_at")
     inlines = [SaleProductInline]
 
@@ -139,6 +142,11 @@ class SaleAdmin(admin.ModelAdmin):
         "sales_supervisor",
         "sales_manager",
         "supplier",
+        "branch",
+        "marketing_campaign",
+        "cancellation_reasons",
+        "products",
+        
     ]
     inlines = [SaleProductInline, PaymentInline]
     search_fields = ("contract_number", "customer__complete_name", "seller__complete_name")
@@ -157,6 +165,10 @@ class TaskAdmin(admin.ModelAdmin):
         "status",
         "task_type",
     )
+    autocomplete_fields = [
+        "lead",
+        "members",
+    ]
 
 
 @admin.register(Project)
@@ -207,6 +219,7 @@ class ProjectStepAdmin(admin.ModelAdmin):
     search_fields = ("project_number", "step__name")
     list_filter = ("deadline",)
     ordering = ("-deadline",)
+    autocomplete_fields = ["project", "step"]
 
 
 @admin.register(ContractTemplate)
@@ -215,6 +228,7 @@ class ContractTemplateAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "person_type")
     search_fields = ("name", "template")
     ordering = ("name",)
+    autocomplete_fields = ("branches",)
 
 
 @admin.register(MarketingCampaign)
