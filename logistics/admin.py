@@ -43,6 +43,6 @@ class SaleProductInline(admin.TabularInline):
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'supplier', 'purchase_date', 'delivery_type', 'status', 'delivery_number', 'is_deleted')
+    list_display = ('project', 'supplier', 'purchase_date', 'status', 'delivery_number', 'is_deleted')
     search_fields = ('project__project_number', 'project__customer__name', 'supplier__name', 'delivery_number')
-    list_filter = ('status', 'delivery_type', 'is_deleted', 'purchase_date')
+    list_filter = ('status', 'is_deleted', 'purchase_date')
