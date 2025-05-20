@@ -179,6 +179,10 @@ class CivilConstruction(models.Model):
         max_length=1,
         choices=[("C", "Cliente"), ("F", "Franquia"), ("O", "Centro de Operações")],
     )
+    is_customer_aware = models.BooleanField(
+        "Cliente ciente",
+        default=False
+    )
     repass_value = models.DecimalField(
         "Valor de Repasse",
         max_digits=10,

@@ -307,6 +307,7 @@ class ProjectViewSet(BaseModelViewSet):
             "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
             "installation_status": lambda qs: qs.with_installation_status(),
+            "has_construction": lambda qs: qs.with_has_construction(),
         }
 
         if metrics:
@@ -381,6 +382,7 @@ class ProjectViewSet(BaseModelViewSet):
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
         installation_status = request.query_params.get("installation_status")
+        has_construction = request.query_params.get("has_construction")
 
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
@@ -470,6 +472,11 @@ class ProjectViewSet(BaseModelViewSet):
         if supply_adquance:
             queryset = queryset.filter(
                 units__supply_adquance__id__in=supply_adquance.split(",")
+            )
+
+        if has_construction:
+            queryset = queryset.filter(
+                has_construction=has_construction.lower() == "true"
             )
 
         if access_opnion == "liberado":
