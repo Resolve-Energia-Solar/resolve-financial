@@ -175,65 +175,113 @@ class ScheduleSerializer(BaseSerializer):
                 if all_schedules:
                     first_schedule = all_schedules[0]
                     if first_schedule.schedule_start_time > disponibility.start_time:
-                        latest_end = first_schedule.schedule_start_time.replace(
-                            hour=(first_schedule.schedule_start_time.hour * 60 + first_schedule.schedule_start_time.minute - travel_time_next) // 60,
-                            minute=(first_schedule.schedule_start_time.hour * 60 + first_schedule.schedule_start_time.minute - travel_time_next) % 60
+                        # total de minutos até o início do primeiro
+                        start_total = (
+                            first_schedule.schedule_start_time.hour * 60 +
+                            first_schedule.schedule_start_time.minute
                         )
-                        if disponibility.start_time < latest_end:
-                            available_slots.append({
-                                "start": disponibility.start_time.strftime("%H:%M"),
-                                "end": latest_end.strftime("%H:%M")
-                            })
-                            if (schedule_start_time >= disponibility.start_time and schedule_end_time <= latest_end):
-                                if total_travel_time < min_travel_time:
-                                    min_travel_time = total_travel_time
-                                    best_position = i
+                        latest_end_minutes = start_total - travel_time_next
+
+                        # só se der horário válido
+                        if latest_end_minutes > 0:
+                            hour, minute = divmod(latest_end_minutes, 60)
+                            latest_end = first_schedule.schedule_start_time.replace(
+                                hour=hour,
+                                minute=minute
+                            )
+                            if disponibility.start_time < latest_end:
+                                available_slots.append({
+                                    "start": disponibility.start_time.strftime("%H:%M"),
+                                    "end": latest_end.strftime("%H:%M")
+                                })
+                            if (schedule_start_time >= disponibility.start_time and
+                                schedule_end_time <= latest_end and
+                                total_travel_time < min_travel_time):
+                                min_travel_time = total_travel_time
+                                best_position = i
                 else:
+                    # sem nenhum agendamento existente
                     available_slots.append({
                         "start": disponibility.start_time.strftime("%H:%M"),
                         "end": disponibility.end_time.strftime("%H:%M")
                     })
                     best_position = 0
+
             elif i == len(all_schedules):
                 last_schedule = all_schedules[-1]
                 if last_schedule.schedule_end_time < disponibility.end_time:
-                    earliest_start = last_schedule.schedule_end_time.replace(
-                        hour=(last_schedule.schedule_end_time.hour * 60 + last_schedule.schedule_end_time.minute + travel_time_previous) // 60,
-                        minute=(last_schedule.schedule_end_time.hour * 60 + last_schedule.schedule_end_time.minute + travel_time_previous) % 60
+                    end_total = (
+                        last_schedule.schedule_end_time.hour * 60 +
+                        last_schedule.schedule_end_time.minute +
+                        travel_time_previous
                     )
-                    if earliest_start < disponibility.end_time:
-                        available_slots.append({
-                            "start": earliest_start.strftime("%H:%M"),
-                            "end": disponibility.end_time.strftime("%H:%M")
-                        })
-                        if (schedule_start_time >= earliest_start and schedule_end_time <= disponibility.end_time):
-                            if total_travel_time < min_travel_time:
+                    dispon_end_total = (
+                        disponibility.end_time.hour * 60 +
+                        disponibility.end_time.minute
+                    )
+                    if 0 <= end_total < dispon_end_total:
+                        hour, minute = divmod(end_total, 60)
+                        earliest_start = last_schedule.schedule_end_time.replace(
+                            hour=hour,
+                            minute=minute
+                        )
+                        if earliest_start < disponibility.end_time:
+                            available_slots.append({
+                                "start": earliest_start.strftime("%H:%M"),
+                                "end": disponibility.end_time.strftime("%H:%M")
+                            })
+                            if (schedule_start_time >= earliest_start and
+                                schedule_end_time <= disponibility.end_time and
+                                total_travel_time < min_travel_time):
                                 min_travel_time = total_travel_time
                                 best_position = i
+
             else:
                 current_schedule = all_schedules[i-1]
                 next_schedule = all_schedules[i]
-                
-                earliest_start = current_schedule.schedule_end_time.replace(
-                    hour=(current_schedule.schedule_end_time.hour * 60 + current_schedule.schedule_end_time.minute + travel_time_previous) // 60,
-                    minute=(current_schedule.schedule_end_time.hour * 60 + current_schedule.schedule_end_time.minute + travel_time_previous) % 60
+
+                # calcula earliest_start de forma segura
+                start_total = (
+                    current_schedule.schedule_end_time.hour * 60 +
+                    current_schedule.schedule_end_time.minute +
+                    travel_time_previous
                 )
-                
-                latest_end = next_schedule.schedule_start_time.replace(
-                    hour=(next_schedule.schedule_start_time.hour * 60 + next_schedule.schedule_start_time.minute - travel_time_next) // 60,
-                    minute=(next_schedule.schedule_start_time.hour * 60 + next_schedule.schedule_start_time.minute - travel_time_next) % 60
+                if 0 <= start_total < 24*60:
+                    h1, m1 = divmod(start_total, 60)
+                    earliest_start = current_schedule.schedule_end_time.replace(
+                        hour=h1,
+                        minute=m1
+                    )
+                else:
+                    continue  # pula este slot se inválido
+
+                # calcula latest_end de forma segura
+                end_total = (
+                    next_schedule.schedule_start_time.hour * 60 +
+                    next_schedule.schedule_start_time.minute -
+                    travel_time_next
                 )
-                
+                if 0 <= end_total < 24*60:
+                    h2, m2 = divmod(end_total, 60)
+                    latest_end = next_schedule.schedule_start_time.replace(
+                        hour=h2,
+                        minute=m2
+                    )
+                else:
+                    continue  # pula se inválido
+
                 if earliest_start < latest_end:
                     available_slots.append({
                         "start": earliest_start.strftime("%H:%M"),
                         "end": latest_end.strftime("%H:%M")
                     })
-                    if (schedule_start_time >= earliest_start and schedule_end_time <= latest_end):
-                        if total_travel_time < min_travel_time:
-                            min_travel_time = total_travel_time
-                            best_position = i
+                    if (schedule_start_time >= earliest_start and
+                        schedule_end_time <= latest_end and
+                        total_travel_time < min_travel_time):
+                        min_travel_time = total_travel_time
+                        best_position = i
 
+        # Se não encontrou posição válida
         if best_position is None:
             if available_slots:
                 raise serializers.ValidationError({
@@ -247,6 +295,7 @@ class ScheduleSerializer(BaseSerializer):
                 })
 
         return best_position
+
 
     def create(self, validated_data):
         schedule_agent = validated_data.get("schedule_agent")
