@@ -6,6 +6,7 @@ from .models import *
 class MaterialAttributesInline(admin.TabularInline):
     model = MaterialAttributes
     extra = 0
+    autocomplete_fields = ['material']
 
 
 @admin.register(Materials)
@@ -19,6 +20,7 @@ class MaterialsAdmin(admin.ModelAdmin):
 class ProductMaterialsInline(admin.TabularInline):
     model = ProductMaterials
     extra = 0
+    autocomplete_fields = ["product", "material"]
 
 
 @admin.register(Product)
@@ -27,17 +29,18 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name', 'roof_type__name', 'params', 'branch__name')
     list_filter = ('default', 'is_deleted', 'created_at')
     inlines = [ProductMaterialsInline]
+    autocomplete_fields = ['roof_type', 'branch', "materials"]
 
 
 class ProjectMaterialsInline(admin.TabularInline):
     model = ProjectMaterials
-    autocomplete_fields = ['material']
+    autocomplete_fields = ['material', 'project']
     extra = 1
     
     
 class SaleProductInline(admin.TabularInline):
     model = SaleProduct
-    autocomplete_fields = ['product', 'commercial_proposal']
+    autocomplete_fields = ['product', 'commercial_proposal', 'sale']
     extra = 1
     
 
@@ -46,3 +49,4 @@ class PurchaseAdmin(admin.ModelAdmin):
     list_display = ('project', 'supplier', 'purchase_date', 'status', 'delivery_number', 'is_deleted')
     search_fields = ('project__project_number', 'project__customer__name', 'supplier__name', 'delivery_number')
     list_filter = ('status', 'is_deleted', 'purchase_date')
+    autocomplete_fields = ['project', 'supplier']

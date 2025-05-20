@@ -7,6 +7,7 @@ from field_services.models import *
 @admin.register(RoofType)
 class RoofTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
+    search_fields = ("name",)
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
