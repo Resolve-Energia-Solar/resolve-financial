@@ -1364,6 +1364,15 @@ class ProjectQuerySet(models.QuerySet):
                 distinct=True
             )
         )
+    
+    def with_has_construction(self):
+        return self.annotate(
+            has_construction=Exists(
+                CivilConstruction.objects.filter(
+                    project=OuterRef('pk')
+                ).values('id')
+            )
+        )
 
 
 
@@ -1417,7 +1426,7 @@ class Project(models.Model):
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
     material_list_is_completed = models.BooleanField("Lista de Materiais Finalizada", default=False, null=True, blank=True)
     documention_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
-    delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")], blank=True, null=True)
+    # delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")], blank=True, null=True)
     registered_circuit_breaker = models.ForeignKey(
         'logistics.Materials',
         on_delete=models.PROTECT,
