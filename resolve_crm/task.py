@@ -26,6 +26,36 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
+def generate_sale_contract_number(sale_id):
+    table = Sale._meta.db_table
+    lock_name = "contract_number_lock"
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT GET_LOCK(%s, 10)", [lock_name])
+        try:
+            cursor.execute(
+                f"""
+                SELECT MAX(CAST(SUBSTRING(contract_number, 6) AS UNSIGNED))
+                FROM {table}
+                WHERE contract_number LIKE 'RESOL%%'
+            """
+            )
+            last = cursor.fetchone()[0] or 0
+            new = last + 1
+            # agora usando zfill para 6 dígitos
+            new_cn = f"RESOL{str(new).zfill(6)}"
+
+            cursor.execute(
+                f"UPDATE {table} SET contract_number = %s WHERE id = %s",
+                [new_cn, sale_id],
+            )
+        finally:
+            cursor.execute("SELECT RELEASE_LOCK(%s)", [lock_name])
+
+    return ("success", f"Contract number {new_cn} generated for sale {sale_id}.")
+
+
+@shared_task
 def generate_project_number(project_id):
     with connection.cursor() as cursor:
         cursor.execute("SELECT GET_LOCK('project_number_lock', 10)")
@@ -174,7 +204,7 @@ def send_clicksign_url_to_teams(customer_name, seller_name, clicksign_url):
     payload = {
         "customer": customer_name,
         "seller": seller_name,
-        "clicksign_url": clicksign_url
+        "clicksign_url": clicksign_url,
     }
 
     logger.info(f"📌 Task: Enviando mensagem para o Teams")
@@ -238,6 +268,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
 
         try:
             from .task import send_clicksign_url_to_teams
+
             logger.info("Enviando link para o Teams")
             send_clicksign_url_to_teams.delay(
                 customer_name=sale.customer.complete_name,
@@ -304,6 +335,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
 
     try:
         from .task import send_clicksign_url_to_teams
+
         logger.info("Enviando link para o Teams")
         send_clicksign_url_to_teams.delay(
             customer_name=sale.customer.complete_name,
@@ -313,7 +345,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
         logger.info("Link enviado para o Teams com sucesso")
     except Exception as e:
         logger.error("Erro ao enviar link para o Teams", str(e))
-        
+
     logger.info(
         f"📌 Task: Envio de contrato para Clicksign concluído. ID da submissão: {submission.id}"
     )

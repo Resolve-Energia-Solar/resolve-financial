@@ -1,12 +1,11 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-import requests
-import sys
-from django.contrib.contenttypes.models import ContentType
-from .task import generate_project_number, remove_tag_from_sale
-from core.utils import create_process
+from .task import (
+    generate_project_number,
+    generate_sale_contract_number,
+    remove_tag_from_sale,
+)
 from resolve_crm.task import (
-    check_projects_and_update_sale_tag,
     update_or_create_sale_tag,
 )
 from .models import Project, Sale
@@ -16,10 +15,11 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
-# @receiver(post_save, sender=Project)
-# def post_create_project(sender, instance, created, **kwargs):
-#     if not instance.project_number:
-#         generate_project_number.delay(instance.pk)
+
+@receiver(post_save, sender=Project)
+def post_create_project(sender, instance, created, **kwargs):
+    if not instance.project_number:
+        generate_project_number.delay(instance.pk)
 
 
 @receiver(post_save, sender=Attachment)
@@ -46,6 +46,8 @@ def attachment_changed(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Sale)
 def handle_sale_post_save(sender, instance, created, **kwargs):
+    if not instance.contract_number:
+        generate_sale_contract_number.delay(instance.id)
     print(f"📌 Signal: Venda salva - ID: {instance.id} - Criada: {created}")
 
     def on_commit_all_tasks():

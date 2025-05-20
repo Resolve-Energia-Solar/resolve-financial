@@ -138,6 +138,7 @@ class UserViewSet(BaseModelViewSet):
         start_time = self.request.query_params.get('start_time')
         end_time = self.request.query_params.get('end_time')
         order_by_schedule_count = self.request.query_params.get('order_by_schedule_count')
+        role = self.request.query_params.get('role')
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -157,6 +158,8 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(
                 id__in=Category.objects.get(id=category).members.values_list('id', flat=True)
             )
+        if role:
+            queryset = queryset.filter(employee__role__name__icontains=role).distinct()
 
         if date and start_time and end_time:
             blocked_agents = BlockTimeAgent.objects.filter(
