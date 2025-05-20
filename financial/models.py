@@ -134,6 +134,9 @@ class Payment(models.Model):
         verbose_name = "Pagamento"
         verbose_name_plural = "Pagamentos"
         ordering = ["-created_at"]
+        permissions = [
+            ("can_change_payments_after_issued", "Can change payments after issued"),
+        ]
 
 
 
