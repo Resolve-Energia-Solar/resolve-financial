@@ -97,6 +97,8 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+SILKY_MAX_RECORDED_REQUESTS_CHECK_PERCENT = 0
+
 # REST_FLEX_FIELDS = {
 #     'SERIALIZER_EXTENSIONS': [
 #         'accounts.serializers',
