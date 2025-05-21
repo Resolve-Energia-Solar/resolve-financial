@@ -13,17 +13,6 @@ admin.site.site_title = "CRM"
 admin.site.index_title = "Administração"
 
 
-admin.site.unregister(Group)
-
-
-@admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
-    list_display = ("id", "name")
-    search_fields = ("id", "name")
-    list_per_page = 10
-    list_max_show_all = 100
-
-
 class PhoneNumberInline(admin.TabularInline):
     model = PhoneNumber
     extra = 1
@@ -80,7 +69,10 @@ class UserAdmin(UserAdmin):
         "first_document",
         "second_document",
     )
-    autocomplete_fields = ("addresses", "user_types",)
+    autocomplete_fields = (
+        "addresses",
+        "user_types",
+    )
     readonly_fields = ("last_login", "date_joined")
     inlines = [PhoneNumberInline, EmployeeInline]
 
@@ -146,7 +138,7 @@ class UserAdmin(UserAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        
+
         if not change:
             if obj.user_types.filter(name="Funcionário").exists():
                 self.send_invitation(request, [obj])
@@ -174,7 +166,13 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_filter = ("role", "department", "branch")
     list_per_page = 10
     list_max_show_all = 100
-    autocomplete_fields = ("branch", "department", "role", "user_manager", "related_branches",)
+    autocomplete_fields = (
+        "branch",
+        "department",
+        "role",
+        "user_manager",
+        "related_branches",
+    )
 
 
 @admin.register(Address)
@@ -243,11 +241,17 @@ class SquadAdmin(admin.ModelAdmin):
     list_display_links = ("name", "branch")
     search_fields = ("name",)
     list_filter = ("branch",)
-    autocomplete_fields = ("branch", "manager", "members",)
-    
+    autocomplete_fields = (
+        "branch",
+        "manager",
+        "members",
+    )
 
 
 @admin.register(UserType)
 class UserTypeAdmin(admin.ModelAdmin):
-    list_display = ("id", "name",)
+    list_display = (
+        "id",
+        "name",
+    )
     search_fields = ("name",)

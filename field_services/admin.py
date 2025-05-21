@@ -19,7 +19,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ("name", "category", "form")
     search_fields = ("name", "category__name")
-    autocomplete_fields = ("category", "form", "deadline", "groups")
+    autocomplete_fields = ("category", "form", "deadline")
 
 @admin.register(Forms)
 class FormsAdmin(admin.ModelAdmin):

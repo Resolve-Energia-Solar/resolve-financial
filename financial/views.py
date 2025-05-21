@@ -357,10 +357,6 @@ class FinancialRecordViewSet(BaseModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.responsible_status != "P":
-            return Response(
-                {"error": "A solicitação não está pendente de aprovação."}, status=400
-            )
 
         cancel_url = os.environ.get("CANCEL_FINANCIAL_RECORD_APPROVAL_URL")
         if cancel_url:
