@@ -72,13 +72,14 @@ class PaymentViewSet(BaseModelViewSet):
         # Criar parcelas se solicitado
         if create_installments and num_installments > 0:
             self.create_installments(instance, num_installments)
-    
-    
+
     def perform_update(self, serializer):
         user = self.request.user
         invoice_status = self.request.data.get("invoice_status", "").upper()
 
-        if invoice_status == "E" and not user.has_perm("financial.can_change_payments_after_issued"):
+        if invoice_status == "E" and not user.has_perm(
+            "financial.can_change_payments_after_issued"
+        ):
             raise PermissionDenied("Você não tem permissão para editar este pagamento.")
 
         serializer.save()
@@ -434,7 +435,7 @@ class FinancialRecordViewSet(BaseModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=["get"], url_path="financial-record-indicators")
     def financial_record_indicators(self, request, *args, **kwargs):
         filter_params = request.GET.dict()
@@ -456,14 +457,21 @@ class FinancialRecordViewSet(BaseModelViewSet):
                 Sum("value", output_field=DecimalField()),
                 Value(0, output_field=DecimalField()),
             ),
-            total_in_progress=Count("id", filter=Q(responsible_status="A", payment_status="P")),
-            total_with_error=Count("id", filter=Q(responsible_status="A", payment_status="P", integration_code__isnull=True)),
+            total_in_progress=Count(
+                "id", filter=Q(responsible_status="A", payment_status="P")
+            ),
+            total_with_error=Count(
+                "id",
+                filter=Q(
+                    responsible_status="A",
+                    payment_status="P",
+                    integration_code__isnull=True,
+                ),
+            ),
         )
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-
-
 
 
 class OmieIntegrationView(APIView):
@@ -778,6 +786,7 @@ class FinancialRecordApprovalView(APIView):
                 logger.error(
                     f"Failed to update due date for financial record {financial_record_id}: {e}"
                 )
+                return Response({"error": "Failed to update due date"}, status=500)
 
             try:
                 response = OmieIntegrationView().create_payment_request(
@@ -791,6 +800,10 @@ class FinancialRecordApprovalView(APIView):
                     financial_record.save()
             except Exception as e:
                 logger.error(f"Failed to create payment request in Omie: {e}")
+                return Response(
+                    {"error": "Failed to create payment request in Omie"},
+                    status=response.status_code,
+                )
 
         return Response({"message": "Financial record(s) approved"})
 
@@ -867,11 +880,12 @@ class SendFinancialRecordsToOmieView(APIView):
         financial_records_ids = request.data.get("financial_records_ids", [])
         if not financial_records_ids:
             return Response({"error": "No financial records IDs provided"}, status=400)
-        
+
         for id in financial_records_ids:
             from .task import send_to_omie_task
+
             send_to_omie_task.delay(id)
-        
+
         return Response({"message": "Financial records sent to Omie for processing"})
 
 
