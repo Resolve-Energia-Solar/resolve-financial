@@ -80,7 +80,7 @@ class UserAdmin(UserAdmin):
         "first_document",
         "second_document",
     )
-    autocomplete_fields = ["addresses"]
+    autocomplete_fields = ("addresses", "user_types",)
     readonly_fields = ("last_login", "date_joined")
     inlines = [PhoneNumberInline, EmployeeInline]
 
@@ -174,6 +174,7 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_filter = ("role", "department", "branch")
     list_per_page = 10
     list_max_show_all = 100
+    autocomplete_fields = ("branch", "department", "role", "user_manager", "related_branches",)
 
 
 @admin.register(Address)
@@ -225,18 +226,28 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name", "email")
     list_per_page = 10
     list_max_show_all = 100
+    autocomplete_fields = ("owner",)
 
 
 @admin.register(PhoneNumber)
 class PhoneNumberAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("country_code", "area_code", "phone_number", "is_main")
+    list_display_links = ("country_code", "area_code", "phone_number")
+    search_fields = ("country_code", "area_code", "phone_number")
+    autocomplete_fields = ("user",)
 
 
 @admin.register(Squad)
 class SquadAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("name", "branch")
+    list_display_links = ("name", "branch")
+    search_fields = ("name",)
+    list_filter = ("branch",)
+    autocomplete_fields = ("branch", "manager", "members",)
+    
 
 
 @admin.register(UserType)
 class UserTypeAdmin(admin.ModelAdmin):
-    list_display = ("id", "name")
+    list_display = ("id", "name",)
+    search_fields = ("name",)

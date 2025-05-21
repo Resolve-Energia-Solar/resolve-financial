@@ -152,7 +152,7 @@ class SaleViewSet(BaseModelViewSet):
         
         if query_params.get("delivery_type__in"):
             queryset = queryset.filter(
-                projects__purchases__delivery_type__in=query_params.get("delivery_type__in").split(",")
+                projects__delivery_type__in=query_params.get("delivery_type__in").split(",")
             )
 
         if tag := query_params.get("tag_name__exact"):
@@ -391,7 +391,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         if delivery_type__in:
             delivery_type_list = delivery_type__in.split(",")
-            queryset = queryset.filter(purchases__delivery_type__in=delivery_type_list)
+            queryset = queryset.filter(delivery_type__in=delivery_type_list)
 
         if attachments_status:
             queryset = queryset.filter(

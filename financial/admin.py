@@ -19,11 +19,13 @@ class FinancierAdmin(admin.ModelAdmin):
     search_fields = ("name", "cnpj", "email")
     list_filter = ("is_deleted", "created_at")
     ordering = ("-created_at",)
+    autocomplete_fields = ["address"]
 
 
 class PaymentInstallmentInline(admin.StackedInline):
     model = PaymentInstallment
     extra = 1
+    autocomplete_fields = ["payment"]
 
 
 @admin.register(Payment)
@@ -40,6 +42,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = ("payment_type", "due_date", "created_at")
     ordering = ("-created_at",)
     inlines = [PaymentInstallmentInline]
+    autocomplete_fields = ["borrower", "sale", "financier"]
 
 
 @admin.register(PaymentInstallment)
@@ -57,6 +60,7 @@ class PaymentInstallmentAdmin(admin.ModelAdmin):
     list_filter = ("is_paid", "due_date", "created_at")
     ordering = ("-created_at",)
     actions = ["mark_as_paid"]
+    autocomplete_fields = ["payment"]
 
     def mark_as_paid(self, request, queryset):
         for installment in queryset:
@@ -91,6 +95,8 @@ class FranchiseInstallmentAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at")
     ordering = ("-created_at",)
     actions = ["mark_as_paid"]
+    autocomplete_fields = ["sale"]
+    
 
     def total_value(self, obj):
         return obj.total_value

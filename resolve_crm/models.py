@@ -1096,9 +1096,9 @@ class ProjectQuerySet(models.QuerySet):
                     Q(purchases__isnull=False) &
                     (
                         # ENTREGA DIRETA E NÃO ESTÁ COM O STATUS 'COMPRA REALIZADA (R)'
-                        (Q(purchases__delivery_type='D') & ~Q(purchases__status='R')) |
+                        (Q(delivery_type='D') & ~Q(purchases__status='R')) |
                         # ENTREGA CD E STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO NÃO 'CO' E LISTA DE MATERIAIS NÃO FINALIZADA
-                        (Q(purchases__delivery_type='C') & Q(purchases__status='R') & ~Q(designer_status__in=['CO']) & ~Q(material_list_is_completed=True))
+                        (Q(delivery_type='C') & Q(purchases__status='R') & ~Q(designer_status__in=['CO']) & ~Q(material_list_is_completed=True))
                     ),
                     then=Value('Bloqueado')
                 ),
@@ -1106,7 +1106,7 @@ class ProjectQuerySet(models.QuerySet):
                 # CASO ENTREGA DIRETA E STATUS 'COMPRA REALIZADA (R)'
                 When(
                     Q(purchases__isnull=False) &
-                    Q(purchases__delivery_type='D') &
+                    Q(delivery_type='D') &
                     Q(purchases__status='R') &
                     Q(has_delivery=False),
                     then=Value('Liberado')
@@ -1115,7 +1115,7 @@ class ProjectQuerySet(models.QuerySet):
                 # CASO ENTREGA CD COM STATUS 'COMPRA REALIZADA (R)' E STATUS DO PROJETO 'CO' E LISTA DE MATERIAIS FINALIZADA
                 When(
                     Q(purchases__isnull=False) &
-                    Q(purchases__delivery_type='C') &
+                    Q(delivery_type='C') &
                     Q(purchases__status='R') &
                     Q(designer_status__in=['CO']) &
                     Q(material_list_is_completed=True) &
@@ -1281,6 +1281,23 @@ class ProjectQuerySet(models.QuerySet):
             )
         )
 
+    
+    def with_construction_status(self):
+        return self.annotate(
+            has_construction=Exists(
+                CivilConstruction.objects.filter(
+                    project=OuterRef('pk')
+                ).values('id')
+            ),
+            construction_status=Case(
+                When(Q(has_construction=True), then=Value('Em obra')),
+                When(Q(has_construction=False), then=Value('Sem obra')),
+                default=Value('Sem obra'),
+                output_field=CharField(),
+            )
+        ).distinct()
+    
+    
     def with_status_annotations(self):
         return (
             self
@@ -1426,7 +1443,7 @@ class Project(models.Model):
     is_documentation_completed = models.BooleanField("Documentos Completos", default=False, null=True, blank=True)
     material_list_is_completed = models.BooleanField("Lista de Materiais Finalizada", default=False, null=True, blank=True)
     documention_completion_date = models.DateTimeField("Data de Conclusão do Documento", null=True, blank=True)
-    # delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")], blank=True, null=True)
+    delivery_type = models.CharField("Tipo de Entrega", max_length=1, choices=[("D", "Entrega Direta"), ("C", "Entrega CD")], blank=True, null=True)
     registered_circuit_breaker = models.ForeignKey(
         'logistics.Materials',
         on_delete=models.PROTECT,
