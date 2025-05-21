@@ -1282,22 +1282,6 @@ class ProjectQuerySet(models.QuerySet):
         )
 
     
-    def with_construction_status(self):
-        return self.annotate(
-            has_construction=Exists(
-                CivilConstruction.objects.filter(
-                    project=OuterRef('pk')
-                ).values('id')
-            ),
-            construction_status=Case(
-                When(Q(has_construction=True), then=Value('Em obra')),
-                When(Q(has_construction=False), then=Value('Sem obra')),
-                default=Value('Sem obra'),
-                output_field=CharField(),
-            )
-        ).distinct()
-    
-    
     def with_status_annotations(self):
         return (
             self
