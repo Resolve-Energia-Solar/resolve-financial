@@ -51,7 +51,10 @@ def resend_approval_request_to_responsible_task(record_id):
         return {"status": "error", "message": "Record not found"}
 
     cancel_url = os.environ.get("CANCEL_FINANCIAL_RECORD_APPROVAL_URL")
-    if cancel_url:
+    if cancel_url and record.responsible_request_integration_code:
+        logger.info(
+            f"Cancelando o pedido de aprovação do registro {record.protocol}."
+        )
         body = {"run_id": record.responsible_request_integration_code}
         cancel_response = requests.post(cancel_url, json=body)
         logger.info(
@@ -93,7 +96,10 @@ def resend_approval_request_to_responsible_task(record_id):
                     if integration_code:
                         record.responsible_request_integration_code = integration_code
                         record.save()
-                        return {"status": "success", "message": "Invitation resent"}
+                        logger.info(
+                            f"Registro {record.protocol} atualizado com o código de integração: {integration_code}"
+                        )
+                    return {"status": "success", "message": f"Approval request resent{', previously canceled' if integration_code else ''}"}
                 except requests.RequestException as e:
                     logger.error(
                         f"Erro ao enviar webhook para o registro {record.protocol}: {e}"
