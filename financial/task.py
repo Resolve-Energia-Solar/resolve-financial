@@ -42,7 +42,6 @@ def send_to_omie_task(record_id):
         )
         return {"status": "warning", "message": "Record does not meet sending criteria"}
 
-
 @shared_task
 def resend_approval_request_to_responsible_task(record_id):
     try:
@@ -50,6 +49,21 @@ def resend_approval_request_to_responsible_task(record_id):
     except FinancialRecord.DoesNotExist:
         logger.error(f"Registro {record_id} não encontrado.")
         return {"status": "error", "message": "Record not found"}
+
+    cancel_url = os.environ.get("CANCEL_FINANCIAL_RECORD_APPROVAL_URL")
+    if cancel_url and record.responsible_request_integration_code:
+        logger.info(
+            f"Cancelando o pedido de aprovação do registro {record.protocol}."
+        )
+        body = {"run_id": record.responsible_request_integration_code}
+        cancel_response = requests.post(cancel_url, json=body)
+        logger.info(
+            f"Cancel approval request response: {cancel_response.status_code} - {cancel_response.text}"
+        )
+    else:
+        logger.warning(
+            "CANCEL_FINANCIAL_RECORD_APPROVAL_URL não está definido nas variáveis de ambiente."
+        )
 
     omie_service = OmieIntegrationView()
     if record.responsible_status == "P":
@@ -78,7 +92,14 @@ def resend_approval_request_to_responsible_task(record_id):
                     logger.info(
                         f"Convite reenviado para o gestor do registro {record.protocol}."
                     )
-                    return {"status": "success", "message": "Invitation resent"}
+                    integration_code = response.headers.get("x-ms-workflow-run-id")
+                    if integration_code:
+                        record.responsible_request_integration_code = integration_code
+                        record.save()
+                        logger.info(
+                            f"Registro {record.protocol} atualizado com o código de integração: {integration_code}"
+                        )
+                    return {"status": "success", "message": f"Approval request resent{', previously canceled' if integration_code else ''}"}
                 except requests.RequestException as e:
                     logger.error(
                         f"Erro ao enviar webhook para o registro {record.protocol}: {e}"
@@ -88,7 +109,10 @@ def resend_approval_request_to_responsible_task(record_id):
                 logger.error(
                     f"Informações do fornecedor incompletas para o registro {record.protocol}."
                 )
-                return {"status": "error", "message": "Incomplete supplier information from Omie"}
+                return {
+                    "status": "error",
+                    "message": "Incomplete supplier information from Omie",
+                }
         else:
             logger.error(
                 f"Erro ao obter informações do fornecedor para o registro {record.protocol}."
