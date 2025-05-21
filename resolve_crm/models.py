@@ -1282,6 +1282,28 @@ class ProjectQuerySet(models.QuerySet):
         )
 
     
+    def with_construction_status(self):
+        return self.annotate(
+            has_construction=Exists(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__category__name__icontains='Vistoria',
+                ).filter(
+                    Q(final_service_opinion__name__icontains='Aprovad') & (
+                        Q(final_service_opinion__name__icontains='Obra') |
+                        Q(final_service_opinion__name__icontains='Sombreamento')
+                    )
+                ).values('id')
+            ),
+            construction_status=Case(
+                When(Q(has_construction=True), then=Value('Em obra')),
+                When(Q(has_construction=False), then=Value('Sem obra')),
+                default=Value('Sem obra'),
+                output_field=CharField(),
+            )
+        ).distinct()
+    
+    
     def with_status_annotations(self):
         return (
             self
@@ -1305,6 +1327,9 @@ class ProjectQuerySet(models.QuerySet):
             .with_expected_delivery_date()
             # Installation
             .with_installation_status()
+            # Construction
+            .with_construction_status()
+            .with_in_construction()
         ).distinct()
 
 
@@ -1366,11 +1391,17 @@ class ProjectQuerySet(models.QuerySet):
             )
         )
     
-    def with_has_construction(self):
+    def with_in_construction(self):
         return self.annotate(
-            has_construction=Exists(
-                CivilConstruction.objects.filter(
-                    project=OuterRef('pk')
+            in_construction=Exists(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__category__name__icontains='Vistoria',
+                ).filter(
+                    Q(final_service_opinion__name__icontains='Aprovad') & (
+                        Q(final_service_opinion__name__icontains='Obra') |
+                        Q(final_service_opinion__name__icontains='Sombreamento')
+                    )
                 ).values('id')
             )
         )
