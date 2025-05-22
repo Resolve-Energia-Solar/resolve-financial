@@ -226,11 +226,12 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     except Sale.DoesNotExist:
         return {"status": "error", "message": f"Sale {sale_id} não encontrada."}
 
-    # Verifica se já existe um envio anterior para atualizar
-    existing_submission = ContractSubmission.objects.filter(sale=sale).first()
+    existing_submission = (
+        ContractSubmission.objects.filter(sale=sale).order_by("-id").first()
+    )
+    # Tenta atualizar se já existe
     if existing_submission:
         envelope_id = existing_submission.envelope_id
-        # Atualiza o documento do envelope
         document_response = update_clicksign_document(
             envelope_id,
             existing_submission.key_number,
@@ -240,54 +241,53 @@ def send_contract_to_clicksign(sale_id, pdf_content):
             existing_submission.request_signature_key,
             pdf_content,
         )
+        # Em caso de erro, anula existing_submission para cair no fluxo de criação
         if document_response.get("status") == "error":
-            return {
-                "status": "error",
-                "message": f"Erro ao atualizar documento no envelope: {document_response}",
-            }
-        document_key = document_response.get("new_document_id")
-        if not document_key:
-            return {
-                "status": "error",
-                "message": "Chave do documento ausente após atualização.",
-            }
-
-        # Atualiza os dados da submissão existente
-        existing_submission.key_number = document_key
-        existing_submission.submit_datetime = timezone.now()
-        existing_submission.due_date = timezone.now() + datetime.timedelta(days=7)
-        existing_submission.save()
-
-        # Envia notificação (opcional)
-        notif_response = send_notification(envelope_id)
-        if notif_response.get("status") != "success":
-            return {
-                "status": "error",
-                "message": "Erro ao enviar notificação após atualização do documento.",
-            }
-
-        try:
-            from .task import send_clicksign_url_to_teams
-
-            logger.info("Enviando link para o Teams")
-            send_clicksign_url_to_teams.delay(
-                customer_name=sale.customer.complete_name,
-                seller_name=sale.seller.complete_name,
-                clicksign_url=f"https://app.clicksign.com/widget/notarial/{existing_submission.request_signature_key}/documents/{document_key}",
+            logger.warning(
+                "Erro ao atualizar documento, criando novo envelope", document_response
             )
-            logger.info("Link enviado para o Teams com sucesso")
-        except Exception as e:
-            logger.error("Erro ao enviar link para o Teams", str(e))
+            existing_submission = None
+        else:
+            document_key = document_response.get("new_document_id")
+            if not document_key:
+                logger.warning(
+                    "Chave do documento ausente após atualização, criando novo envelope"
+                )
+                existing_submission = None
+            else:
+                # segue fluxo de atualização normal...
+                existing_submission.key_number = document_key
+                existing_submission.submit_datetime = timezone.now()
+                existing_submission.due_date = timezone.now() + datetime.timedelta(
+                    days=7
+                )
+                existing_submission.save()
+                notif_response = send_notification(envelope_id)
+                if notif_response.get("status") != "success":
+                    return {
+                        "status": "error",
+                        "message": "Erro ao enviar notificação após atualização.",
+                    }
+                # envia link ao Teams...
+                try:
+                    from .task import send_clicksign_url_to_teams
 
-        return {"status": "success", "submission_id": existing_submission.id}
+                    send_clicksign_url_to_teams.delay(
+                        customer_name=sale.customer.complete_name,
+                        seller_name=sale.seller.complete_name,
+                        clicksign_url=f"https://app.clicksign.com/widget/notarial/{existing_submission.request_signature_key}/documents/{document_key}",
+                    )
+                except Exception as e:
+                    logger.error("Erro ao enviar link para o Teams", str(e))
+                return {"status": "success", "submission_id": existing_submission.id}
 
-    # Fluxo de criação de envelope, documento, signatário e requisitos (novo envio)
+    # --- fluxo de criação de envelope (novo envio) ---
     envelope_response = create_clicksign_envelope(
         sale.contract_number, sale.customer.complete_name, sale.seller.complete_name
     )
     if envelope_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao criar envelope no Clicksign."}
-    envelope_id = envelope_response.get("envelope_id")
+    envelope_id = envelope_response["envelope_id"]
 
     document_response = create_clicksign_document(
         envelope_id, sale.contract_number, sale.customer.complete_name, pdf_content
@@ -305,7 +305,7 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     signer_response = create_signer(envelope_id, sale.customer)
     if signer_response.get("status") != "success":
         return {"status": "error", "message": "Erro ao criar signatário."}
-    signer_key = signer_response.get("signer_key")
+    signer_key = signer_response["signer_key"]
 
     req_response = add_envelope_requirements(envelope_id, document_key, signer_key)
     if req_response.get("status") != "success":
@@ -336,19 +336,15 @@ def send_contract_to_clicksign(sale_id, pdf_content):
     try:
         from .task import send_clicksign_url_to_teams
 
-        logger.info("Enviando link para o Teams")
         send_clicksign_url_to_teams.delay(
             customer_name=sale.customer.complete_name,
             seller_name=sale.seller.complete_name,
             clicksign_url=f"https://app.clicksign.com/widget/notarial/{signer_key}/documents/{document_key}",
         )
-        logger.info("Link enviado para o Teams com sucesso")
     except Exception as e:
         logger.error("Erro ao enviar link para o Teams", str(e))
 
-    logger.info(
-        f"📌 Task: Envio de contrato para Clicksign concluído. ID da submissão: {submission.id}"
-    )
+    logger.info(f"📌 Task concluída. ID da submissão: {submission.id}")
     return {"status": "success", "submission_id": submission.id}
 
 

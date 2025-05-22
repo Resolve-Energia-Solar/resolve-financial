@@ -163,8 +163,13 @@ class CivilConstruction(models.Model):
         choices=[("P", "Pendente"), ("F", "Finalizada"), ("C", "Cancelado"), ("EA", "Em Andamento")],
         default="P"
     )
-    deadline = models.DateField(
-        "Prazo",
+    start_date = models.DateField(
+        "Início da Obra",
+        null=True,
+        blank=True
+    )
+    end_date = models.DateField(
+        "Fim da Obra",
         null=True,
         blank=True
     )
