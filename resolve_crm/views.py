@@ -384,6 +384,7 @@ class ProjectViewSet(BaseModelViewSet):
         delivery_type__in = request.query_params.get("delivery_type__in")
         installation_status = request.query_params.get("installation_status")
         in_construction = request.query_params.get("in_construction")
+        construction_status__in = request.query_params.get("construction_status__in")
 
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
@@ -479,7 +480,12 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(
                 in_construction=in_construction.lower() == "true"
             )
-            
+
+        if 'construction_status' in queryset.query.annotations and construction_status__in:
+            construction_status_list = construction_status__in.split(",")
+            queryset = queryset.filter(
+                construction_status__in=construction_status_list
+            )
 
         if access_opnion == "liberado":
             queryset = queryset.filter(access_opnion__icontains="Liberado")
