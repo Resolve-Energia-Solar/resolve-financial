@@ -1284,21 +1284,39 @@ class ProjectQuerySet(models.QuerySet):
     
     def with_construction_status(self):
         return self.annotate(
-            has_construction=Exists(
+            # Determine if the project needs construction 
+            # (if there's a schedule with an approved inspection that mentions construction or shading)
+            needs_construction=Exists(
                 Schedule.objects.filter(
                     project=OuterRef('pk'),
                     service__category__name__icontains='Vistoria',
+                    final_service_opinion__name__icontains='Aprovad'
                 ).filter(
-                    Q(final_service_opinion__name__icontains='Aprovad') & (
-                        Q(final_service_opinion__name__icontains='Obra') |
-                        Q(final_service_opinion__name__icontains='Sombreamento')
-                    )
+                    Q(final_service_opinion__name__icontains='Obra') |
+                    Q(final_service_opinion__name__icontains='Sombreamento')
                 ).values('id')
             ),
+            # Check if there's any civil construction associated with the project
+            has_construction=Exists(
+                CivilConstruction.objects.filter(
+                    project=OuterRef('pk')
+                )
+            ),
+            # Return the status based on the conditions:
+            # - If has construction, return the status of the latest construction
+            # - If needs construction but has no construction, return empty string
+            # - If doesn't need construction, return "Não se aplica"
             construction_status=Case(
-                When(Q(has_construction=True), then=Value('Em obra')),
-                When(Q(has_construction=False), then=Value('Sem obra')),
-                default=Value('Sem obra'),
+                When(
+                    Q(has_construction=True), 
+                    then=Subquery(
+                        CivilConstruction.objects.filter(
+                            project=OuterRef('pk')
+                        ).order_by('-id').values('status')[:1]
+                    )
+                ),
+                When(Q(needs_construction=True) & Q(has_construction=False), then=Value('')),
+                default=Value('NA'),
                 output_field=CharField(),
             )
         ).distinct()
