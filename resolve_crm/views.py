@@ -308,6 +308,7 @@ class ProjectViewSet(BaseModelViewSet):
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
             "installation_status": lambda qs: qs.with_installation_status(),
             "in_construction": lambda qs: qs.with_in_construction(),
+            "construction_status": lambda qs: qs.with_construction_status(),
         }
 
         if metrics:
@@ -383,6 +384,7 @@ class ProjectViewSet(BaseModelViewSet):
         delivery_type__in = request.query_params.get("delivery_type__in")
         installation_status = request.query_params.get("installation_status")
         in_construction = request.query_params.get("in_construction")
+        construction_status__in = request.query_params.get("construction_status__in")
 
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
@@ -478,7 +480,12 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(
                 in_construction=in_construction.lower() == "true"
             )
-            
+
+        if 'construction_status' in queryset.query.annotations and construction_status__in:
+            construction_status_list = construction_status__in.split(",")
+            queryset = queryset.filter(
+                construction_status__in=construction_status_list
+            )
 
         if access_opnion == "liberado":
             queryset = queryset.filter(access_opnion__icontains="Liberado")
@@ -701,7 +708,35 @@ class ProjectViewSet(BaseModelViewSet):
         return Response({"indicators": indicators})
 
 
+    @action(detail=False, methods=["get"], url_path="constructions-indicators")
+    def constructions_indicators(self, request):
+        filter_params = request.GET.dict()
+        filter_hash = md5(str(filter_params).encode()).hexdigest()
+        cache_key = f"constructions_indicators_{filter_hash}"
 
+        cached_indicators = cache.get(cache_key)
+        if cached_indicators:
+            return Response({"indicators": cached_indicators})
+        
+        request.query_params._mutable = True
+        request.query_params["metrics"] = (
+            "construction_status"
+        )
+        request.query_params._mutable = False
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.apply_additional_filters(queryset, request)
+
+        indicators = queryset.aggregate(
+            total_pending=Count('id', filter=Q(construction_status="P")),
+            total_in_progress=Count('id', filter=Q(construction_status="EA")),
+            total_finished=Count('id', filter=Q(construction_status="F")),
+            total_canceled=Count('id', filter=Q(construction_status="C")),
+            total_without_construction=Count('id', filter=Q(construction_status="S")),
+            # total_not_applicable=Count('id', filter=Q(construction_status="NA")),
+        )
+
+        cache.set(cache_key, indicators, 60)
+        return Response({"indicators": indicators})
 
 
     @action(detail=False, methods=["get"], url_path="logistics-indicators")
