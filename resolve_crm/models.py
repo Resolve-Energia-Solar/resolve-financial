@@ -1315,7 +1315,7 @@ class ProjectQuerySet(models.QuerySet):
                         ).order_by('-id').values('status')[:1]
                     )
                 ),
-                When(Q(needs_construction=True) & Q(has_construction=False), then=Value('')),
+                When(Q(needs_construction=True) & Q(has_construction=False), then=Value('S')),
                 default=Value('NA'),
                 output_field=CharField(),
             )

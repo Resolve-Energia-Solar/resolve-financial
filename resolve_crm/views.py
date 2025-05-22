@@ -725,7 +725,7 @@ class ProjectViewSet(BaseModelViewSet):
             total_in_progress=Count('id', filter=Q(construction_status="EA")),
             total_finished=Count('id', filter=Q(construction_status="F")),
             total_canceled=Count('id', filter=Q(construction_status="C")),
-            total_without_construction=Count('id', filter=Q(construction_status="")),
+            total_without_construction=Count('id', filter=Q(construction_status="S")),
             # total_not_applicable=Count('id', filter=Q(construction_status="NA")),
         )
 
