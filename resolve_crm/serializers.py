@@ -382,14 +382,14 @@ class ProjectSerializer(BaseSerializer):
         latest_installation = obj.latest_installation_obj
         if latest_installation:
             products_list = list(latest_installation.products.all())
-            pannel_description = products_list[0].description if products_list else None
+            product_description = products_list[0].description if products_list else None
             
             address_data = AddressSerializer(latest_installation.address).data if latest_installation.address else {}
             return {
                 'id': latest_installation.id,
                 'schedule_agent': latest_installation.schedule_agent.pk if latest_installation.schedule_agent else None,
                 'final_service_opinion_user': latest_installation.final_service_opinion_user.pk if latest_installation.final_service_opinion_user else None,
-                'pannel_qtd': pannel_description,
+                'product_description': product_description,
                 'complete_address': address_data.get('complete_address') if latest_installation.address else None,
                 'neighborhood': latest_installation.address.neighborhood if latest_installation.address else None
             }
