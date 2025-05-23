@@ -315,7 +315,8 @@ class ProjectSerializer(BaseSerializer):
     expected_delivery_status = serializers.CharField(read_only=True)
     delivery_status = serializers.CharField(read_only=True)
     installation_status = serializers.CharField(read_only=True)
-    
+    is_released_to_installation = serializers.BooleanField(read_only=True, required=False)
+    latest_installation = SerializerMethodField()
     access_opnion_days_int = serializers.IntegerField(read_only=True)
     load_increase_days_int = serializers.IntegerField(read_only=True)
     branch_adjustment_days_int = serializers.IntegerField(read_only=True)
@@ -376,7 +377,23 @@ class ProjectSerializer(BaseSerializer):
     def get_address(self, obj):
         main_unit = obj.main_unit_prefetched[0] if hasattr(obj, 'main_unit_prefetched') and obj.main_unit_prefetched else None
         return AddressSerializer(main_unit.address).data if main_unit and main_unit.address else None
-
+    
+    def get_latest_installation(self, obj):
+        latest_installation = obj.latest_installation_obj
+        if latest_installation:
+            products_list = list(latest_installation.products.all())
+            pannel_description = products_list[0].description if products_list else None
+            
+            address_data = AddressSerializer(latest_installation.address).data if latest_installation.address else {}
+            return {
+                'id': latest_installation.id,
+                'schedule_agent': latest_installation.schedule_agent.pk if latest_installation.schedule_agent else None,
+                'final_service_opinion_user': latest_installation.final_service_opinion_user.pk if latest_installation.final_service_opinion_user else None,
+                'pannel_qtd': pannel_description,
+                'complete_address': address_data.get('complete_address') if latest_installation.address else None,
+                'neighborhood': latest_installation.address.neighborhood if latest_installation.address else None
+            }
+        return None
 
     def update(self, instance, validated_data):
         materials_data = validated_data.pop('materials_data', [])

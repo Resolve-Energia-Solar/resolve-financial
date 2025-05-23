@@ -307,6 +307,8 @@ class ProjectViewSet(BaseModelViewSet):
             "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
             "installation_status": lambda qs: qs.with_installation_status(),
+            "is_released_to_installation": lambda qs: qs.with_is_released_to_installation(),
+            "latest_installation": lambda qs: qs.with_latest_installation(),
             "in_construction": lambda qs: qs.with_in_construction(),
             "construction_status": lambda qs: qs.with_construction_status(),
         }
@@ -383,6 +385,7 @@ class ProjectViewSet(BaseModelViewSet):
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
         installation_status = request.query_params.get("installation_status")
+        is_released_to_installation = request.query_params.get("is_released_to_installation")
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
 
@@ -422,6 +425,11 @@ class ProjectViewSet(BaseModelViewSet):
             queryset = queryset.filter(
                 installation_status__in=installation_status.split(",")
             )
+        if "is_released_to_installation" in queryset.query.annotations and is_released_to_installation:
+            queryset = queryset.filter(
+                is_released_to_installation=is_released_to_installation.lower() == "true"
+            )
+
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
         if payment_types:

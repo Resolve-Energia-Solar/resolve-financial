@@ -1150,6 +1150,46 @@ class ProjectQuerySet(models.QuerySet):
             )
         ).distinct()
     
+    def with_is_released_to_installation(self):
+        return self.with_is_released_to_engineering().with_delivery_status().annotate(
+            # Verifica se existe vistoria aprovada com obra ou sombreamento
+            has_construction_need=Exists(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__category__name__icontains='Vistoria',
+                    final_service_opinion__name__icontains='Aprovad',
+                ).filter(
+                    Q(final_service_opinion__name__icontains='Obra') | 
+                    Q(final_service_opinion__name__icontains='Sombreamento')
+                ).values('id')
+            ),
+            # Verifica se existe obra com status "F" (Finalizado)
+            has_finished_construction=Exists(
+                CivilConstruction.objects.filter(
+                    project=OuterRef('pk'),
+                    status='F'
+                ).values('id')
+            ),
+            # Condição final de liberação
+            is_released_to_installation=Case(
+                # Está liberado quando:
+                When(
+                    # Está liberado para engenharia E está entregue
+                    Q(is_released_to_engineering=True) &
+                    Q(delivery_status='Entregue') &
+                    # E (não precisa de obra OU (precisa de obra E a obra está finalizada))
+                    (
+                        ~Q(has_construction_need=True) | 
+                        (Q(has_construction_need=True) & Q(has_finished_construction=True))
+                    ),
+                    then=Value(True)
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        ).distinct()
+
+
     def with_installation_status(self):
         return (
             self.with_delivery_status()
@@ -1211,6 +1251,18 @@ class ProjectQuerySet(models.QuerySet):
             )
             .distinct()
         )
+    
+    def with_latest_installation(self):
+        return self.annotate(
+            latest_installation=Subquery(
+                Schedule.objects.filter(
+                    project=OuterRef('pk'),
+                    service__category__name__icontains='Instalação',
+                ).order_by('-created_at').values('id')[:1]
+            )
+        ).distinct()
+    
+    # def with_installation_days(self):
     
     # FINANCEIRO
     def with_installments_indicators(self):
@@ -1344,6 +1396,8 @@ class ProjectQuerySet(models.QuerySet):
             .with_purchase_status()
             .with_expected_delivery_date()
             # Installation
+            .with_is_released_to_installation()
+            .with_installation_status()
             .with_installation_status()
             # Construction
             .with_construction_status()
@@ -1500,6 +1554,18 @@ class Project(models.Model):
             att for att in self.attachments.all()
             if att.content_type_id == self.content_type_id and att.status == 'EA'
         ]
+    
+    @cached_property
+    def latest_installation_obj(self):
+        """
+        Return the Schedule instance itself (or None),
+        so serializers can treat it like a real FK.
+        """
+        pk = getattr(self, 'latest_installation', None)
+        if not pk:
+            return None
+        # you could cache this if you like:
+        return Schedule.objects.get(pk=pk)
     
     # @property
     # def missing_documents(self):
