@@ -681,7 +681,7 @@ class ProjectViewSet(BaseModelViewSet):
         
         # Count projects by installation status
         status_counts = queryset.values('installation_status').annotate(
-            count=Count('id')
+            count=Count('id', distinct=True)
         ).order_by('installation_status')
         
         installation_status_dict = {
