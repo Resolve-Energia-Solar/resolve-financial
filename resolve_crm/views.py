@@ -384,7 +384,7 @@ class ProjectViewSet(BaseModelViewSet):
         )
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
-        installation_status = request.query_params.get("installation_status")
+        installation_status__in = request.query_params.get("installation_status__in")
         is_released_to_installation = request.query_params.get("is_released_to_installation")
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
@@ -421,9 +421,9 @@ class ProjectViewSet(BaseModelViewSet):
         if "delivery_status" in queryset.query.annotations and delivery_status:
             queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
 
-        if "installation_status" in queryset.query.annotations and installation_status:
+        if "installation_status" in queryset.query.annotations and installation_status__in:
             queryset = queryset.filter(
-                installation_status__in=installation_status.split(",")
+                installation_status__in=installation_status__in.split(",")
             )
         if "is_released_to_installation" in queryset.query.annotations and is_released_to_installation:
             queryset = queryset.filter(
@@ -672,7 +672,7 @@ class ProjectViewSet(BaseModelViewSet):
             return Response(cached_data)
 
         request.query_params._mutable = True
-        request.query_params["metrics"] = "avg_time_installation,installation_status"
+        request.query_params["metrics"] = "installation_status"
         request.query_params._mutable = False
 
         queryset = self.filter_queryset(self.get_queryset())
