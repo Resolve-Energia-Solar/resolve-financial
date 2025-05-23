@@ -307,6 +307,8 @@ class ProjectViewSet(BaseModelViewSet):
             "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
             "installation_status": lambda qs: qs.with_installation_status(),
+            "is_released_to_installation": lambda qs: qs.with_is_released_to_installation(),
+            "latest_installation": lambda qs: qs.with_latest_installation(),
             "in_construction": lambda qs: qs.with_in_construction(),
             "construction_status": lambda qs: qs.with_construction_status(),
         }
@@ -382,7 +384,8 @@ class ProjectViewSet(BaseModelViewSet):
         )
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
-        installation_status = request.query_params.get("installation_status")
+        installation_status__in = request.query_params.get("installation_status__in")
+        is_released_to_installation = request.query_params.get("is_released_to_installation")
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
 
@@ -418,10 +421,15 @@ class ProjectViewSet(BaseModelViewSet):
         if "delivery_status" in queryset.query.annotations and delivery_status:
             queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
 
-        if "installation_status" in queryset.query.annotations and installation_status:
+        if "installation_status" in queryset.query.annotations and installation_status__in:
             queryset = queryset.filter(
-                installation_status__in=installation_status.split(",")
+                installation_status__in=installation_status__in.split(",")
             )
+        if "is_released_to_installation" in queryset.query.annotations and is_released_to_installation:
+            queryset = queryset.filter(
+                is_released_to_installation=is_released_to_installation.lower() == "true"
+            )
+
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
         if payment_types:
@@ -664,27 +672,12 @@ class ProjectViewSet(BaseModelViewSet):
             return Response(cached_data)
 
         request.query_params._mutable = True
-        request.query_params["metrics"] = "avg_time_installation,installation_status"
+        request.query_params["metrics"] = "installation_status"
         request.query_params._mutable = False
 
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
-        queryset = queryset.with_avg_time_installation()
-        queryset = queryset.with_customer_released_flag()
         queryset = queryset.with_installation_status()
-
-        avg_timedelta = queryset.aggregate(
-            avg_time=Avg("avg_time_installation")
-        )["avg_time"]
-        avg_duration = round(avg_timedelta.total_seconds() / 3600, 2) if avg_timedelta else 0
-
-        released_clients_count = queryset.filter(customer_released=True).count()
-
-        number_of_installations = Schedule.objects.filter(
-            project__in=queryset,
-            service__name__icontains='instalação',
-            execution_finished_at__isnull=False
-        ).count()
         
         # Count projects by installation status
         status_counts = queryset.values('installation_status').annotate(
@@ -698,9 +691,6 @@ class ProjectViewSet(BaseModelViewSet):
         }
 
         indicators = {
-            "avg_time_installation_hours": avg_duration,
-            "released_clients_count": released_clients_count,
-            "number_of_installations": number_of_installations,
             "installations_status_count": installation_status_dict
         }
 
