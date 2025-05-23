@@ -321,6 +321,8 @@ class ProjectSerializer(BaseSerializer):
     branch_adjustment_days_int = serializers.IntegerField(read_only=True)
     new_contact_number_days_int = serializers.IntegerField(read_only=True)
     final_inspection_days_int = serializers.IntegerField(read_only=True)
+    
+    distance_to_matriz_km = SerializerMethodField()
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
@@ -331,7 +333,13 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        
+    
+    
+    def get_distance_to_matriz_km(self, obj):
+        if obj.distance_to_matriz_km is not None:
+            return obj.distance_to_matriz_km
+        else:
+            return 0
         
     # def get_supply_adquance(self, obj):
     #     supply_list = obj.supply_adquance

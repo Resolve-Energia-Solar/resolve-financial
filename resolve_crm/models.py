@@ -19,8 +19,7 @@ from engineering.models import CivilConstruction, RequestsEnergyCompany, Units
 from django.db.models.functions import TruncDate,Coalesce
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round, Coalesce
-
-
+import math
 
 
 def get_current_month():
@@ -547,6 +546,7 @@ class Sale(models.Model):
         if (self.payment_status == 'P' or self.payment_status == 'CA') and self.financial_completion_date:
             self.financial_completion_date = None
             self.is_completed_financial = False
+        
         super().save(*args, **kwargs)
     
     
@@ -1488,6 +1488,37 @@ class Project(models.Model):
     objects = ProjectQuerySet.as_manager()
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
+    
+    @cached_property
+    def distance_to_matriz_km(self):
+        """
+        Distância linear (Haversine) entre o endereço da Matriz e o do projeto.
+        Retorna None se qualquer dado estiver faltando.
+        """
+        matriz = Branch.objects.filter(name__icontains="Matriz").first()
+        proj_addr = self.address
+
+        if not (matriz and matriz.address and proj_addr):
+            return None
+
+        try:
+            lat1, lon1 = float(matriz.address.latitude), float(matriz.address.longitude)
+            lat2, lon2 = float(proj_addr.latitude), float(proj_addr.longitude)
+        except (TypeError, ValueError):
+            return None
+
+        # Haversine
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(math.radians(lat1))
+            * math.cos(math.radians(lat2))
+            * math.sin(dlon / 2) ** 2
+        )
+        c = 2 * math.asin(math.sqrt(a))
+        return round(R * c, 2)
 
     @cached_property
     def address(self):
@@ -1519,6 +1550,7 @@ class Project(models.Model):
         steps = Step.objects.all()
         for step in steps:
             ProjectStep.objects.create(project=self, step=step)
+            
     
     class Meta:
         verbose_name = "Projeto"
@@ -1544,6 +1576,7 @@ class Project(models.Model):
             ('can_manage_journey', 'Can manage journey'),
         ]
     
+    
     def __str__(self):
         return self.project_number if self.project_number else f'Projeto {self.id}'
 
@@ -1552,6 +1585,7 @@ class Project(models.Model):
             self.documention_completion_date = now()
         if not self.designer_coclusion_date and self.designer_status == 'CO':
             self.designer_coclusion_date = now()
+            
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
             self.create_deadlines()
