@@ -677,22 +677,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
-        queryset = queryset.with_avg_time_installation()
-        queryset = queryset.with_customer_released_flag()
         queryset = queryset.with_installation_status()
-
-        avg_timedelta = queryset.aggregate(
-            avg_time=Avg("avg_time_installation")
-        )["avg_time"]
-        avg_duration = round(avg_timedelta.total_seconds() / 3600, 2) if avg_timedelta else 0
-
-        released_clients_count = queryset.filter(customer_released=True).count()
-
-        number_of_installations = Schedule.objects.filter(
-            project__in=queryset,
-            service__name__icontains='instalação',
-            execution_finished_at__isnull=False
-        ).count()
         
         # Count projects by installation status
         status_counts = queryset.values('installation_status').annotate(
@@ -706,9 +691,6 @@ class ProjectViewSet(BaseModelViewSet):
         }
 
         indicators = {
-            "avg_time_installation_hours": avg_duration,
-            "released_clients_count": released_clients_count,
-            "number_of_installations": number_of_installations,
             "installations_status_count": installation_status_dict
         }
 
