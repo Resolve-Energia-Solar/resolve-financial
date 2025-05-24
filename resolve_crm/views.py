@@ -285,6 +285,7 @@ class ProjectViewSet(BaseModelViewSet):
         queryset = Project.objects.all()
 
         method_map = {
+            "journey_counter": lambda qs: qs.with_journey_counter(),
             "is_released_to_engineering": lambda qs: qs.with_is_released_to_engineering(),
             "trt_status": lambda qs: qs.with_trt_status(),
             "pending_material_list": lambda qs: qs.with_pending_material_list(),
@@ -347,6 +348,7 @@ class ProjectViewSet(BaseModelViewSet):
         inspection_isnull = request.query_params.get('inspection_isnull')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
+        journey_counter = request.query_params.get("journey_counter")
 
         access_opnion = request.query_params.get("access_opnion")
         trt_status = request.query_params.get("trt_status")
@@ -389,6 +391,8 @@ class ProjectViewSet(BaseModelViewSet):
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
 
+        if 'journey_counter' in queryset.query.annotations and journey_counter:
+            queryset = queryset.filter(journey_counter=journey_counter)
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
         elif is_pre_sale == "false":

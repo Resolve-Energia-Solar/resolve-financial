@@ -27,6 +27,7 @@ from django.db.models import (
     DateField,
     ExpressionWrapper,
     F,
+    Max,
     Sum,
     DecimalField,
     Count,
@@ -596,45 +597,6 @@ class Sale(models.Model):
     def franchise_installments_generated(self):
         return self.franchise_installments.exists()
 
-    def treadmill_counter(self):
-        if not self.signature_date:
-            return None
-
-        from django.db.models import Prefetch
-        from field_services.models import Schedule
-        from django.utils.timezone import now
-
-        qs = self.projects.all().prefetch_related(
-            Prefetch(
-                "field_services",
-                queryset=Schedule.objects.filter(
-                    service__category__name="Instalação",
-                    final_service_opinion__name="Concluído",
-                ).select_related("service", "final_service_opinion"),
-                to_attr="installations_filtered",
-            )
-        )
-
-        counters = {}
-        for project in qs:
-            if project.installations_filtered:
-                installation = project.installations_filtered[0]
-                if installation.execution_finished_at:
-                    days = (
-                        installation.execution_finished_at - self.signature_date
-                    ).days
-                else:
-                    days = (now() - self.signature_date).days
-            else:
-                days = (now() - self.signature_date).days
-            counters[project.id] = days
-
-        unique_days = set(counters.values())
-        if len(unique_days) == 1:
-            return unique_days.pop()
-        else:
-            return counters
-
     def missing_documents(self):
         required_documents = DocumentType.objects.filter(required=True)
         missing_documents = []
@@ -759,6 +721,44 @@ class TimestampDiff(Func):
 
 
 class ProjectQuerySet(models.QuerySet):
+    def with_journey_counter(self):
+        return (
+            self
+            # 1) Data da última “Vistoria final” concluída
+            .annotate(
+                last_final=Max(
+                    Case(
+                        When(
+                            Q(requests_energy_company__type__name__icontains='Vistoria final') &
+                            Q(requests_energy_company__status='D') &
+                            Q(requests_energy_company__conclusion_date__isnull=False),
+                            then=F('requests_energy_company__conclusion_date')
+                        ),
+                        output_field=DateField(),
+                    )
+                ),
+                # 2) Data de assinatura já em DateField
+                contract_dt=Cast(F('sale__signature_date'), DateField()),
+            )
+            # 3) Fim da jornada = vistoria final ou hoje (CURDATE())
+            .annotate(
+                journey_end=Coalesce(
+                    F('last_final'),
+                    Value(timezone.localdate(), output_field=DateField()),
+                    output_field=DateField()
+                )
+            )
+            # 4) Diferença em dias via DATEDIFF(end, start)
+            .annotate(
+                journey_counter=Func(
+                    F('journey_end'),
+                    F('contract_dt'),
+                    function='DATEDIFF',
+                    output_field=IntegerField()
+                )
+            )
+        )
+    
     def with_is_released_to_engineering(self):
         sale_ct = ContentType.objects.get_for_model(Sale)
 

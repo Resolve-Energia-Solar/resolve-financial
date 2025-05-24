@@ -307,6 +307,7 @@ class ProjectSerializer(BaseSerializer):
     final_inspection_status = serializers.CharField(read_only=True)
     request_requested = serializers.BooleanField(read_only=True)
     pending_material_list = serializers.BooleanField(read_only=True)
+    journey_counter  = serializers.IntegerField(read_only=True, required=False)
     is_released_to_engineering = serializers.BooleanField(read_only=True)
     trt_status = serializers.CharField(read_only=True)
     supply_adquance_names = serializers.CharField(read_only=True)
