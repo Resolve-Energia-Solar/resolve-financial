@@ -402,7 +402,8 @@ class Sale(models.Model):
             ("F", "Finalizado"), 
             ("EA", "Em Andamento"), 
             ("C", "Cancelado"), 
-            ("D", "Distrato")
+            ("D", "Distrato"),
+            ("ED", "Em Distrato")
         ], 
         default="P",
         db_index=True
