@@ -7,6 +7,9 @@ from django.db import transaction
 from core.models import Process, ProcessBase
 import requests
 import logging
+from django.apps import apps
+
+from core.utils import get_model_data
 
 logger = logging.getLogger(__name__)
 
@@ -56,16 +59,36 @@ def create_process_async(
         return new_process.id
 
 
-@shared_task(bind=True,autoretry_for=(requests.exceptions.RequestException,),retry_backoff=True,retry_kwargs={'max_retries': 5},default_retry_delay=10)
-def send_webhook_request_async(self, web_hook_url, data, secret):
+@shared_task(
+    bind=True,
+    autoretry_for=(requests.exceptions.RequestException,),
+    retry_backoff=True,
+    retry_kwargs={'max_retries': 5}
+)
+def send_webhook_request_async(self, url, model_label, instance_id, secret, webhook_id=None):
+    Model = apps.get_model(model_label)
+    instance = Model.objects.filter(pk=instance_id).first()
+
+    if not instance:
+        logger.warning(f"[Webhook] Instância não encontrada: {model_label}({instance_id})")
+        return
+
+    data = get_model_data(instance)
+
     headers = {
         'Content-Type': 'application/json',
         'X-Hook-Secret': secret
     }
 
+    log_data = {
+        'webhook_id': webhook_id,
+        'payload': data,
+    }
+
     try:
-        response = requests.post(web_hook_url, json=data, headers=headers, timeout=5)
+        response = requests.post(url, json=data, headers=headers, timeout=5)
         response.raise_for_status()
+
         logger.info(f"Webhook enviado com sucesso: {response.status_code}")
         return {
             'success': True,
