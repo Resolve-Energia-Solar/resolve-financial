@@ -5,6 +5,10 @@ from copy import deepcopy
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from core.models import Process, ProcessBase
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 @shared_task(bind= True , max_retries= 3 , default_retry_delay= 5 * 60) 
 def create_process_async(
@@ -50,3 +54,25 @@ def create_process_async(
         print(f"Process created with ID: {new_process.id}")
 
         return new_process.id
+
+
+@shared_task(bind=True,autoretry_for=(requests.exceptions.RequestException,),retry_backoff=True,retry_kwargs={'max_retries': 5},default_retry_delay=10)
+def send_webhook_request_async(self, web_hook_url, data, secret):
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Hook-Secret': secret
+    }
+
+    try:
+        response = requests.post(web_hook_url, json=data, headers=headers, timeout=5)
+        response.raise_for_status()
+        logger.info(f"Webhook enviado com sucesso: {response.status_code}")
+        return {
+            'success': True,
+            'status_code': response.status_code,
+            'response': response.json() if response.content else None
+        }
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erro ao enviar o webhook: {e}")
+        raise self.retry(exc=e)
