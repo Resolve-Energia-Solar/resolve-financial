@@ -80,65 +80,87 @@ class SaleViewSet(BaseModelViewSet):
         user = self.request.user
 
         qs = (
-            Sale.objects.select_related(
-                "customer",
-                "seller",
-                "sales_supervisor",
-                "sales_manager",
-                "branch",
-                "marketing_campaign",
-                "supplier",
+            Sale.objects
+                .select_related(
+                    "customer", "seller", "sales_supervisor", "sales_manager",
+                    "branch", "marketing_campaign", "supplier",
+                )
+                .prefetch_related(
+                    "cancellation_reasons",
+                    "products",
+                    "attachments",
+                    "tags",
+                    "payments",
+                    "contract_submissions",
+                    Prefetch(
+                        "attachments",
+                        queryset=Attachment.objects.filter(
+                            content_type=sale_content_type,
+                            status="EA"
+                        ),
+                        to_attr="attachments_under_analysis",
+                    ),
+                )
+        )
+
+        expands = self.request.query_params.get("expand", "")
+        fields_list = self.request.query_params.getlist("fields[]")
+        if not fields_list and "fields" in self.request.query_params:
+            fields_list = [
+                f.strip()
+                for f in self.request.query_params["fields"].split(",")
+                if f.strip()
+            ]
+
+        if "projects" in expands.split(","):
+            project_qs = Project.objects.all()
+            if any(f == "projects.journey_counter" for f in fields_list):
+                project_qs = project_qs.with_journey_counter()
+            else:
+                project_qs = project_qs.with_is_released_to_engineering()
+
+            project_qs = project_qs.prefetch_related(
+                "units",
+                "inspection__final_service_opinion",
+                "homologator",
             )
-            .prefetch_related(
-                "cancellation_reasons",
-                "products",
-                "attachments",
-                "tags",
-                "payments",
-                "contract_submissions",
+            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs))
+        else:
+            qs = qs.prefetch_related(
                 Prefetch(
                     "projects",
-                    queryset=Project.objects.with_is_released_to_engineering().prefetch_related(
-                        "units",
-                        "inspection__final_service_opinion",
-                        "homologator",
-                    ),
-                ),
-                Prefetch(
-                    "attachments",
-                    queryset=Attachment.objects.filter(
-                        content_type=sale_content_type, status="EA"
-                    ),
-                    to_attr="attachments_under_analysis",
+                    queryset=Project.objects
+                        .with_is_released_to_engineering()
+                        .prefetch_related(
+                            "units",
+                            "inspection__final_service_opinion",
+                            "homologator",
+                        ),
                 ),
             )
-            .annotate(
-                total_paid=Sum(
-                    "payments__installments__installment_value",
-                    filter=Q(payments__installments__is_paid=True),
-                    default=0,
-                )
+
+        qs = qs.annotate(
+            total_paid=Sum(
+                "payments__installments__installment_value",
+                filter=Q(payments__installments__is_paid=True),
+                default=0,
             )
-            .order_by("-created_at")
-        )
+        ).order_by("-created_at")
 
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
 
-        stakeholder_filter = (
+        stakeholder = (
             Q(customer=user)
             | Q(seller=user)
             | Q(sales_supervisor=user)
             | Q(sales_manager=user)
         )
-
         if hasattr(user, "employee") and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list("id", flat=True)
-            return qs.filter(
-                Q(branch__id__in=branch_ids) | stakeholder_filter
-            ).distinct()
+            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder).distinct()
 
-        return qs.filter(stakeholder_filter)
+        return qs.filter(stakeholder)
 
     def apply_filters(self, queryset, query_params):
         if query_params.get("documents_under_analysis") == "true":
