@@ -1,43 +1,44 @@
-import re
+# Python standard library imports
+import datetime
 import logging
-from datetime import datetime
-from django.shortcuts import redirect
+import re
+from hashlib import md5
+
+# Django imports
+from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.files.base import ContentFile
+from django.db import transaction
+from django.db.models import Count, F, Prefetch, Q, Sum
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import formats
+
+# REST framework imports
 from rest_framework import status
-from rest_framework.views import APIView
-from weasyprint import HTML
+from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+# Third-party imports
+from weasyprint import HTML
+
+# Local application imports
 from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
+from core.models import Process, ProcessBase
+from core.task import create_process_async
 from engineering.models import Units
-from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
-from django.db.models import Count, Q, Sum, Prefetch
-from django.db.models import Exists, OuterRef, Q, F, DecimalField
-from django.db import transaction
-from django.contrib import messages
-from django.http import HttpResponse
-from rest_framework.decorators import action, api_view
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from django.core.cache import cache
-from hashlib import md5
-from rest_framework.decorators import api_view
-from django.contrib.contenttypes.models import ContentType
-from core.task import create_process_async
-from core.models import ProcessBase, Process
-from .serializers import *
-from .models import *
-from django.utils import timezone
-from functools import reduce
-import operator
 
 
 logger = logging.getLogger(__name__)
