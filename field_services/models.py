@@ -346,6 +346,10 @@ class BlockTimeAgent(models.Model):
                 name="unique_block_time_agent",
             )
         ]
+        indexes = [
+            models.Index(fields=['agent', 'start_date', 'end_date']),
+            models.Index(fields=['agent', 'start_time', 'end_time']),
+        ]
 
 
 class FreeTimeAgent(models.Model):

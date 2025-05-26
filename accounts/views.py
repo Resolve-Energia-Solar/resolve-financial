@@ -106,127 +106,127 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
-class UserViewSet(BaseModelViewSet):
-    queryset = User.objects.all()
+from django.db.models import OuterRef, Exists, Count, Value
+from django.db.models.functions import Coalesce
+from django.utils.dateparse import parse_date, parse_time
+
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+
+
+class UserViewSet(ModelViewSet):
+    """
+    Listagem/CRUD de usuários e verificação de disponibilidade via /users/{pk}/availability/
+    """
+    queryset = User.objects.all().select_related('employee').prefetch_related(
+        'groups',
+        'phone_numbers',
+        'user_permissions',
+        'user_types',
+        'addresses',
+        'attachments',
+        'employee__related_branches',
+    )
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        queryset = User.objects.all().select_related(
-            'employee',
-        ).prefetch_related(
-            'groups',
-            'phone_numbers',
-            'user_permissions',
-            'user_types',
-            'addresses',
-            'attachments',
-            'employee__related_branches',
+        qs = super().get_queryset()
+
+        # filtros simples
+        params = self.request.query_params
+        if params.get('name'):
+            qs = qs.filter(complete_name__icontains=params['name'])
+        if params.get('type'):
+            qs = qs.filter(user_types__name=params['type'])
+        if params.get('email'):
+            qs = qs.filter(email__icontains=params['email'])
+        if params.get('phone'):
+            qs = qs.filter(phone__number__icontains=params['phone'])
+        if params.get('person_type'):
+            qs = qs.filter(person_type=params['person_type'])
+        if params.get('first_document'):
+            qs = qs.filter(first_document__icontains=params['first_document'])
+        if params.get('second_document'):
+            qs = qs.filter(second_document__icontains=params['second_document'])
+        if params.get('category'):
+            qs = qs.filter(
+                id__in=Category.objects.get(id=params['category'])
+                                  .members.values_list('id', flat=True)
+            )
+        if params.get('role'):
+            qs = qs.filter(employee__role__name__icontains=params['role']).distinct()
+
+        return qs
+
+    @action(detail=True, methods=['get'])
+    def availability(self, request, pk=None):
+        user = self.get_object()
+        params = request.query_params
+        date_str = params.get('date')
+        start_str = params.get('start_time')
+        end_str   = params.get('end_time')
+
+        if not all([date_str, start_str, end_str]):
+            return Response(
+                {'detail': 'Parâmetros date, start_time e end_time são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # parse
+        try:
+            day = parse_date(date_str).weekday()
+            start_time = parse_time(start_str)
+            end_time   = parse_time(end_str)
+        except Exception:
+            return Response(
+                {'detail': 'Formato de data ou hora inválido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # subqueries para este único usuário
+        blocked_sq = BlockTimeAgent.objects.filter(
+            agent=user,
+            start_date__lte=date_str,
+            end_date__gte=date_str,
+            start_time__lt=end_time,
+            end_time__gt=start_time
         )
-        
-        # Parâmetros de filtro
-        name = self.request.query_params.get('name')
-        user_type = self.request.query_params.get('type')
-        email = self.request.query_params.get('email')
-        phone = self.request.query_params.get('phone')
-        person_type = self.request.query_params.get('person_type')
-        first_document = self.request.query_params.get('first_document')
-        second_document = self.request.query_params.get('second_document')
-        category = self.request.query_params.get('category')
-        date = self.request.query_params.get('date')
-        start_time = self.request.query_params.get('start_time')
-        end_time = self.request.query_params.get('end_time')
-        order_by_schedule_count = self.request.query_params.get('order_by_schedule_count')
-        role = self.request.query_params.get('role')
-        expand = self.request.query_params.get('expand', '')
+        free_sq = FreeTimeAgent.objects.filter(
+            agent=user,
+            is_deleted=False,
+            day_of_week=day,
+            start_time__lt=end_time,
+            end_time__gt=start_time
+        )
+        overlap_sq = Schedule.objects.filter(
+            schedule_agent=user,
+            schedule_date=date_str,
+            schedule_start_time__lt=end_time,
+            schedule_end_time__gt=start_time
+        )
 
+        # executa EXISTS
+        is_blocked    = blocked_sq.exists()
+        has_free_slot = free_sq.exists()
+        has_overlap   = overlap_sq.exists()
 
-        if name:
-            queryset = queryset.filter(complete_name__icontains=name)
-        if user_type:
-            queryset = queryset.filter(user_types__name=user_type)
-        if email:
-            queryset = queryset.filter(email__icontains=email)
-        if phone:
-            queryset = queryset.filter(phone__number__icontains=phone)
-        if person_type:
-            queryset = queryset.filter(person_type=person_type)
-        if first_document:
-            queryset = queryset.filter(first_document__icontains=first_document)
-        if second_document:
-            queryset = queryset.filter(second_document__icontains=second_document)
-        if category:
-            queryset = queryset.filter(
-                id__in=Category.objects.get(id=category).members.values_list('id', flat=True)
-            )
-        if role:
-            queryset = queryset.filter(employee__role__name__icontains=role).distinct()
-    
+        available = (not is_blocked) and has_free_slot and (not has_overlap)
 
-        # if 'schedules' in expand.split(',') and date:
-        #     queryset = queryset.prefetch_related(
-        #         Prefetch(
-        #             'schedule_agent',
-        #             queryset=Schedule.objects.filter(schedule_date=date)
-        #         )
-        #     )
+        data = {
+            'user_id': user.id,
+            'date': date_str,
+            'start_time': start_str,
+            'end_time': end_str,
+            'is_blocked': is_blocked,
+            'has_free_slot': has_free_slot,
+            'has_overlap': has_overlap,
+            'available': available,
+        }
 
-        # if 'free_time_agent' in expand.split(','):
-        #     today = datetime.date.today().weekday()
-
-        #     queryset = queryset.prefetch_related(
-        #         Prefetch(
-        #             'freetimeagent_set',
-        #             queryset=FreeTimeAgent.objects.filter(is_deleted=False, day_of_week=today)
-        #         )
-        #     )
-
-
-        if date and start_time and end_time:
-            blocked_agents = BlockTimeAgent.objects.filter(
-                start_date__lte=date,
-                end_date__gte=date,
-                start_time__lt=parse_time(end_time),
-                end_time__gt=parse_time(start_time)
-            ).values_list('agent', flat=True)
-            queryset = queryset.exclude(id__in=blocked_agents)
-
-            day_of_week = timezone.datetime.strptime(date, '%Y-%m-%d').weekday()
-            free_agents_ids = FreeTimeAgent.objects.filter(
-                day_of_week=day_of_week,
-                start_time__lt=parse_time(end_time),
-                end_time__gt=parse_time(start_time)
-            ).values_list('agent_id', flat=True).distinct()
-            queryset = queryset.filter(id__in=free_agents_ids)
-
-            overlapping_schedules = Schedule.objects.filter(
-                schedule_date=date,
-                schedule_start_time__lt=parse_time(end_time),
-                schedule_end_time__gt=parse_time(start_time),
-                schedule_agent_id__isnull=False
-            ).values_list('schedule_agent_id', flat=True)
-            queryset = queryset.exclude(id__in=overlapping_schedules)
-
-        if date and category and order_by_schedule_count:
-            daily_schedules_subquery = Schedule.objects.filter(
-                schedule_agent=OuterRef('pk'),
-                schedule_date=date
-            ).values('schedule_agent').annotate(cnt=Count('id')).values('cnt')[:1]
-
-            queryset = queryset.annotate(
-                daily_schedules_count=Coalesce(Subquery(daily_schedules_subquery), Value(0))
-            )
-
-            if order_by_schedule_count == 'asc':
-                queryset = queryset.order_by('daily_schedules_count')
-            elif order_by_schedule_count == 'desc':
-                queryset = queryset.order_by('-daily_schedules_count')
-
-        return queryset
-
-
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class EmployeeViewSet(BaseModelViewSet):
