@@ -64,7 +64,6 @@ class SaleSerializer(BaseSerializer):
     final_service_opinion = serializers.SerializerMethodField()
     signature_status = serializers.SerializerMethodField()
     is_released_to_engineering = serializers.SerializerMethodField()
-    treadmill_counter = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
 
     class Meta:
@@ -112,9 +111,6 @@ class SaleSerializer(BaseSerializer):
             if p.inspection and p.inspection.final_service_opinion
         ]
         return opinions or None
-
-    def get_treadmill_counter(self, obj):
-        return obj.treadmill_counter()
         
     def validate(self, data):
         # Validação para definir o percentual de repasse
