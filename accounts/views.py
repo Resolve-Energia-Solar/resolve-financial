@@ -116,7 +116,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(BaseModelViewSet):
     """
     Listagem/CRUD de usuários e verificação de disponibilidade via /users/{pk}/availability/
     """
@@ -228,6 +228,87 @@ class UserViewSet(ModelViewSet):
 
         return Response(data, status=status.HTTP_200_OK)
 
+    
+    @action(detail=False, methods=['get'], url_path='available')
+    def available(self, request):
+        """
+        GET /users/available/?date=YYYY-MM-DD&start_time=HH:MM&end_time=HH:MM&service=<id>
+        Retorna lista de agentes que:
+          - pertencem ao serviço especificado
+          - NÃO estão bloqueados nesse período
+          - têm slot livre nesse dia/hora
+          - não têm agendamento sobreposto
+        """
+        # 1) validação de entrada
+        date_str   = request.query_params.get('date')
+        start_str  = request.query_params.get('start_time')
+        end_str    = request.query_params.get('end_time')
+        service_id = request.query_params.get('service')
+
+        if not all([date_str, start_str, end_str, service_id]):
+            return Response(
+                {'detail': 'Parâmetros date, start_time, end_time e service são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2) parse das strings
+        try:
+            day        = parse_date(date_str).weekday()
+            start_time = parse_time(start_str)
+            end_time   = parse_time(end_str)
+        except Exception:
+            return Response(
+                {'detail': 'Formato de date ou hora inválido. Use YYYY-MM-DD e HH:MM.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3) subqueries de disponibilidade
+        blocked_sq = BlockTimeAgent.objects.filter(
+            agent=OuterRef('pk'),
+            start_date__lte=date_str,
+            end_date__gte=date_str,
+            start_time__lt=end_time,
+            end_time__gt=start_time
+        )
+        free_sq = FreeTimeAgent.objects.filter(
+            agent=OuterRef('pk'),
+            is_deleted=False,
+            day_of_week=day,
+            start_time__lt=end_time,
+            end_time__gt=start_time
+        )
+        overlap_sq = Schedule.objects.filter(
+            schedule_agent=OuterRef('pk'),
+            schedule_date=date_str,
+            schedule_start_time__lt=end_time,
+            schedule_end_time__gt=start_time
+        )
+
+        # 4) filtra usuários que têm o serviço e anotam a disponibilidade
+        qs = User.objects.filter(
+            employee__services__id=service_id  # ajusta conforme seu relation M2M
+        ).select_related('employee').prefetch_related(
+            'groups', 'phone_numbers', 'user_permissions',
+            'user_types', 'addresses', 'attachments',
+            'employee__related_branches'
+        ).annotate(
+            is_blocked=Exists(blocked_sq),
+            has_free_slot=Exists(free_sq),
+            has_overlap=Exists(overlap_sq),
+        ).filter(
+            is_blocked=False,
+            has_free_slot=True,
+            has_overlap=False,
+        )
+
+        # 5) retorna serializado
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = UserSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = UserSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()
