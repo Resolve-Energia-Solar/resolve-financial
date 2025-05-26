@@ -1,21 +1,21 @@
-import time
-from django.forms import ValidationError
-from core.serializers import AttachmentSerializer
-from financial.models import FranchiseInstallment
-from resolve_crm.models import *
-from accounts.serializers import AddressSerializer
-from api.serializers import BaseSerializer
-from logistics.models import Materials, ProjectMaterials, Product, SaleProduct
-from rest_framework.serializers import SerializerMethodField, ListField, DictField
 import re
+import logging
+from decimal import Decimal
+
+from django.db import transaction
+from django.db.models import F, Sum, Value, DecimalField
+from django.db.models.functions import Coalesce
+
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
-from django.db import transaction
-from django.db.models import Sum, F
+from rest_framework.serializers import ValidationError
 
-import logging
-
-from resolve_crm.task import create_projects_for_sale
+from api.serializers import BaseSerializer
+from core.serializers import AttachmentSerializer
+from accounts.serializers import AddressSerializer
+from financial.models import FranchiseInstallment
+from logistics.models import Materials, Product, ProjectMaterials, SaleProduct
+from resolve_crm.models import *
 
 class OriginSerializer(BaseSerializer):
     class Meta:
@@ -25,7 +25,7 @@ class OriginSerializer(BaseSerializer):
 
  
 class LeadSerializer(BaseSerializer):
-    proposals = SerializerMethodField()
+    proposals = serializers.SerializerMethodField()
     class Meta:
         model = Lead
         fields = '__all__'
@@ -59,12 +59,12 @@ class SaleSerializer(BaseSerializer):
     )
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
     
-    documents_under_analysis = SerializerMethodField()
+    documents_under_analysis = serializers.SerializerMethodField()
     total_paid = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
-    final_service_opinion = SerializerMethodField()
-    signature_status = SerializerMethodField()
-    is_released_to_engineering = SerializerMethodField()
-    treadmill_counter = SerializerMethodField()
+    final_service_opinion = serializers.SerializerMethodField()
+    signature_status = serializers.SerializerMethodField()
+    is_released_to_engineering = serializers.SerializerMethodField()
+    treadmill_counter = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
 
     class Meta:
@@ -307,6 +307,7 @@ class ProjectSerializer(BaseSerializer):
     final_inspection_status = serializers.CharField(read_only=True)
     request_requested = serializers.BooleanField(read_only=True)
     pending_material_list = serializers.BooleanField(read_only=True)
+    journey_counter  = serializers.IntegerField(read_only=True, required=False)
     is_released_to_engineering = serializers.BooleanField(read_only=True)
     trt_status = serializers.CharField(read_only=True)
     supply_adquance_names = serializers.CharField(read_only=True)
@@ -315,12 +316,15 @@ class ProjectSerializer(BaseSerializer):
     expected_delivery_status = serializers.CharField(read_only=True)
     delivery_status = serializers.CharField(read_only=True)
     installation_status = serializers.CharField(read_only=True)
-    
+    is_released_to_installation = serializers.BooleanField(read_only=True, required=False)
+    latest_installation = serializers.SerializerMethodField()
     access_opnion_days_int = serializers.IntegerField(read_only=True)
     load_increase_days_int = serializers.IntegerField(read_only=True)
     branch_adjustment_days_int = serializers.IntegerField(read_only=True)
     new_contact_number_days_int = serializers.IntegerField(read_only=True)
     final_inspection_days_int = serializers.IntegerField(read_only=True)
+    
+    distance_to_matriz_km = serializers.SerializerMethodField()
 
     materials_data = serializers.ListField(
         child=serializers.DictField(),
@@ -331,7 +335,13 @@ class ProjectSerializer(BaseSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        
+    
+    
+    def get_distance_to_matriz_km(self, obj):
+        if obj.distance_to_matriz_km is not None:
+            return obj.distance_to_matriz_km
+        else:
+            return 0
         
     # def get_supply_adquance(self, obj):
     #     supply_list = obj.supply_adquance
@@ -376,7 +386,44 @@ class ProjectSerializer(BaseSerializer):
     def get_address(self, obj):
         main_unit = obj.main_unit_prefetched[0] if hasattr(obj, 'main_unit_prefetched') and obj.main_unit_prefetched else None
         return AddressSerializer(main_unit.address).data if main_unit and main_unit.address else None
+    
+    def get_latest_installation(self, obj):
+        inst = obj.latest_installation_obj
+        if not inst:
+            return None
 
+        # 1 query para soma dos módulos
+        panel_count = ProjectMaterials.objects.filter(
+            project=inst.project,
+            is_deleted=False,
+            material__attributes__key='Tipo',
+            material__attributes__value='MODULO',
+            material__attributes__is_deleted=False
+        ).aggregate(
+            total=Coalesce(
+                Sum('amount', output_field=DecimalField()),
+                Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            )
+        )['total']
+
+        # só 1 query para buscar installation + select_related(pf. address, agentes, usuários)
+        inst = (
+            Schedule.objects
+            .select_related('address', 'schedule_agent', 'final_service_opinion_user')
+            .get(pk=inst.pk)
+        )
+
+        addr = AddressSerializer(inst.address).data if inst.address else None
+
+        return {
+            'id': inst.id,
+            'schedule_agent': inst.schedule_agent_id,
+            'final_service_opinion_user': inst.final_service_opinion_user_id,
+            'panel_count': panel_count,
+            'complete_address': addr.get('complete_address') if addr else None,
+            'neighborhood': addr.get('neighborhood') if addr else None
+        }
 
     def update(self, instance, validated_data):
         materials_data = validated_data.pop('materials_data', [])

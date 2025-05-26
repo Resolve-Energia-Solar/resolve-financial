@@ -1,13 +1,14 @@
 import datetime
 import logging
 import os
-
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, transaction
 from django.utils import timezone
 import requests
-
+import math
+from django.conf import settings
+from accounts.models import Branch
 from core.models import Tag
 from logistics.models import SaleProduct
 
@@ -367,3 +368,86 @@ def create_projects_for_sale(sale_id):
         Project.objects.bulk_create(project_instances)
 
     return {"status": "success", "message": f"Projetos criados para a venda {sale_id}."}
+
+
+def _linear_distance_km(lat1, lon1, lat2, lon2):
+    """
+    Haversine fallback caso a API do Google retorne ZERO_RESULTS.
+    """
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
+
+@shared_task
+def update_project_delivery_type(project_id):
+    logger.info(f"🔄 Iniciando cálculo de delivery_type por rota para Project {project_id}")
+    try:
+        project = Project.objects.get(pk=project_id)
+    except Project.DoesNotExist:
+        logger.warning(f"Project {project_id} não encontrado")
+        return
+
+    matriz = Branch.objects.filter(name__icontains="Matriz").first()
+    proj_addr = project.address  # cached_property
+
+    if not (matriz and matriz.address and proj_addr):
+        logger.error(f"Endereço da Matriz ou do Projeto {project_id} ausente")
+        return
+
+    # extrai e valida coordenadas
+    try:
+        lat1 = float(matriz.address.latitude)
+        lon1 = float(matriz.address.longitude)
+        lat2 = float(proj_addr.latitude)
+        lon2 = float(proj_addr.longitude)
+    except (TypeError, ValueError) as e:
+        logger.error(f"Coordenadas inválidas para Project {project_id}: {e}")
+        return
+
+    # chama Google Distance Matrix
+    url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+    params = {
+        "origins":      f"{lat1},{lon1}",
+        "destinations": f"{lat2},{lon2}",
+        "mode":         "driving",
+        "key":          settings.GMAPS_API_KEY,
+    }
+
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        elm = resp.json()["rows"][0]["elements"][0]
+    except Exception as e:
+        logger.error(f"Erro chamando Google API: {e}")
+        elm = {"status": "ZERO_RESULTS"}
+
+    # se a API retornar OK, usa distance.value; senão fallback Haversine
+    if elm.get("status") == "OK":
+        dist_km = elm["distance"]["value"] / 1000.0
+        logger.info(f"Distância de rota (Google): {dist_km:.2f} km")
+    else:
+        dist_km = _linear_distance_km(lat1, lon1, lat2, lon2)
+        logger.info(f"ZERO_RESULTS → fallback linear: {dist_km:.2f} km")
+
+    # atualiza delivery_type
+    project.delivery_type = "D" if dist_km > 200 else "C"
+    project.save(update_fields=["delivery_type"])
+    logger.info(
+        f"Project {project_id} delivery_type atualizado para "
+        f"{project.delivery_type} ({dist_km:.2f} km)"
+    )
+
+    return {
+        "status": "success",
+        "project_id": project_id,
+        "delivery_type": project.delivery_type,
+        "distance_km": round(dist_km, 2),
+    }

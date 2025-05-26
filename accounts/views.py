@@ -3,7 +3,7 @@ from django.core.mail import EmailMessage
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
-from django.db.models import Case, When, Value, FloatField, IntegerField, Q
+from django.db.models import Case, When, Value, FloatField, IntegerField, Q, Prefetch
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -31,6 +31,7 @@ from django.utils.dateparse import parse_time
 from django.utils import timezone
 from django.db.models import OuterRef, Subquery, Count, Value
 from django.db.models.functions import Coalesce
+import datetime
 # Accounts views
 
 class UserLoginView(APIView):
@@ -139,6 +140,8 @@ class UserViewSet(BaseModelViewSet):
         end_time = self.request.query_params.get('end_time')
         order_by_schedule_count = self.request.query_params.get('order_by_schedule_count')
         role = self.request.query_params.get('role')
+        expand = self.request.query_params.get('expand', '')
+
 
         if name:
             queryset = queryset.filter(complete_name__icontains=name)
@@ -160,6 +163,26 @@ class UserViewSet(BaseModelViewSet):
             )
         if role:
             queryset = queryset.filter(employee__role__name__icontains=role).distinct()
+    
+
+        if 'schedules' in expand.split(',') and date:
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'schedule_agent',
+                    queryset=Schedule.objects.filter(schedule_date=date)
+                )
+            )
+
+        if 'free_time_agent' in expand.split(','):
+            today = datetime.date.today().weekday()
+
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'freetimeagent_set',
+                    queryset=FreeTimeAgent.objects.filter(is_deleted=False, day_of_week=today)
+                )
+            )
+
 
         if date and start_time and end_time:
             blocked_agents = BlockTimeAgent.objects.filter(

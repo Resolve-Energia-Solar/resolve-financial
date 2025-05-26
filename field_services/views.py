@@ -148,6 +148,10 @@ class ScheduleViewSet(BaseModelViewSet):
             if customer and project:
                 qs = qs.filter(Q(customer=customer) | Q(project=project))
 
+        view_all = self.request.query_params.get("view_all")
+        if view_all == "true":
+            return qs
+        
         # 2. Filtros por permissão
         if user.has_perm("field_services.view_all_schedule"):
             return qs
