@@ -227,20 +227,10 @@ class UserViewSet(BaseModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='available')
     def available(self, request):
-        """
-        GET /api/users/available/
-        ?date=YYYY-MM-DD
-        &start_time=HH:MM
-        &end_time=HH:MM
-        &service=<id>
-        &limit=<n opcional>
-        """
-        # 1) validação dos params básicos
         date_str   = request.query_params.get('date')
         start_str  = request.query_params.get('start_time')
         end_str    = request.query_params.get('end_time')
         service_id = request.query_params.get('service')
-        limit      = int(request.query_params.get('limit', 25))
 
         if not all([date_str, start_str, end_str, service_id]):
             return Response(
@@ -248,35 +238,31 @@ class UserViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 2) parse das strings
+        # Parse de data/hora
         try:
             day        = parse_date(date_str).weekday()
             start_time = parse_time(start_str)
             end_time   = parse_time(end_str)
         except Exception:
             return Response(
-                {'detail': 'Formato de date ou hora inválido. Use YYYY-MM-DD e HH:MM.'},
+                {'detail': 'Formato inválido. Use YYYY-MM-DD e HH:MM.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 3) carrega o Service e sua Categoria
+        # Carrega o serviço e obtém a categoria
         service = get_object_or_404(Service, pk=service_id)
-        category_id = service.category.id
+        cat_id  = service.category_id
 
-        # 4) subqueries de disponibilidade
+        # Subqueries de bloqueio, slot livre e overlap
         blocked_sq = BlockTimeAgent.objects.filter(
             agent=OuterRef('pk'),
-            start_date__lte=date_str,
-            end_date__gte=date_str,
-            start_time__lt=end_time,
-            end_time__gt=start_time
+            start_date__lte=date_str, end_date__gte=date_str,
+            start_time__lt=end_time, end_time__gt=start_time
         )
         free_sq = FreeTimeAgent.objects.filter(
             agent=OuterRef('pk'),
-            is_deleted=False,
-            day_of_week=day,
-            start_time__lt=end_time,
-            end_time__gt=start_time
+            is_deleted=False, day_of_week=day,
+            start_time__lt=end_time, end_time__gt=start_time
         )
         overlap_sq = Schedule.objects.filter(
             schedule_agent=OuterRef('pk'),
@@ -285,27 +271,32 @@ class UserViewSet(BaseModelViewSet):
             schedule_end_time__gt=start_time
         )
 
-        # 5) filtra Usuários que são membros da categoria do serviço
-        qs = User.objects.filter(
-            categories__id=category_id
-        ).select_related('employee').prefetch_related(
-            'groups', 'phone_numbers', 'user_permissions',
-            'user_types', 'addresses', 'attachments',
-            'employee__related_branches'
-        ).annotate(
-            is_blocked=Exists(blocked_sq),
-            has_free_slot=Exists(free_sq),
-            has_overlap=Exists(overlap_sq),
-        ).filter(
-            is_blocked=False,
-            has_free_slot=True,
-            has_overlap=False,
-        ).distinct()[:limit]
+        # ÚNICA QUERY: filtra pela categoria, anota disponibilidade e contagem,
+        # e retorna só id, nome e a contagem daquele dia
+        qs = (
+            User.objects
+                .filter(categories__id=cat_id)
+                .annotate(
+                    is_blocked=Exists(blocked_sq),
+                    has_free_slot=Exists(free_sq),
+                    has_overlap=Exists(overlap_sq),
+                )
+                .filter(
+                    is_blocked=False,
+                    has_free_slot=True,
+                    has_overlap=False,
+                )
+                .annotate(
+                    schedule_count=Count(
+                        'schedule_agent',
+                        filter=Q(schedule_agent__schedule_date=date_str)
+                    )
+                )
+                .distinct()
+                .values('id', 'complete_name', 'schedule_count')
+        )
 
-        # 6) serializa e retorna (sem paginação, já que limit é aplicado)
-        serializer = UserSerializer(qs, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return Response(list(qs), status=status.HTTP_200_OK)
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()
