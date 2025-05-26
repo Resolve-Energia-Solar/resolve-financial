@@ -42,3 +42,32 @@ def create_process(
         )
 
         return new_process.id
+
+
+
+def get_model_data(instance):
+    data = {}
+    fields_to_skip = {'arquivo_grande', 'campo_muito_longo'}
+
+    for field in instance._meta.get_fields():
+        field_name = field.name
+        if field_name in fields_to_skip:
+            continue
+
+        try:
+            field_value = getattr(instance, field_name, None)
+        except Exception:
+            continue
+
+        if field.one_to_many or field.many_to_many:
+            field_value = [obj.id for obj in field_value.all()] if field_value else []
+        elif field.is_relation:
+            field_value = field_value.id if field_value else None
+        elif hasattr(field_value, 'url'):
+            field_value = field_value.url if field_value else None
+        elif hasattr(field_value, 'isoformat'):
+            field_value = field_value.isoformat()
+
+        data[field_name] = field_value
+
+    return data

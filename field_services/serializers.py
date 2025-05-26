@@ -56,14 +56,13 @@ class ScheduleSerializer(BaseSerializer):
 
         if schedule_start_time < disponibility.start_time or schedule_end_time > disponibility.end_time:
             raise serializers.ValidationError({
-                "message": f"O horário do agendamento deve estar entre {disponibility.start_time} e {disponibility.end_time}",
+                "message": f"Este horário não está disponível, pois o agente não possui disponibilidade para agendamentos neste dia e horário. Por favor, selecione um horário dentro do período disponível: {disponibility.start_time} às {disponibility.end_time}.",
                 "available_time": [{
                     "start": disponibility.start_time.strftime("%H:%M"),
                     "end": disponibility.end_time.strftime("%H:%M")
                 }]
             })
 
-        # Check for blocked time slots
         blocked_time = BlockTimeAgent.objects.filter(
             agent=schedule_agent,
             start_date__lte=schedule_date,
