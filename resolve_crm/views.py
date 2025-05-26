@@ -1,43 +1,44 @@
-import re
+# Python standard library imports
+import datetime
 import logging
-from datetime import datetime
-from django.shortcuts import redirect
+import re
+from hashlib import md5
+
+# Django imports
+from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.files.base import ContentFile
+from django.db import transaction
+from django.db.models import Count, F, Prefetch, Q, Sum
+from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import formats
+
+# REST framework imports
 from rest_framework import status
-from rest_framework.views import APIView
-from weasyprint import HTML
+from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+# Third-party imports
+from weasyprint import HTML
+
+# Local application imports
 from accounts.models import User, UserType
 from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
+from core.models import Process, ProcessBase
+from core.task import create_process_async
 from engineering.models import Units
-from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
-from django.db.models import Count, Q, Sum, Prefetch
-from django.db.models import Exists, OuterRef, Q, F, DecimalField
-from django.db import transaction
-from django.contrib import messages
-from django.http import HttpResponse
-from rest_framework.decorators import action, api_view
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from django.core.cache import cache
-from hashlib import md5
-from rest_framework.decorators import api_view
-from django.contrib.contenttypes.models import ContentType
-from core.task import create_process_async
-from core.models import ProcessBase, Process
-from .serializers import *
-from .models import *
-from django.utils import timezone
-from functools import reduce
-import operator
 
 
 logger = logging.getLogger(__name__)
@@ -80,65 +81,87 @@ class SaleViewSet(BaseModelViewSet):
         user = self.request.user
 
         qs = (
-            Sale.objects.select_related(
-                "customer",
-                "seller",
-                "sales_supervisor",
-                "sales_manager",
-                "branch",
-                "marketing_campaign",
-                "supplier",
+            Sale.objects
+                .select_related(
+                    "customer", "seller", "sales_supervisor", "sales_manager",
+                    "branch", "marketing_campaign", "supplier",
+                )
+                .prefetch_related(
+                    "cancellation_reasons",
+                    "products",
+                    "attachments",
+                    "tags",
+                    "payments",
+                    "contract_submissions",
+                    Prefetch(
+                        "attachments",
+                        queryset=Attachment.objects.filter(
+                            content_type=sale_content_type,
+                            status="EA"
+                        ),
+                        to_attr="attachments_under_analysis",
+                    ),
+                )
+        )
+
+        expands = self.request.query_params.get("expand", "")
+        fields_list = self.request.query_params.getlist("fields[]")
+        if not fields_list and "fields" in self.request.query_params:
+            fields_list = [
+                f.strip()
+                for f in self.request.query_params["fields"].split(",")
+                if f.strip()
+            ]
+
+        if "projects" in expands.split(","):
+            project_qs = Project.objects.all()
+            if any(f == "projects.journey_counter" for f in fields_list):
+                project_qs = project_qs.with_journey_counter()
+            else:
+                project_qs = project_qs.with_is_released_to_engineering()
+
+            project_qs = project_qs.prefetch_related(
+                "units",
+                "inspection__final_service_opinion",
+                "homologator",
             )
-            .prefetch_related(
-                "cancellation_reasons",
-                "products",
-                "attachments",
-                "tags",
-                "payments",
-                "contract_submissions",
+            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs))
+        else:
+            qs = qs.prefetch_related(
                 Prefetch(
                     "projects",
-                    queryset=Project.objects.with_is_released_to_engineering().prefetch_related(
-                        "units",
-                        "inspection__final_service_opinion",
-                        "homologator",
-                    ),
-                ),
-                Prefetch(
-                    "attachments",
-                    queryset=Attachment.objects.filter(
-                        content_type=sale_content_type, status="EA"
-                    ),
-                    to_attr="attachments_under_analysis",
+                    queryset=Project.objects
+                        .with_is_released_to_engineering()
+                        .prefetch_related(
+                            "units",
+                            "inspection__final_service_opinion",
+                            "homologator",
+                        ),
                 ),
             )
-            .annotate(
-                total_paid=Sum(
-                    "payments__installments__installment_value",
-                    filter=Q(payments__installments__is_paid=True),
-                    default=0,
-                )
+
+        qs = qs.annotate(
+            total_paid=Sum(
+                "payments__installments__installment_value",
+                filter=Q(payments__installments__is_paid=True),
+                default=0,
             )
-            .order_by("-created_at")
-        )
+        ).order_by("-created_at")
 
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
 
-        stakeholder_filter = (
+        stakeholder = (
             Q(customer=user)
             | Q(seller=user)
             | Q(sales_supervisor=user)
             | Q(sales_manager=user)
         )
-
         if hasattr(user, "employee") and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list("id", flat=True)
-            return qs.filter(
-                Q(branch__id__in=branch_ids) | stakeholder_filter
-            ).distinct()
+            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder).distinct()
 
-        return qs.filter(stakeholder_filter)
+        return qs.filter(stakeholder)
 
     def apply_filters(self, queryset, query_params):
         if query_params.get("documents_under_analysis") == "true":
@@ -285,6 +308,7 @@ class ProjectViewSet(BaseModelViewSet):
         queryset = Project.objects.all()
 
         method_map = {
+            "journey_counter": lambda qs: qs.with_journey_counter(),
             "is_released_to_engineering": lambda qs: qs.with_is_released_to_engineering(),
             "trt_status": lambda qs: qs.with_trt_status(),
             "pending_material_list": lambda qs: qs.with_pending_material_list(),
@@ -307,6 +331,8 @@ class ProjectViewSet(BaseModelViewSet):
             "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
             "number_of_installations": lambda qs: qs.with_number_of_installations(),
             "installation_status": lambda qs: qs.with_installation_status(),
+            "is_released_to_installation": lambda qs: qs.with_is_released_to_installation(),
+            "latest_installation": lambda qs: qs.with_latest_installation(),
             "in_construction": lambda qs: qs.with_in_construction(),
             "construction_status": lambda qs: qs.with_construction_status(),
         }
@@ -345,6 +371,7 @@ class ProjectViewSet(BaseModelViewSet):
         inspection_isnull = request.query_params.get('inspection_isnull')
         signature_date = request.query_params.get('signature_date')
         product_kwp = request.query_params.get('product_kwp')
+        journey_counter = request.query_params.get("journey_counter")
 
         access_opnion = request.query_params.get("access_opnion")
         trt_status = request.query_params.get("trt_status")
@@ -382,10 +409,13 @@ class ProjectViewSet(BaseModelViewSet):
         )
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
-        installation_status = request.query_params.get("installation_status")
+        installation_status__in = request.query_params.get("installation_status__in")
+        is_released_to_installation = request.query_params.get("is_released_to_installation")
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
 
+        if 'journey_counter' in queryset.query.annotations and journey_counter:
+            queryset = queryset.filter(journey_counter=journey_counter)
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
         elif is_pre_sale == "false":
@@ -418,10 +448,15 @@ class ProjectViewSet(BaseModelViewSet):
         if "delivery_status" in queryset.query.annotations and delivery_status:
             queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
 
-        if "installation_status" in queryset.query.annotations and installation_status:
+        if "installation_status" in queryset.query.annotations and installation_status__in:
             queryset = queryset.filter(
-                installation_status__in=installation_status.split(",")
+                installation_status__in=installation_status__in.split(",")
             )
+        if "is_released_to_installation" in queryset.query.annotations and is_released_to_installation:
+            queryset = queryset.filter(
+                is_released_to_installation=is_released_to_installation.lower() == "true"
+            )
+
         if borrower:
             queryset = queryset.filter(sale__payments__borrower__id=borrower)
         if payment_types:
@@ -664,31 +699,16 @@ class ProjectViewSet(BaseModelViewSet):
             return Response(cached_data)
 
         request.query_params._mutable = True
-        request.query_params["metrics"] = "avg_time_installation,installation_status"
+        request.query_params["metrics"] = "installation_status"
         request.query_params._mutable = False
 
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
-        queryset = queryset.with_avg_time_installation()
-        queryset = queryset.with_customer_released_flag()
         queryset = queryset.with_installation_status()
-
-        avg_timedelta = queryset.aggregate(
-            avg_time=Avg("avg_time_installation")
-        )["avg_time"]
-        avg_duration = round(avg_timedelta.total_seconds() / 3600, 2) if avg_timedelta else 0
-
-        released_clients_count = queryset.filter(customer_released=True).count()
-
-        number_of_installations = Schedule.objects.filter(
-            project__in=queryset,
-            service__name__icontains='instalação',
-            execution_finished_at__isnull=False
-        ).count()
         
         # Count projects by installation status
         status_counts = queryset.values('installation_status').annotate(
-            count=Count('id')
+            count=Count('id', distinct=True)
         ).order_by('installation_status')
         
         installation_status_dict = {
@@ -698,9 +718,6 @@ class ProjectViewSet(BaseModelViewSet):
         }
 
         indicators = {
-            "avg_time_installation_hours": avg_duration,
-            "released_clients_count": released_clients_count,
-            "number_of_installations": number_of_installations,
             "installations_status_count": installation_status_dict
         }
 

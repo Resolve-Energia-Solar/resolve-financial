@@ -4,6 +4,7 @@ from .task import (
     generate_project_number,
     generate_sale_contract_number,
     remove_tag_from_sale,
+    update_project_delivery_type,
 )
 from resolve_crm.task import (
     update_or_create_sale_tag,
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 def post_create_project(sender, instance, created, **kwargs):
     if not instance.project_number:
         generate_project_number.delay(instance.pk)
+    
+    if not instance.delivery_type:
+        update_project_delivery_type.delay(instance.id)
 
 
 @receiver(post_save, sender=Attachment)
