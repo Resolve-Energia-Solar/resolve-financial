@@ -228,10 +228,10 @@ class UserViewSet(BaseModelViewSet):
     @action(detail=False, methods=['get'], url_path='available')
     def available(self, request):
         complete_name = request.query_params.get('complete_name')
-        date_str   = request.query_params.get('date')
-        start_str  = request.query_params.get('start_time')
-        end_str    = request.query_params.get('end_time')
-        service_id = request.query_params.get('service')
+        date_str      = request.query_params.get('date')
+        start_str     = request.query_params.get('start_time')
+        end_str       = request.query_params.get('end_time')
+        service_id    = request.query_params.get('service')
 
         if not all([date_str, start_str, end_str, service_id]):
             return Response(
@@ -239,7 +239,6 @@ class UserViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Parse de data/hora
         try:
             day        = parse_date(date_str).weekday()
             start_time = parse_time(start_str)
@@ -250,11 +249,15 @@ class UserViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Carrega o serviço e obtém a categoria
         service = get_object_or_404(Service, pk=service_id)
-        cat_id  = service.category_id
+        cat_id  = service.category.id
+        
+        if not cat_id:
+            return Response(
+                {'detail': 'Serviço não possui categoria associada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Subqueries de bloqueio, slot livre e overlap
         blocked_sq = BlockTimeAgent.objects.filter(
             agent=OuterRef('pk'),
             start_date__lte=date_str, end_date__gte=date_str,
@@ -272,34 +275,37 @@ class UserViewSet(BaseModelViewSet):
             schedule_end_time__gt=start_time
         )
 
-        # ÚNICA QUERY: filtra pela categoria, anota disponibilidade e contagem,
-        # e retorna só id, nome e a contagem daquele dia
+        # começa o QS apenas pela categoria
+        qs = User.objects.filter(categories__id=cat_id)
+
+        # só aplica filtro por nome se vier algo não‐vazio
+        if complete_name:
+            qs = qs.filter(complete_name__icontains=complete_name)
+
+        # aplica disponibilidade e contagem
         qs = (
-            User.objects
-                .filter(categories__id=cat_id, complete_name__icontains=complete_name)
-                .annotate(
-                    is_blocked=Exists(blocked_sq),
-                    has_free_slot=Exists(free_sq),
-                    has_overlap=Exists(overlap_sq),
+            qs
+            .annotate(
+                is_blocked=Exists(blocked_sq),
+                has_free_slot=Exists(free_sq),
+                has_overlap=Exists(overlap_sq),
+            )
+            .filter(
+                is_blocked=False,
+                has_free_slot=True,
+                has_overlap=False,
+            )
+            .annotate(
+                schedule_count=Count(
+                    'schedule_agent',
+                    filter=Q(schedule_agent__schedule_date=date_str)
                 )
-                .filter(
-                    is_blocked=False,
-                    has_free_slot=True,
-                    has_overlap=False,
-                )
-                .annotate(
-                    schedule_count=Count(
-                        'schedule_agent',
-                        filter=Q(schedule_agent__schedule_date=date_str)
-                    )
-                )
-                .distinct()
-                .values('id', 'complete_name', 'schedule_count')
+            )
+            .distinct()
+            .values('id', 'complete_name', 'schedule_count')
         )
 
         return Response(list(qs), status=status.HTTP_200_OK)
-
-
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()
