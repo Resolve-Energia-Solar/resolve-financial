@@ -227,6 +227,7 @@ class UserViewSet(BaseModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='available')
     def available(self, request):
+        complete_name = request.query_params.get('complete_name')
         date_str   = request.query_params.get('date')
         start_str  = request.query_params.get('start_time')
         end_str    = request.query_params.get('end_time')
@@ -275,7 +276,7 @@ class UserViewSet(BaseModelViewSet):
         # e retorna só id, nome e a contagem daquele dia
         qs = (
             User.objects
-                .filter(categories__id=cat_id)
+                .filter(categories__id=cat_id, complete_name__icontains=complete_name)
                 .annotate(
                     is_blocked=Exists(blocked_sq),
                     has_free_slot=Exists(free_sq),
@@ -297,6 +298,8 @@ class UserViewSet(BaseModelViewSet):
         )
 
         return Response(list(qs), status=status.HTTP_200_OK)
+
+
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()
