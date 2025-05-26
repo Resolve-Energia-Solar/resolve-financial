@@ -165,23 +165,23 @@ class UserViewSet(BaseModelViewSet):
             queryset = queryset.filter(employee__role__name__icontains=role).distinct()
     
 
-        if 'schedules' in expand.split(',') and date:
-            queryset = queryset.prefetch_related(
-                Prefetch(
-                    'schedule_agent',
-                    queryset=Schedule.objects.filter(schedule_date=date)
-                )
-            )
+        # if 'schedules' in expand.split(',') and date:
+        #     queryset = queryset.prefetch_related(
+        #         Prefetch(
+        #             'schedule_agent',
+        #             queryset=Schedule.objects.filter(schedule_date=date)
+        #         )
+        #     )
 
-        if 'free_time_agent' in expand.split(','):
-            today = datetime.date.today().weekday()
+        # if 'free_time_agent' in expand.split(','):
+        #     today = datetime.date.today().weekday()
 
-            queryset = queryset.prefetch_related(
-                Prefetch(
-                    'freetimeagent_set',
-                    queryset=FreeTimeAgent.objects.filter(is_deleted=False, day_of_week=today)
-                )
-            )
+        #     queryset = queryset.prefetch_related(
+        #         Prefetch(
+        #             'freetimeagent_set',
+        #             queryset=FreeTimeAgent.objects.filter(is_deleted=False, day_of_week=today)
+        #         )
+        #     )
 
 
         if date and start_time and end_time:
