@@ -104,85 +104,117 @@ class HistoryView(APIView):
         get_related = request.query_params.get('get_related', 'false').lower() == 'true'
 
         if not content_type_id or not object_id:
-            return Response({
-                'message': 'content_type e object_id são obrigatórios.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'message': 'content_type e object_id são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Busca o ContentType ou retorna 404 se não encontrado
         content_type = get_object_or_404(ContentType, id=content_type_id)
         model_class = content_type.model_class()
 
-        # Busca o objeto principal
+        # Pré-fetch relações pertinentes
+        related_names = [rel.get_accessor_name() for rel in model_class._meta.related_objects]
         try:
-            obj = model_class.objects.get(id=object_id)
+            obj = model_class.objects.prefetch_related(*related_names).get(id=object_id)
         except model_class.DoesNotExist:
-            return Response({
-                'message': 'Objeto não encontrado.'
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'message': 'Objeto não encontrado.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Função para buscar histórico de um objeto
-        def get_object_history(object_instance, related_model_name=None, related_object_id=None):
-            if not hasattr(object_instance, 'history'):
-                return []
-
-            history = object_instance.history.all()
-            changes = []
-            history_objects = list(history)
-
-            for i in range(len(history_objects) - 1):
-                new_record = history_objects[i]
-                old_record = history_objects[i + 1]
-                delta = new_record.diff_against(old_record)
-
-                if delta.changes:
-                    author_data = UserSerializer(new_record.history_user).data if new_record.history_user else {'username': 'Desconhecido'}
-                    change_list = []
-                    for change in delta.changes:
-                        field_name = change.field
-                        try:
-                            field_verbose = new_record._meta.get_field(field_name).verbose_name
-                        except FieldDoesNotExist:
-                            field_verbose = field_name
-                        field_verbose = capfirst(field_verbose)
-                        change_list.append({
-                            'field': field_name,
-                            'field_label': field_verbose,
-                            'old': change.old,
-                            'new': change.new
-                        })
-                    changes.append({
-                        'timestamp': new_record.history_date,
-                        'history_type': new_record.history_type,
-                        'author': author_data,
-                        'model': related_model_name or object_instance.__class__.__name__,
-                        'object_id': related_object_id or object_instance.id,
-                        'changes': change_list
-                    })
-
-            return changes
-
-        # Consolidar histórico
-        unified_history = []
-
-        # Adiciona histórico do objeto principal
-        unified_history.extend(get_object_history(obj))
-
-        # Busca objetos relacionados dinamicamente apenas se `get_related` for `true`
+        # IDs e mapeamento de modelos
+        obj_ids = [obj.id]
+        model_names = {obj.id: model_class.__name__}
         if get_related:
-            for model in apps.get_models():
-                for field in model._meta.fields:
-                    if isinstance(field, (ForeignKey, OneToOneField)) and field.related_model == model_class:
-                        related_objects = model.objects.filter(**{field.name: obj})
-                        for related_obj in related_objects:
-                            unified_history.extend(
-                                get_object_history(related_obj, related_model_name=model.__name__, related_object_id=related_obj.id)
-                            )
+            for rel in model_class._meta.related_objects:
+                for related in getattr(obj, rel.get_accessor_name()).all():
+                    obj_ids.append(related.id)
+                    model_names[related.id] = rel.related_model.__name__
 
-        # Ordena o histórico pela timestamp
-        unified_history = sorted(unified_history, key=lambda x: x['timestamp'], reverse=True)
+        # Paginação
+        try:
+            limit = int(request.query_params.get('limit', 100))
+            offset = int(request.query_params.get('offset', 0))
+        except ValueError:
+            return Response(
+                {'message': 'Parâmetros limit e offset devem ser inteiros.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        start, end = offset, offset + limit + 1
+
+        # Batch fetch do histórico
+        HistoryModel = obj.history.model
+        records = list(
+            HistoryModel.objects
+            .filter(id__in=obj_ids)
+            .select_related('history_user')
+            .order_by('-history_date')[start:end]
+        )
+
+        # Cache para verbose_name de campos
+        verbose_cache = {}
+        def get_verbose_name(field, meta):
+            key = (meta, field)
+            if key not in verbose_cache:
+                try:
+                    verbose_cache[key] = capfirst(meta.get_field(field).verbose_name)
+                except Exception:
+                    verbose_cache[key] = field
+            return verbose_cache[key]
+
+        # Agrupa por objeto e gera diffs
+        grouped = {}
+        for rec in records:
+            grouped.setdefault(rec.id, []).append(rec)
+
+        unified = []
+        for oid, recs in grouped.items():
+            for new, old in zip(recs, recs[1:]):
+                delta = new.diff_against(old)
+                if not delta.changes:
+                    continue
+                user = new.history_user
+                if user:
+                    author = {
+                        'id': user.id,
+                        'complete_name': getattr(user, 'complete_name', user.get_full_name()),
+                        'email': user.email,
+                        'username': user.username,
+                    }
+                else:
+                    author = {
+                        'id': None,
+                        'complete_name': None,
+                        'email': None,
+                        'username': 'Desconhecido',
+                    }
+                changes = []
+                for change in delta.changes:
+                    label = get_verbose_name(change.field, new._meta)
+                    changes.append({
+                        'field': change.field,
+                        'field_label': label,
+                        'old': change.old,
+                        'new': change.new,
+                    })
+                unified.append({
+                    'timestamp': new.history_date,
+                    'history_type': new.history_type,
+                    'author': author,
+                    'model': model_names.get(oid, model_class.__name__),
+                    'object_id': oid,
+                    'changes': changes,
+                })
+
+        # Ordenação e paginação final
+        unified.sort(key=lambda x: x['timestamp'], reverse=True)
+        paginated = unified[:limit]
 
         return Response({
-            'history': unified_history
+            'count': len(unified),
+            'offset': offset,
+            'limit': limit,
+            'history': paginated,
         }, status=status.HTTP_200_OK)
 
 
