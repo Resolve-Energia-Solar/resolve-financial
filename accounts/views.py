@@ -26,12 +26,19 @@ from accounts.models import *
 from accounts.serializers import *
 from api.views import BaseModelViewSet
 from accounts.serializers import PasswordResetConfirmSerializer
-from field_services.models import BlockTimeAgent, Category, FreeTimeAgent, Schedule
+from field_services.models import BlockTimeAgent, Category, FreeTimeAgent, Schedule, Service
 from django.utils.dateparse import parse_time
 from django.utils import timezone
 from django.db.models import OuterRef, Subquery, Count, Value
 from django.db.models.functions import Coalesce
 import datetime
+from django.shortcuts import get_object_or_404
+from django.db.models import OuterRef, Exists
+from django.utils.dateparse import parse_date, parse_time
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 # Accounts views
 
 class UserLoginView(APIView):
@@ -106,20 +113,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
-from django.db.models import OuterRef, Exists, Count, Value
-from django.db.models.functions import Coalesce
-from django.utils.dateparse import parse_date, parse_time
-
-from rest_framework import status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
-
-
 class UserViewSet(BaseModelViewSet):
-    """
-    Listagem/CRUD de usuários e verificação de disponibilidade via /users/{pk}/availability/
-    """
     queryset = User.objects.all().select_related('employee').prefetch_related(
         'groups',
         'phone_numbers',
@@ -128,6 +122,8 @@ class UserViewSet(BaseModelViewSet):
         'addresses',
         'attachments',
         'employee__related_branches',
+        'free_times',
+        'block_times'
     )
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
@@ -228,22 +224,23 @@ class UserViewSet(BaseModelViewSet):
 
         return Response(data, status=status.HTTP_200_OK)
 
-    
+
     @action(detail=False, methods=['get'], url_path='available')
     def available(self, request):
         """
-        GET /users/available/?date=YYYY-MM-DD&start_time=HH:MM&end_time=HH:MM&service=<id>
-        Retorna lista de agentes que:
-          - pertencem ao serviço especificado
-          - NÃO estão bloqueados nesse período
-          - têm slot livre nesse dia/hora
-          - não têm agendamento sobreposto
+        GET /api/users/available/
+        ?date=YYYY-MM-DD
+        &start_time=HH:MM
+        &end_time=HH:MM
+        &service=<id>
+        &limit=<n opcional>
         """
-        # 1) validação de entrada
+        # 1) validação dos params básicos
         date_str   = request.query_params.get('date')
         start_str  = request.query_params.get('start_time')
         end_str    = request.query_params.get('end_time')
         service_id = request.query_params.get('service')
+        limit      = int(request.query_params.get('limit', 25))
 
         if not all([date_str, start_str, end_str, service_id]):
             return Response(
@@ -262,7 +259,11 @@ class UserViewSet(BaseModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 3) subqueries de disponibilidade
+        # 3) carrega o Service e sua Categoria
+        service = get_object_or_404(Service, pk=service_id)
+        category_id = service.category.id
+
+        # 4) subqueries de disponibilidade
         blocked_sq = BlockTimeAgent.objects.filter(
             agent=OuterRef('pk'),
             start_date__lte=date_str,
@@ -284,9 +285,9 @@ class UserViewSet(BaseModelViewSet):
             schedule_end_time__gt=start_time
         )
 
-        # 4) filtra usuários que têm o serviço e anotam a disponibilidade
+        # 5) filtra Usuários que são membros da categoria do serviço
         qs = User.objects.filter(
-            employee__services__id=service_id  # ajusta conforme seu relation M2M
+            categories__id=category_id
         ).select_related('employee').prefetch_related(
             'groups', 'phone_numbers', 'user_permissions',
             'user_types', 'addresses', 'attachments',
@@ -299,16 +300,12 @@ class UserViewSet(BaseModelViewSet):
             is_blocked=False,
             has_free_slot=True,
             has_overlap=False,
-        )
+        ).distinct()[:limit]
 
-        # 5) retorna serializado
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = UserSerializer(page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
-
+        # 6) serializa e retorna (sem paginação, já que limit é aplicado)
         serializer = UserSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()

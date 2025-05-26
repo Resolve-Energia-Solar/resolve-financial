@@ -326,7 +326,7 @@ class Schedule(models.Model):
 
 class BlockTimeAgent(models.Model):
     agent = models.ForeignKey(
-        "accounts.User", verbose_name="Agente", on_delete=models.CASCADE
+        "accounts.User", verbose_name="Agente", on_delete=models.CASCADE, related_name="block_times"
     )
     start_date = models.DateField("Data de Início")
     end_date = models.DateField("Data de Fim")
@@ -364,7 +364,7 @@ class FreeTimeAgent(models.Model):
     ]
 
     agent = models.ForeignKey(
-        "accounts.User", verbose_name="Agente", on_delete=models.CASCADE
+        "accounts.User", verbose_name="Agente", on_delete=models.CASCADE, related_name="free_times"
     )
     day_of_week = models.IntegerField("Dia da Semana", choices=day_of_week)
     start_time = models.TimeField("Horário de Início")
