@@ -209,6 +209,8 @@ class CivilConstruction(models.Model):
         "Percentual de Sombreamento",
         max_digits=5,
         decimal_places=2,
+        null=True,
+        blank=True
     )
     
     class Meta:
