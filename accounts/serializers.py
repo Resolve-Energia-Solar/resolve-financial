@@ -178,18 +178,6 @@ class UserSerializer(BaseSerializer):
     user_permissions = SerializerMethodField()
     distance = SerializerMethodField()
     daily_schedules_count = SerializerMethodField()
-    schedules = SerializerMethodField()
-    free_time_agent = SerializerMethodField()
-    
-    def get_schedules(self, obj):
-        if hasattr(obj, 'schedule_agent'):
-            return ScheduleSerializer(getattr(obj, 'schedule_agent', None), many=True).data
-        return None
-
-    def get_free_time_agent(self, obj):
-        if hasattr(obj, 'freetimeagent_set'):
-            return FreeTimeAgentSerializer(getattr(obj, 'freetimeagent_set', None), many=True).data
-        return None
 
     class Meta:
         model = User
