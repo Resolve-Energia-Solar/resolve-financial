@@ -114,7 +114,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 class UserViewSet(BaseModelViewSet):
-    queryset = User.objects.all().select_related('employee').prefetch_related(
+    queryset = User.objects.all().select_related('employee', 'employee__user_manager', 'employee__department', 'employee__role').prefetch_related(
         'groups',
         'phone_numbers',
         'user_permissions',
@@ -203,6 +203,24 @@ class UserViewSet(BaseModelViewSet):
             schedule_start_time__lt=end_time,
             schedule_end_time__gt=start_time
         )
+        
+        # monta lista de slots livres daquele dia para esse agente
+        free_qs = FreeTimeAgent.objects.filter(
+            agent=user,
+            is_deleted=False,
+            day_of_week=day,
+            start_time__lt=end_time,
+            end_time__gt=start_time,
+        ).values('start_time', 'end_time')
+
+        # 2) formata para string HH:MM
+        free_time_agent = [
+            {
+                'start_time': slot['start_time'].strftime('%H:%M'),
+                'end_time':   slot['end_time'].strftime('%H:%M'),
+            }
+            for slot in free_qs
+        ]
 
         # executa EXISTS
         is_blocked    = blocked_sq.exists()
@@ -220,6 +238,7 @@ class UserViewSet(BaseModelViewSet):
             'has_free_slot': has_free_slot,
             'has_overlap': has_overlap,
             'available': available,
+            'free_time_agent': free_time_agent,
         }
 
         return Response(data, status=status.HTTP_200_OK)

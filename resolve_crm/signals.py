@@ -1,5 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from engineering.models import Units
 from .task import (
     generate_project_number,
     generate_sale_contract_number,
@@ -24,6 +26,12 @@ def post_create_project(sender, instance, created, **kwargs):
     
     if not instance.delivery_type:
         update_project_delivery_type.delay(instance.id)
+        
+
+@receiver(post_save, sender=Units)
+def post_units(sender, instance, created, **kwargs):
+    if instance.address and instance.main_unit and instance.project:
+        update_project_delivery_type.delay(instance.project.id)
 
 
 @receiver(post_save, sender=Attachment)
