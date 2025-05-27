@@ -327,7 +327,8 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale", "inspection__final_service_opinion"
+            "sale", "inspection__final_service_opinion", "inspection",
+            "product", "designer", "homologator", "registered_circuit_breaker"
         ).prefetch_related(
             "attachments",
             "attachments__document_type",
