@@ -112,13 +112,9 @@ class SaleViewSet(BaseModelViewSet):
                 for f in self.request.query_params["fields"].split(",")
                 if f.strip()
             ]
-
-        if "projects" in expands.split(","):
-            project_qs = Project.objects.all()
-            if any(f == "projects.journey_counter" for f in fields_list):
-                project_qs = project_qs.with_journey_counter()
-            else:
-                project_qs = project_qs.with_is_released_to_engineering()
+        
+        if "projects" in expands.split(",") or "projects.journey_counter" in fields_list:
+            project_qs = Project.objects.with_is_released_to_engineering().with_journey_counter()
 
             project_qs = project_qs.prefetch_related(
                 "units",
@@ -126,19 +122,6 @@ class SaleViewSet(BaseModelViewSet):
                 "homologator",
             )
             qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs))
-        else:
-            qs = qs.prefetch_related(
-                Prefetch(
-                    "projects",
-                    queryset=Project.objects
-                        .with_is_released_to_engineering()
-                        .prefetch_related(
-                            "units",
-                            "inspection__final_service_opinion",
-                            "homologator",
-                        ),
-                ),
-            )
 
         qs = qs.annotate(
             total_paid=Sum(
