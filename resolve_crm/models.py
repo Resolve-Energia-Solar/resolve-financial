@@ -418,6 +418,7 @@ class Sale(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Cliente",
         related_name="customer_sales",
+        db_index=True
     )
     seller = models.ForeignKey(
         get_user_model(),
@@ -1787,6 +1788,7 @@ class Project(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Venda",
         related_name="projects",
+        db_index=True
     )
     product = models.ForeignKey(
         "logistics.Product",
@@ -1808,6 +1810,7 @@ class Project(models.Model):
         related_name="designer_projects",
         null=True,
         blank=True,
+        db_index=True
     )
     designer_status = models.CharField(
         "Status do Projeto de Engenharia",

@@ -327,7 +327,7 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale", "inspection__final_service_opinion", "inspection",
+            "sale","sale__customer", "inspection__final_service_opinion", "inspection",
             "product", "designer", "homologator", "registered_circuit_breaker"
         ).prefetch_related(
             "attachments",
@@ -342,6 +342,7 @@ class ProjectViewSet(BaseModelViewSet):
         )
 
         return queryset.order_by("-created_at")
+
 
     def apply_additional_filters(self, queryset, request):
         from django.db.models import Q, Exists, OuterRef
@@ -594,6 +595,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         return queryset
 
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
@@ -606,6 +608,7 @@ class ProjectViewSet(BaseModelViewSet):
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
 
+    
     @action(detail=False, methods=["get"])
     def indicators(self, request, *args, **kwargs):
         request.query_params._mutable = True

@@ -9,8 +9,8 @@ from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from api.views import BaseModelViewSet
-from customer_service.models import CustomerService, LostReason
-from customer_service.serializers import CustomerServiceSerializer, LostReasonSerializer
+from customer_service.models import CustomerService, LostReason, Ticket, TicketType
+from customer_service.serializers import CustomerServiceSerializer, LostReasonSerializer, TicketSerializer, TicketTypeSerializer
 
 User = get_user_model()
 
@@ -52,6 +52,28 @@ class CustomerServiceViewSet(BaseModelViewSet):
 class LostReasonViewSet(BaseModelViewSet):
     serializer_class = LostReasonSerializer
     queryset = LostReason.objects.all()
+    authentication_classes = [
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+        JWTAuthentication,
+    ]
+    
+
+class TicketTypeViewSet(BaseModelViewSet):
+    serializer_class = TicketTypeSerializer
+    queryset = TicketType.objects.all()
+    authentication_classes = [
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+        JWTAuthentication,
+    ]
+    
+
+class TicketViewSet(BaseModelViewSet):
+    serializer_class = TicketSerializer
+    queryset = Ticket.objects.all()
     authentication_classes = [
         TokenAuthentication,
         BasicAuthentication,

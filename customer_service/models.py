@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 
 class CustomerService(models.Model):
@@ -31,3 +32,99 @@ class LostReason(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TicketType(models.Model):
+    name = models.CharField("Tipo de Chamado", max_length=50)
+    deadline = models.PositiveIntegerField(
+        "Prazo (dias)",
+        help_text="Prazo em dias para resolução do chamado",
+    )
+    is_deleted = models.BooleanField("Deletado", default=False)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Tipo de Chamado"
+        verbose_name_plural = "Tipos de Chamados"
+
+    def __str__(self):
+        return self.name
+
+
+
+class Ticket(models.Model):
+    project = models.ForeignKey(
+        "resolve_crm.Project", on_delete=models.CASCADE, verbose_name="Projeto", related_name="project_tickets"
+    )
+    responsible = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        verbose_name="Responsável",
+        related_name="responsible_tickets",
+    )
+    subject = models.CharField("Assunto", max_length=100)
+    description = models.TextField("Descrição")
+    ticket_type = models.ForeignKey(
+        "TicketType",
+        on_delete=models.CASCADE,
+        verbose_name="Tipo de Chamado",
+        related_name="ticket_type_tickets",
+    )
+    priority = models.PositiveSmallIntegerField(
+        "Prioridade",
+        choices=[
+            (1, "Baixa"),
+            (2, "Média"),
+            (3, "Alta"),
+        ],
+    )
+    responsible_department = models.ForeignKey(
+        "accounts.Department",
+        on_delete=models.CASCADE,
+        verbose_name="Departamento Responsável",
+        related_name="responsible_department_tickets",
+    )
+    responsible_user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        verbose_name="Usuário Responsável",
+        related_name="responsible_user_tickets",
+    )
+    status = models.CharField(
+        "Status",
+        max_length=20,
+        choices=[
+            ("A", "Aberto"),
+            ("E", "Em Espera"),
+            ("RE", "Respondido"),
+            ("R", "Resolvido"),
+            ("F", "Fechado"),
+        ],
+        default="A",
+    )
+    conclusion_date = models.DateField(
+        "Data de Conclusão",
+        blank=True,
+        null=True,
+        help_text="Data em que o chamado foi concluído",
+    )
+    deadline = models.PositiveIntegerField(
+        "Prazo (dias)",
+        help_text="Prazo em dias para resolução do chamado",
+    )
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    updated_at = models.DateTimeField("Atualizado em", auto_now=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Chamado"
+        verbose_name_plural = "Chamados"
+        ordering = ["-created_at"]
+        
+    def __str__(self):
+        return f"{self.subject} - {self.project.project_number} ({self.get_status_display()})"
+
+
+    
