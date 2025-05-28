@@ -1506,7 +1506,7 @@ class ProjectQuerySet(models.QuerySet):
                     ),
                     # 1) instalado ou cancelado
                     When(
-                        Q(latest_installation_opinion_name__icontains="Instalado"),
+                        Q(latest_installation_opinion_name__icontains="Concluído"),
                         then=Value("Instalado"),
                     ),
                     When(
