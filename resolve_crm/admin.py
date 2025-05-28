@@ -74,7 +74,14 @@ class OriginAdmin(admin.ModelAdmin):
 class LeadAdmin(admin.ModelAdmin):
     list_display = ("name", "type", "contact_email", "origin", "seller")
     search_fields = ("name",)
-    autocomplete_fields = ("addresses", "customer", "origin", "seller", "sdr", "column", )
+    autocomplete_fields = (
+        "addresses",
+        "customer",
+        "origin",
+        "seller",
+        "sdr",
+        "column",
+    )
 
     def save_model(self, request, obj, form, change):
         obj.save(current_user=request.user)
@@ -146,10 +153,13 @@ class SaleAdmin(admin.ModelAdmin):
         "marketing_campaign",
         "cancellation_reasons",
         "products",
-        
     ]
     inlines = [SaleProductInline, PaymentInline]
-    search_fields = ("contract_number", "customer__complete_name", "seller__complete_name")
+    search_fields = (
+        "contract_number",
+        "customer__complete_name",
+        "seller__complete_name",
+    )
     list_filter = ("payment_status", "status", "created_at")
     ordering = ("-created_at",)
     actions = [criar_processos_para_venda, criar_projetos_para_venda]
