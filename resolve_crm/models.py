@@ -491,13 +491,13 @@ class Sale(models.Model):
         "Status da Venda",
         max_length=2,
         choices=[
-            ("P", "Pendente"), 
-            ("F", "Finalizado"), 
-            ("EA", "Em Andamento"), 
-            ("C", "Cancelado"), 
+            ("P", "Pendente"),
+            ("F", "Finalizado"),
+            ("EA", "Em Andamento"),
+            ("C", "Cancelado"),
             ("D", "Distrato"),
-            ("ED", "Em Distrato")
-        ], 
+            ("ED", "Em Distrato"),
+        ],
         default="P",
         db_index=True,
     )
@@ -730,36 +730,38 @@ class ProjectQuerySet(models.QuerySet):
                 last_final=Max(
                     Case(
                         When(
-                            Q(requests_energy_company__type__name__icontains='Vistoria final') &
-                            Q(requests_energy_company__status='D') &
-                            Q(requests_energy_company__conclusion_date__isnull=False),
-                            then=F('requests_energy_company__conclusion_date')
+                            Q(
+                                requests_energy_company__type__name__icontains="Vistoria final"
+                            )
+                            & Q(requests_energy_company__status="D")
+                            & Q(requests_energy_company__conclusion_date__isnull=False),
+                            then=F("requests_energy_company__conclusion_date"),
                         ),
                         output_field=DateField(),
                     )
                 ),
                 # 2) Data de assinatura já em DateField
-                contract_dt=Cast(F('sale__signature_date'), DateField()),
+                contract_dt=Cast(F("sale__signature_date"), DateField()),
             )
             # 3) Fim da jornada = vistoria final ou hoje (CURDATE())
             .annotate(
                 journey_end=Coalesce(
-                    F('last_final'),
+                    F("last_final"),
                     Value(timezone.localdate(), output_field=DateField()),
-                    output_field=DateField()
+                    output_field=DateField(),
                 )
             )
             # 4) Diferença em dias via DATEDIFF(end, start)
             .annotate(
                 journey_counter=Func(
-                    F('journey_end'),
-                    F('contract_dt'),
-                    function='DATEDIFF',
-                    output_field=IntegerField()
+                    F("journey_end"),
+                    F("contract_dt"),
+                    function="DATEDIFF",
+                    output_field=IntegerField(),
                 )
             )
         )
-    
+
     def with_is_released_to_engineering(self):
         sale_ct = ContentType.objects.get_for_model(Sale)
 
@@ -1219,13 +1221,16 @@ class ProjectQuerySet(models.QuerySet):
 
     def with_final_inspection_status(self):
         return (
-            self.with_is_released_to_engineering()
+            self.with_last_installation_final_service_opinion()
+            .with_is_released_to_engineering()
             .with_request_days_since_requested(
                 "Vistoria Final", "final_inspection_days"
             )
             .annotate(
                 final_inspection_status=Case(
+                    # bloqueado se não liberado
                     When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                    # bloqueado se falta parecer de acesso aprovado
                     When(
                         Q(is_released_to_engineering=True)
                         & ~Q(
@@ -1234,6 +1239,7 @@ class ProjectQuerySet(models.QuerySet):
                         ),
                         then=Value("Bloqueado"),
                     ),
+                    # pendente: acesso deferido e instalação concluída
                     When(
                         Q(
                             requests_energy_company__type__name__icontains="Parecer de Acesso",
@@ -1245,6 +1251,7 @@ class ProjectQuerySet(models.QuerySet):
                         ),
                         then=Value("Pendente"),
                     ),
+                    # solicitado / deferido / indeferido de vistoria final
                     When(
                         Q(
                             requests_energy_company__type__name__icontains="Vistoria Final",
