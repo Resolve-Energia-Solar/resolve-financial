@@ -18,11 +18,6 @@ urlpatterns = [
     path('sentry-debug/', trigger_error),
 ]
 
-if settings.ENABLE_SILK:
-    urlpatterns += [
-        path('silk/', include('silk.urls', namespace='silk')),
-    ]
-
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns = [

@@ -109,22 +109,9 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
-
-
-if DEBUG:
-    INSTALLED_APPS += ['silk']
-    MIDDLEWARE += ['silk.middleware.SilkyMiddleware', 'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware']
-    ENABLE_SILK = True
-else:
-    ENABLE_SILK = False
-
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
-
-SILKY_MAX_RECORDED_REQUESTS_CHECK_PERCENT = 10
-
-SILKY_MAX_RECORDED_REQUESTS = 10000
 
 # REST_FLEX_FIELDS = {
 #     'SERIALIZER_EXTENSIONS': [
