@@ -1,18 +1,25 @@
-from requests import Response
-from accounts.models import User
-from accounts.serializers import UserSerializer
-from accounts.models import User
-from accounts.serializers import UserSerializer
-from api.views import BaseModelViewSet
-from .models import *
-from .serializers import *
-from rest_framework.decorators import action
-from rest_framework import status
-from rest_framework.response import Response
-from django.utils.dateparse import parse_datetime
-from datetime import datetime
-from django.db.models import Q
 from collections import defaultdict
+from datetime import datetime
+
+from django.db.models import Prefetch, Q
+from django.utils.dateparse import parse_datetime
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from accounts.models import Address, PhoneNumber, User
+from api.views import BaseModelViewSet
+from .models import (
+    Answer, BlockTimeAgent, Category, Deadline, Forms, FormFile,
+    FreeTimeAgent, RoofType, Route, Schedule, Service,
+    ServiceOpinion
+)
+from .serializers import (
+    AnswerSerializer, BlockTimeAgentSerializer, CategorySerializer,
+    DeadlineSerializer, FormsSerializer, FormFileSerializer,
+    FreeTimeAgentSerializer, RoofTypeSerializer, RouteSerializer,
+    ScheduleSerializer, ServiceOpinionSerializer, ServiceSerializer
+)
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -95,14 +102,20 @@ class ScheduleViewSet(BaseModelViewSet):
                 "schedule_creator__employee__branch",
                 "schedule_agent__employee__branch",
                 "project__sale__branch",
+                Prefetch("customer__phone_numbers", queryset=PhoneNumber.objects.order_by("-is_main")),
+                Prefetch(
+                    "customer__addresses",
+                    queryset=Address.objects.filter(is_deleted=False),
+                    to_attr="addresses_list"
+                ),
             )
         )
 
-        user = self.request.user
+        user    = self.request.user
+        params  = self.request.query_params
 
-        # 1. Filtros Globais
-        q = self.request.query_params.get("q")
-        if q:
+        # 1) filtros globais
+        if q := params.get("q"):
             qs = qs.filter(
                 Q(customer__complete_name__icontains=q)
                 | Q(customer__first_document__icontains=q)
@@ -110,51 +123,41 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(schedule_agent__complete_name__icontains=q)
                 | Q(protocol__icontains=q)
             )
-
-        if self.request.query_params.get("schedule_agent__isnull") in ("true", "false"):
-            isnull = self.request.query_params["schedule_agent__isnull"] == "true"
-            qs = qs.filter(schedule_agent__isnull=isnull)
-
-        if category := self.request.query_params.get("category__icontains"):
-            qs = qs.filter(service__category__name__icontains=category)
-
-        if cust := self.request.query_params.get("customer__icontains"):
+        if params.get("schedule_agent__isnull") in ("true","false"):
+            qs = qs.filter(schedule_agent__isnull=params["schedule_agent__isnull"]=="true")
+        if cat := params.get("category__icontains"):
+            qs = qs.filter(service__category__name__icontains=cat)
+        if cust := params.get("customer__icontains"):
             qs = qs.filter(
                 Q(customer__complete_name__icontains=cust)
                 | Q(customer__first_document__icontains=cust)
             )
-
-        if opin := self.request.query_params.get("final_services_opnions"):
+        if opin := params.get("final_services_opnions"):
             qs = qs.filter(final_service_opinion__id__in=opin.split(","))
-
-        if fsn := self.request.query_params.get("final_service_is_null") in ("true", "false"):
-            qs = qs.filter(final_service_opinion__isnull=fsn)
-
-        if son := self.request.query_params.get("service_opnion_is_null") in ("true", "false"):
-            qs = qs.filter(service_opinion__isnull=son)
-
-        if proj := self.request.query_params.get("project_confirmed"):
+        if params.get("final_service_is_null") in ("true","false"):
+            qs = qs.filter(final_service_opinion__isnull=params["final_service_is_null"]=="true")
+        if params.get("service_opnion_is_null") in ("true","false"):
+            qs = qs.filter(service_opinion__isnull=params["service_opnion_is_null"]=="true")
+        if proj := params.get("project_confirmed"):
             qs = qs.filter(project__id=proj, status="Confirmado")
-
-        if svc := self.request.query_params.get("service"):
+        if svc := params.get("service"):
             qs = qs.filter(service__id=svc)
-
-        if self.request.query_params.get("customer_project_or") == "true":
-            c, p = self.request.query_params.get("customer"), self.request.query_params.get("project")
+        if params.get("customer_project_or") == "true":
+            c,p = params.get("customer"), params.get("project")
             if c and p:
-                qs = qs.filter(Q(customer=c) | Q(project=p))
+                qs = qs.filter(Q(customer=c)|Q(project=p))
 
-        # 2. Verifica se vê tudo
-        if self.request.query_params.get("view_all") == "true" or user.has_perm("field_services.view_all_schedule"):
+        # 2) vê tudo?
+        if params.get("view_all")=="true" or user.has_perm("field_services.view_all_schedule"):
             return qs
 
-        # 3. Branch IDs
+        # 3) branches do usuário
         branch_ids = []
-        if (hasattr(user, "employee") and user.employee.related_branches.exists()) or user.branch_owners.exists():
-            branch_ids = list(user.employee.related_branches.values_list("id", flat=True))
-            branch_ids += list(user.branch_owners.values_list("id", flat=True))
+        if (hasattr(user,"employee") and user.employee.related_branches.exists()) or user.branch_owners.exists():
+            branch_ids = list(user.employee.related_branches.values_list("id",flat=True))
+            branch_ids += list(user.branch_owners.values_list("id",flat=True))
 
-        # 4. Filtro único (mantém select/prefetch)
+        # 4) filtro único (mantém select/prefetch)
         perms = (
             Q(schedule_creator=user)
             | Q(schedule_agent=user)

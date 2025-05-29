@@ -295,7 +295,6 @@ class ScheduleSerializer(BaseSerializer):
 
         return best_position
 
-
     def create(self, validated_data):
         schedule_agent = validated_data.get("schedule_agent")
         service = validated_data.get("service")
