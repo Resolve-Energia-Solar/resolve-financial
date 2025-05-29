@@ -71,6 +71,9 @@ class ScheduleViewSet(BaseModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
+class ScheduleViewSet(BaseModelViewSet):
+    serializer_class = ScheduleSerializer
+
     def get_queryset(self):
         qs = (
             Schedule.objects
@@ -88,6 +91,7 @@ class ScheduleViewSet(BaseModelViewSet):
                 "branch",
             )
             .prefetch_related(
+                "service",
                 "schedule_creator__employee__branch",
                 "schedule_agent__employee__branch",
                 "project__sale__branch",
@@ -107,68 +111,50 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(protocol__icontains=q)
             )
 
-        schedule_agent__isnull = self.request.query_params.get("schedule_agent__isnull")
-        if schedule_agent__isnull == "true":
-            qs = qs.filter(schedule_agent__isnull=True)
-        elif schedule_agent__isnull == "false":
-            qs = qs.filter(schedule_agent__isnull=False)
+        if self.request.query_params.get("schedule_agent__isnull") in ("true", "false"):
+            isnull = self.request.query_params["schedule_agent__isnull"] == "true"
+            qs = qs.filter(schedule_agent__isnull=isnull)
 
-        category = self.request.query_params.get("category__icontains")
-        if category:
+        if category := self.request.query_params.get("category__icontains"):
             qs = qs.filter(service__category__name__icontains=category)
 
-        customer__icontains = self.request.query_params.get("customer__icontains")
-        if customer__icontains:
+        if cust := self.request.query_params.get("customer__icontains"):
             qs = qs.filter(
-                Q(customer__complete_name__icontains=customer__icontains)
-                | Q(customer__first_document__icontains=customer__icontains)
+                Q(customer__complete_name__icontains=cust)
+                | Q(customer__first_document__icontains=cust)
             )
 
-        final_services_opinions = self.request.query_params.get("final_services_opnions")
-        if final_services_opinions:
-            opinions = final_services_opinions.split(",")
-            qs = qs.filter(final_service_opinion__id__in=opinions)
+        if opin := self.request.query_params.get("final_services_opnions"):
+            qs = qs.filter(final_service_opinion__id__in=opin.split(","))
 
-        final_service_is_null = self.request.query_params.get("final_service_is_null")
-        if final_service_is_null == "true":
-            qs = qs.filter(final_service_opinion__isnull=True)
-        elif final_service_is_null == "false":
-            qs = qs.filter(final_service_opinion__isnull=False)
+        if fsn := self.request.query_params.get("final_service_is_null") in ("true", "false"):
+            qs = qs.filter(final_service_opinion__isnull=fsn)
 
-        service_opinion_is_null = self.request.query_params.get("service_opnion_is_null")
-        if service_opinion_is_null == "true":
-            qs = qs.filter(service_opinion__isnull=True)
-        elif service_opinion_is_null == "false":
-            qs = qs.filter(service_opinion__isnull=False)
+        if son := self.request.query_params.get("service_opnion_is_null") in ("true", "false"):
+            qs = qs.filter(service_opinion__isnull=son)
 
-        project = self.request.query_params.get("project_confirmed")
-        if project:
-            qs = qs.filter(project__id=project, status="Confirmado")
+        if proj := self.request.query_params.get("project_confirmed"):
+            qs = qs.filter(project__id=proj, status="Confirmado")
 
-        service = self.request.query_params.get("service")
-        if service:
-            qs = qs.filter(service__id=service)
+        if svc := self.request.query_params.get("service"):
+            qs = qs.filter(service__id=svc)
 
         if self.request.query_params.get("customer_project_or") == "true":
-            customer = self.request.query_params.get("customer")
-            project = self.request.query_params.get("project")
-            if customer and project:
-                qs = qs.filter(Q(customer=customer) | Q(project=project))
+            c, p = self.request.query_params.get("customer"), self.request.query_params.get("project")
+            if c and p:
+                qs = qs.filter(Q(customer=c) | Q(project=p))
 
         # 2. Verifica se vê tudo
-        view_all = self.request.query_params.get("view_all") == "true"
-        if view_all or user.has_perm("field_services.view_all_schedule"):
+        if self.request.query_params.get("view_all") == "true" or user.has_perm("field_services.view_all_schedule"):
             return qs
 
-        # 3. Monta lista de branch_ids do usuário
+        # 3. Branch IDs
         branch_ids = []
-        if (
-            hasattr(user, "employee") and user.employee.related_branches.exists()
-        ) or user.branch_owners.exists():
+        if (hasattr(user, "employee") and user.employee.related_branches.exists()) or user.branch_owners.exists():
             branch_ids = list(user.employee.related_branches.values_list("id", flat=True))
             branch_ids += list(user.branch_owners.values_list("id", flat=True))
 
-        # 4. Filtro único de permissão (mantém select/prefetch)
+        # 4. Filtro único (mantém select/prefetch)
         perms = (
             Q(schedule_creator=user)
             | Q(schedule_agent=user)
