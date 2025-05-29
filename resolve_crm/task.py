@@ -101,9 +101,8 @@ def update_or_create_sale_tag(sale_id, sale_status):
     try:
         sale = Sale.objects.get(id=sale_id)
         sale_ct = ContentType.objects.get_for_model(Sale)
-
+        new_tag = "documentação parcial"
         if sale_status == "EA":
-            new_tag = "documentação parcial"
             color = "#FF0000"
             tag_qs = Tag.objects.filter(
                 content_type=sale_ct, object_id=sale.id, tag=new_tag
@@ -117,7 +116,7 @@ def update_or_create_sale_tag(sale_id, sale_status):
                 logger.info(f"📌 Tag já existe para sale {sale.id}")
         else:
             tag_qs = Tag.objects.filter(
-                content_type=sale_ct, object_id=sale.id, tag="documentação parcial"
+                content_type=sale_ct, object_id=sale.id, tag=new_tag
             )
             if tag_qs.exists():
                 tag_qs.delete()

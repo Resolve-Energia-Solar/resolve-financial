@@ -170,20 +170,14 @@ class EmployeeSerializer(BaseSerializer):
 
 class UserSerializer(BaseSerializer):
     employee_data = SerializerMethodField()
-    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
     phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True, required=False)
-    groups = SerializerMethodField()
 
-    user_permissions = SerializerMethodField()
     distance = SerializerMethodField()
     daily_schedules_count = SerializerMethodField()
 
     class Meta:
         model = User
-        exclude = ['password']
-        
-    def get_groups(self, obj):
-        return obj.groups.values_list('id', flat=True)
+        exclude = ['password', 'user_permissions', 'groups']
         
     def validate(self, attrs):
         if 'first_document' in attrs:
@@ -229,9 +223,6 @@ class UserSerializer(BaseSerializer):
     def get_employee_data(self, obj):
         return obj.employee_data() if hasattr(obj, 'employee') else None
     
-    def get_user_permissions(self, obj):
-        return obj.get_all_permissions()
-    
     def get_distance(self, obj):
         return getattr(obj, 'distance', None)
 
@@ -255,3 +246,44 @@ class UserTypeSerializer(BaseSerializer):
     class Meta:
         model = UserType
         fields = '__all__'
+
+
+class UserLoginSerializer(serializers.ModelSerializer):
+    employee_data = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(slug_field='name', many=True, read_only=True)
+    user_permissions = serializers.SerializerMethodField()
+    employee = SerializerMethodField()
+
+    class Meta:
+        model = User
+        exclude = ['password',]
+    
+    def get_employee(self, obj):
+        if not obj.employee:
+            return None
+        return {
+            'id': obj.employee.id,
+            'role': getattr(obj.employee.role, 'name', None),
+            'department': getattr(obj.employee.department, 'name', None),
+            'user_manager': {
+                'id': getattr(obj.employee.user_manager, 'id', None),
+                'complete_name': getattr(obj.employee.user_manager, 'complete_name', None)
+            } if obj.employee.user_manager else None,
+        }
+        
+
+    def get_employee_data(self, obj):
+        if not obj.employee:
+            return None
+        return {
+            'id': obj.employee.id,
+            'role': getattr(obj.employee.role, 'name', None),
+            'department': getattr(obj.employee.department, 'name', None),
+            'user_manager': {
+                'id': getattr(obj.employee.user_manager, 'id', None),
+                'complete_name': getattr(obj.employee.user_manager, 'complete_name', None)
+            } if obj.employee.user_manager else None,
+        }
+
+    def get_user_permissions(self, obj):
+        return list(obj.get_all_permissions())
