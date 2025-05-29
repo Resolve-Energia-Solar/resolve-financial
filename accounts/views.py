@@ -38,6 +38,8 @@ from django.utils.dateparse import parse_date, parse_time
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from accounts.serializers import UserLoginSerializer
+
 
 # Accounts views
 
@@ -51,54 +53,41 @@ class UserLoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        # Validar os campos recebidos
         if not email or not password:
-            return Response({
-                'message': 'Email e senha são obrigatórios.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Email e senha são obrigatórios.'}, status=400)
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.select_related(
+                "employee", "employee__user_manager", "employee__department", "employee__role"
+            ).prefetch_related("groups", "user_permissions").get(email=email)
         except User.DoesNotExist:
-            return Response({
-                'message': 'Usuário com esse email não encontrado.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Usuário não encontrado.'}, status=400)
 
-        # Verificar se o usuário está ativo
         if not user.is_active:
-            return Response({
-                'message': 'Usuário inativo.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Usuário inativo.'}, status=400)
 
         if not user.is_superuser and not user.employee:
-            return Response({
-                'message': 'Usuário não é um funcionário.'
-            }, status=status.HTTP_403_FORBIDDEN)
+            return Response({'message': 'Usuário não é um funcionário.'}, status=403)
 
-        # Verificar senha
         if not user.check_password(password):
-            return Response({
-                'message': 'Senha incorreta.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        last_login = user.last_login
-        
-        # Gerar e retornar os tokens JWT
+            return Response({'message': 'Senha incorreta.'}, status=400)
+
         refresh = RefreshToken.for_user(user)
-        
-        # Atualizar o último login do usuário
+        last_login = user.last_login
+
         user.last_login = timezone.now()
         user.save()
 
+        user_data = UserLoginSerializer(user).data
+
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'id': user.id,
-            'username': user.username,
-            'last_login': last_login,
-        }, status=status.HTTP_200_OK)
-
-
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "last_login": last_login,
+            "user": user_data,
+        })
+        
+        
 class UserTokenRefreshView(TokenRefreshView):
     http_method_names = ['post']
     
