@@ -113,7 +113,7 @@ MIDDLEWARE = [
 
 if DEBUG:
     INSTALLED_APPS += ['silk']
-    MIDDLEWARE += ['silk.middleware.SilkyMiddleware', 'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
     ENABLE_SILK = True
 else:
     ENABLE_SILK = False
