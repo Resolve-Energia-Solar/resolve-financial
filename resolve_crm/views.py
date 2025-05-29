@@ -43,10 +43,6 @@ from .serializers import *
 
 logger = logging.getLogger(__name__)
 
-sale_content_type = ContentType.objects.get_for_model(Sale)
-project_content_type = ContentType.objects.get_for_model(Project)
-
-
 class OriginViewSet(BaseModelViewSet):
     queryset = Origin.objects.all()
     serializer_class = OriginSerializer
@@ -76,6 +72,10 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+    
+    @cached_property
+    def sale_content_type(self):
+        return ContentType.objects.get_for_model(Sale)
 
     def get_queryset(self):
         user = self.request.user
@@ -96,7 +96,7 @@ class SaleViewSet(BaseModelViewSet):
                     Prefetch(
                         "attachments",
                         queryset=Attachment.objects.filter(
-                            content_type=sale_content_type,
+                            content_type=self.sale_content_type,
                             status="EA"
                         ),
                         to_attr="attachments_under_analysis",
@@ -142,7 +142,7 @@ class SaleViewSet(BaseModelViewSet):
         )
         if hasattr(user, "employee") and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list("id", flat=True)
-            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder).distinct()
+            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder)
 
         return qs.filter(stakeholder)
 
@@ -327,7 +327,7 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale","sale__customer", "inspection__final_service_opinion", "inspection",
+            "sale","sale__customer", "sale__branch", "inspection__final_service_opinion", "inspection",
             "product", "designer", "homologator", "registered_circuit_breaker"
         ).prefetch_related(
             "attachments",

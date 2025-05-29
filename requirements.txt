@@ -26,6 +26,7 @@ daphne==4.0.0
 Django==4.2.9
 django-appconf==1.0.6
 django-cors-headers==4.4.0
+django-cprofile-middleware==1.0.5
 django-debug-toolbar==5.0.1
 django-filter==24.3
 django-jazzmin==3.0.1
@@ -96,6 +97,7 @@ qrcode==8.0
 redis==5.2.0
 requests==2.32.3
 rsa==4.9
+sentry-sdk==2.29.1
 service-identity==24.2.0
 setuptools==68.1.2
 simplejson==3.19.3

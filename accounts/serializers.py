@@ -167,7 +167,6 @@ class EmployeeSerializer(BaseSerializer):
 
         return instance
 
-from field_services.serializers import ScheduleSerializer, FreeTimeAgentSerializer
 
 class UserSerializer(BaseSerializer):
     employee_data = SerializerMethodField()

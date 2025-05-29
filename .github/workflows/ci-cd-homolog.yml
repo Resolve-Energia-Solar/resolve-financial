@@ -38,6 +38,7 @@ jobs:
           echo "CLICKSIGN_ACCESS_TOKEN=${{ vars.CLICKSIGN_ACCESS_TOKEN}}" >> .env
           echo "TEAMS_CLICKSIGN_WEBHOOK_URL=${{ vars.TEAMS_CLICKSIGN_WEBHOOK_URL}}" >> .env
           echo "SECRET_KEY=${{ vars.SECRET_KEY}}" >> .env
+          echo "SENTRY_DSN=${{ vars.SENTRY_DSN}}" >> .env
           echo "DEBUG=${{ vars.DEBUG}}" >> .env
           echo "DB_USED=${{ vars.DB_USED }}" >> .env
           echo "DB1_NAME=${{ vars.DB1_NAME }}" >> .env

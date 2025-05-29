@@ -45,10 +45,6 @@ from django.db.models.functions import Now, Cast, Round, Coalesce
 import math
 
 
-def get_current_month():
-    return datetime.date.today().month
-
-
 class Origin(models.Model):
     TYPE_CHOICES = [
         ("IB", "Inbound"),
@@ -821,7 +817,7 @@ class ProjectQuerySet(models.QuerySet):
                 default=Value(False),
                 output_field=BooleanField(),
             )
-        ).distinct()
+        )
 
     def with_trt_status(self):
         from core.models import Attachment
@@ -840,7 +836,7 @@ class ProjectQuerySet(models.QuerySet):
                 .values("status")[:1],
                 output_field=CharField(),
             )
-        ).distinct()
+        )
 
     def with_pending_material_list(self):
         return (
@@ -856,7 +852,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=BooleanField(),
                 )
             )
-            .distinct()
         )
 
     def with_access_opnion(self):
@@ -875,7 +870,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     def with_trt_pending(self):
@@ -897,7 +891,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     def with_request_requested(self):
@@ -920,7 +913,7 @@ class ProjectQuerySet(models.QuerySet):
                 .values("final_service_opinion__name")[:1],
                 output_field=CharField(),
             )
-        ).distinct()
+        )
 
     def with_request_days_since_requested(self, type_name: str, annotation_name: str):
         base_qs = RequestsEnergyCompany.objects.filter(
@@ -958,7 +951,7 @@ class ProjectQuerySet(models.QuerySet):
                 ),
                 Value(""),
             )
-        ).distinct()
+        )
 
     # PARECER DE ACESSO
     def with_access_opnion_status(self):
@@ -1017,7 +1010,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     # AUMENTO DE CARGA
@@ -1082,7 +1074,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     # AJUSTE DE RAMAL
@@ -1149,7 +1140,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     # NOVA UC
@@ -1278,7 +1268,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     def with_purchase_status(self):
@@ -1301,7 +1290,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     def with_expected_delivery_date(self):
@@ -1409,7 +1397,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 ),
             )
-            .distinct()
         )
 
     def with_is_released_to_installation(self):
@@ -1458,7 +1445,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=BooleanField(),
                 ),
             )
-            .distinct()
         )
 
     def with_installation_status(self):
@@ -1541,7 +1527,6 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-            .distinct()
         )
 
     def with_latest_installation(self):
@@ -1554,7 +1539,7 @@ class ProjectQuerySet(models.QuerySet):
                 .order_by("-created_at")
                 .values("id")[:1]
             )
-        ).distinct()
+        )
 
     # FINANCEIRO
     def with_installments_indicators(self):
@@ -1691,7 +1676,7 @@ class ProjectQuerySet(models.QuerySet):
             # Construction
             .with_construction_status()
             .with_in_construction()
-        ).distinct()
+        )
 
     def with_avg_time_installation(self):
         entrega_finished_at_subquery = (
