@@ -117,7 +117,6 @@ class UserViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-
         # filtros simples
         params = self.request.query_params
         if params.get('name'):
