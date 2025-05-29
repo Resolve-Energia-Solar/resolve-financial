@@ -49,15 +49,34 @@ class PaymentViewSet(BaseModelViewSet):
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
-        query = Payment.objects.select_related(
-            "sale",
-            "sale__customer",
-            "sale__branch",
-        ).prefetch_related(
-            "installments",
+        return (
+            Payment.objects
+            .select_related(
+                "borrower",
+                "borrower__employee",
+                "borrower__employee__branch",
+                "borrower__employee__department",
+                "borrower__employee__role",
+                "borrower__employee__user_manager",
+                "sale",
+                "sale__customer",
+                "sale__branch",
+                'financier'
+            )
+            .prefetch_related(
+                "installments",
+                "borrower__groups",
+                "borrower__addresses",
+                "borrower__user_types",
+                "borrower__attachments",
+                Prefetch(
+                    "installments",
+                    queryset=PaymentInstallment.objects.filter(is_paid=True),
+                    to_attr="paid_installments"
+            )
+            )
+            .order_by("-created_at")
         )
-
-        return query.order_by("-created_at")
 
     def perform_create(self, serializer):
         # Remover os campos que não pertencem ao modelo antes de salvar

@@ -109,10 +109,8 @@ class Payment(models.Model):
 
     @cached_property
     def total_paid(self):
-        return sum(
-            installment.installment_value
-            for installment in self.installments.filter(is_paid=True)
-        )
+        return sum(inst.installment_value for inst in getattr(self, "paid_installments", []))
+
 
     @cached_property
     def percentual_paid(self):
