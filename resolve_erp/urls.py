@@ -3,9 +3,10 @@ from django.urls import path, re_path, include
 from . import settings
 from django.conf.urls.static import static
 from notifications import urls as notifications_urls
-from django.contrib.admin.views.decorators import staff_member_required
-from django.views.decorators.cache import never_cache
 
+
+def trigger_error(request):
+    division_by_zero = 1 / 0
 
 
 urlpatterns = [
@@ -14,6 +15,7 @@ urlpatterns = [
     path('api/mobile/', include('mobile_app.urls'), name='api_mobile'),
     path('admin/', admin.site.urls),
     re_path(r'^inbox/notifications/', include(notifications_urls, namespace='notifications')),
+    path('sentry-debug/', trigger_error),
 ]
 
 if settings.ENABLE_SILK:

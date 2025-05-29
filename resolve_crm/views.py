@@ -142,7 +142,7 @@ class SaleViewSet(BaseModelViewSet):
         )
         if hasattr(user, "employee") and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list("id", flat=True)
-            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder).distinct()
+            return qs.filter(Q(branch__id__in=branch_ids) | stakeholder)
 
         return qs.filter(stakeholder)
 

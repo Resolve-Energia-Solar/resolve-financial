@@ -3,6 +3,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from .jazzmin import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+
+
 
 load_dotenv()
 
@@ -18,6 +23,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',') if os.e
 
 GMAPS_API_KEY = os.environ.get('GMAPS_API_KEY')
 
+
 # if not DEBUG:
 #     SESSION_COOKIE_SECURE = True
 #     CSRF_COOKIE_SECURE = True
@@ -28,7 +34,18 @@ GMAPS_API_KEY = os.environ.get('GMAPS_API_KEY')
 #     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 #     USE_X_FORWARDED_HOST = True
 
-ENABLE_SILK = os.environ.get('ENABLE_SILK') == 'True'
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    send_default_pii=True,
+    profile_lifecycle="trace",
+    environment="dev",  
+    integrations=[DjangoIntegration(), CeleryIntegration()],
+    traces_sample_rate=1.0,
+    profile_session_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -59,7 +76,6 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'channels',
-    'silk'
 ]
 
 ASGI_APPLICATION = 'resolve_erp.asgi.application'
@@ -90,8 +106,16 @@ MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware',
-    'silk.middleware.SilkyMiddleware',
 ]
+
+
+
+if DEBUG:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+    ENABLE_SILK = True
+else:
+    ENABLE_SILK = False
 
 INTERNAL_IPS = [
     "127.0.0.1",
