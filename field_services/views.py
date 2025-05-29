@@ -90,10 +90,9 @@ class ScheduleViewSet(BaseModelViewSet):
             .prefetch_related(
                 "schedule_creator__employee__branch",
                 "schedule_agent__employee__branch",
-                "project__sale__branch"
+                "project__sale__branch",
             )
         )
-
 
         user = self.request.user
 
@@ -113,7 +112,7 @@ class ScheduleViewSet(BaseModelViewSet):
             qs = qs.filter(schedule_agent__isnull=True)
         elif schedule_agent__isnull == "false":
             qs = qs.filter(schedule_agent__isnull=False)
-            
+
         category = self.request.query_params.get("category__icontains")
         if category:
             qs = qs.filter(service__category__name__icontains=category)
@@ -125,9 +124,9 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(customer__first_document__icontains=customer__icontains)
             )
 
-        final_services_opnions = self.request.query_params.get("final_services_opnions")
-        if final_services_opnions:
-            opinions = final_services_opnions.split(",")
+        final_services_opinions = self.request.query_params.get("final_services_opnions")
+        if final_services_opinions:
+            opinions = final_services_opinions.split(",")
             qs = qs.filter(final_service_opinion__id__in=opinions)
 
         final_service_is_null = self.request.query_params.get("final_service_is_null")
@@ -136,10 +135,10 @@ class ScheduleViewSet(BaseModelViewSet):
         elif final_service_is_null == "false":
             qs = qs.filter(final_service_opinion__isnull=False)
 
-        service_opnion_is_null = self.request.query_params.get("service_opnion_is_null")
-        if service_opnion_is_null == "true":
+        service_opinion_is_null = self.request.query_params.get("service_opnion_is_null")
+        if service_opinion_is_null == "true":
             qs = qs.filter(service_opinion__isnull=True)
-        elif service_opnion_is_null == "false":
+        elif service_opinion_is_null == "false":
             qs = qs.filter(service_opinion__isnull=False)
 
         project = self.request.query_params.get("project_confirmed")
@@ -156,41 +155,32 @@ class ScheduleViewSet(BaseModelViewSet):
             if customer and project:
                 qs = qs.filter(Q(customer=customer) | Q(project=project))
 
-        view_all = self.request.query_params.get("view_all")
-        if view_all == "true":
-            return qs
-        
-        # 2. Filtros por permissão
-        if user.has_perm("field_services.view_all_schedule"):
+        # 2. Verifica se vê tudo
+        view_all = self.request.query_params.get("view_all") == "true"
+        if view_all or user.has_perm("field_services.view_all_schedule"):
             return qs
 
-        # a) Stakeholder direto
-        stakeholder_qs = qs.filter(
+        # 3. Monta lista de branch_ids do usuário
+        branch_ids = []
+        if (
+            hasattr(user, "employee") and user.employee.related_branches.exists()
+        ) or user.branch_owners.exists():
+            branch_ids = list(user.employee.related_branches.values_list("id", flat=True))
+            branch_ids += list(user.branch_owners.values_list("id", flat=True))
+
+        # 4. Filtro único de permissão (mantém select/prefetch)
+        perms = (
             Q(schedule_creator=user)
             | Q(schedule_agent=user)
             | Q(project__sale__seller=user)
         )
-
-        # b) Unidades relacionadas
-        if (
-            hasattr(user, "employee")
-            and user.employee.related_branches.exists()
-            or user.branch_owners.exists()
-        ):
-            related_branch_ids = list(
-                user.employee.related_branches.values_list("id", flat=True)
-            )
-            branch_owner_ids = list(user.branch_owners.values_list("id", flat=True))
-            branch_ids = related_branch_ids + branch_owner_ids
-
-            branch_qs = qs.filter(
+        if branch_ids:
+            perms |= (
                 Q(schedule_creator__employee__branch_id__in=branch_ids)
                 | Q(project__sale__branch_id__in=branch_ids)
             )
-        else:
-            branch_qs = qs.none()
 
-        return stakeholder_qs | branch_qs
+        return qs.filter(perms).distinct()
         
     def perform_update(self, serializer):
         instance = self.get_object()
