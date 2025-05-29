@@ -263,9 +263,15 @@ class UserLoginSerializer(serializers.ModelSerializer):
             return None
         return {
             'id': obj.employee.id,
-            'role': getattr(obj.employee.role, 'name', None),
-            'department': getattr(obj.employee.department, 'name', None),
-            'branch': getattr(obj.employee.branch, 'name', None),
+            'role': {
+                'id': getattr(obj.employee.role, 'id', None),
+                'name': getattr(obj.employee.role, 'name', None)
+            } if obj.employee.role else None,
+            'department': {
+                'id': getattr(obj.employee.department, 'id', None),
+                'name': getattr(obj.employee.department, 'name', None)
+            } if obj.employee.department else None,
+            'branch': getattr(obj.employee.branch, 'id', None),
             'user_manager': {
                 'id': getattr(obj.employee.user_manager, 'id', None),
                 'complete_name': getattr(obj.employee.user_manager, 'complete_name', None)
