@@ -69,6 +69,11 @@ class PaymentViewSet(BaseModelViewSet):
                 "borrower__addresses",
                 "borrower__user_types",
                 "borrower__attachments",
+                Prefetch(
+                    "installments",
+                    queryset=PaymentInstallment.objects.filter(is_paid=True),
+                    to_attr="paid_installments"
+            )
             )
             .order_by("-created_at")
         )
