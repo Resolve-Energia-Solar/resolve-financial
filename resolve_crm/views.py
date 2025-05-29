@@ -43,10 +43,6 @@ from .serializers import *
 
 logger = logging.getLogger(__name__)
 
-sale_content_type = ContentType.objects.get_for_model(Sale)
-project_content_type = ContentType.objects.get_for_model(Project)
-
-
 class OriginViewSet(BaseModelViewSet):
     queryset = Origin.objects.all()
     serializer_class = OriginSerializer
@@ -79,6 +75,8 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        
+        sale_content_type = ContentType.objects.get_for_model(Sale)
 
         qs = (
             Sale.objects

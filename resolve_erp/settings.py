@@ -35,16 +35,18 @@ GMAPS_API_KEY = os.environ.get('GMAPS_API_KEY')
 #     USE_X_FORWARDED_HOST = True
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")
+SENTRY_ENVIRONMENT = "dev" if DEBUG else "production"
+
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
-    send_default_pii=True,
-    profile_lifecycle="trace",
-    environment="dev",  
     integrations=[DjangoIntegration(), CeleryIntegration()],
-    traces_sample_rate=1.0,
-    profile_session_sample_rate=1.0,
-    profiles_sample_rate=1.0,
+    send_default_pii=True,
+    environment=SENTRY_ENVIRONMENT,
+    traces_sample_rate=1.0 if DEBUG else 0.1,
+    profile_session_sample_rate=1.0 if DEBUG else 0.0,
+    profiles_sample_rate=1.0 if DEBUG else 0.0,
+    profile_lifecycle="trace",
 )
 
 INSTALLED_APPS = [
