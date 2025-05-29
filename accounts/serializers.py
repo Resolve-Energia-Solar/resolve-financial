@@ -265,6 +265,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
             'id': obj.employee.id,
             'role': getattr(obj.employee.role, 'name', None),
             'department': getattr(obj.employee.department, 'name', None),
+            'branch': getattr(obj.employee.branch, 'name', None),
             'user_manager': {
                 'id': getattr(obj.employee.user_manager, 'id', None),
                 'complete_name': getattr(obj.employee.user_manager, 'complete_name', None)
