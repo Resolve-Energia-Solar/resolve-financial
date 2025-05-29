@@ -104,16 +104,14 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 class UserViewSet(BaseModelViewSet):
     queryset = User.objects.all().select_related('employee', 'employee__user_manager', 'employee__department', 'employee__role').prefetch_related(
-        'groups',
         'phone_numbers',
-        'user_permissions',
         'user_types',
         'addresses',
         'attachments',
         'employee__related_branches',
         'free_times',
         'block_times'
-    )
+    ).defer('groups', 'user_permissions')
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
 
@@ -314,6 +312,8 @@ class UserViewSet(BaseModelViewSet):
         )
 
         return Response(list(qs), status=status.HTTP_200_OK)
+
+
 
 class EmployeeViewSet(BaseModelViewSet):
     queryset = Employee.objects.all()

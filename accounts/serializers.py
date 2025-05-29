@@ -170,7 +170,6 @@ class EmployeeSerializer(BaseSerializer):
 
 class UserSerializer(BaseSerializer):
     employee_data = SerializerMethodField()
-    groups_ids = PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True, write_only=True, source='groups', allow_null=True, required=False)
     phone_numbers_ids = PrimaryKeyRelatedField(queryset=PhoneNumber.objects.all(), many=True, write_only=True, source='phone_numbers', allow_null=True, required=False)
 
     distance = SerializerMethodField()
