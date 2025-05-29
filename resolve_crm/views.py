@@ -72,11 +72,13 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
+    
+    @cached_property
+    def sale_content_type(self):
+        return ContentType.objects.get_for_model(Sale)
 
     def get_queryset(self):
         user = self.request.user
-        
-        sale_content_type = ContentType.objects.get_for_model(Sale)
 
         qs = (
             Sale.objects
@@ -94,7 +96,7 @@ class SaleViewSet(BaseModelViewSet):
                     Prefetch(
                         "attachments",
                         queryset=Attachment.objects.filter(
-                            content_type=sale_content_type,
+                            content_type=self.sale_content_type,
                             status="EA"
                         ),
                         to_attr="attachments_under_analysis",
@@ -325,7 +327,7 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale","sale__customer", "inspection__final_service_opinion", "inspection",
+            "sale","sale__customer", "sale__branch", "inspection__final_service_opinion", "inspection",
             "product", "designer", "homologator", "registered_circuit_breaker"
         ).prefetch_related(
             "attachments",

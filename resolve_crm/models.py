@@ -45,10 +45,6 @@ from django.db.models.functions import Now, Cast, Round, Coalesce
 import math
 
 
-def get_current_month():
-    return datetime.date.today().month
-
-
 class Origin(models.Model):
     TYPE_CHOICES = [
         ("IB", "Inbound"),
