@@ -107,14 +107,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
-    'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware',
 ]
 
 
 
 if DEBUG:
     INSTALLED_APPS += ['silk']
-    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware', 'resolve_erp.middleware.silk_auth.ProtectSilkMiddleware']
     ENABLE_SILK = True
 else:
     ENABLE_SILK = False
