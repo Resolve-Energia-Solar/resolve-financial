@@ -807,7 +807,7 @@ class UpdateFinancialRecordPaymentStatus(APIView):
         topic = request.data.get("topic", None)
 
         if not financial_record_id:
-            logger.error("Missing codigo_lancamento_integracao")
+            logger.warning("Missing codigo_lancamento_integracao in request data at UpdateFinancialRecordPaymentStatus")
             return Response({"error": "Missing financial_record_id"}, status=400)
 
         try:
