@@ -956,34 +956,27 @@ class ProjectQuerySet(models.QuerySet):
 
 
     def with_homologation_status(self):
-        # 1) pegar os IDs de cada tipo de pedido uma única vez
-        parecer_ids = list(
-            ResquestType.objects
-                .filter(name__icontains="Parecer de Acesso")
-                .values_list("id", flat=True)
+        request_types = ResquestType.objects.filter(
+            Q(name__icontains="Parecer de Acesso") |
+            Q(name__icontains="Aumento de Carga") |
+            Q(name__icontains="Ajuste de Ramal") |
+            Q(name__icontains="Nova UC") |
+            Q(name__icontains="Vistoria Final")
         )
-        aumento_ids = list(
-            ResquestType.objects
-                .filter(name__icontains="Aumento de Carga")
-                .values_list("id", flat=True)
-        )
-        ajuste_ids = list(
-            ResquestType.objects
-                .filter(name__icontains="Ajuste de Ramal")
-                .values_list("id", flat=True)
-        )
-        nova_uc_ids = list(
-            ResquestType.objects
-                .filter(name__icontains="Nova UC")
-                .values_list("id", flat=True)
-        )
-        vistoria_ids = list(
-            ResquestType.objects
-                .filter(name__icontains="Vistoria Final")
-                .values_list("id", flat=True)
-        )
-
-        # 2) subquery para Nova UC
+        
+        type_ids = {
+            "Parecer de Acesso": [],
+            "Aumento de Carga": [],
+            "Ajuste de Ramal": [],
+            "Nova UC": [],
+            "Vistoria Final": []
+        }
+        
+        for rt in request_types:
+            for key in type_ids.keys():
+                if key.lower() in rt.name.lower():
+                    type_ids[key].append(rt.id)
+        
         main_unit_has_new_contract = Units.objects.filter(
             project=OuterRef("pk"),
             main_unit=True,
@@ -992,7 +985,6 @@ class ProjectQuerySet(models.QuerySet):
 
         return (
             self
-            # pré-anotações que você já vinha usando
             .with_is_released_to_engineering()
             .with_last_installation_final_service_opinion()
             .with_supply_adquance_names()
@@ -1001,31 +993,29 @@ class ProjectQuerySet(models.QuerySet):
             .with_request_days_since_requested("Ajuste de Ramal", "branch_adjustment_days")
             .with_request_days_since_requested("Nova UC", "new_contact_number_days")
             .with_request_days_since_requested("Vistoria Final", "final_inspection_days")
-            
             .annotate(
                 access_req=FilteredRelation(
                     'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=parecer_ids)
+                    condition=Q(requests_energy_company__type_id__in=type_ids["Parecer de Acesso"])
                 ),
                 load_req=FilteredRelation(
                     'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=aumento_ids)
+                    condition=Q(requests_energy_company__type_id__in=type_ids["Aumento de Carga"])
                 ),
                 branch_req=FilteredRelation(
                     'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=ajuste_ids)
+                    condition=Q(requests_energy_company__type_id__in=type_ids["Ajuste de Ramal"])
                 ),
                 new_uc_req=FilteredRelation(
                     'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=nova_uc_ids)
+                    condition=Q(requests_energy_company__type_id__in=type_ids["Nova UC"])
                 ),
                 final_req=FilteredRelation(
                     'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=vistoria_ids)
+                    condition=Q(requests_energy_company__type_id__in=type_ids["Vistoria Final"])
                 ),
                 has_main_unit_new_contract=Exists(main_unit_has_new_contract),
             )
-
             .annotate(
                 access_opnion_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
