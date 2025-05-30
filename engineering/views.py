@@ -118,7 +118,14 @@ class RequestsEnergyCompanyViewSet(BaseModelViewSet):
     
 
 class UnitsViewSet(BaseModelViewSet):
-    queryset = Units.objects.all()
+    queryset = Units.objects.select_related(
+        "project",
+        "project__sale",
+        "project__sale__customer",
+        "address"
+    ).prefetch_related(
+        "supply_adquance",
+    )
     serializer_class = UnitsSerializer
 
 
