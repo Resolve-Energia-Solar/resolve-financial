@@ -327,16 +327,28 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale","sale__customer", "sale__branch", "inspection__final_service_opinion", "inspection",
-            "product", "designer", "homologator", "registered_circuit_breaker"
+            "sale", "sale__customer", "sale__branch", 
+            "inspection__final_service_opinion", "inspection",
+            "product", "designer", "homologator", 
+            "registered_circuit_breaker"
         ).prefetch_related(
             "attachments",
             "attachments__document_type",
             "units",
-            "requests_energy_company",
+            Prefetch(
+                "requests_energy_company",
+                queryset=RequestsEnergyCompany.objects.select_related(
+                    "type",
+                    "company",
+                    "requested_by",
+                    "unit"
+                ).prefetch_related("situation")
+            ),
             Prefetch(
                 "units",
-                queryset=Units.objects.filter(main_unit=True).select_related("address"),
+                queryset=Units.objects.filter(main_unit=True)
+                    .select_related("address")
+                    .prefetch_related("supply_adquance"),
                 to_attr="main_unit_prefetched",
             ),
         )
