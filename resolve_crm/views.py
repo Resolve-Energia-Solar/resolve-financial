@@ -34,6 +34,7 @@ from api.views import BaseModelViewSet
 from core.models import Process, ProcessBase
 from core.task import create_process_async
 from engineering.models import Units
+from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
@@ -79,67 +80,55 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-
-        qs = (
-            Sale.objects
-                .select_related(
-                    "customer", "seller", "sales_supervisor", "sales_manager",
-                    "branch", "marketing_campaign", "supplier",
-                )
-                .prefetch_related(
-                    "cancellation_reasons",
-                    "products",
-                    "attachments",
-                    "tags",
-                    "payments",
-                    "contract_submissions",
-                    Prefetch(
-                        "attachments",
-                        queryset=Attachment.objects.filter(
-                            content_type=self.sale_content_type,
-                            status="EA"
-                        ),
-                        to_attr="attachments_under_analysis",
-                    ),
-                )
-        )
-
-        expands = self.request.query_params.get("expand", "")
-        fields_list = self.request.query_params.getlist("fields[]")
-        if not fields_list and "fields" in self.request.query_params:
-            fields_list = [
-                f.strip()
-                for f in self.request.query_params["fields"].split(",")
-                if f.strip()
-            ]
         
-        if "projects" in expands.split(",") or "projects.journey_counter" in fields_list:
-            project_qs = Project.objects.with_is_released_to_engineering().with_journey_counter()
+        # 1. Otimização de seleção de campos
+        base_select_related = [
+            "customer", "seller", "branch", "marketing_campaign", "supplier"
+        ]
+        
+        # 2. Subquery para total_paid
+        paid_installments = PaymentInstallment.objects.filter(
+            payment__sale_id=OuterRef('pk'),
+            is_paid=True
+        ).values('payment__sale_id').annotate(
+            total=Sum('installment_value')
+        ).values('total')[:1]
 
-            project_qs = project_qs.prefetch_related(
-                "units",
-                "inspection__final_service_opinion",
-                "homologator",
+        # 3. Query principal otimizada
+        qs = Sale.objects.annotate(
+            total_paid=Coalesce(
+                Subquery(paid_installments, output_field=DecimalField()),
+                Value(0, output_field=DecimalField())
             )
-            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs))
-
-        qs = qs.annotate(
-            total_paid=Sum(
-                "payments__installments__installment_value",
-                filter=Q(payments__installments__is_paid=True),
-                default=0,
-            )
+        ).select_related(*base_select_related).prefetch_related(
+            "cancellation_reasons",
+            "products",
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Sale),
+                    status="EA"
+                ),
+                to_attr="attachments_under_analysis",
+            ),
         ).order_by("-created_at")
 
+        # 4. Pré-carregamento condicional de projetos
+        expands = self.request.query_params.get("expand", "")
+        if "projects" in expands.split(","):
+            project_qs = Project.objects.only(
+                "id", "project_number", "sale_id", "designer_status", 
+                "material_list_is_completed", "status"
+            )
+            qs = qs.prefetch_related(
+                Prefetch("projects", queryset=project_qs)
+            )
+
+        # 5. Filtragem de permissões
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
 
-        stakeholder = (
-            Q(customer=user)
-            | Q(seller=user)
-            | Q(sales_supervisor=user)
-            | Q(sales_manager=user)
-        )
+        stakeholder = Q(customer=user) | Q(seller=user)
         if hasattr(user, "employee") and user.employee.related_branches.exists():
             branch_ids = user.employee.related_branches.values_list("id", flat=True)
             return qs.filter(Q(branch__id__in=branch_ids) | stakeholder)
