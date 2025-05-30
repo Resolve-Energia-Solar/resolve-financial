@@ -43,6 +43,12 @@ class ScheduleAdmin(admin.ModelAdmin):
     search_fields = ("project__project_number", "service__name", "protocol", "schedule_creator__complete_name", "customer__complete_name", "project__sale__customer__complete_name")
     readonly_fields = ("display_leads",)
     autocomplete_fields = ("project", "service", "schedule_creator", "parent_schedules", "attachments", "address", "schedule_agent", "branch", "service_opinion", "final_service_opinion", "customer", "products", "leads", "final_service_opinion_user")
+    
+    def queryset(self, request):
+        qs = super().queryset(request)
+        return qs.select_related(
+            "project", "service", "schedule_creator", "customer", "branch", 
+        )
 
     def display_leads(self, obj):
         leads = obj.lead_inspections.all()

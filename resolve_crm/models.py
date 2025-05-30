@@ -36,9 +36,10 @@ from django.db.models import (
     Func,
     Avg,
     DateTimeField,
+    FilteredRelation
 )
 from field_services.models import Schedule
-from engineering.models import CivilConstruction, RequestsEnergyCompany, Units
+from engineering.models import CivilConstruction, RequestsEnergyCompany, ResquestType, Units
 from django.db.models.functions import TruncDate, Coalesce
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round, Coalesce
@@ -836,7 +837,7 @@ class ProjectQuerySet(models.QuerySet):
                 .values("status")[:1],
                 output_field=CharField(),
             )
-        )
+        ).distinct()
 
     def with_pending_material_list(self):
         return (
@@ -862,7 +863,7 @@ class ProjectQuerySet(models.QuerySet):
                 access_opnion=Case(
                     When(
                         Q(trt_status="A")
-                        & ~Q(units__new_contract_number=True)
+                        & Q(units__new_contract_number=False)
                         & Q(is_released_to_engineering=True),
                         then=Value("Liberado"),
                     ),
@@ -870,7 +871,7 @@ class ProjectQuerySet(models.QuerySet):
                     output_field=CharField(),
                 )
             )
-        )
+        ).distinct()
 
     def with_trt_pending(self):
         return (
@@ -930,7 +931,7 @@ class ProjectQuerySet(models.QuerySet):
                     Coalesce(Subquery(conclusion_date_subquery), Func(function="NOW")),
                 )
             }
-        )
+        ).distinct()
 
     def with_supply_adquance_names(self):
         subquery = Units.objects.filter(
@@ -951,324 +952,137 @@ class ProjectQuerySet(models.QuerySet):
                 ),
                 Value(""),
             )
+        ).distinct()
+
+
+    def with_homologation_status(self):
+        # 1) pegar os IDs de cada tipo de pedido uma única vez
+        parecer_ids = list(
+            ResquestType.objects
+                .filter(name__icontains="Parecer de Acesso")
+                .values_list("id", flat=True)
+        )
+        aumento_ids = list(
+            ResquestType.objects
+                .filter(name__icontains="Aumento de Carga")
+                .values_list("id", flat=True)
+        )
+        ajuste_ids = list(
+            ResquestType.objects
+                .filter(name__icontains="Ajuste de Ramal")
+                .values_list("id", flat=True)
+        )
+        nova_uc_ids = list(
+            ResquestType.objects
+                .filter(name__icontains="Nova UC")
+                .values_list("id", flat=True)
+        )
+        vistoria_ids = list(
+            ResquestType.objects
+                .filter(name__icontains="Vistoria Final")
+                .values_list("id", flat=True)
         )
 
-    # PARECER DE ACESSO
-    def with_access_opnion_status(self):
+        # 2) subquery para Nova UC
+        main_unit_has_new_contract = Units.objects.filter(
+            project=OuterRef("pk"),
+            main_unit=True,
+            new_contract_number=True
+        )
+
         return (
-            self.with_access_opnion()
+            self
+            # pré-anotações que você já vinha usando
+            .with_is_released_to_engineering()
             .with_last_installation_final_service_opinion()
-            .with_request_days_since_requested(
-                "Parecer de Acesso", "access_opnion_days"
+            .with_supply_adquance_names()
+            .with_request_days_since_requested("Parecer de Acesso", "access_opnion_days")
+            .with_request_days_since_requested("Aumento de Carga", "load_increase_days")
+            .with_request_days_since_requested("Ajuste de Ramal", "branch_adjustment_days")
+            .with_request_days_since_requested("Nova UC", "new_contact_number_days")
+            .with_request_days_since_requested("Vistoria Final", "final_inspection_days")
+            
+            .annotate(
+                access_req=FilteredRelation(
+                    'requests_energy_company',
+                    condition=Q(requests_energy_company__type_id__in=parecer_ids)
+                ),
+                load_req=FilteredRelation(
+                    'requests_energy_company',
+                    condition=Q(requests_energy_company__type_id__in=aumento_ids)
+                ),
+                branch_req=FilteredRelation(
+                    'requests_energy_company',
+                    condition=Q(requests_energy_company__type_id__in=ajuste_ids)
+                ),
+                new_uc_req=FilteredRelation(
+                    'requests_energy_company',
+                    condition=Q(requests_energy_company__type_id__in=nova_uc_ids)
+                ),
+                final_req=FilteredRelation(
+                    'requests_energy_company',
+                    condition=Q(requests_energy_company__type_id__in=vistoria_ids)
+                ),
+                has_main_unit_new_contract=Exists(main_unit_has_new_contract),
             )
+
             .annotate(
                 access_opnion_status=Case(
-                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                    When(
-                        # Q(last_installation_final_service_opinion__iexact='Concluído') &
-                        Q(access_opnion="Liberado")
-                        & Q(requests_energy_company__isnull=True),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        # Q(last_installation_final_service_opinion__iexact='Concluído') &
-                        Q(access_opnion="Liberado")
-                        & Q(requests_energy_company__isnull=False)
-                        & ~Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso"
-                        ),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        # Q(last_installation_final_service_opinion__iexact='Concluído') &
-                        Q(access_opnion="Liberado")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso",
-                            requests_energy_company__status="S",
-                        ),
-                        then=Value("Solicitado"),
-                    ),
-                    When(
-                        # Q(last_installation_final_service_opinion__iexact='Concluído') &
-                        Q(access_opnion="Liberado")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso",
-                            requests_energy_company__status="D",
-                        ),
-                        then=Value("Deferido"),
-                    ),
-                    When(
-                        # Q(last_installation_final_service_opinion__iexact='Concluído') &
-                        Q(access_opnion="Liberado")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso",
-                            requests_energy_company__status="I",
-                        ),
-                        then=Value("Indeferida"),
-                    ),
+                    When(is_released_to_engineering=False, then=Value("Bloqueado")),
+                    When(access_req__isnull=True, then=Value("Pendente")),
+                    When(access_req__status="S",    then=Value("Solicitado")),
+                    When(access_req__status="D",    then=Value("Deferido")),
+                    When(access_req__status="I",    then=Value("Indeferida")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
-                )
-            )
-        )
-
-    # AUMENTO DE CARGA
-    def with_load_increase_status(self):
-        return (
-            self.with_is_released_to_engineering()
-            .with_supply_adquance_names()
-            .with_last_installation_final_service_opinion()
-            .with_request_days_since_requested("Aumento de Carga", "load_increase_days")
-            .annotate(
+                ),
                 load_increase_status=Case(
-                    When(
-                        ~Q(supply_adquance_names__icontains="Aumento de Carga"),
-                        then=Value("Não se aplica"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & ~Q(
-                            last_installation_final_service_opinion__iexact="Concluído"
-                        ),
-                        then=Value("Bloqueado"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & Q(last_installation_final_service_opinion__iexact="Concluído")
-                        & Q(requests_energy_company__isnull=True),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & Q(requests_energy_company__isnull=False)
-                        & ~Q(
-                            requests_energy_company__type__name__icontains="Aumento de Carga"
-                        ),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & Q(requests_energy_company__status="S")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Aumento de Carga"
-                        ),
-                        then=Value("Solicitado"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & Q(requests_energy_company__status="D")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Aumento de Carga"
-                        ),
-                        then=Value("Deferido"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Aumento de Carga")
-                        & Q(requests_energy_company__status="I")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Aumento de Carga"
-                        ),
-                        then=Value("Indeferida"),
-                    ),
+                When(~Q(supply_adquance_names__icontains="Aumento de Carga"), then=Value("Não se aplica")),
+                    When(load_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
+                    When(load_req__status="S", then=Value("Solicitado")),
+                    When(load_req__status="D", then=Value("Deferido")),
+                    When(load_req__status="I", then=Value("Indeferida")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
-                )
-            )
-        )
-
-    # AJUSTE DE RAMAL
-    def with_branch_adjustment_status(self):
-        return (
-            self.with_is_released_to_engineering()
-            .with_supply_adquance_names()
-            .with_last_installation_final_service_opinion()
-            .with_request_days_since_requested(
-                "Ajuste de Ramal", "branch_adjustment_days"
-            )
-            .annotate(
+                ),
                 branch_adjustment_status=Case(
-                    When(
-                        ~Q(supply_adquance_names__icontains="Ajuste de Ramal"),
-                        then=Value("Não se aplica"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & ~Q(
-                            last_installation_final_service_opinion__iexact="Concluído"
-                        ),
-                        then=Value("Bloqueado"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & Q(last_installation_final_service_opinion__iexact="Concluído")
-                        & Q(requests_energy_company__isnull=True),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & Q(requests_energy_company__isnull=False)
-                        & ~Q(
-                            requests_energy_company__type__name__icontains="Ajuste de Ramal"
-                        ),
-                        then=Value("Pendente"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & Q(requests_energy_company__status="S")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Ajuste de Ramal"
-                        ),
-                        then=Value("Solicitado"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & Q(requests_energy_company__status="D")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Ajuste de Ramal"
-                        ),
-                        then=Value("Deferido"),
-                    ),
-                    When(
-                        Q(supply_adquance_names__icontains="Ajuste de Ramal")
-                        & Q(requests_energy_company__status="I")
-                        & Q(
-                            requests_energy_company__type__name__icontains="Ajuste de Ramal"
-                        ),
-                        then=Value("Indeferida"),
-                    ),
+                    When(~Q(supply_adquance_names__icontains="Ajuste de Ramal"), then=Value("Não se aplica")),
+                    When(branch_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
+                    When(branch_req__status="S", then=Value("Solicitado")),
+                    When(branch_req__status="D", then=Value("Deferido")),
+                    When(branch_req__status="I", then=Value("Indeferida")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
-                )
-            )
-        )
-
-    # NOVA UC
-    def with_new_contact_number_status(self):
-        main_unit_has_new_contract = Units.objects.filter(
-            project=OuterRef("pk"), main_unit=True, new_contract_number=True
-        )
-
-        return (
-            self.with_is_released_to_engineering()
-            .with_request_days_since_requested("Nova UC", "new_contact_number_days")
-            .annotate(has_main_unit_new_contract=Exists(main_unit_has_new_contract))
-            .annotate(
+                ),
                 new_contact_number_status=Case(
                     When(has_main_unit_new_contract=False, then=Value("Não se aplica")),
                     When(
                         has_main_unit_new_contract=True,
                         then=Case(
-                            When(
-                                is_released_to_engineering=False,
-                                then=Value("Bloqueado"),
-                            ),
+                            When(is_released_to_engineering=False, then=Value("Bloqueado")),
                             When(~Q(designer_status="CO"), then=Value("Bloqueado")),
-                            When(
-                                Q(requests_energy_company__isnull=True)
-                                & Q(
-                                    requests_energy_company__type__name__icontains="Nova UC"
-                                ),
-                                then=Value("Pendente"),
-                            ),
-                            When(
-                                Q(requests_energy_company__isnull=False)
-                                & ~Q(
-                                    requests_energy_company__type__name__icontains="Nova UC"
-                                ),
-                                then=Value("Pendente"),
-                            ),
-                            When(
-                                Q(requests_energy_company__status="S")
-                                & Q(
-                                    requests_energy_company__type__name__icontains="Nova UC"
-                                ),
-                                then=Value("Solicitado"),
-                            ),
-                            When(
-                                Q(requests_energy_company__status="D")
-                                & Q(
-                                    requests_energy_company__type__name__icontains="Nova UC"
-                                ),
-                                then=Value("Deferido"),
-                            ),
-                            When(
-                                Q(requests_energy_company__status="I")
-                                & Q(
-                                    requests_energy_company__type__name__icontains="Nova UC"
-                                ),
-                                then=Value("Indeferida"),
-                            ),
+                            When(new_uc_req__isnull=True,  then=Value("Pendente")),
+                            When(new_uc_req__status="S",   then=Value("Solicitado")),
+                            When(new_uc_req__status="D",   then=Value("Deferido")),
+                            When(new_uc_req__status="I",   then=Value("Indeferida")),
                             default=Value("Bloqueado"),
-                        ),
-                    ),
-                )
-            )
-        )
-
-    # VISTORIA FINAL
-    # instalacao completa
-    # parecer de acesso concluido
-    # se nao precisa de adequacao de fornecimento liberado
-
-    def with_final_inspection_status(self):
-        return (
-            self.with_last_installation_final_service_opinion()
-            .with_is_released_to_engineering()
-            .with_request_days_since_requested(
-                "Vistoria Final", "final_inspection_days"
-            )
-            .annotate(
-                final_inspection_status=Case(
-                    # bloqueado se não liberado
-                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                    # bloqueado se falta parecer de acesso aprovado
-                    When(
-                        Q(is_released_to_engineering=True)
-                        & ~Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso",
-                            requests_energy_company__status="S",
-                        ),
-                        then=Value("Bloqueado"),
-                    ),
-                    # pendente: acesso deferido e instalação concluída
-                    When(
-                        Q(
-                            requests_energy_company__type__name__icontains="Parecer de Acesso",
-                            requests_energy_company__status="D",
                         )
-                        & Q(last_installation_final_service_opinion__iexact="Concluído")
-                        & ~Q(
-                            requests_energy_company__type__name__icontains="Vistoria Final"
-                        ),
-                        then=Value("Pendente"),
                     ),
-                    # solicitado / deferido / indeferido de vistoria final
-                    When(
-                        Q(
-                            requests_energy_company__type__name__icontains="Vistoria Final",
-                            requests_energy_company__status="S",
-                        ),
-                        then=Value("Solicitado"),
-                    ),
-                    When(
-                        Q(
-                            requests_energy_company__type__name__icontains="Vistoria Final",
-                            requests_energy_company__status="D",
-                        ),
-                        then=Value("Deferido"),
-                    ),
-                    When(
-                        Q(
-                            requests_energy_company__type__name__icontains="Vistoria Final",
-                            requests_energy_company__status="I",
-                        ),
-                        then=Value("Indeferida"),
-                    ),
+                    output_field=CharField(),
+                ),
+                final_inspection_status=Case(
+                    When(is_released_to_engineering=False, then=Value("Bloqueado")),
+                    When(final_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
+                    When(final_req__status="S",    then=Value("Solicitado")),
+                    When(final_req__status="D",    then=Value("Deferido")),
+                    When(final_req__status="I",    then=Value("Indeferida")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
-                )
+                ),
             )
+            .distinct()
         )
+
 
     def with_purchase_status(self):
         return (
