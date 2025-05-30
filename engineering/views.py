@@ -43,7 +43,7 @@ class EnergyCompanyViewSet(BaseModelViewSet):
 
 
 class RequestsEnergyCompanyViewSet(BaseModelViewSet):
-    queryset = RequestsEnergyCompany.objects.all()
+    queryset = RequestsEnergyCompany.objects.all().prefetch_related('situation')
     serializer_class = RequestsEnergyCompanySerializer
     
     def list(self, request, *args, **kwargs):
