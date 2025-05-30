@@ -9,16 +9,36 @@ from rest_framework.response import Response
 
 from accounts.models import Address, PhoneNumber, User
 from api.views import BaseModelViewSet
+from core.models import Attachment
+from logistics.models import Product
+from resolve_crm.models import Lead
 from .models import (
-    Answer, BlockTimeAgent, Category, Deadline, Forms, FormFile,
-    FreeTimeAgent, RoofType, Route, Schedule, Service,
-    ServiceOpinion
+    Answer,
+    BlockTimeAgent,
+    Category,
+    Deadline,
+    Forms,
+    FormFile,
+    FreeTimeAgent,
+    RoofType,
+    Route,
+    Schedule,
+    Service,
+    ServiceOpinion,
 )
 from .serializers import (
-    AnswerSerializer, BlockTimeAgentSerializer, CategorySerializer,
-    DeadlineSerializer, FormsSerializer, FormFileSerializer,
-    FreeTimeAgentSerializer, RoofTypeSerializer, RouteSerializer,
-    ScheduleSerializer, ServiceOpinionSerializer, ServiceSerializer
+    AnswerSerializer,
+    BlockTimeAgentSerializer,
+    CategorySerializer,
+    DeadlineSerializer,
+    FormsSerializer,
+    FormFileSerializer,
+    FreeTimeAgentSerializer,
+    RoofTypeSerializer,
+    RouteSerializer,
+    ScheduleSerializer,
+    ServiceOpinionSerializer,
+    ServiceSerializer,
 )
 
 
@@ -75,44 +95,53 @@ class AnswerViewSet(BaseModelViewSet):
 
 
 class ScheduleViewSet(BaseModelViewSet):
-    queryset = Schedule.objects.all()
-    serializer_class = ScheduleSerializer
-
-class ScheduleViewSet(BaseModelViewSet):
     serializer_class = ScheduleSerializer
 
     def get_queryset(self):
-        qs = (
-            Schedule.objects
-            .select_related(
-                "customer",
-                "final_service_opinion",
-                "service_opinion",
-                "project",
-                "project__sale",
-                "schedule_creator",
-                "schedule_creator__employee",
-                "schedule_agent",
-                "service",
-                "service__category",
-                "branch",
-            )
-            .prefetch_related(
-                "service",
-                "schedule_creator__employee__branch",
-                "schedule_agent__employee__branch",
-                "project__sale__branch",
-                Prefetch("customer__phone_numbers", queryset=PhoneNumber.objects.order_by("-is_main")),
-                Prefetch(
-                    "customer__addresses",
-                    queryset=Address.objects.filter(is_deleted=False),
-                    to_attr="addresses_list"
-                ),
-            )
+        qs = Schedule.objects.select_related(
+            "customer",
+            "final_service_opinion",
+            "service_opinion",
+            "project",
+            "project__sale",
+            "project__sale__branch",
+            "schedule_creator",
+            "schedule_creator__employee",
+            "schedule_creator__employee__branch",
+            "schedule_agent",
+            "schedule_agent__employee",
+            "schedule_agent__employee__branch",
+            "service",
+            "service__category",
+            "branch",
+            "address",
+        ).prefetch_related(
+            Prefetch(
+                "project__sale__products",
+                queryset=Product.objects.select_related("roof_type"),
+            ),
+            Prefetch(
+                "attachments", queryset=Attachment.objects.filter(is_deleted=False)
+            ),
+            Prefetch("leads", queryset=Lead.objects.select_related("column")),
+            Prefetch("products", queryset=Product.objects.select_related("roof_type")),
+            Prefetch(
+                "parent_schedules",
+                queryset=Schedule.objects.select_related("customer", "service"),
+            ),
+            Prefetch(
+                "customer__phone_numbers",
+                queryset=PhoneNumber.objects.order_by("-is_main"),
+            ),
+            Prefetch(
+                "customer__addresses",
+                queryset=Address.objects.filter(is_deleted=False),
+                to_attr="addresses_list",
+            ),
         )
 
-        user    = self.request.user
-        params  = self.request.query_params
+        user = self.request.user
+        params = self.request.query_params
 
         # 1) filtros globais
         if q := params.get("q"):
@@ -123,8 +152,10 @@ class ScheduleViewSet(BaseModelViewSet):
                 | Q(schedule_agent__complete_name__icontains=q)
                 | Q(protocol__icontains=q)
             )
-        if params.get("schedule_agent__isnull") in ("true","false"):
-            qs = qs.filter(schedule_agent__isnull=params["schedule_agent__isnull"]=="true")
+        if params.get("schedule_agent__isnull") in ("true", "false"):
+            qs = qs.filter(
+                schedule_agent__isnull=params["schedule_agent__isnull"] == "true"
+            )
         if cat := params.get("category__icontains"):
             qs = qs.filter(service__category__name__icontains=cat)
         if cust := params.get("customer__icontains"):
@@ -134,28 +165,38 @@ class ScheduleViewSet(BaseModelViewSet):
             )
         if opin := params.get("final_services_opnions"):
             qs = qs.filter(final_service_opinion__id__in=opin.split(","))
-        if params.get("final_service_is_null") in ("true","false"):
-            qs = qs.filter(final_service_opinion__isnull=params["final_service_is_null"]=="true")
-        if params.get("service_opnion_is_null") in ("true","false"):
-            qs = qs.filter(service_opinion__isnull=params["service_opnion_is_null"]=="true")
+        if params.get("final_service_is_null") in ("true", "false"):
+            qs = qs.filter(
+                final_service_opinion__isnull=params["final_service_is_null"] == "true"
+            )
+        if params.get("service_opnion_is_null") in ("true", "false"):
+            qs = qs.filter(
+                service_opinion__isnull=params["service_opnion_is_null"] == "true"
+            )
         if proj := params.get("project_confirmed"):
             qs = qs.filter(project__id=proj, status="Confirmado")
         if svc := params.get("service"):
             qs = qs.filter(service__id=svc)
         if params.get("customer_project_or") == "true":
-            c,p = params.get("customer"), params.get("project")
+            c, p = params.get("customer"), params.get("project")
             if c and p:
-                qs = qs.filter(Q(customer=c)|Q(project=p))
+                qs = qs.filter(Q(customer=c) | Q(project=p))
 
         # 2) vê tudo?
-        if params.get("view_all")=="true" or user.has_perm("field_services.view_all_schedule"):
+        if params.get("view_all") == "true" or user.has_perm(
+            "field_services.view_all_schedule"
+        ):
             return qs
 
         # 3) branches do usuário
         branch_ids = []
-        if (hasattr(user,"employee") and user.employee.related_branches.exists()) or user.branch_owners.exists():
-            branch_ids = list(user.employee.related_branches.values_list("id",flat=True))
-            branch_ids += list(user.branch_owners.values_list("id",flat=True))
+        if (
+            hasattr(user, "employee") and user.employee.related_branches.exists()
+        ) or user.branch_owners.exists():
+            branch_ids = list(
+                user.employee.related_branches.values_list("id", flat=True)
+            )
+            branch_ids += list(user.branch_owners.values_list("id", flat=True))
 
         # 4) filtro único (mantém select/prefetch)
         perms = (
@@ -164,16 +205,18 @@ class ScheduleViewSet(BaseModelViewSet):
             | Q(project__sale__seller=user)
         )
         if branch_ids:
-            perms |= (
-                Q(schedule_creator__employee__branch_id__in=branch_ids)
-                | Q(project__sale__branch_id__in=branch_ids)
+            perms |= Q(schedule_creator__employee__branch_id__in=branch_ids) | Q(
+                project__sale__branch_id__in=branch_ids
             )
 
         return qs.filter(perms).distinct()
-        
+
     def perform_update(self, serializer):
         instance = self.get_object()
-        if instance.final_service_opinion is None and serializer.validated_data.get('final_service_opinion') is not None:
+        if (
+            instance.final_service_opinion is None
+            and serializer.validated_data.get("final_service_opinion") is not None
+        ):
             serializer.save(final_service_opinion_user=self.request.user)
         else:
             serializer.save()
