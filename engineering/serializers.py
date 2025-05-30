@@ -27,16 +27,23 @@ class SupplyAdequanceSerializer(BaseSerializer):
         fields = '__all__'
 
 
-class UnitsSerializer(BaseSerializer):    
+class UnitsSerializer(BaseSerializer):
     def validate(self, data):
-        project = data.get('project') or (self.instance.project if self.instance else None)
-        unit_percentage = data.get('unit_percentage') or (self.instance.unit_percentage if self.instance else 0)
-        total_percentage = Units.objects.filter(project=project)
-        if self.instance:
-            total_percentage = total_percentage.exclude(id=self.instance.id)
-        total_percentage = total_percentage.aggregate(total=models.Sum('unit_percentage'))['total'] or 0
-        if total_percentage + (unit_percentage or 0) > 100:
-            raise ValidationError({"unit_percentage": "A soma da porcentagem das unidades não pode ser superior a 100%"})
+        instance = self.instance
+        project = data.get('project') or (instance.project if instance else None)
+        unit_percentage = data.get('unit_percentage') or (instance.unit_percentage if instance else 0)
+        
+        if project:
+            total_percentage = Units.objects.filter(
+                project=project
+            ).exclude(id=instance.id if instance else None).aggregate(
+                total=models.Sum('unit_percentage')
+            )['total'] or 0
+            
+            if total_percentage + (unit_percentage or 0) > 100:
+                raise ValidationError({
+                    "unit_percentage": "A soma da porcentagem das unidades não pode ser superior a 100%"
+                })
         return data
     
     class Meta:
