@@ -24,6 +24,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.models import *
 from accounts.serializers import *
+from accounts.task import send_login_info_logs
 from api.views import BaseModelViewSet
 from accounts.serializers import PasswordResetConfirmSerializer
 from field_services.models import BlockTimeAgent, Category, FreeTimeAgent, Schedule, Service
@@ -82,10 +83,18 @@ class UserLoginView(APIView):
 
         user_data = UserLoginSerializer(user).data
 
+        send_login_info_logs.delay(
+            user.id,
+            user.email,
+            user.complete_name,
+            str(last_login) if last_login else None,
+            request.META.get('REMOTE_ADDR', 'unknown')
+        )
+
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
-            "last_login": last_login,
+            "last_login": str(last_login) if last_login else None,
             "user": user_data,
         })
         
