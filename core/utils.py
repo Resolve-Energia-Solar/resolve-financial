@@ -2,6 +2,7 @@ from copy import deepcopy
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from core.models import Process, ProcessBase
+from datetime import timedelta
 
 def create_process(
     process_base_id,
@@ -45,6 +46,7 @@ def create_process(
 
 
 
+
 def get_model_data(instance):
     data = {}
     fields_to_skip = {'arquivo_grande', 'campo_muito_longo'}
@@ -63,6 +65,8 @@ def get_model_data(instance):
             field_value = [obj.id for obj in field_value.all()] if field_value else []
         elif field.is_relation:
             field_value = field_value.id if field_value else None
+        elif isinstance(field_value, timedelta):
+            field_value = str(field_value)
         elif hasattr(field_value, 'url'):
             field_value = field_value.url if field_value else None
         elif hasattr(field_value, 'isoformat'):
