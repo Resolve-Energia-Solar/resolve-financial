@@ -121,7 +121,7 @@ class ScheduleViewSet(BaseModelViewSet):
                 queryset=Product.objects.select_related("roof_type"),
             ),
             Prefetch(
-                "attachments", queryset=Attachment.objects.filter(is_deleted=False)
+                "attachments", queryset=Attachment.objects.all()
             ),
             Prefetch("leads", queryset=Lead.objects.select_related("column")),
             Prefetch("products", queryset=Product.objects.select_related("roof_type")),
