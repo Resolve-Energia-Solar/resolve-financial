@@ -62,12 +62,14 @@ class UserLoginView(APIView):
             ).prefetch_related("groups", "user_permissions").get(email=email)
         except User.DoesNotExist:
             return Response({'message': 'Usuário não encontrado.'}, status=400)
+        
+        try:
+            employee = user.employee
+        except Employee.DoesNotExist:
+            return Response({'message': 'Usuário não é um funcionário.'}, status=400)
 
         if not user.is_active:
             return Response({'message': 'Usuário inativo.'}, status=400)
-
-        if not user.is_superuser and not user.employee:
-            return Response({'message': 'Usuário não é um funcionário.'}, status=403)
 
         if not user.check_password(password):
             return Response({'message': 'Senha incorreta.'}, status=400)
