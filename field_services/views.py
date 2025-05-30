@@ -141,6 +141,10 @@ class ScheduleViewSet(BaseModelViewSet):
         )
 
         user = self.request.user
+        user = User.objects.prefetch_related(
+            'employee__related_branches',
+            'branch_owners'
+        ).get(pk=user.pk)
         params = self.request.query_params
 
         # 1) filtros globais
