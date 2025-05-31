@@ -59,23 +59,42 @@ class GroupConcat(Aggregate):
 class ProjectQuerySet(django_models.QuerySet):
     
     def with_journey_counter(self):
-        return self.annotate(
-            journey_counter=ExpressionWrapper(
-                Coalesce(
-                    Max(
-                        Case(
-                            When(
-                                requests_energy_company__type__name__icontains="Vistoria final",
-                                requests_energy_company__status="D",
-                                requests_energy_company__conclusion_date__isnull=False,
-                                then=F("requests_energy_company__conclusion_date")
-                            ),
-                            output_field=DateField()
-                        )
-                    ),
-                    Value(timezone.localdate())
-                ) - Cast(F("sale__signature_date"), DateField()),
-                output_field=DurationField()
+        return (
+            self
+            # 1) Data da última “Vistoria final” concluída
+            .annotate(
+                last_final=Max(
+                    Case(
+                        When(
+                            Q(
+                                requests_energy_company__type__name__icontains="Vistoria final"
+                            )
+                            & Q(requests_energy_company__status="D")
+                            & Q(requests_energy_company__conclusion_date__isnull=False),
+                            then=F("requests_energy_company__conclusion_date"),
+                        ),
+                        output_field=DateField(),
+                    )
+                ),
+                # 2) Data de assinatura já em DateField
+                contract_dt=Cast(F("sale__signature_date"), DateField()),
+            )
+            # 3) Fim da jornada = vistoria final ou hoje (CURDATE())
+            .annotate(
+                journey_end=Coalesce(
+                    F("last_final"),
+                    Value(timezone.localdate(), output_field=DateField()),
+                    output_field=DateField(),
+                )
+            )
+            # 4) Diferença em dias via DATEDIFF(end, start)
+            .annotate(
+                journey_counter=Func(
+                    F("journey_end"),
+                    F("contract_dt"),
+                    function="DATEDIFF",
+                    output_field=IntegerField(),
+                )
             )
         )
 
@@ -409,6 +428,41 @@ class ProjectQuerySet(django_models.QuerySet):
         )
 
 
+    def with_final_inspection_status(self):
+        request_types = ResquestType.objects.filter(
+            Q(name__icontains="Vistoria Final")
+        )
+        
+        type_ids = {
+            "Vistoria Final": []
+        }
+        
+        for rt in request_types:
+            for key in type_ids.keys():
+                if key.lower() in rt.name.lower():
+                    type_ids[key].append(rt.id)
+        
+        return self.with_last_installation_final_service_opinion().with_is_released_to_engineering().annotate(
+            final_req=FilteredRelation(
+                'requests_energy_company',
+                condition=Q(requests_energy_company__type_id__in=type_ids["Vistoria Final"])
+            ),
+            
+            final_inspection_status=Case(
+                When(
+                    Q(is_released_to_engineering=False), then=Value("Bloqueado")
+                ),
+                When(final_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
+                When(final_req__status="S", then=Value("Solicitado")),
+                When(final_req__status="D", then=Value("Deferido")),
+                When(final_req__status="I", then=Value("Indeferida")),
+                When(final_req__status="ID", then=Value("Indeferida Debito")),
+                default=Value("Bloqueado"),
+                output_field=CharField(),
+            )
+        )
+    
+    
     def with_purchase_status(self):
         return (
             self.with_is_released_to_engineering()

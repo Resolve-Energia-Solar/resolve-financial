@@ -291,6 +291,7 @@ class ProjectViewSet(BaseModelViewSet):
             "last_installation_final_service_opinion": lambda qs: qs.with_last_installation_final_service_opinion(),
             "supply_adquance_names": lambda qs: qs.with_supply_adquance_names(),
             "homologation_status": lambda qs: qs.with_homologation_status(),
+            "final_inspection_status": lambda qs: qs.with_final_inspection_status(),
             "purchase_status": lambda qs: qs.with_purchase_status(),
             "delivery_status": lambda qs: qs.with_delivery_status(),
             "expected_delivery_date": lambda qs: qs.with_expected_delivery_date(),
