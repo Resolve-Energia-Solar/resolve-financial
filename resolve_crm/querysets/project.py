@@ -59,45 +59,34 @@ class GroupConcat(Aggregate):
 class ProjectQuerySet(django_models.QuerySet):
     
     def with_journey_counter(self):
-        return (
-            self
-            # 1) Data da última “Vistoria final” concluída
-            .annotate(
-                last_final=Max(
-                    Case(
-                        When(
-                            Q(
-                                requests_energy_company__type__name__icontains="Vistoria final"
-                            )
-                            & Q(requests_energy_company__status="D")
-                            & Q(requests_energy_company__conclusion_date__isnull=False),
-                            then=F("requests_energy_company__conclusion_date"),
-                        ),
-                        output_field=DateField(),
-                    )
-                ),
-                # 2) Data de assinatura já em DateField
-                contract_dt=Cast(F("sale__signature_date"), DateField()),
-            )
-            # 3) Fim da jornada = vistoria final ou hoje (CURDATE())
-            .annotate(
-                journey_end=Coalesce(
-                    F("last_final"),
-                    Value(timezone.localdate(), output_field=DateField()),
-                    output_field=DateField(),
+        return self.annotate(
+            last_final=Subquery(
+                RequestsEnergyCompany.objects.filter(
+                    project=OuterRef('pk'),
+                    type__name__icontains="Vistoria final",
+                    status="D",
+                    conclusion_date__isnull=False
                 )
+                .order_by('-conclusion_date')
+                .values('conclusion_date')[:1],
+                output_field=DateField()
+            ),
+            contract_dt=Cast(F("sale__signature_date"), DateField())
+        ).annotate(
+            journey_end=Coalesce(
+                F("last_final"),
+                Value(timezone.localdate()),
+                output_field=DateField()
             )
-            # 4) Diferença em dias via DATEDIFF(end, start)
-            .annotate(
-                journey_counter=Func(
-                    F("journey_end"),
-                    F("contract_dt"),
-                    function="DATEDIFF",
-                    output_field=IntegerField(),
-                )
+        ).annotate(
+            journey_counter=Func(
+                F('journey_end'),  # Data final
+                F('contract_dt'),  # Data inicial
+                function='DATEDIFF',
+                template='%(function)s(%(expressions)s)',
+                output_field=IntegerField()
             )
         )
-
 
     def with_is_released_to_engineering(self):
         from resolve_crm import models as resolve_models
@@ -429,34 +418,39 @@ class ProjectQuerySet(django_models.QuerySet):
 
 
     def with_final_inspection_status(self):
-        request_types = ResquestType.objects.filter(
-            Q(name__icontains="Vistoria Final")
-        )
+        # Mover para constante global (definida no topo do arquivo)
+        VISTORIA_FINAL_IDS = ResquestType.objects.filter(
+            name__icontains="Vistoria Final"
+        ).values_list('id', flat=True)
+        return self.with_is_released_to_engineering().with_last_installation_final_service_opinion().annotate(
         
-        type_ids = {
-            "Vistoria Final": []
-        }
-        
-        for rt in request_types:
-            for key in type_ids.keys():
-                if key.lower() in rt.name.lower():
-                    type_ids[key].append(rt.id)
-        
-        return self.with_last_installation_final_service_opinion().with_is_released_to_engineering().annotate(
-            final_req=FilteredRelation(
-                'requests_energy_company',
-                condition=Q(requests_energy_company__type_id__in=type_ids["Vistoria Final"])
+            final_req_exists=Exists(
+                RequestsEnergyCompany.objects.filter(
+                    project=OuterRef('pk'),
+                    type_id__in=VISTORIA_FINAL_IDS
+                )
             ),
+            final_req_status=Subquery(
+                RequestsEnergyCompany.objects.filter(
+                    project=OuterRef('pk'),
+                    type_id__in=VISTORIA_FINAL_IDS
+                ).order_by('-id')[:1].values('status')
+            )
+        ).annotate(
             
             final_inspection_status=Case(
                 When(
                     Q(is_released_to_engineering=False), then=Value("Bloqueado")
                 ),
-                When(final_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
-                When(final_req__status="S", then=Value("Solicitado")),
-                When(final_req__status="D", then=Value("Deferido")),
-                When(final_req__status="I", then=Value("Indeferida")),
-                When(final_req__status="ID", then=Value("Indeferida Debito")),
+                When(
+                    Q(final_req_exists=False) &
+                    Q(last_installation_final_service_opinion__icontains='Concluído'),
+                    then=Value("Pendente")
+                ),
+                When(final_req_status="S", then=Value("Solicitado")),
+                When(final_req_status="D", then=Value("Deferido")),
+                When(final_req_status="I", then=Value("Indeferida")),
+                When(final_req_status="ID", then=Value("Indeferida Debito")),
                 default=Value("Bloqueado"),
                 output_field=CharField(),
             )
@@ -514,24 +508,17 @@ class ProjectQuerySet(django_models.QuerySet):
         from django.db.models import Exists, OuterRef, Subquery
         
         # Subquery para o último parecer de entrega
-        last_delivery_opinion = Schedule.objects.filter(
-            project=OuterRef('pk'),
+        delivery_schedules = Schedule.objects.filter(
             service__name__icontains="Entrega"
-        ).order_by('-created_at').values('final_service_opinion__name')[:1]
-        
-        # Exists para verificar se tem agendamento de entrega
-        has_delivery = Exists(
-            Schedule.objects.filter(
-                project=OuterRef('pk'),
-                service__name__icontains="Entrega"
-            )
-        )
+        ).filter(project=OuterRef('pk'))
         
         return (
-            self.with_is_released_to_engineering()
-            .annotate(
-                last_delivery_opinion_name=Subquery(last_delivery_opinion),
-                has_delivery=has_delivery,
+            self.with_is_released_to_engineering().annotate(
+            has_delivery=Exists(delivery_schedules),
+            last_delivery_opinion_name=Subquery(
+                delivery_schedules.order_by('-created_at')
+                .values('final_service_opinion__name')[:1]
+                ),
                 delivery_status=Case(
                     # Condições de Bloqueado
                     When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
@@ -649,55 +636,37 @@ class ProjectQuerySet(django_models.QuerySet):
 
 
     def _annotate_installation_related_fields(self, queryset):
-        """Helper method to annotate fields related to installation status"""
         INSTALLATION_CATEGORY = "Instalação"
         INSPECTION_CATEGORY = "Vistoria"
-        APPROVED_OPINION = "Aprovad"
-        CONSTRUCTION_OPINIONS = ["Obra", "Sombreamento"]
-        
+
+        installation_schedules = Schedule.objects.filter(
+            project=OuterRef("pk"),
+            service__category__name__icontains=INSTALLATION_CATEGORY
+        )
+
+        inspection_schedules = Schedule.objects.filter(
+            project=OuterRef("pk"),
+            service__category__name__icontains=INSPECTION_CATEGORY,
+            final_service_opinion__name__icontains="Aprovad"
+        ).filter(
+            Q(final_service_opinion__name__icontains="Obra") |
+            Q(final_service_opinion__name__icontains="Sombreamento")
+        )
+
         return queryset.annotate(
-            # Last installation opinion
             latest_installation_opinion_name=Subquery(
-                Schedule.objects.filter(
-                    project=OuterRef("pk"),
-                    service__category__name__icontains=INSTALLATION_CATEGORY,
-                )
-                .order_by("-created_at")
+                installation_schedules.order_by("-created_at")
                 .values("final_service_opinion__name")[:1]
             ),
-            # Has any installation scheduled
-            has_installation=Exists(
-                Schedule.objects.filter(
-                    project=OuterRef("pk"),
-                    service__category__name__icontains=INSTALLATION_CATEGORY,
-                )
-            ),
-            # Has construction needed from inspection
-            has_construction_schedule=Exists(
-                Schedule.objects.filter(
-                    project=OuterRef("pk"),
-                    service__category__name__icontains=INSPECTION_CATEGORY,
-                    final_service_opinion__name__icontains=APPROVED_OPINION,
-                )
-                .filter(
-                    reduce(
-                        operator.or_,
-                        [
-                            Q(final_service_opinion__name__icontains=opinion)
-                            for opinion in CONSTRUCTION_OPINIONS
-                        ]
-                    )
-                )
-                .values("id")
-            ),
-            # Latest construction status (defaults to "P")
+            has_installation=Exists(installation_schedules),
+            has_construction_schedule=Exists(inspection_schedules),
             latest_construction_status=Coalesce(
                 Subquery(
                     CivilConstruction.objects.filter(project=OuterRef("pk"))
                     .order_by("-id")
                     .values("status")[:1]
                 ),
-                Value("P"),
+                Value("P")
             )
         )
 

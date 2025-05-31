@@ -323,6 +323,7 @@ class Schedule(models.Model):
             models.Index(fields=["schedule_date", "schedule_agent"]),
             models.Index(fields=['project', 'service']),
             models.Index(fields=['final_service_opinion']),
+            models.Index(fields=['project', '-created_at'])
         ]
 
 
