@@ -40,6 +40,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from accounts.serializers import UserLoginSerializer
+from resolve_crm.models import Project
 
 
 # Accounts views
@@ -375,7 +376,18 @@ class AddressViewSet(BaseModelViewSet):
         queryset = super().get_queryset()
         search = self.request.query_params.get('q')
         customer = self.request.query_params.get('customer_id')
+        project_customer = self.request.query_params.get('project_customer_id')
         
+        if project_customer:
+            project = get_object_or_404(Project, id=project_customer)
+            
+            try:
+                customer_id = project.sale.customer.id if project.sale.customer else None
+            except AttributeError:
+                customer_id = None
+            
+            queryset = queryset.filter(customer_addresses__id=customer_id)
+
         if customer:
             queryset = queryset.filter(customer_addresses__id=customer)
 
