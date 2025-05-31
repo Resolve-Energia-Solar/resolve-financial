@@ -83,7 +83,7 @@ class SaleSerializer(BaseSerializer):
     def get_is_released_to_engineering(self, obj):
         return any(
             getattr(p, 'is_released_to_engineering', False)
-            for p in obj.projects.all()
+            for p in obj.projects.with_is_released_to_engineering()
         )
     
     def get_signature_status(self, obj):
@@ -338,46 +338,10 @@ class ProjectSerializer(BaseSerializer):
             return obj.distance_to_matriz_km
         else:
             return 0
-        
-    # def get_supply_adquance(self, obj):
-    #     supply_list = obj.supply_adquance
-    #     return [{"id": sa.id, "name": sa.name} for sa in supply_list]
-
-    
-    # def get_access_opnion_status(self, obj):
-    #     return obj.access_opnion_status
-    
-    # def get_load_increase_status(self, obj):
-    #     return obj.load_increase_status
-    
-    # def get_branch_adjustment_status(self, obj):
-    #     return obj.branch_adjustment_status
-    
-    # def get_new_contact_number_status(self, obj):
-    #     return obj.new_contact_number_status
-    
-    # def get_final_inspection_status(self, obj):
-    #     return obj.final_inspection_status
-
-
-    # def get_is_released_to_engineering(self, obj):
-    #     return obj.is_released_to_engineering
 
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis[:10]
         return [{"id": d.id, "name": d.document_type.name if d.document_type else None, "status": d.status} for d in documents]
-
-    # def get_access_opnion(self, obj):
-    #     return obj.access_opnion
-
-    # def get_trt_pending(self, obj):
-    #     return obj.trt_pending
-
-    # def get_trt_status(self, obj):
-    #     return obj.trt_status
-
-    # def get_request_requested(self, obj):
-    #     return obj.request_requested
 
     def get_address(self, obj):
         main_unit = obj.main_unit_prefetched[0] if hasattr(obj, 'main_unit_prefetched') and obj.main_unit_prefetched else None
@@ -403,7 +367,6 @@ class ProjectSerializer(BaseSerializer):
             )
         )['total']
 
-        # só 1 query para buscar installation + select_related(pf. address, agentes, usuários)
         inst = (
             Schedule.objects
             .select_related('address', 'schedule_agent', 'final_service_opinion_user')

@@ -578,19 +578,6 @@ class Sale(models.Model):
             return missing_documents
         return None
 
-    # def clean(self):
-    #     if self.pk is not None:
-    #         original = Sale.objects.get(pk=self.pk)
-    #         if not original.is_pre_sale:
-    #             if self.is_pre_sale:
-    #                 raise ValidationError("O campo 'Pré-venda' não pode ser alterado de volta para True após ser definido como False.")
-    #             allowed_fields = {'seller', 'payment_status', 'marketing_campaign', 'supplier', 'status', 'is_completed_financial'}
-    #             for field in self._meta.fields:
-    #                 if field.name not in allowed_fields:
-    #                     if getattr(self, field.name) != getattr(original, field.name):
-    #                         raise ValidationError(f"O campo '{field.verbose_name}' não pode ser editado após a pré-venda ser concluída.")
-    #     super().clean()
-
     def save(self, *args, **kwargs):
         if not self.billing_date and self.signature_date:
             self.billing_date = self.signature_date
@@ -606,17 +593,6 @@ class Sale(models.Model):
             self.is_completed_financial = False
 
         super().save(*args, **kwargs)
-
-    """
-    def clean(self):
-        if self.is_pre_sale:
-            qs = Sale.objects.filter(customer=self.customer, is_pre_sale=True)
-            if self.pk:
-                qs = qs.exclude(pk=self.pk)
-            if qs.exists():
-                raise ValidationError("Já existe uma pré-venda para esse cliente.")
-        super().clean()
-    """
 
     class Meta:
         verbose_name = "Venda"
@@ -785,7 +761,8 @@ class Project(models.Model):
     objects = ProjectQuerySet.as_manager()
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-
+    
+        
     @cached_property
     def distance_to_matriz_km(self):
         """
