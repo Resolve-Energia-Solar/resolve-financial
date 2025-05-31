@@ -404,6 +404,13 @@ class ProjectQuerySet(django_models.QuerySet):
                 ),
                 final_inspection_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
+                    When(
+                        Q(final_req__isnull=True) |
+                        ~Q(Q(new_contact_number_status="Não se aplica") | Q(new_contact_number_status="Deferido")) |
+                        ~Q(Q(load_increase_status="Não se aplica") | Q(load_increase_status="Deferido")) |
+                        ~Q(last_installation_final_service_opinion__icontains='Concluído'),
+                        then=Value("Bloqueado")
+                    ),
                     When(final_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
                     When(final_req__status="S",    then=Value("Solicitado")),
                     When(final_req__status="D",    then=Value("Deferido")),
