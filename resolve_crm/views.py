@@ -339,17 +339,17 @@ class ProjectViewSet(BaseModelViewSet):
                 to_attr="main_unit_prefetched",
             ),
         )
-        
-        if 'delivery_status' in metrics.split(","):
-            queryset = queryset.prefetch_related(
-                Prefetch(
-                    'field_services',
-                    queryset=Schedule.objects.filter(
-                        service__name__icontains="Entrega"
-                    ).order_by('-created_at'),
-                    to_attr='delivery_schedules'
+        if metrics:
+            if 'delivery_status' in metrics.split(","):
+                queryset = queryset.prefetch_related(
+                    Prefetch(
+                        'field_services',
+                        queryset=Schedule.objects.filter(
+                            service__name__icontains="Entrega"
+                        ).order_by('-created_at'),
+                        to_attr='delivery_schedules'
+                    )
                 )
-            )
 
         return queryset.order_by("-created_at")
 
