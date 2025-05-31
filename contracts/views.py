@@ -76,7 +76,8 @@ class ReciveContractInfomation(APIView):
             contract.save()
             return contract
         except ContractSubmission.DoesNotExist:
-            raise ValueError(f"Contrato {document_key} não encontrado.")
+            logger.warning(f"Contrato {document_key} não encontrado.")
+            return None
 
     def save_signature_date(self, sale, signature_date):
         sale.signature_date = signature_date

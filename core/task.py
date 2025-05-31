@@ -97,8 +97,12 @@ def send_webhook_request_async(self, url, model_label, instance_id, secret, webh
         }
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Erro ao enviar o webhook: {e}")
-        raise self.retry(exc=e)
+        logger.warning(f"Erro ao enviar o webhook: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'status_code': response.status_code if 'response' in locals() else None
+        }
     
     
     
