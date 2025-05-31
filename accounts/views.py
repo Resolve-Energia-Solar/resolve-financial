@@ -92,7 +92,7 @@ class UserLoginView(APIView):
             user.id,
             user.email,
             user.complete_name,
-            last_login,
+            user.last_login,
             client_ip
         )
 
