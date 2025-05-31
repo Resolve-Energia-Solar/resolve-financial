@@ -3,6 +3,9 @@ from field_services.models import *
 from accounts.serializers import BaseSerializer
 from rest_framework import serializers
 from resolve_erp.settings import GMAPS_API_KEY
+from django.utils import timezone
+from datetime import datetime, timedelta
+from django.utils.timezone import make_aware, is_naive
 
 gmaps = googlemaps.Client(key=GMAPS_API_KEY)
 
@@ -40,6 +43,29 @@ class ScheduleSerializer(BaseSerializer):
     class Meta(BaseSerializer.Meta):
         model = Schedule
         fields = '__all__'
+
+    def validate(self, attrs):
+        schedule_date = attrs.get("schedule_date")
+        schedule_start_time = attrs.get("schedule_start_time")
+
+        if schedule_date and schedule_start_time:
+            schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
+
+            if is_naive(schedule_datetime):
+                schedule_datetime = make_aware(schedule_datetime)
+
+            now = timezone.now()
+
+            deadline_datetime = (schedule_datetime - timedelta(days=1)).replace(
+                hour=17, minute=0, second=0, microsecond=0
+            )
+
+            if schedule_datetime - now < timedelta(hours=24) and now > deadline_datetime:
+                raise serializers.ValidationError(
+                    "Vistorias agendadas com menos de 24 horas de antecedência só são aceitas se forem registradas até às 17h do dia anterior."
+                )
+
+        return attrs
 
     def validate_agent_availability(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time):
         disponibility = FreeTimeAgent.objects.filter(
