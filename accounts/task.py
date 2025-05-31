@@ -11,7 +11,6 @@ import requests
 from resolve_erp.celery import shared_task
 from .models import User
 
-# Get an instance of a logger
 logger = logging.getLogger(__name__)
 
 
@@ -68,11 +67,8 @@ def send_login_info_logs(user_id, email, complete_name, last_login, ip_address):
             logger.error("LOGIN_INFO_WEBHOOK_URL environment variable not set.")
             return {"status": "error", "message": "Webhook URL not configured."}
 
-        # Format last_login to server timezone string
         if last_login:
-            # Convert to server timezone
             local_last_login = timezone.localtime(last_login)
-            # Format as string
             formatted_last_login = local_last_login.strftime("%Y-%m-%d %H:%M:%S")
         else:
             formatted_last_login = None
