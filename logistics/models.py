@@ -166,3 +166,6 @@ class Purchase(models.Model):
         verbose_name = "Compra"
         verbose_name_plural = "Compras"
         ordering = ["-purchase_date"]
+        indexes = [
+            models.Index(fields=['project', 'status']),
+        ]

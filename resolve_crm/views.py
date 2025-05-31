@@ -33,13 +33,14 @@ from accounts.serializers import PhoneNumberSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from core.models import Process, ProcessBase
 from core.task import create_process_async
-from engineering.models import Units
+from engineering.models import RequestsEnergyCompany, Units
 from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from .models import *
 from .serializers import *
+from django.db.models import OuterRef, Subquery, DecimalField, Value
 
 
 logger = logging.getLogger(__name__)
@@ -337,6 +338,17 @@ class ProjectViewSet(BaseModelViewSet):
                 to_attr="main_unit_prefetched",
             ),
         )
+        
+        if 'delivery_status' in metrics.split(","):
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'field_services',
+                    queryset=Schedule.objects.filter(
+                        service__name__icontains="Entrega"
+                    ).order_by('-created_at'),
+                    to_attr='delivery_schedules'
+                )
+            )
 
         return queryset.order_by("-created_at")
 

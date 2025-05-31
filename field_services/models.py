@@ -321,6 +321,8 @@ class Schedule(models.Model):
             models.Index(fields=["status"]),
             models.Index(fields=["schedule_agent"]),
             models.Index(fields=["schedule_date", "schedule_agent"]),
+            models.Index(fields=['project', 'service']),
+            models.Index(fields=['final_service_opinion']),
         ]
 
 
