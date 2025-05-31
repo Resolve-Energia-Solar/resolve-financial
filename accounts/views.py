@@ -84,12 +84,16 @@ class UserLoginView(APIView):
 
         user_data = UserLoginSerializer(user).data
 
+        client_ip = request.META.get('HTTP_X_REAL_IP') or \
+               request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or \
+               request.META.get('REMOTE_ADDR', 'unknown')
+               
         send_login_info_logs.delay(
             user.id,
             user.email,
             user.complete_name,
-            str(last_login) if last_login else None,
-            request.META.get('REMOTE_ADDR', 'unknown')
+            last_login,
+            client_ip
         )
 
         return Response({
