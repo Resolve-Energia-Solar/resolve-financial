@@ -104,6 +104,10 @@ class SaleViewSet(BaseModelViewSet):
         ).select_related(*base_select_related).prefetch_related(
             "cancellation_reasons",
             "products",
+            'payments',
+            'payments__borrower',
+            'payments__financier',
+            'payments__installments',
             Prefetch(
                 "attachments",
                 queryset=Attachment.objects.filter(
