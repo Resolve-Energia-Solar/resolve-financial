@@ -81,55 +81,60 @@ class SaleViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # 1. Otimização de seleção de campos
-        base_select_related = [
-            "customer", "seller", "branch", "marketing_campaign", "supplier"
-        ]
-        
-        # 2. Subquery para total_paid
-        paid_installments = PaymentInstallment.objects.filter(
-            payment__sale_id=OuterRef('pk'),
-            is_paid=True
-        ).values('payment__sale_id').annotate(
-            total=Sum('installment_value')
-        ).values('total')[:1]
+        base_select = ["customer", "seller", "branch", "marketing_campaign", "supplier"]
 
-        # 3. Query principal otimizada
-        qs = Sale.objects.annotate(
-            total_paid=Coalesce(
-                Subquery(paid_installments, output_field=DecimalField()),
-                Value(0, output_field=DecimalField())
+        paid_installments = (
+            PaymentInstallment.objects
+            .filter(payment__sale_id=OuterRef("pk"), is_paid=True)
+            .values("payment__sale_id")
+            .annotate(total=Sum("installment_value"))
+            .values("total")[:1]
+        )
+        qs = (
+            Sale.objects
+            .annotate(
+                total_paid=Coalesce(
+                    Subquery(paid_installments, output_field=DecimalField()), 
+                    Value(0, output_field=DecimalField())
+                )
             )
-        ).select_related(*base_select_related).prefetch_related(
-            "cancellation_reasons",
-            "products",
-            'payments',
-            'payments__borrower',
-            'payments__financier',
-            'payments__installments',
-            Prefetch(
-                "attachments",
-                queryset=Attachment.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Sale),
-                    status="EA"
+            .select_related(*base_select)
+            .prefetch_related(
+                "cancellation_reasons",
+                "products",
+                "payments__borrower",
+                "payments__financier",
+                "payments__installments",
+                Prefetch(
+                    "attachments",
+                    queryset=Attachment.objects.filter(
+                        content_type=self.sale_content_type, status="EA"
+                    ),
+                    to_attr="attachments_under_analysis",
                 ),
-                to_attr="attachments_under_analysis",
-            ),
-        ).order_by("-created_at")
-
-        # 4. Pré-carregamento condicional de projetos
-        expands = self.request.query_params.get("expand", "")
-        if "projects" in expands.split(","):
-            project_qs = Project.objects.only(
-                "id", "project_number", "sale_id", "designer_status", 
-                "material_list_is_completed", "status"
+                Prefetch(
+                    "contract_submissions",
+                    queryset=ContractSubmission.objects.order_by("-submit_datetime"),
+                    to_attr="all_submissions",
+                ),
             )
-            qs = qs.prefetch_related(
-                Prefetch("projects", queryset=project_qs)
-            )
+            .order_by("-created_at")
+        )
 
-        # 5. Filtragem de permissões
+        if "projects" in self.request.query_params.get("expand", "").split(","):
+            project_qs = (
+                Project.objects
+                .select_related("inspection", "inspection__final_service_opinion")
+                .only(
+                    "id", "project_number", "sale_id", "designer_status", 
+                    "material_list_is_completed", "status", "inspection", 
+                    "inspection__final_service_opinion"
+                )
+                .with_is_released_to_engineering()
+                .with_homologation_status()
+            )
+            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs, to_attr="cached_projects"))
+
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
 
