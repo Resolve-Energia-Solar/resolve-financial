@@ -420,10 +420,13 @@ class ProjectViewSet(BaseModelViewSet):
         construction_status__in = request.query_params.get("construction_status__in")
         is_customer_aware_of_construction = request.query_params.get("is_customer_aware_of_construction")
         
-        if is_customer_aware_of_construction == True:
-            queryset = queryset.filter(civil_construction__is_customer_aware=True)
-        elif is_customer_aware_of_construction == False:
-            queryset = queryset.filter(civil_construction__is_customer_aware=False)
+        if is_customer_aware_of_construction:
+            if is_customer_aware_of_construction.lower() == "true":
+                queryset = queryset.filter(civil_construction__is_customer_aware=True)
+            elif is_customer_aware_of_construction.lower() == "false":
+                queryset = queryset.filter(civil_construction__is_customer_aware=False)
+            else:
+                pass
 
         if 'journey_counter' in queryset.query.annotations and journey_counter:
             queryset = queryset.filter(journey_counter=journey_counter)
