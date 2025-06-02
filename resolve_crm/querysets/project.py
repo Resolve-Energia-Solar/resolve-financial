@@ -408,6 +408,7 @@ class ProjectQuerySet(django_models.QuerySet):
                         ~Q(Q(new_contact_number_status="Não se aplica") | Q(new_contact_number_status="Deferido")) |
                         ~Q(Q(load_increase_status="Não se aplica") | Q(load_increase_status="Deferido")) |
                         ~Q(Q(branch_adjustment_status="Não se aplica") | Q(branch_adjustment_status="Deferido")) |
+                        ~Q(access_opnion_status="Deferido") |
                         ~Q(last_installation_final_service_opinion__icontains='Concluído'),
                         then=Value("Bloqueado")
                     ),
