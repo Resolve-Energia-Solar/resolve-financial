@@ -37,9 +37,9 @@ class LostReason(models.Model):
 
 class TicketType(models.Model):
     name = models.CharField("Tipo de Chamado", max_length=50)
-    deadline = models.PositiveIntegerField(
-        "Prazo (dias)",
-        help_text="Prazo em dias para resolução do chamado",
+    deadline = models.DurationField(
+        "Prazo (Horas)",
+        help_text="Prazo em horas para resolução do chamado",
     )
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -109,9 +109,9 @@ class Ticket(models.Model):
         null=True,
         help_text="Data em que o chamado foi concluído",
     )
-    deadline = models.PositiveIntegerField(
-        "Prazo (dias)",
-        help_text="Prazo em dias para resolução do chamado",
+    deadline = models.DurationField(
+        "Prazo (Em horas)",
+        help_text="Prazo em horas para resolução do chamado",
     )
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True)
