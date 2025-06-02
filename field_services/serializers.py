@@ -49,7 +49,7 @@ class ScheduleSerializer(BaseSerializer):
                 return attrs
             
             service = attrs.get("service")
-            schedule_creator = attrs.get("schedule_creator")
+            user = self.context["request"].user
 
             if service and service.name == "Serviço de Vistoria":
                 schedule_date = attrs.get("schedule_date")
@@ -64,9 +64,9 @@ class ScheduleSerializer(BaseSerializer):
                     now = timezone.now()
 
                     has_permission = (
-                        schedule_creator
-                        and hasattr(schedule_creator, 'has_perm')
-                        and schedule_creator.has_perm('field_services.can_schedule_short_notice')
+                        user
+                        and hasattr(user, 'has_perm')
+                        and user.has_perm('field_services.can_schedule_short_notice')
                     )
 
                     if not has_permission and schedule_datetime - now < timedelta(hours=24):
