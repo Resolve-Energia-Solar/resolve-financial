@@ -401,7 +401,7 @@ class ProjectQuerySet(django_models.QuerySet):
                         )
                     ),
                     output_field=CharField(),
-                ),
+            ),
                 final_inspection_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
                     When(

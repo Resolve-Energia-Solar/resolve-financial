@@ -611,6 +611,14 @@ class ProjectViewSet(BaseModelViewSet):
                     )
                 )
             ).filter(has_current_step=True)
+            
+        ordering = request.query_params.get("ordering")
+        
+        if ordering and "inspection.schedule_date" in ordering:
+            if not ordering.startswith("-"):
+                queryset = queryset.order_by("inspection__schedule_date")
+            else:
+                queryset = queryset.order_by("-inspection__schedule_date")
 
         return queryset
 
