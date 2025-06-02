@@ -1,5 +1,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
+from django.utils import timezone
 
 
 class CustomerService(models.Model):
@@ -63,7 +64,7 @@ class Ticket(models.Model):
         related_name="responsible_tickets",
     )
     subject = models.CharField("Assunto", max_length=100)
-    description = models.TextField("Descrição")
+    description = models.TextField("Descrição", blank=True, null=True)
     ticket_type = models.ForeignKey(
         "TicketType",
         on_delete=models.CASCADE,
@@ -102,7 +103,7 @@ class Ticket(models.Model):
         ],
         default="A",
     )
-    conclusion_date = models.DateField(
+    conclusion_date = models.DateTimeField(
         "Data de Conclusão",
         blank=True,
         null=True,
@@ -118,6 +119,10 @@ class Ticket(models.Model):
 
     history = HistoricalRecords()
     
+    def save(self, *args, **kwargs):
+        if not self.conclusion_date and (self.status == "R" or self.status == "F"):
+            self.conclusion_date = timezone.now()
+
     class Meta:
         verbose_name = "Chamado"
         verbose_name_plural = "Chamados"

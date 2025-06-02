@@ -11,6 +11,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.views import BaseModelViewSet
 from customer_service.models import CustomerService, LostReason, Ticket, TicketType
 from customer_service.serializers import CustomerServiceSerializer, LostReasonSerializer, TicketSerializer, TicketTypeSerializer
+from rest_framework import serializers
 
 User = get_user_model()
 
@@ -80,3 +81,33 @@ class TicketViewSet(BaseModelViewSet):
         SessionAuthentication,
         JWTAuthentication,
     ]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related(
+            "project",
+            "responsible",
+            "ticket_type",
+            "responsible_department",
+            "responsible_user"
+        ).prefetch_related(
+            "comments",
+            "attachments",
+        )
+        return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        employee = getattr(user, "employee", None)
+        ticket_type = serializer.validated_data.get("ticket_type")
+
+        if not ticket_type or not getattr(ticket_type, "deadline", None):
+            raise serializers.ValidationError("O tipo de chamado deve ter um prazo definido.")
+        
+        if not employee:
+            raise serializers.ValidationError("Usuário não está cadastrado como funcionário.")
+
+        serializer.save(
+            responsible=user,
+            responsible_department=employee.department,
+            deadline=ticket_type.deadline
+        )
