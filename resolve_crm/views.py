@@ -90,50 +90,59 @@ class SaleViewSet(BaseModelViewSet):
             .annotate(total=Sum("installment_value"))
             .values("total")[:1]
         )
-        qs = (
-            Sale.objects
-            .annotate(
-                total_paid=Coalesce(
-                    Subquery(paid_installments, output_field=DecimalField()), 
-                    Value(0, output_field=DecimalField())
-                )
-            )
-            .select_related(*base_select)
-            .prefetch_related(
-                "cancellation_reasons",
-                "products",
-                "payments__borrower",
-                "payments__financier",
-                "payments__installments",
-                Prefetch(
-                    "attachments",
-                    queryset=Attachment.objects.filter(
-                        content_type=self.sale_content_type, status="EA"
-                    ),
-                    to_attr="attachments_under_analysis",
+        prefetch_list = [
+            "cancellation_reasons",
+            "products",
+            "payments__borrower",
+            "payments__financier",
+            "payments__installments",
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(
+                    content_type=self.sale_content_type, status="EA"
                 ),
-                Prefetch(
-                    "contract_submissions",
-                    queryset=ContractSubmission.objects.order_by("-submit_datetime"),
-                    to_attr="all_submissions",
-                ),
-            )
-            .order_by("-created_at")
-        )
+                to_attr="attachments_under_analysis",
+            ),
+            Prefetch(
+                "contract_submissions",
+                queryset=ContractSubmission.objects.order_by("-submit_datetime"),
+                to_attr="all_submissions",
+            ),
+            Prefetch(
+                "projects",
+                queryset=Project.objects
+                .select_related("inspection", "inspection__final_service_opinion")
+                .with_is_released_to_engineering(),
+                to_attr="cached_projects",
+            ),
+        ]
 
         if "projects" in self.request.query_params.get("expand", "").split(","):
             project_qs = (
                 Project.objects
                 .select_related("inspection", "inspection__final_service_opinion")
                 .only(
-                    "id", "project_number", "sale_id", "designer_status", 
-                    "material_list_is_completed", "status", "inspection", 
+                    "id", "project_number", "sale_id", "designer_status",
+                    "material_list_is_completed", "status", "inspection",
                     "inspection__final_service_opinion"
                 )
                 .with_is_released_to_engineering()
                 .with_homologation_status()
             )
-            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs, to_attr="cached_projects"))
+            prefetch_list[-1] = Prefetch("projects", queryset=project_qs, to_attr="cached_projects")
+
+        qs = (
+            Sale.objects
+            .annotate(
+                total_paid=Coalesce(
+                    Subquery(paid_installments, output_field=DecimalField()),
+                    Value(0, output_field=DecimalField())
+                )
+            )
+            .select_related(*base_select)
+            .prefetch_related(*prefetch_list)
+            .order_by("-created_at")
+        )
 
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
