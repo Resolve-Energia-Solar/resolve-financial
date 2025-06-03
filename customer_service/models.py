@@ -63,7 +63,12 @@ class Ticket(models.Model):
         verbose_name="Responsável",
         related_name="responsible_tickets",
     )
-    subject = models.CharField("Assunto", max_length=100)
+    subject = models.ForeignKey(
+        "TicketsSubject",
+        on_delete=models.CASCADE,
+        verbose_name="Assunto",
+        related_name="subject_tickets",
+    )
     description = models.TextField("Descrição")
     ticket_type = models.ForeignKey(
         "TicketType",
