@@ -18,7 +18,7 @@ from .models import *
 from .pagination import AttachmentPagination
 from .serializers import *
 from rest_framework import generics
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Sum
 
 
 class SystemConfigView(APIView):
@@ -96,8 +96,16 @@ class ColumnViewSet(BaseModelViewSet):
     serializer_class = ColumnSerializer
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            Prefetch('leads', queryset=Lead.objects.prefetch_related('proposals'))
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    'leads',
+                    queryset=Lead.objects.prefetch_related('proposals'),
+                )
+            )
+            .annotate(proposals_total=Sum('leads__proposals__value'))
         )
     
 
