@@ -89,22 +89,26 @@ class TicketViewSet(BaseModelViewSet):
             "ticket_type",
             "responsible_department",
             "responsible_user"
-        ).prefetch_related(
-            "comments",
-            "attachments",
         )
+        
         return queryset
 
     def perform_create(self, serializer):
         user = self.request.user
         employee = getattr(user, "employee", None)
         ticket_type = serializer.validated_data.get("ticket_type")
+        
+        print(f"User: {user}, Employee: {employee}, Ticket Type: {ticket_type}")
 
         if not ticket_type or not getattr(ticket_type, "deadline", None):
             raise serializers.ValidationError("O tipo de chamado deve ter um prazo definido.")
-        
         if not employee:
             raise serializers.ValidationError("Usuário não está cadastrado como funcionário.")
+        
+        print(f"Employee Department: {employee.department}")
+        
+        if not employee.department:
+            raise serializers.ValidationError("Funcionário não está vinculado a um Setor.")
 
         serializer.save(
             responsible=user,

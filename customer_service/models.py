@@ -122,6 +122,7 @@ class Ticket(models.Model):
     def save(self, *args, **kwargs):
         if not self.conclusion_date and (self.status == "R" or self.status == "F"):
             self.conclusion_date = timezone.now()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Chamado"
