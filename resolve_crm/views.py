@@ -8,6 +8,8 @@ from hashlib import md5
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q, Sum
@@ -206,6 +208,7 @@ class SaleViewSet(BaseModelViewSet):
 
         return queryset
 
+    @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_filters(queryset, request.query_params)
@@ -646,6 +649,7 @@ class ProjectViewSet(BaseModelViewSet):
         return queryset
 
 
+    @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
