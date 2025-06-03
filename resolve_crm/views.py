@@ -774,6 +774,8 @@ class ProjectViewSet(BaseModelViewSet):
             total_canceled=Count('id', filter=Q(construction_status="C")),
             total_without_construction=Count('id', filter=Q(construction_status="S")),
             # total_not_applicable=Count('id', filter=Q(construction_status="NA")),
+            total_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=True)),
+            total_not_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=False)),
         )
 
         cache.set(cache_key, indicators, 60)
