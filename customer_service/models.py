@@ -64,7 +64,7 @@ class Ticket(models.Model):
         related_name="responsible_tickets",
     )
     subject = models.CharField("Assunto", max_length=100)
-    description = models.TextField("Descrição", blank=True, null=True)
+    description = models.TextField("Descrição")
     ticket_type = models.ForeignKey(
         "TicketType",
         on_delete=models.CASCADE,
@@ -115,6 +115,14 @@ class Ticket(models.Model):
     )
     
     # Monitoring
+    observer = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Observador",
+        related_name="observed_tickets",
+        blank=True,
+        null=True,
+    )
     answered_at = models.DateTimeField(
         "Respondido em",
         blank=True,
@@ -229,4 +237,16 @@ class Ticket(models.Model):
         return f"{self.subject} - {self.project.project_number} ({self.get_status_display()})"
 
 
-    
+
+class TicketsSubject(models.Model):
+    """
+    Modelo auxiliar para armazenar os assuntos dos tickets.
+    Utilizado para facilitar a busca e categorização de tickets.
+    """
+    subject = models.CharField("Assunto", max_length=100, unique=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Assunto de Chamado"
+        verbose_name_plural = "Assuntos de Chamados"
+        ordering = ["subject"]
