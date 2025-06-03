@@ -16,10 +16,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User, UserType
 from api.views import BaseModelViewSet
 from core.serializers import AttachmentSerializer
-from engineering.models import RequestsEnergyCompany
+from engineering.models import RequestsEnergyCompany, Units
 from field_services.models import Schedule
 from mobile_app.serializers import *
-from resolve_crm.models import Project, ProjectStep, Sale
+from resolve_crm.models import ContractSubmission, Project, ProjectStep, Sale
+from django.db.models import Prefetch
 
 
 # Carrega o .env
@@ -101,17 +102,46 @@ class CustomerViewset(BaseModelViewSet):
     serializer_class = CustomerSerializer
     http_method_names = ['get']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('customer_sales')
+
 
 class SaleViewset(BaseModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = MobileSaleSerializer
     http_method_names = ['get']
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch('projects', queryset=Project.objects.only('id')),
+                Prefetch(
+                    'contract_submissions',
+                    queryset=ContractSubmission.objects.order_by('-submit_datetime'),
+                    to_attr='prefetched_contract_submissions',
+                ),
+            )
+        )
+
 
 class ProjectViewset(BaseModelViewSet):
     queryset = Project.objects.all()
     serializer_class = MobileProjectSerializer
     http_method_names = ['get']
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch('units', queryset=Units.objects.select_related('address')),
+                Prefetch('field_services', queryset=Schedule.objects.order_by('-created_at')),
+                Prefetch('requests_energy_company', queryset=RequestsEnergyCompany.objects.order_by('-created_at')),
+                Prefetch('project_steps', queryset=ProjectStep.objects.select_related('step')),
+            )
+        )
 
 
 class DocumentationView(APIView):

@@ -1,4 +1,5 @@
 from collections import defaultdict
+import datetime
 
 from django.utils.text import slugify
 from .models import *
@@ -47,7 +48,8 @@ class MobileSaleSerializer(BaseSerializer):
         ]
     
     def get_contract_submission(self, obj):
-        contract_submission = obj.contract_submissions.all().order_by('-submit_datetime').first()
+        submissions = getattr(obj, 'prefetched_contract_submissions', None)
+        contract_submission = submissions[0] if submissions else None
         if contract_submission:
             data = ContractSubmissionSerializer(contract_submission).data
             data.pop('sale', None)
@@ -73,8 +75,9 @@ class MobileProjectSerializer(BaseSerializer):
         fields = ['id', 'start_date', 'product', 'project_number', 'address', 'deadlines', 'contract_url', 'field_services_urls', 'requests_energy_company_urls', 'monitoring_url']
 
     def get_address(self, obj):
-        if obj.units.filter(main_unit=True).exists():
-            return AddressSerializer(obj.units.filter(main_unit=True).first().address).data
+        main_unit = next((u for u in obj.units.all() if u.main_unit), None)
+        if main_unit and main_unit.address:
+            return AddressSerializer(main_unit.address).data
         return None
 
     def get_deadlines(self, obj):
@@ -90,13 +93,14 @@ class MobileProjectSerializer(BaseSerializer):
         }
 
         # Filtrar prazos
+        steps = sorted(obj.project_steps.all(), key=lambda s: s.deadline or datetime.date.max)
         return [
             {
                 'step': step.step.name,
                 'deadline': step.deadline,
                 'slug': step.step.slug
             }
-            for step in obj.project_steps.all().order_by('deadline')
+            for step in steps
             if slugify(step.step.slug) not in excluded_slugs and
                slugify(step.step.name) not in field_service_slugs | request_energy_slugs
         ]
@@ -110,7 +114,7 @@ class MobileProjectSerializer(BaseSerializer):
         grouped_urls = defaultdict(list)
 
         # Agrupando e ordenando os serviços de campo
-        for field_service in obj.field_services.all().order_by('-created_at'):
+        for field_service in obj.field_services.all():
             service_slug = slugify(field_service.service)
             url = reverse('mobile_app:field_service-detail', args=[field_service.id], request=request)
             grouped_urls[service_slug].append(url)
@@ -122,7 +126,7 @@ class MobileProjectSerializer(BaseSerializer):
         grouped_urls = defaultdict(list)
 
         # Agrupando e ordenando solicitações de concessionárias
-        for request_energy_company in obj.requests_energy_company.all().order_by('-created_at'):
+        for request_energy_company in obj.requests_energy_company.all():
             type_slug = slugify(request_energy_company.type)
             url = reverse('mobile_app:requests_energy_company-detail', args=[request_energy_company.id], request=request)
             grouped_urls[type_slug].append(url)
