@@ -64,7 +64,17 @@ class AttachmentViewSet(BaseModelViewSet):
 
 
 class CommentViewSet(BaseModelViewSet):
-    queryset = Comment.objects.all()
+    queryset = (
+        Comment.objects
+        .all()
+        .select_related(
+            'author',
+            'author__employee',
+            'author__employee__role',
+            'author__employee__department',
+            'author__employee__branch',
+        )
+    )
     serializer_class = CommentSerializer
 
 
