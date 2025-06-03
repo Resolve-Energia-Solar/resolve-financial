@@ -322,6 +322,10 @@ class ProjectSerializer(BaseSerializer):
     branch_adjustment_days_int = serializers.IntegerField(read_only=True)
     new_contact_number_days_int = serializers.IntegerField(read_only=True)
     final_inspection_days_int = serializers.IntegerField(read_only=True)
+    total_tickets = serializers.IntegerField(read_only=True)
+    total_tickets_abertos = serializers.IntegerField(read_only=True)
+    avg_tempo_resolucao = serializers.DurationField(read_only=True)
+    ticket_aberto_mais_antigo = serializers.DateTimeField(read_only=True)
     
     distance_to_matriz_km = serializers.SerializerMethodField()
 

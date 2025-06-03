@@ -28,6 +28,7 @@ from django.db.models import (
     DateTimeField,
     FilteredRelation,
     Prefetch,
+    Min,
 )
 from django.db.models.functions import Cast, Coalesce
 import operator
@@ -294,6 +295,7 @@ class ProjectQuerySet(django_models.QuerySet):
 
 
     def with_homologation_status(self):
+        # 1) busca os RequestType relevantes e agrupa seus IDs por categoria
         request_types = ResquestType.objects.filter(
             Q(name__icontains="Parecer de Acesso") |
             Q(name__icontains="Aumento de Carga") |
@@ -301,7 +303,6 @@ class ProjectQuerySet(django_models.QuerySet):
             Q(name__icontains="Nova UC") |
             Q(name__icontains="Vistoria Final")
         )
-        
         type_ids = {
             "Parecer de Acesso": [],
             "Aumento de Carga": [],
@@ -309,16 +310,71 @@ class ProjectQuerySet(django_models.QuerySet):
             "Nova UC": [],
             "Vistoria Final": []
         }
-        
         for rt in request_types:
-            for key in type_ids.keys():
-                if key.lower() in rt.name.lower():
-                    type_ids[key].append(rt.id)
-        
+            lower = rt.name.lower()
+            if "parecer de acesso" in lower:
+                type_ids["Parecer de Acesso"].append(rt.id)
+            if "aumento de carga" in lower:
+                type_ids["Aumento de Carga"].append(rt.id)
+            if "ajuste de ramal" in lower:
+                type_ids["Ajuste de Ramal"].append(rt.id)
+            if "nova uc" in lower:
+                type_ids["Nova UC"].append(rt.id)
+            if "vistoria final" in lower:
+                type_ids["Vistoria Final"].append(rt.id)
+
+        # 2) subquery para detectar se há Unidade principal com novo contrato
         main_unit_has_new_contract = Units.objects.filter(
             project=OuterRef("pk"),
             main_unit=True,
             new_contract_number=True
+        )
+
+        # 3) para cada categoria de pedido, crio um Subquery que retorna o status
+        #    e um Exists() que apenas verifica existência
+        access_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Parecer de Acesso"]
+        ).order_by().values("status")[:1]
+        access_exists = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Parecer de Acesso"]
+        )
+
+        load_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Aumento de Carga"]
+        ).order_by().values("status")[:1]
+        load_exists = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Aumento de Carga"]
+        )
+
+        branch_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Ajuste de Ramal"]
+        ).order_by().values("status")[:1]
+        branch_exists = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Ajuste de Ramal"]
+        )
+
+        newuc_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Nova UC"]
+        ).order_by().values("status")[:1]
+        newuc_exists = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Nova UC"]
+        )
+
+        final_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Vistoria Final"]
+        ).order_by().values("status")[:1]
+        final_exists = RequestsEnergyCompany.objects.filter(
+            project=OuterRef("pk"),
+            type_id__in=type_ids["Vistoria Final"]
         )
 
         return (
@@ -332,59 +388,86 @@ class ProjectQuerySet(django_models.QuerySet):
             .with_request_days_since_requested("Nova UC", "new_contact_number_days")
             .with_request_days_since_requested("Vistoria Final", "final_inspection_days")
             .annotate(
-                access_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Parecer de Acesso"])
-                ),
-                load_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Aumento de Carga"])
-                ),
-                branch_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Ajuste de Ramal"])
-                ),
-                new_uc_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Nova UC"])
-                ),
-                final_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Vistoria Final"])
-                ),
+                access_req_status=Subquery(access_qs, output_field=CharField()),
+                access_req_exists=Exists(access_exists),
+
+                load_req_status=Subquery(load_qs, output_field=CharField()),
+                load_req_exists=Exists(load_exists),
+
+                branch_req_status=Subquery(branch_qs, output_field=CharField()),
+                branch_req_exists=Exists(branch_exists),
+
+                newuc_req_status=Subquery(newuc_qs, output_field=CharField()),
+                newuc_req_exists=Exists(newuc_exists),
+
+                final_req_status=Subquery(final_qs, output_field=CharField()),
+                final_req_exists=Exists(final_exists),
+
                 has_main_unit_new_contract=Exists(main_unit_has_new_contract),
             )
             .annotate(
+                all_pre_reqs_deferred_or_not_applicable=Case(
+                    When(
+                        (
+                            (
+                                Q(has_main_unit_new_contract=True)
+                                & Q(newuc_req_status="D")
+                            )
+                            | Q(has_main_unit_new_contract=False)
+                        )
+                        &
+                        (
+                            ~Q(supply_adquance_names__icontains="Aumento de Carga")
+                            | Q(load_req_status="D")
+                        )
+                        &
+                        (
+                            ~Q(supply_adquance_names__icontains="Ajuste de Ramal")
+                            | Q(branch_req_status="D")
+                        )
+                        &
+                        Q(access_req_status="D")
+                        &
+                        Q(last_installation_final_service_opinion__icontains="Concluído"),
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                ),
+
                 access_opnion_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
-                    When(access_req__isnull=True, then=Value("Pendente")),
-                    When(access_req__status="S",    then=Value("Solicitado")),
-                    When(access_req__status="D",    then=Value("Deferido")),
-                    When(access_req__status="I",    then=Value("Indeferida")),
-                    When(access_req__status="ID",    then=Value("Indeferida Debito")),
+                    When(access_req_exists=False, then=Value("Pendente")),
+                    When(access_req_status="S",    then=Value("Solicitado")),
+                    When(access_req_status="D",    then=Value("Deferido")),
+                    When(access_req_status="I",    then=Value("Indeferida")),
+                    When(access_req_status="ID",   then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
+
                 load_increase_status=Case(
-                When(~Q(supply_adquance_names__icontains="Aumento de Carga"), then=Value("Não se aplica")),
-                    When(load_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
-                    When(load_req__status="S", then=Value("Solicitado")),
-                    When(load_req__status="D", then=Value("Deferido")),
-                    When(load_req__status="I", then=Value("Indeferida")),
-                    When(load_req__status="ID", then=Value("Indeferida Debito")),
+                    When(~Q(supply_adquance_names__icontains="Aumento de Carga"), then=Value("Não se aplica")),
+                    When(load_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(load_req_status="S", then=Value("Solicitado")),
+                    When(load_req_status="D", then=Value("Deferido")),
+                    When(load_req_status="I", then=Value("Indeferida")),
+                    When(load_req_status="ID", then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
+
                 branch_adjustment_status=Case(
                     When(~Q(supply_adquance_names__icontains="Ajuste de Ramal"), then=Value("Não se aplica")),
-                    When(branch_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
-                    When(branch_req__status="S", then=Value("Solicitado")),
-                    When(branch_req__status="D", then=Value("Deferido")),
-                    When(branch_req__status="I", then=Value("Indeferida")),
-                    When(branch_req__status="ID", then=Value("Indeferida Debito")),
+                    When(branch_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(branch_req_status="S", then=Value("Solicitado")),
+                    When(branch_req_status="D", then=Value("Deferido")),
+                    When(branch_req_status="I", then=Value("Indeferida")),
+                    When(branch_req_status="ID", then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
+
                 new_contact_number_status=Case(
                     When(has_main_unit_new_contract=False, then=Value("Não se aplica")),
                     When(
@@ -392,37 +475,35 @@ class ProjectQuerySet(django_models.QuerySet):
                         then=Case(
                             When(is_released_to_engineering=False, then=Value("Bloqueado")),
                             When(~Q(designer_status="CO"), then=Value("Bloqueado")),
-                            When(new_uc_req__isnull=True,  then=Value("Pendente")),
-                            When(new_uc_req__status="S",   then=Value("Solicitado")),
-                            When(new_uc_req__status="D",   then=Value("Deferido")),
-                            When(new_uc_req__status="I",   then=Value("Indeferida")),
-                            When(new_uc_req__status="ID", then=Value("Indeferida Debito")),
+                            When(newuc_req_exists=False, then=Value("Pendente")),
+                            When(newuc_req_status="S", then=Value("Solicitado")),
+                            When(newuc_req_status="D", then=Value("Deferido")),
+                            When(newuc_req_status="I", then=Value("Indeferida")),
+                            When(newuc_req_status="ID", then=Value("Indeferida Debito")),
                             default=Value("Bloqueado"),
                         )
                     ),
                     output_field=CharField(),
-            ),
+                ),
+
                 final_inspection_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
-                    When(
-                        ~Q(Q(new_contact_number_status="Não se aplica") | Q(new_contact_number_status="Deferido")) |
-                        ~Q(Q(load_increase_status="Não se aplica") | Q(load_increase_status="Deferido")) |
-                        ~Q(Q(branch_adjustment_status="Não se aplica") | Q(branch_adjustment_status="Deferido")) |
-                        ~Q(access_opnion_status="Deferido") |
-                        ~Q(last_installation_final_service_opinion__icontains='Concluído'),
-                        then=Value("Bloqueado")
-                    ),
-                    When(final_req__isnull=True, last_installation_final_service_opinion__icontains='Concluído', then=Value("Pendente")),
-                    When(final_req__status="S",    then=Value("Solicitado")),
-                    When(final_req__status="D",    then=Value("Deferido")),
-                    When(final_req__status="I",    then=Value("Indeferida")),
-                    When(final_req__status="ID",    then=Value("Indeferida Debito")),
+
+                    When(all_pre_reqs_deferred_or_not_applicable=False, then=Value("Bloqueado")),
+
+                    When(final_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(final_req_status="S",    then=Value("Solicitado")),
+                    When(final_req_status="D",    then=Value("Deferido")),
+                    When(final_req_status="I",    then=Value("Indeferida")),
+                    When(final_req_status="ID",   then=Value("Indeferida Debito")),
+
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
             )
-            .distinct()
         )
+
+
 
 
     def with_final_inspection_status(self):
@@ -853,6 +934,31 @@ class ProjectQuerySet(django_models.QuerySet):
             ),
         ).distinct()
 
+    
+    def with_ticket_stats(self):
+        return self.annotate(
+            total_tickets=Count(
+                "project_tickets",
+                distinct=True
+            ),
+            total_tickets_abertos=Count(
+                "project_tickets",
+                filter=~Q(project_tickets__status__in=["R", "F"]),
+                distinct=True
+            ),
+            avg_tempo_resolucao=Avg(
+                ExpressionWrapper(
+                    F("project_tickets__conclusion_date") - F("project_tickets__created_at"),
+                    output_field=DurationField(),
+                ),
+                filter=Q(project_tickets__status__in=["R", "F"])
+            ),
+            ticket_aberto_mais_antigo=Min(
+                "project_tickets__created_at",
+                filter=~Q(project_tickets__status__in=["R", "F"])
+            ),
+        )
+    
 
     def with_status_annotations(self):
         return (

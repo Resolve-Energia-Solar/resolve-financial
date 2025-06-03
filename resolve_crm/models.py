@@ -794,6 +794,7 @@ class Project(models.Model):
         c = 2 * math.asin(math.sqrt(a))
         return round(R * c, 2)
 
+
     @cached_property
     def address(self):
         main_unit = self.units.filter(main_unit=True).first()

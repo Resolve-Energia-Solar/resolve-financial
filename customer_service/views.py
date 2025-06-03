@@ -113,5 +113,10 @@ class TicketViewSet(BaseModelViewSet):
         serializer.save(
             responsible=user,
             responsible_department=employee.department,
-            deadline=ticket_type.deadline
+            deadline=ticket_type.deadline,
+            current_user=self.request.user
         )
+
+    
+    def perform_update(self, serializer):
+        serializer.save(current_user=self.request.user)

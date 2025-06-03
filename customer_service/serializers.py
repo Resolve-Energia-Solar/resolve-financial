@@ -43,4 +43,8 @@ class TicketSerializer(BaseSerializer):
             "responsible",           
             "responsible_department",
             "deadline",
+            "answered_at", "answered_by",
+            "resolved_at", "resolved_by",
+            "closed_at", "closed_by",
+            "conclusion_date",
         )

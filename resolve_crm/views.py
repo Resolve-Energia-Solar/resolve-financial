@@ -293,84 +293,88 @@ class SaleViewSet(BaseModelViewSet):
 
 class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
+    queryset = Project.objects.all()
 
-    def get_queryset(self):
-        metrics = self.request.query_params.get("metrics")
-        queryset = Project.objects.all()
+    # def get_queryset(self):
+    #     metrics = self.request.query_params.get("metrics")
+    #     queryset = Project.objects.all()
 
-        method_map = {
-            "journey_counter": lambda qs: qs.with_journey_counter(),
-            "is_released_to_engineering": lambda qs: qs.with_is_released_to_engineering(),
-            "trt_status": lambda qs: qs.with_trt_status(),
-            "pending_material_list": lambda qs: qs.with_pending_material_list(),
-            "access_opnion": lambda qs: qs.with_access_opnion(),
-            "trt_pending": lambda qs: qs.with_trt_pending(),
-            "request_requested": lambda qs: qs.with_request_requested(),
-            "last_installation_final_service_opinion": lambda qs: qs.with_last_installation_final_service_opinion(),
-            "supply_adquance_names": lambda qs: qs.with_supply_adquance_names(),
-            "homologation_status": lambda qs: qs.with_homologation_status(),
-            "final_inspection_status": lambda qs: qs.with_final_inspection_status(),
-            "purchase_status": lambda qs: qs.with_purchase_status(),
-            "delivery_status": lambda qs: qs.with_delivery_status(),
-            "expected_delivery_date": lambda qs: qs.with_expected_delivery_date(),
-            "installments_indicators": lambda qs: qs.with_installments_indicators(),
-            "all_status_annotations": lambda qs: qs.with_status_annotations(),
-            "avg_time_installation": lambda qs: qs.with_avg_time_installation(),
-            "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
-            "number_of_installations": lambda qs: qs.with_number_of_installations(),
-            "installation_status": lambda qs: qs.with_installation_status(),
-            "is_released_to_installation": lambda qs: qs.with_is_released_to_installation(),
-            "latest_installation": lambda qs: qs.with_latest_installation(),
-            "in_construction": lambda qs: qs.with_in_construction(),
-            "construction_status": lambda qs: qs.with_construction_status(),
-        }
+    #     method_map = {
+    #         "journey_counter": lambda qs: qs.with_journey_counter(),
+    #         "is_released_to_engineering": lambda qs: qs.with_is_released_to_engineering(),
+    #         "trt_status": lambda qs: qs.with_trt_status(),
+    #         "pending_material_list": lambda qs: qs.with_pending_material_list(),
+    #         "access_opnion": lambda qs: qs.with_access_opnion(),
+    #         "trt_pending": lambda qs: qs.with_trt_pending(),
+    #         "request_requested": lambda qs: qs.with_request_requested(),
+    #         "last_installation_final_service_opinion": lambda qs: qs.with_last_installation_final_service_opinion(),
+    #         "supply_adquance_names": lambda qs: qs.with_supply_adquance_names(),
+    #         "homologation_status": lambda qs: qs.with_homologation_status(),
+    #         "final_inspection_status": lambda qs: qs.with_final_inspection_status(),
+    #         "purchase_status": lambda qs: qs.with_purchase_status(),
+    #         "delivery_status": lambda qs: qs.with_delivery_status(),
+    #         "expected_delivery_date": lambda qs: qs.with_expected_delivery_date(),
+    #         "installments_indicators": lambda qs: qs.with_installments_indicators(),
+    #         "all_status_annotations": lambda qs: qs.with_status_annotations(),
+    #         "avg_time_installation": lambda qs: qs.with_avg_time_installation(),
+    #         "customer_released_flag": lambda qs: qs.with_customer_released_flag(),
+    #         "number_of_installations": lambda qs: qs.with_number_of_installations(),
+    #         "installation_status": lambda qs: qs.with_installation_status(),
+    #         "is_released_to_installation": lambda qs: qs.with_is_released_to_installation(),
+    #         "latest_installation": lambda qs: qs.with_latest_installation(),
+    #         "in_construction": lambda qs: qs.with_in_construction(),
+    #         "construction_status": lambda qs: qs.with_construction_status(),
+    #         "ticket_stats": lambda qs: qs.with_ticket_stats(),
+    #     }
 
-        if metrics:
-            for metric in metrics.split(","):
-                metric = metric.strip()
-                if metric in method_map:
-                    queryset = method_map[metric](queryset)
+    #     if metrics:
+    #         for metric in metrics.split(","):
+    #             metric = metric.strip()
+    #             if metric in method_map:
+    #                 queryset = method_map[metric](queryset)
 
-        queryset = queryset.select_related(
-            "sale", "sale__customer", "sale__branch", 
-            "inspection__final_service_opinion", "inspection",
-            "product", "designer", "homologator", 
-            "registered_circuit_breaker"
-        ).prefetch_related(
-            "attachments",
-            "attachments__document_type",
-            "units",
-            "civil_construction",
-            Prefetch(
-                "requests_energy_company",
-                queryset=RequestsEnergyCompany.objects.select_related(
-                    "type",
-                    "company",
-                    "requested_by",
-                    "unit"
-                ).prefetch_related("situation")
-            ),
-            Prefetch(
-                "units",
-                queryset=Units.objects.filter(main_unit=True)
-                    .select_related("address")
-                    .prefetch_related("supply_adquance"),
-                to_attr="main_unit_prefetched",
-            ),
-        )
-        if metrics:
-            if 'delivery_status' in metrics.split(","):
-                queryset = queryset.prefetch_related(
-                    Prefetch(
-                        'field_services',
-                        queryset=Schedule.objects.filter(
-                            service__name__icontains="Entrega"
-                        ).order_by('-created_at'),
-                        to_attr='delivery_schedules'
-                    )
-                )
+    #     queryset = queryset.select_related(
+    #         "sale", "sale__customer", "sale__branch", 
+    #         "inspection__final_service_opinion", "inspection",
+    #         "product", "designer", "homologator", 
+    #         "registered_circuit_breaker"
+    #     ).prefetch_related(
+    #         "attachments",
+    #         "attachments__document_type",
+    #         "units",
+    #         "civil_construction",
+    #         "project_tickets",
+    #         "field_services",
+    #         Prefetch(
+    #             "requests_energy_company",
+    #             queryset=RequestsEnergyCompany.objects.select_related(
+    #                 "type",
+    #                 "company",
+    #                 "requested_by",
+    #                 "unit"
+    #             ).prefetch_related("situation")
+    #         ),
+    #         Prefetch(
+    #             "units",
+    #             queryset=Units.objects.filter(main_unit=True)
+    #                 .select_related("address")
+    #                 .prefetch_related("supply_adquance"),
+    #             to_attr="main_unit_prefetched",
+    #         ),
+    #     )
+    #     if metrics:
+    #         if 'delivery_status' in metrics.split(","):
+    #             queryset = queryset.prefetch_related(
+    #                 Prefetch(
+    #                     'field_services',
+    #                     queryset=Schedule.objects.filter(
+    #                         service__name__icontains="Entrega"
+    #                     ).order_by('-created_at'),
+    #                     to_attr='delivery_schedules'
+    #                 )
+    #             )
 
-        return queryset.order_by("-created_at")
+    #     return queryset.order_by("-created_at")
 
 
     def apply_additional_filters(self, queryset, request):
