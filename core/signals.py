@@ -11,29 +11,29 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_MODELS = ['Sale', 'Schedule', 'Project']
 
-@receiver(post_save, sender=Process)
-def update_current_steps(sender, instance, created, **kwargs):
-    etapas = instance.steps or []
-    concluidas = {et.get("id") for et in etapas if et.get("is_completed")}
-    liberadas = []
+# @receiver(post_save, sender=Process)
+# def update_current_steps(sender, instance, created, **kwargs):
+#     etapas = instance.steps or []
+#     concluidas = {et.get("id") for et in etapas if et.get("is_completed")}
+#     liberadas = []
 
-    for etapa in etapas:
-        if etapa.get("is_completed"):
-            continue
-        dependencias = etapa.get("dependencies", [])
-        if all(dep in concluidas for dep in dependencias):
-            liberadas.append(etapa)
+#     for etapa in etapas:
+#         if etapa.get("is_completed"):
+#             continue
+#         dependencias = etapa.get("dependencies", [])
+#         if all(dep in concluidas for dep in dependencias):
+#             liberadas.append(etapa)
 
-    step_ids = []
-    for etapa in liberadas:
-        step_value = etapa.get("step")
-        if isinstance(step_value, dict):
-            step_ids.append(step_value.get("id"))
-        elif isinstance(step_value, list) and len(step_value) == 2:
-            _, step_id = step_value
-            step_ids.append(step_id)
-    steps = StepName.objects.filter(id__in=step_ids)
-    instance.current_step.set(steps)
+#     step_ids = []
+#     for etapa in liberadas:
+#         step_value = etapa.get("step")
+#         if isinstance(step_value, dict):
+#             step_ids.append(step_value.get("id"))
+#         elif isinstance(step_value, list) and len(step_value) == 2:
+#             _, step_id = step_value
+#             step_ids.append(step_id)
+#     steps = StepName.objects.filter(id__in=step_ids)
+#     instance.current_step.set(steps)
     
 
 @receiver(post_save)
