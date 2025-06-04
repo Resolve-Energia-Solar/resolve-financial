@@ -114,8 +114,7 @@ class SaleViewSet(BaseModelViewSet):
                 "projects",
                 queryset=Project.objects
                 .select_related("inspection", "inspection__final_service_opinion")
-                .with_is_released_to_engineering(),
-                to_attr="cached_projects",
+                .with_is_released_to_engineering()
             ),
         ]
 
