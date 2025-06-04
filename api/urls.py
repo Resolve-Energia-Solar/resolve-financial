@@ -77,6 +77,6 @@ urlpatterns = [
     path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
     path('save-sales/', save_all_sales_func , name='save_sales'),    
     path('list-sale/', list_sales_func , name='simple_serializer'),
-    path("api/tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
+    path("tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
 
 ]
