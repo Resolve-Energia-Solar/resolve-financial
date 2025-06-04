@@ -81,13 +81,13 @@ class SaleSerializer(BaseSerializer):
         return AttachmentSerializer(attachments, many=True, context=self.context).data
     
     def get_is_released_to_engineering(self, obj):
-        return any(
-            getattr(p, 'is_released_to_engineering', False)
-            for p in obj.projects.with_is_released_to_engineering()
-        )
+        projects = getattr(obj, 'cached_projects', None)
+        if projects is None:
+            projects = obj.projects.with_is_released_to_engineering()
+        return any(getattr(p, 'is_released_to_engineering', False) for p in projects)
     
     def get_signature_status(self, obj):
-        submissions = list(obj.contract_submissions.all())
+        submissions = list(getattr(obj, 'all_submissions', obj.contract_submissions.all()))
         statuses = {s.status for s in submissions}
 
         if not obj.signature_date:
@@ -102,12 +102,15 @@ class SaleSerializer(BaseSerializer):
         return 'Assinado'
   
     def get_final_service_opinion(self, obj):
+        projects = getattr(obj, 'cached_projects', None)
+        if projects is None:
+            projects = obj.projects.select_related('inspection__final_service_opinion')
         opinions = [
             {
                 "id": p.inspection.final_service_opinion.id,
-                "name": p.inspection.final_service_opinion.name
+                "name": p.inspection.final_service_opinion.name,
             }
-            for p in obj.projects.all()
+            for p in projects
             if p.inspection and p.inspection.final_service_opinion
         ]
         return opinions or None
@@ -319,6 +322,10 @@ class ProjectSerializer(BaseSerializer):
     branch_adjustment_days_int = serializers.IntegerField(read_only=True)
     new_contact_number_days_int = serializers.IntegerField(read_only=True)
     final_inspection_days_int = serializers.IntegerField(read_only=True)
+    total_tickets = serializers.IntegerField(read_only=True)
+    total_tickets_abertos = serializers.IntegerField(read_only=True)
+    avg_tempo_resolucao = serializers.DurationField(read_only=True)
+    ticket_aberto_mais_antigo = serializers.DateTimeField(read_only=True)
     
     distance_to_matriz_km = serializers.SerializerMethodField()
 

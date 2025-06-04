@@ -12,12 +12,13 @@ from django.apps import apps
 from accounts.serializers import ContentTypeSerializer, UserSerializer
 from api.views import BaseModelViewSet
 from notifications.models import Notification
-from resolve_crm.models import Sale
+from resolve_crm.models import Sale, Lead
 from django.utils import timezone
 from .models import *
 from .pagination import AttachmentPagination
 from .serializers import *
 from rest_framework import generics
+from django.db.models import Prefetch, Sum
 
 
 class SystemConfigView(APIView):
@@ -64,7 +65,17 @@ class AttachmentViewSet(BaseModelViewSet):
 
 
 class CommentViewSet(BaseModelViewSet):
-    queryset = Comment.objects.all()
+    queryset = (
+        Comment.objects
+        .all()
+        .select_related(
+            'author',
+            'author__employee',
+            'author__employee__role',
+            'author__employee__department',
+            'author__employee__branch',
+        )
+    )
     serializer_class = CommentSerializer
 
 
@@ -83,6 +94,19 @@ class BoardViewSet(BaseModelViewSet):
 class ColumnViewSet(BaseModelViewSet):
     queryset = Column.objects.all()
     serializer_class = ColumnSerializer
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    'leads',
+                    queryset=Lead.objects.prefetch_related('proposals'),
+                )
+            )
+            .annotate(proposals_total=Sum('leads__proposals__value'))
+        )
     
 
 class TaskTemplatesViewSet(BaseModelViewSet):

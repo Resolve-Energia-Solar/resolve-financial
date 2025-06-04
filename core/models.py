@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse_lazy
 from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.db.models import Max
+from django.db.models import Max, Sum
 import os
 
 
@@ -183,10 +183,15 @@ class Column(models.Model):
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-    
+
     @property
     def proposals_value(self):
-        return sum([proposal.value for lead in self.leads.all() for proposal in lead.proposals.all()])
+        total = getattr(self, "proposals_total", None)
+        if total is not None:
+            return total
+        return self.leads.aggregate(total=Sum("proposals__value"))[
+            "total"
+        ] or 0
     
     def __str__(self):
         return f'{self.name} | {self.board}'

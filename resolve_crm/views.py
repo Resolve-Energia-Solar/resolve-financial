@@ -8,6 +8,8 @@ from hashlib import md5
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q, Sum
@@ -90,50 +92,59 @@ class SaleViewSet(BaseModelViewSet):
             .annotate(total=Sum("installment_value"))
             .values("total")[:1]
         )
-        qs = (
-            Sale.objects
-            .annotate(
-                total_paid=Coalesce(
-                    Subquery(paid_installments, output_field=DecimalField()), 
-                    Value(0, output_field=DecimalField())
-                )
-            )
-            .select_related(*base_select)
-            .prefetch_related(
-                "cancellation_reasons",
-                "products",
-                "payments__borrower",
-                "payments__financier",
-                "payments__installments",
-                Prefetch(
-                    "attachments",
-                    queryset=Attachment.objects.filter(
-                        content_type=self.sale_content_type, status="EA"
-                    ),
-                    to_attr="attachments_under_analysis",
+        prefetch_list = [
+            "cancellation_reasons",
+            "products",
+            "payments__borrower",
+            "payments__financier",
+            "payments__installments",
+            Prefetch(
+                "attachments",
+                queryset=Attachment.objects.filter(
+                    content_type=self.sale_content_type, status="EA"
                 ),
-                Prefetch(
-                    "contract_submissions",
-                    queryset=ContractSubmission.objects.order_by("-submit_datetime"),
-                    to_attr="all_submissions",
-                ),
-            )
-            .order_by("-created_at")
-        )
+                to_attr="attachments_under_analysis",
+            ),
+            Prefetch(
+                "contract_submissions",
+                queryset=ContractSubmission.objects.order_by("-submit_datetime"),
+                to_attr="all_submissions",
+            ),
+            Prefetch(
+                "projects",
+                queryset=Project.objects
+                .select_related("inspection", "inspection__final_service_opinion")
+                .with_is_released_to_engineering(),
+                to_attr="cached_projects",
+            ),
+        ]
 
         if "projects" in self.request.query_params.get("expand", "").split(","):
             project_qs = (
                 Project.objects
                 .select_related("inspection", "inspection__final_service_opinion")
                 .only(
-                    "id", "project_number", "sale_id", "designer_status", 
-                    "material_list_is_completed", "status", "inspection", 
+                    "id", "project_number", "sale_id", "designer_status",
+                    "material_list_is_completed", "status", "inspection",
                     "inspection__final_service_opinion"
                 )
                 .with_is_released_to_engineering()
                 .with_homologation_status()
             )
-            qs = qs.prefetch_related(Prefetch("projects", queryset=project_qs, to_attr="cached_projects"))
+            prefetch_list[-1] = Prefetch("projects", queryset=project_qs, to_attr="cached_projects")
+
+        qs = (
+            Sale.objects
+            .annotate(
+                total_paid=Coalesce(
+                    Subquery(paid_installments, output_field=DecimalField()),
+                    Value(0, output_field=DecimalField())
+                )
+            )
+            .select_related(*base_select)
+            .prefetch_related(*prefetch_list)
+            .order_by("-created_at")
+        )
 
         if user.is_superuser or user.has_perm("resolve_crm.view_all_sales"):
             return qs
@@ -197,6 +208,7 @@ class SaleViewSet(BaseModelViewSet):
 
         return queryset
 
+    @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_filters(queryset, request.query_params)
@@ -284,10 +296,11 @@ class SaleViewSet(BaseModelViewSet):
 
 class ProjectViewSet(BaseModelViewSet):
     serializer_class = ProjectSerializer
+    queryset = Project.objects.all()
 
     def get_queryset(self):
         metrics = self.request.query_params.get("metrics")
-        queryset = Project.objects.all()
+        queryset = super().get_queryset()
 
         method_map = {
             "journey_counter": lambda qs: qs.with_journey_counter(),
@@ -314,6 +327,7 @@ class ProjectViewSet(BaseModelViewSet):
             "latest_installation": lambda qs: qs.with_latest_installation(),
             "in_construction": lambda qs: qs.with_in_construction(),
             "construction_status": lambda qs: qs.with_construction_status(),
+            "ticket_stats": lambda qs: qs.with_ticket_stats(),
         }
 
         if metrics:
@@ -322,43 +336,50 @@ class ProjectViewSet(BaseModelViewSet):
                 if metric in method_map:
                     queryset = method_map[metric](queryset)
 
-        queryset = queryset.select_related(
-            "sale", "sale__customer", "sale__branch", 
-            "inspection__final_service_opinion", "inspection",
-            "product", "designer", "homologator", 
-            "registered_circuit_breaker"
-        ).prefetch_related(
-            "attachments",
-            "attachments__document_type",
-            "units",
-            Prefetch(
-                "requests_energy_company",
-                queryset=RequestsEnergyCompany.objects.select_related(
-                    "type",
-                    "company",
-                    "requested_by",
-                    "unit"
-                ).prefetch_related("situation")
-            ),
-            Prefetch(
-                "units",
-                queryset=Units.objects.filter(main_unit=True)
-                    .select_related("address")
-                    .prefetch_related("supply_adquance"),
-                to_attr="main_unit_prefetched",
-            ),
-        )
-        if metrics:
-            if 'delivery_status' in metrics.split(","):
-                queryset = queryset.prefetch_related(
-                    Prefetch(
-                        'field_services',
-                        queryset=Schedule.objects.filter(
-                            service__name__icontains="Entrega"
-                        ).order_by('-created_at'),
-                        to_attr='delivery_schedules'
-                    )
-                )
+
+        # queryset = queryset.select_related(
+        #     "sale", "sale__customer", "sale__branch", 
+        #     "inspection__final_service_opinion", "inspection",
+        #     "product", "designer", "homologator", 
+        #     "registered_circuit_breaker"
+        # ).prefetch_related(
+        #     "attachments",
+        #     "attachments__document_type",
+        #     "units",
+        #     "civil_construction",
+        #     "project_tickets",
+        #     "field_services",
+        #     Prefetch(
+        #         "requests_energy_company",
+        #         queryset=RequestsEnergyCompany.objects.select_related(
+        #             "type",
+        #             "company",
+        #             "requested_by",
+        #             "unit"
+        #         ).prefetch_related("situation")
+        #     ),
+        #     Prefetch(
+        #         "units",
+        #         queryset=Units.objects.filter(main_unit=True)
+        #             .select_related("address")
+        #             .prefetch_related("supply_adquance"),
+        #         to_attr="main_unit_prefetched",
+        #     ),
+        # )
+        
+        
+        
+        # if metrics:
+        #     if 'delivery_status' in metrics.split(","):
+        #         queryset = queryset.prefetch_related(
+        #             Prefetch(
+        #                 'field_services',
+        #                 queryset=Schedule.objects.filter(
+        #                     service__name__icontains="Entrega"
+        #                 ).order_by('-created_at'),
+        #                 to_attr='delivery_schedules'
+        #             )
+        #         )
 
         return queryset.order_by("-created_at")
 
@@ -417,6 +438,15 @@ class ProjectViewSet(BaseModelViewSet):
         is_released_to_installation = request.query_params.get("is_released_to_installation")
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
+        is_customer_aware_of_construction = request.query_params.get("is_customer_aware_of_construction")
+        
+        if is_customer_aware_of_construction:
+            if is_customer_aware_of_construction.lower() == "true":
+                queryset = queryset.filter(civil_construction__is_customer_aware=True)
+            elif is_customer_aware_of_construction.lower() == "false":
+                queryset = queryset.filter(civil_construction__is_customer_aware=False)
+            else:
+                pass
 
         if 'journey_counter' in queryset.query.annotations and journey_counter:
             queryset = queryset.filter(journey_counter=journey_counter)
@@ -611,10 +641,19 @@ class ProjectViewSet(BaseModelViewSet):
                     )
                 )
             ).filter(has_current_step=True)
+            
+        ordering = request.query_params.get("ordering")
+        
+        if ordering and "inspection.schedule_date" in ordering:
+            if not ordering.startswith("-"):
+                queryset = queryset.order_by("inspection__schedule_date")
+            else:
+                queryset = queryset.order_by("-inspection__schedule_date")
 
         return queryset
 
 
+    @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
@@ -756,6 +795,8 @@ class ProjectViewSet(BaseModelViewSet):
             total_canceled=Count('id', filter=Q(construction_status="C")),
             total_without_construction=Count('id', filter=Q(construction_status="S")),
             # total_not_applicable=Count('id', filter=Q(construction_status="NA")),
+            total_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=True)),
+            total_not_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=False)),
         )
 
         cache.set(cache_key, indicators, 60)

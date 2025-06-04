@@ -84,7 +84,8 @@ class ColumnSerializer(BaseSerializer):
         fields = '__all__'
 
     def get_proposals_value(self, obj):
-        return obj.proposals_value
+        total = getattr(obj, 'proposals_total', None)
+        return total if total is not None else obj.proposals_value
 
 
 class BoardSerializer(BaseSerializer):

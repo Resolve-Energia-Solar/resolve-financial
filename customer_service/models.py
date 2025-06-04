@@ -1,5 +1,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
+from django.utils import timezone
 
 
 class CustomerService(models.Model):
@@ -36,9 +37,9 @@ class LostReason(models.Model):
 
 class TicketType(models.Model):
     name = models.CharField("Tipo de Chamado", max_length=50)
-    deadline = models.PositiveIntegerField(
-        "Prazo (dias)",
-        help_text="Prazo em dias para resolução do chamado",
+    deadline = models.DurationField(
+        "Prazo (Horas)",
+        help_text="Prazo em horas para resolução do chamado",
     )
     is_deleted = models.BooleanField("Deletado", default=False)
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
@@ -102,22 +103,131 @@ class Ticket(models.Model):
         ],
         default="A",
     )
-    conclusion_date = models.DateField(
+    conclusion_date = models.DateTimeField(
         "Data de Conclusão",
         blank=True,
         null=True,
         help_text="Data em que o chamado foi concluído",
     )
-    deadline = models.PositiveIntegerField(
-        "Prazo (dias)",
-        help_text="Prazo em dias para resolução do chamado",
+    deadline = models.DurationField(
+        "Prazo (Em horas)",
+        help_text="Prazo em horas para resolução do chamado",
     )
+    
+    # Monitoring
+    observer = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Observador",
+        related_name="observed_tickets",
+        blank=True,
+        null=True,
+    )
+    answered_at = models.DateTimeField(
+        "Respondido em",
+        blank=True,
+        null=True,
+        help_text="Data e hora em que o chamado foi respondido",
+    )
+    answered_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Respondido por",
+        related_name="answered_tickets",
+        blank=True,
+        null=True,
+    )
+    closed_at = models.DateTimeField(
+        "Fechado em",
+        blank=True,
+        null=True,
+        help_text="Data e hora em que o chamado foi fechado",
+    )
+    closed_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Fechado por",
+        related_name="closed_tickets",
+        blank=True,
+        null=True,
+    )
+    resolved_at = models.DateTimeField(
+        "Resolvido em",
+        blank=True,
+        null=True,
+        help_text="Data e hora em que o chamado foi resolvido",
+    )
+    resolved_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Resolvido por",
+        related_name="resolved_tickets",
+        blank=True,
+        null=True,
+    )
+    
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True)
     is_deleted = models.BooleanField("Deletado", default=False)
 
     history = HistoricalRecords()
     
+    def save(self, *args, **kwargs):
+        """
+        Override do save para:
+        - popular answered_at / answered_by quando status passar a 'RE'
+        - popular resolved_at / resolved_by quando status passar a 'R'
+        - popular closed_at / closed_by quando status passar a 'F'
+        - manter a lógica de conclusion_date (quando status for 'R' ou 'F')
+        """
+        # 1) Obter o usuário atual, se passado como argumento
+        current_user = kwargs.pop("current_user", None)
+
+        # 2) Verificar se já existe essa instância no banco (para comparar o status antigo)
+        if self.pk:
+            # Busco apenas o campo 'status' antigo; evita carregar tudo
+            old = Ticket.objects.filter(pk=self.pk).values("status").first()
+            old_status = old["status"] if old else None
+        else:
+            old_status = None
+
+        # 3) Se status mudou para 'RE' (Respondido) E ainda não tem answered_at
+        if self.status == "RE" and old_status != "RE" and not self.answered_at:
+            self.answered_at = timezone.now()
+            if current_user:
+                self.answered_by = current_user
+
+        # 4) Se status mudou para 'R' (Resolvido) E ainda não tem resolved_at
+        if self.status == "R" and old_status != "R" and not self.resolved_at:
+            self.resolved_at = timezone.now()
+            if current_user:
+                self.resolved_by = current_user
+
+        # 5) Se status mudou para 'F' (Fechado) E ainda não tem closed_at
+        if self.status == "F" and old_status != "F" and not self.closed_at:
+            self.closed_at = timezone.now()
+            if current_user:
+                self.closed_by = current_user
+
+        # 6) Lógica anterior: se status for 'R' ou 'F' e conclusion_date vazio, preenche
+        if not self.conclusion_date and self.status in ("R", "F"):
+            self.conclusion_date = timezone.now()
+
+        # 7) Chamamos o save real
+        super().save(*args, **kwargs)
+
+        # 8) Atualizar o atributo interno para não revalidar na próxima chamada
+        self._original_status = self.status
+
+        
+    
+    @property
+    def open_duration(self):
+        início = self.created_at
+        if self.status in ("R", "F") and self.conclusion_date:
+            return self.conclusion_date - início
+        return timezone.now() - início
+
     class Meta:
         verbose_name = "Chamado"
         verbose_name_plural = "Chamados"
@@ -127,4 +237,16 @@ class Ticket(models.Model):
         return f"{self.subject} - {self.project.project_number} ({self.get_status_display()})"
 
 
-    
+
+class TicketsSubject(models.Model):
+    """
+    Modelo auxiliar para armazenar os assuntos dos tickets.
+    Utilizado para facilitar a busca e categorização de tickets.
+    """
+    subject = models.CharField("Assunto", max_length=100, unique=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Assunto de Chamado"
+        verbose_name_plural = "Assuntos de Chamados"
+        ordering = ["subject"]

@@ -40,7 +40,8 @@ from .serializers import (
     ServiceOpinionSerializer,
     ServiceSerializer,
 )
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
@@ -215,6 +216,20 @@ class ScheduleViewSet(BaseModelViewSet):
 
         return qs.filter(perms).distinct()
 
+
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response(serialized_data)
+
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response(serialized_data)
+    
+    
     def perform_update(self, serializer):
         instance = self.get_object()
         if (
@@ -224,6 +239,7 @@ class ScheduleViewSet(BaseModelViewSet):
             serializer.save(final_service_opinion_user=self.request.user)
         else:
             serializer.save()
+
 
     @action(detail=False, methods=["get"])
     def get_timeline(self, request):

@@ -45,27 +45,36 @@ class ScheduleSerializer(BaseSerializer):
         fields = '__all__'
 
     def validate(self, attrs):
-        schedule_date = attrs.get("schedule_date")
-        schedule_start_time = attrs.get("schedule_start_time")
+            if self.instance is not None:
+                return attrs
+            
+            service = attrs.get("service")
+            user = self.context["request"].user
 
-        if schedule_date and schedule_start_time:
-            schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
+            if service and service.name == "Serviço de Vistoria":
+                schedule_date = attrs.get("schedule_date")
+                schedule_start_time = attrs.get("schedule_start_time")
 
-            if is_naive(schedule_datetime):
-                schedule_datetime = make_aware(schedule_datetime)
+                if schedule_date and schedule_start_time:
+                    schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
 
-            now = timezone.now()
+                    if is_naive(schedule_datetime):
+                        schedule_datetime = make_aware(schedule_datetime)
 
-            deadline_datetime = (schedule_datetime - timedelta(days=1)).replace(
-                hour=17, minute=0, second=0, microsecond=0
-            )
+                    now = timezone.now()
 
-            if schedule_datetime - now < timedelta(hours=24) and now > deadline_datetime:
-                raise serializers.ValidationError(
-                    "Vistorias agendadas com menos de 24 horas de antecedência só são aceitas se forem registradas até às 17h do dia anterior."
-                )
+                    has_permission = (
+                        user
+                        and hasattr(user, 'has_perm')
+                        and user.has_perm('field_services.can_schedule_short_notice')
+                    )
 
-        return attrs
+                    if not has_permission and schedule_datetime - now < timedelta(hours=24):
+                        raise serializers.ValidationError(
+                            "Vistorias agendadas com menos de 24 horas de antecedência só são permitidas para usuários com a permissão apropriada."
+                        )
+
+            return attrs
 
     def validate_agent_availability(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time):
         disponibility = FreeTimeAgent.objects.filter(

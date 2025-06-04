@@ -15,7 +15,6 @@ class BaseSerializer(FlexFieldsModelSerializer, ModelSerializer):
         expandable = {}
         if not model:
             return expandable
-
         for field in model._meta.get_fields():
             if field.is_relation and field.related_model:
                 related_model = field.related_model
