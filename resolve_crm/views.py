@@ -114,8 +114,7 @@ class SaleViewSet(BaseModelViewSet):
                 "projects",
                 queryset=Project.objects
                 .select_related("inspection", "inspection__final_service_opinion")
-                .with_is_released_to_engineering(),
-                to_attr="cached_projects",
+                .with_is_released_to_engineering()
             ),
         ]
 
@@ -336,50 +335,46 @@ class ProjectViewSet(BaseModelViewSet):
                 if metric in method_map:
                     queryset = method_map[metric](queryset)
 
-
-        # queryset = queryset.select_related(
-        #     "sale", "sale__customer", "sale__branch", 
-        #     "inspection__final_service_opinion", "inspection",
-        #     "product", "designer", "homologator", 
-        #     "registered_circuit_breaker"
-        # ).prefetch_related(
-        #     "attachments",
-        #     "attachments__document_type",
-        #     "units",
-        #     "civil_construction",
-        #     "project_tickets",
-        #     "field_services",
-        #     Prefetch(
-        #         "requests_energy_company",
-        #         queryset=RequestsEnergyCompany.objects.select_related(
-        #             "type",
-        #             "company",
-        #             "requested_by",
-        #             "unit"
-        #         ).prefetch_related("situation")
-        #     ),
-        #     Prefetch(
-        #         "units",
-        #         queryset=Units.objects.filter(main_unit=True)
-        #             .select_related("address")
-        #             .prefetch_related("supply_adquance"),
-        #         to_attr="main_unit_prefetched",
-        #     ),
-        # )
-        
-        
-        
-        # if metrics:
-        #     if 'delivery_status' in metrics.split(","):
-        #         queryset = queryset.prefetch_related(
-        #             Prefetch(
-        #                 'field_services',
-        #                 queryset=Schedule.objects.filter(
-        #                     service__name__icontains="Entrega"
-        #                 ).order_by('-created_at'),
-        #                 to_attr='delivery_schedules'
-        #             )
-        #         )
+        queryset = queryset.select_related(
+            "sale", "sale__customer", "sale__branch", 
+            "inspection__final_service_opinion", "inspection",
+            "product", "designer", "homologator", 
+            "registered_circuit_breaker"
+        ).prefetch_related(
+            "attachments",
+            "attachments__document_type",
+            "units",
+            "civil_construction",
+            "project_tickets",
+            "field_services",
+            Prefetch(
+                "requests_energy_company",
+                queryset=RequestsEnergyCompany.objects.select_related(
+                    "type",
+                    "company",
+                    "requested_by",
+                    "unit"
+                ).prefetch_related("situation")
+            ),
+            Prefetch(
+                "units",
+                queryset=Units.objects.filter(main_unit=True)
+                    .select_related("address")
+                    .prefetch_related("supply_adquance"),
+                to_attr="main_unit_prefetched",
+            ),
+        )
+        if metrics:
+            if 'delivery_status' in metrics.split(","):
+                queryset = queryset.prefetch_related(
+                    Prefetch(
+                        'field_services',
+                        queryset=Schedule.objects.filter(
+                            service__name__icontains="Entrega"
+                        ).order_by('-created_at'),
+                        to_attr='delivery_schedules'
+                    )
+                )
 
         return queryset.order_by("-created_at")
 
