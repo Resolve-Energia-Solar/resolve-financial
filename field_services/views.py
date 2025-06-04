@@ -219,7 +219,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
     @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
         if page is not None:
