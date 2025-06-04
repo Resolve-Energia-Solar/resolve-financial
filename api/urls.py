@@ -9,6 +9,7 @@ from rest_framework import permissions
 from accounts.views import PasswordResetConfirmView, PasswordResetRequestView, UserLoginView, UserTokenRefreshView
 from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView, SystemConfigView
+from customer_service.views import tickets_por_departamento
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus, SendFinancialRecordsToOmieView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
@@ -76,4 +77,6 @@ urlpatterns = [
     path('financial/omie/update-financial-record-payment-status/', UpdateFinancialRecordPaymentStatus.as_view(), name='update_financial_record_payment_status'),
     path('save-sales/', save_all_sales_func , name='save_sales'),    
     path('list-sale/', list_sales_func , name='simple_serializer'),
+    path("api/tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
+
 ]

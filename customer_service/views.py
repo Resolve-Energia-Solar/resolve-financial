@@ -7,11 +7,12 @@ from rest_framework.authentication import (
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
 from api.views import BaseModelViewSet
 from customer_service.models import CustomerService, LostReason, Ticket, TicketType
 from customer_service.serializers import CustomerServiceSerializer, LostReasonSerializer, TicketSerializer, TicketTypeSerializer
 from rest_framework import serializers
+from django.db.models import Count
+from django.http import JsonResponse
 
 User = get_user_model()
 
@@ -120,3 +121,29 @@ class TicketViewSet(BaseModelViewSet):
     
     def perform_update(self, serializer):
         serializer.save(current_user=self.request.user)
+        
+        
+
+def tickets_por_departamento(request):
+    """
+    Retorna JSON no formato:
+    [
+      { "department": "TI", "count": 12 },
+      { "department": "Suporte", "count": 8 },
+      ...
+    ]
+    """
+    qs = (
+        Ticket.objects
+        .values("responsible_department__name")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
+    data = [
+        {
+            "department": item["responsible_department__name"],
+            "count": item["count"]
+        }
+        for item in qs
+    ]
+    return JsonResponse(data, safe=False)
