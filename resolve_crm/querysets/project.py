@@ -245,7 +245,7 @@ class ProjectQuerySet(django_models.QuerySet):
             last_installation_final_service_opinion=Subquery(
                 Schedule.objects.filter(
                     project=OuterRef("pk"),
-                    service__category__name__icontains="Instalação",
+                    service__category__name="Instalação",
                 )
                 .order_by("-created_at")
                 .values("final_service_opinion__name")[:1],
@@ -297,11 +297,11 @@ class ProjectQuerySet(django_models.QuerySet):
     def with_homologation_status(self):
         # 1) busca os RequestType relevantes e agrupa seus IDs por categoria
         request_types = ResquestType.objects.filter(
-            Q(name__icontains="Parecer de Acesso") |
-            Q(name__icontains="Aumento de Carga") |
-            Q(name__icontains="Ajuste de Ramal") |
-            Q(name__icontains="Nova UC") |
-            Q(name__icontains="Vistoria Final")
+            Q(name="Parecer de Acesso") |
+            Q(name="Aumento de Carga") |
+            Q(name="Ajuste de Ramal") |
+            Q(name="Nova UC") |
+            Q(name="Vistoria Final")
         )
         type_ids = {
             "Parecer de Acesso": [],
@@ -428,7 +428,7 @@ class ProjectQuerySet(django_models.QuerySet):
                         &
                         Q(access_req_status="D")
                         &
-                        Q(last_installation_final_service_opinion__icontains="Concluído"),
+                        Q(last_installation_final_service_opinion="Concluído"),
                         then=Value(True)
                     ),
                     default=Value(False),
@@ -447,8 +447,8 @@ class ProjectQuerySet(django_models.QuerySet):
                 ),
 
                 load_increase_status=Case(
-                    When(~Q(supply_adquance_names__icontains="Aumento de Carga"), then=Value("Não se aplica")),
-                    When(load_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(~Q(supply_adquance_names="Aumento de Carga"), then=Value("Não se aplica")),
+                    When(load_req_exists=False, last_installation_final_service_opinion="Concluído", then=Value("Pendente")),
                     When(load_req_status="S", then=Value("Solicitado")),
                     When(load_req_status="D", then=Value("Deferido")),
                     When(load_req_status="I", then=Value("Indeferida")),
@@ -458,8 +458,8 @@ class ProjectQuerySet(django_models.QuerySet):
                 ),
 
                 branch_adjustment_status=Case(
-                    When(~Q(supply_adquance_names__icontains="Ajuste de Ramal"), then=Value("Não se aplica")),
-                    When(branch_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(~Q(supply_adquance_names="Ajuste de Ramal"), then=Value("Não se aplica")),
+                    When(branch_req_exists=False, last_installation_final_service_opinion="Concluído", then=Value("Pendente")),
                     When(branch_req_status="S", then=Value("Solicitado")),
                     When(branch_req_status="D", then=Value("Deferido")),
                     When(branch_req_status="I", then=Value("Indeferida")),
@@ -491,7 +491,7 @@ class ProjectQuerySet(django_models.QuerySet):
 
                     When(all_pre_reqs_deferred_or_not_applicable=False, then=Value("Bloqueado")),
 
-                    When(final_req_exists=False, last_installation_final_service_opinion__icontains="Concluído", then=Value("Pendente")),
+                    When(final_req_exists=False, last_installation_final_service_opinion="Concluído", then=Value("Pendente")),
                     When(final_req_status="S",    then=Value("Solicitado")),
                     When(final_req_status="D",    then=Value("Deferido")),
                     When(final_req_status="I",    then=Value("Indeferida")),
@@ -509,7 +509,7 @@ class ProjectQuerySet(django_models.QuerySet):
     def with_final_inspection_status(self):
         # Mover para constante global (definida no topo do arquivo)
         VISTORIA_FINAL_IDS = ResquestType.objects.filter(
-            name__icontains="Vistoria Final"
+            name="Vistoria Final"
         ).values_list('id', flat=True)
         return self.with_is_released_to_engineering().with_last_installation_final_service_opinion().annotate(
         
@@ -533,7 +533,7 @@ class ProjectQuerySet(django_models.QuerySet):
                 ),
                 When(
                     Q(final_req_exists=False) &
-                    Q(last_installation_final_service_opinion__icontains='Concluído'),
+                    Q(last_installation_final_service_opinion='Concluído'),
                     then=Value("Pendente")
                 ),
                 When(final_req_status="S", then=Value("Solicitado")),
