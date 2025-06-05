@@ -92,6 +92,14 @@ class SaleViewSet(BaseModelViewSet):
             .annotate(total=Sum("installment_value"))
             .values("total")[:1]
         )
+
+        projects_qs = (
+            Project.objects
+                .with_journey_counter()
+                .select_related("inspection", "inspection__final_service_opinion")
+                .order_by("-created_at")
+        )
+
         prefetch_list = [
             "cancellation_reasons",
             "products",
@@ -110,27 +118,8 @@ class SaleViewSet(BaseModelViewSet):
                 queryset=ContractSubmission.objects.order_by("-submit_datetime"),
                 to_attr="all_submissions",
             ),
-            Prefetch(
-                "projects",
-                queryset=Project.objects
-                .select_related("inspection", "inspection__final_service_opinion")
-                .with_is_released_to_engineering()
-            ),
+            Prefetch("projects", queryset=projects_qs),
         ]
-
-        if "projects" in self.request.query_params.get("expand", "").split(","):
-            project_qs = (
-                Project.objects
-                .select_related("inspection", "inspection__final_service_opinion")
-                .only(
-                    "id", "project_number", "sale_id", "designer_status",
-                    "material_list_is_completed", "status", "inspection",
-                    "inspection__final_service_opinion"
-                )
-                .with_is_released_to_engineering()
-                .with_homologation_status()
-            )
-            prefetch_list[-1] = Prefetch("projects", queryset=project_qs)
 
         qs = (
             Sale.objects
