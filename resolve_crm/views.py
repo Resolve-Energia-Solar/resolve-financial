@@ -130,7 +130,7 @@ class SaleViewSet(BaseModelViewSet):
                 .with_is_released_to_engineering()
                 .with_homologation_status()
             )
-            prefetch_list[-1] = Prefetch("projects", queryset=project_qs, to_attr="cached_projects")
+            prefetch_list[-1] = Prefetch("projects", queryset=project_qs)
 
         qs = (
             Sale.objects
