@@ -61,8 +61,8 @@ class DocumentSubTypeViewSet(BaseModelViewSet):
 class AttachmentViewSet(BaseModelViewSet):
     queryset = (
         Attachment.objects
+        .select_related('document_type', 'document_subtype', 'content_type')
         .all()
-        .select_related('document_type')
     )
     serializer_class = AttachmentSerializer
     pagination_class = AttachmentPagination
