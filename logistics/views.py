@@ -81,7 +81,7 @@ class ProductViewSet(BaseModelViewSet):
 
 
 class ProjectMaterialsViewSet(BaseModelViewSet):
-    queryset = ProjectMaterials.objects.all()
+    queryset = ProjectMaterials.objects.select_related('material').all()
     serializer_class = ProjectMaterialsSerializer
 
 
