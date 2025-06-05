@@ -73,8 +73,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='historicalproject',
-            name='designer_coclusion_date',
-            field=models.DateField(blank=True, null=True, verbose_name='Data de Conclusão do Projeto'),
+            name='designer_conclusion_date',
+            field=models.DateTimeField(blank=True, null=True, verbose_name='Data de Conclusão do Projeto'),
         ),
         migrations.AddField(
             model_name='historicalsale',
@@ -93,8 +93,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='project',
-            name='designer_coclusion_date',
-            field=models.DateField(blank=True, null=True, verbose_name='Data de Conclusão do Projeto'),
+            name='designer_conclusion_date',
+            field=models.DateTimeField(blank=True, null=True, verbose_name='Data de Conclusão do Projeto'),
         ),
         migrations.AddField(
             model_name='sale',

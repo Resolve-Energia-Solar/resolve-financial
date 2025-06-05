@@ -688,7 +688,7 @@ class Project(models.Model):
         ],
         default="P",
     )
-    designer_coclusion_date = models.DateField(
+    designer_conclusion_date = models.DateTimeField(
         "Data de Conclusão do Projeto de Engenharia", null=True, blank=True
     )
     inspection = models.ForeignKey(
@@ -869,8 +869,8 @@ class Project(models.Model):
     def save(self, current_user=None, *args, **kwargs):
         if self.is_documentation_completed and not self.documention_completion_date:
             self.documention_completion_date = now()
-        if not self.designer_coclusion_date and self.designer_status == "CO":
-            self.designer_coclusion_date = now()
+        if not self.designer_conclusion_date and self.designer_status == "CO":
+            self.designer_conclusion_date = now()
 
         super().save(*args, **kwargs)
         if not self.project_steps.exists():
