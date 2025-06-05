@@ -74,9 +74,8 @@ class ComercialProposalViewSet(BaseModelViewSet):
 
 
 class SaleViewSet(BaseModelViewSet):
-    queryset = Sale.objects.all()
     serializer_class = SaleSerializer
-    
+
     @cached_property
     def sale_content_type(self):
         return ContentType.objects.get_for_model(Sale)
