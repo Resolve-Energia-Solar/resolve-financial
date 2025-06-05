@@ -3,7 +3,7 @@ from django.core.mail import EmailMessage
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
-from django.db.models import Case, When, Value, FloatField, IntegerField, Q, Prefetch
+from django.db.models import Q, Subquery
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -372,31 +372,30 @@ class BranchViewSet(BaseModelViewSet):
     serializer_class = BranchSerializer
 
 
+
 class AddressViewSet(BaseModelViewSet):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         search = self.request.query_params.get('q')
         customer = self.request.query_params.get('customer_id')
         project_customer = self.request.query_params.get('project_customer_id')
         
         if project_customer:
-            project = get_object_or_404(Project, id=project_customer)
+            customer_subq = Project.objects.filter(
+                id=project_customer,
+                sale__customer__isnull=False
+            ).values('sale__customer_id')[:1]
             
-            try:
-                customer_id = project.sale.customer.id if project.sale.customer else None
-            except AttributeError:
-                customer_id = None
-            
-            queryset = queryset.filter(customer_addresses__id=customer_id)
+            qs = qs.filter(customer_addresses__id=Subquery(customer_subq))
 
         if customer:
-            queryset = queryset.filter(customer_addresses__id=customer)
+            qs = qs.filter(customer_addresses__id=customer)
 
         if search:
-            queryset = queryset.filter(
+            qs = qs.filter(
                 Q(zip_code__icontains=search) |
                 Q(country__icontains=search) |
                 Q(state__icontains=search) |
@@ -407,8 +406,7 @@ class AddressViewSet(BaseModelViewSet):
                 Q(complement__icontains=search)
             )
 
-        return queryset
-    
+        return qs
 
 class PhoneNumberViewSet(BaseModelViewSet):
     queryset = PhoneNumber.objects.all()
