@@ -126,6 +126,12 @@ class ReciveContractInfomation(APIView):
 
 
                 contract = self.handle_contract_submission(document_key, signature_date, document_status)
+                if not contract:
+                    return Response(
+                        {'message': f'Contrato {document_key} não encontrado.'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
                 self.save_signature_date(contract.sale, signature_date)
 
                 if document_status == 'closed':
