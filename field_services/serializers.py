@@ -6,6 +6,7 @@ from resolve_erp.settings import GMAPS_API_KEY
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.utils.timezone import make_aware, is_naive
+import time
 
 gmaps = googlemaps.Client(key=GMAPS_API_KEY)
 
@@ -45,36 +46,43 @@ class ScheduleSerializer(BaseSerializer):
         fields = '__all__'
 
     def validate(self, attrs):
-            if self.instance is not None:
-                return attrs
-            
-            service = attrs.get("service")
-            user = self.context["request"].user
-
-            if service and service.name == "Serviço de Vistoria":
-                schedule_date = attrs.get("schedule_date")
-                schedule_start_time = attrs.get("schedule_start_time")
-
-                if schedule_date and schedule_start_time:
-                    schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
-
-                    if is_naive(schedule_datetime):
-                        schedule_datetime = make_aware(schedule_datetime)
-
-                    now = timezone.now()
-
-                    has_permission = (
-                        user
-                        and hasattr(user, 'has_perm')
-                        and user.has_perm('field_services.can_schedule_short_notice')
-                    )
-
-                    if not has_permission and schedule_datetime - now < timedelta(hours=24):
-                        raise serializers.ValidationError(
-                            "Vistorias agendadas com menos de 24 horas de antecedência só são permitidas para usuários com a permissão apropriada."
-                        )
-
+        if self.instance is not None:
             return attrs
+
+        service = attrs.get("service")
+        schedule_creator = attrs.get("schedule_creator")
+
+        if service and service.name == "Serviço de Vistoria":
+            schedule_date = attrs.get("schedule_date")
+            schedule_start_time = attrs.get("schedule_start_time")
+
+            if schedule_date and schedule_start_time:
+                schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
+                if is_naive(schedule_datetime):
+                    schedule_datetime = make_aware(schedule_datetime)
+
+                now = timezone.now()
+
+                has_permission = (
+                    schedule_creator
+                    and hasattr(schedule_creator, 'has_perm')
+                    and schedule_creator.has_perm('field_services.can_schedule_short_notice')
+                )
+
+                if not has_permission:
+                    delta = schedule_datetime - now
+
+                    if delta < timedelta(hours=24):
+                        deadline = schedule_datetime - timedelta(days=1)
+                        deadline = deadline.replace(hour=17, minute=0, second=0, microsecond=0)
+                        if now > deadline:
+                            raise serializers.ValidationError(
+                                f"Agendamentos com menos de 24 horas só são aceitos se forem feitos até às 17h do dia anterior. "
+                                f"Para este caso, o agendamento deveria ter sido feito até {deadline.strftime('%d/%m/%Y às %H:%M')}."
+                            )
+
+        return attrs
+
 
     def validate_agent_availability(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time):
         disponibility = FreeTimeAgent.objects.filter(
