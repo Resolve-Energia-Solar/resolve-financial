@@ -48,7 +48,7 @@ class ScheduleSerializer(BaseSerializer):
     def validate(self, attrs):
         if self.instance is not None:
             return attrs
-        
+
         service = attrs.get("service")
         schedule_creator = attrs.get("schedule_creator")
 
@@ -70,14 +70,13 @@ class ScheduleSerializer(BaseSerializer):
                     and schedule_creator.has_perm('field_services.can_schedule_short_notice')
                 )
 
-                if (
-                    not has_permission and 
-                    schedule_datetime - now < timedelta(hours=24) and
-                    now.time() > time(16, 59)
-                ):
-                    raise serializers.ValidationError(
-                        "Vistorias agendadas com menos de 24 horas de antecedência só são permitidas para usuários com a permissão apropriada"
-                    )
+                if not has_permission and now.time() > time(16, 59):
+                    min_allowed_datetime = now + timedelta(hours=24)
+                    if schedule_datetime < min_allowed_datetime:
+                        raise serializers.ValidationError(
+                            f"Após as 16:59, os agendamentos devem ser feitos com pelo menos 24 horas de antecedência. "
+                            f"Você só pode agendar a partir de {min_allowed_datetime.strftime('%d/%m/%Y às %H:%M')}."
+                        )
 
         return attrs
 
