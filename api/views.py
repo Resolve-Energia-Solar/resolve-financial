@@ -15,38 +15,7 @@ class BaseModelViewSet(ModelViewSet):
     ordering_fields = '__all__'
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     pagination_class = CustomPagination
-    
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     expand = self.request.query_params.get('expand')
-    #     if not expand:
-    #         return queryset
-    #     expand_fields = [e.strip() for e in expand.split(',') if e.strip()]
-    #     serializer = self.get_serializer()
-    #     expandable_fields = getattr(serializer, 'expandable_fields', {})
-    #     select_related_fields = []
-    #     prefetch_related_fields = []
-
-    #     for field in expand_fields:
-    #         field_info = expandable_fields.get(field)
-    #         if not field_info or not isinstance(field_info, (tuple, list)) or len(field_info) != 2:
-    #             continue
-
-    #         serializer_class, options = field_info
-    #         many = options.get('many', False)
-
-    #         if many:
-    #             prefetch_related_fields.append(field)
-    #         else:
-    #             select_related_fields.append(field)
-
-    #     if select_related_fields:
-    #         queryset = queryset.select_related(*select_related_fields)
-    #     if prefetch_related_fields:
-    #         queryset = queryset.prefetch_related(*prefetch_related_fields)
-    #     return queryset
-
-
+ 
     @cached_property
     def filterset_fields(self):
         model = self.get_queryset().model

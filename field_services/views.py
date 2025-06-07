@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.db.models import Prefetch, Q
 from django.utils.dateparse import parse_datetime
+from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -76,13 +77,20 @@ class ServiceViewSet(BaseModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    @cached_property
+    def filterset_fields(self):
+        fs = super().filterset_fields
+        fs.update({
+            "category__name": ["exact"],
+        })
+        return fs
 
+    def get_queryset(self):
+        qs = super().get_queryset()
         if not self.request.user.is_superuser:
-            user_groups = self.request.user.groups.values_list("id", flat=True)
-            queryset = queryset.filter(groups__id__in=user_groups)
-        return queryset.distinct()
+            grupos = self.request.user.groups.values_list("id", flat=True)
+            qs = qs.filter(groups__id__in=grupos)
+        return qs.distinct()
 
 
 class FormsViewSet(BaseModelViewSet):
