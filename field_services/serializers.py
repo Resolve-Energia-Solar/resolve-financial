@@ -58,7 +58,6 @@ class ScheduleSerializer(BaseSerializer):
 
             if schedule_date and schedule_start_time:
                 schedule_datetime = datetime.combine(schedule_date, schedule_start_time)
-
                 if is_naive(schedule_datetime):
                     schedule_datetime = make_aware(schedule_datetime)
 
@@ -70,15 +69,20 @@ class ScheduleSerializer(BaseSerializer):
                     and schedule_creator.has_perm('field_services.can_schedule_short_notice')
                 )
 
-                if not has_permission and now.time() > time(16, 59):
-                    min_allowed_datetime = now + timedelta(hours=24)
-                    if schedule_datetime < min_allowed_datetime:
-                        raise serializers.ValidationError(
-                            f"Após as 16:59, os agendamentos devem ser feitos com pelo menos 24 horas de antecedência. "
-                            f"Você só pode agendar a partir de {min_allowed_datetime.strftime('%d/%m/%Y às %H:%M')}."
-                        )
+                if not has_permission:
+                    delta = schedule_datetime - now
+
+                    if delta < timedelta(hours=24):
+                        deadline = schedule_datetime - timedelta(days=1)
+                        deadline = deadline.replace(hour=17, minute=0, second=0, microsecond=0)
+                        if now > deadline:
+                            raise serializers.ValidationError(
+                                f"Agendamentos com menos de 24 horas só são aceitos se forem feitos até às 17h do dia anterior. "
+                                f"Para este caso, o agendamento deveria ter sido feito até {deadline.strftime('%d/%m/%Y às %H:%M')}."
+                            )
 
         return attrs
+
 
     def validate_agent_availability(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time):
         disponibility = FreeTimeAgent.objects.filter(
