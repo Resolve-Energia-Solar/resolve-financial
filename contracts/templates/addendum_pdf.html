@@ -1,0 +1,81 @@
+{% comment %} templates/addendum_pdf.html {% endcomment %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @page { margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.6; margin: 0; color: #333; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo { max-width: 120px; }
+        .company-info { text-align: right; font-size: 10px; color: #555; }
+        h1 { font-size: 18px; text-align: center; margin: 20px 0; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 8px; }
+        .section { margin-bottom: 15px; }
+        .section-title { font-weight: bold; text-transform: uppercase; margin-bottom: 5px; border-left: 4px solid #000; padding-left: 6px; }
+        .box { border: 1px solid #ccc; border-radius: 4px; padding: 10px; background-color: #f9f9f9; }
+        .content-block { text-align: justify; }
+        .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
+        .signature { width: 45%; text-align: center; }
+        .signature-line { border-top: 1px solid #000; margin-top: 60px; }
+        footer { position: fixed; bottom: 1cm; left: 0; right: 0; text-align: center; font-size: 10px; color: #555; border-top: 1px solid #ddd; padding-top: 5px; }
+        .page-number:after { content: counter(page) " / " counter(pages); }
+    </style>
+</head>
+<body>
+    <header>
+        {% load static %}
+        <img src="{% static 'images/Resolve.svg' %}" alt="Logo da Resolve Energia Solar" class="logo">
+        <div class="company-info">
+            R C VIEGAS DE MATOS ME<br>
+            CNPJ 32.012.032/0001-01<br>
+            Tel: (91) 8587-3259<br>
+            resolvesoollar@gmail.com
+        </div>
+    </header>
+
+    <h1>Termo Aditivo ao Contrato Fotovoltaico</h1>
+
+    <div class="section">
+        <div class="section-title">Cliente</div>
+        <div class="box content-block">
+            {{ sale.customer.complete_name }} – {% if sale.customer.first_document|length == 11 %}
+            CPF {{ sale.customer.first_document|slice:"0:3" }}.{{ sale.customer.first_document|slice:"3:6" }}.{{ sale.customer.first_document|slice:"6:9" }}-{{ sale.customer.first_document|slice:"9:11" }}
+            {% else %}
+            CNPJ {{ sale.customer.first_document|slice:"0:2" }}.{{ sale.customer.first_document|slice:"2:5" }}.{{ sale.customer.first_document|slice:"5:8" }}/{{ sale.customer.first_document|slice:"8:12" }}-{{ sale.customer.first_document|slice:"12:14" }}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Contrato nº</div>
+        <div class="box content-block">{{ sale.contract_number }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Onde se lê</div>
+        <div class="box content-block">{{ before_addendum|linebreaksbr }}</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Leia-se</div>
+        <div class="box content-block">{{ after_addendum|linebreaksbr }}</div>
+    </div>
+
+    <div class="signatures">
+        <div class="signature">
+            <div class="signature-line"></div>
+            Assinatura do Cliente
+        </div>
+        <div class="signature">
+            <div class="signature-line"></div>
+            Assinatura Resolve
+        </div>
+    </div>
+
+    <footer>
+        Termo aditivo gerado em {% now "d/m/Y \à\s H:i:s" %}<br>
+        <span class="page-number"></span>
+    </footer>
+</body>
+</html>

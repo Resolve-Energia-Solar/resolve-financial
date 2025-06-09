@@ -229,6 +229,17 @@ class Schedule(models.Model):
         blank=True,
         null=True,
     )
+    severity = models.CharField(
+        "Prioridade",
+        max_length=50,
+        choices=[
+            ("A", "Baixa"),
+            ("B", "Média"),
+            ("C", "Alta"),
+        ],
+        null=True,
+        blank=True,
+    )
     status = models.CharField(
         "Status", max_length=50, choices=status_choices, default="Pendente"
     )

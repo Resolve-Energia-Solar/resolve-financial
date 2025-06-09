@@ -51,6 +51,7 @@ api_schema_view = get_schema_view(
 app_name = 'api'
 urlpatterns = [
     path('', include(core.urls)),
+    path('', include(contracts.urls)),
     path('login/', UserLoginView.as_view(), name='login'),
     path('token/refresh/', UserTokenRefreshView.as_view(), name='token_refresh'),
     path('generate-pre-sale/', GeneratePreSaleView.as_view(), name='generate_pre_sale'),

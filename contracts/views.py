@@ -1,59 +1,76 @@
+# Standard library imports
 from datetime import datetime
+import io
+import logging
 import os
 import requests
+
+# Django imports
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
+from django.db import transaction
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from django.template.loader import get_template
+from django.utils import timezone
+
+# Django REST framework imports
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# Third-party imports
+from weasyprint import HTML
+
+# Local application imports
 from api.utils import extract_data_from_pdf
+from api.views import BaseModelViewSet
 from contracts.models import SicoobRequest
-from contracts.serializers import SicoobRequestSerializer
+from contracts.serializers import AddendumPDFSerializer, SicoobRequestSerializer
 from core.models import Attachment, DocumentType
 from resolve_crm.models import ContractSubmission, Sale
-from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
-import logging
-from django.core.files.base import ContentFile
-from api.views import BaseModelViewSet
+
 
 logger = logging.getLogger(__name__)
 
+
 class InformacaoFaturaAPIView(APIView):
     parser_classes = [MultiPartParser]
-    http_method_names = ['post']
+    http_method_names = ["post"]
     permission_classes = [AllowAny]
 
     def post(self, request):
-        if 'bill_file' not in request.FILES:
-            return Response({
-                'message': 'Arquivo da fatura é obrigatório.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        if "bill_file" not in request.FILES:
+            return Response(
+                {"message": "Arquivo da fatura é obrigatório."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        bill_file = request.FILES['bill_file']
+        bill_file = request.FILES["bill_file"]
 
         try:
             data = extract_data_from_pdf(bill_file)
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({
-                'message': 'Erro ao processar a fatura.',
-                'error': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response(
+                {"message": "Erro ao processar a fatura.", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class ReciveContractInfomation(APIView):
-    http_method_names = ['post']
+    http_method_names = ["post"]
     permission_classes = [AllowAny]
 
     def get_signature_data(self, data):
         return (
-            data.get('event', {}).get('occurred_at', None),
-            data.get('document', {}).get('key', None),
-            data.get('document', {}).get('downloads', {}).get('signed_file_url', None),
-            data.get('document', {}).get('status', None)
+            data.get("event", {}).get("occurred_at", None),
+            data.get("document", {}).get("key", None),
+            data.get("document", {}).get("downloads", {}).get("signed_file_url", None),
+            data.get("document", {}).get("status", None),
         )
 
     def fetch_document(self, url):
@@ -65,14 +82,14 @@ class ReciveContractInfomation(APIView):
     def handle_contract_submission(self, document_key, signature_date, status):
         try:
             contract = ContractSubmission.objects.get(key_number=document_key)
-            if status == 'closed':
-                contract.status = 'A'
-            elif status == 'canceled':
-                contract.status = 'R'
+            if status == "closed":
+                contract.status = "A"
+            elif status == "canceled":
+                contract.status = "R"
             else:
-                contract.status = 'P'
+                contract.status = "P"
             contract.finished_at = signature_date
-            
+
             contract.save()
             return contract
         except ContractSubmission.DoesNotExist:
@@ -87,10 +104,10 @@ class ReciveContractInfomation(APIView):
 
     def save_attachment(self, sale_id, file_content, document_type):
         content_type_model = ContentType.objects.get_for_model(Sale)
-        
+
         sale = Sale.objects.get(id=sale_id)
         contract_number = sale.contract_number
-        current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+        current_time = datetime.now().strftime("%Y%m%d%H%M%S")
 
         # Criar o nome do arquivo com o número do contrato e a hora exata
         file_name = f"{document_type.name}_{contract_number}_{current_time}.pdf"
@@ -104,51 +121,122 @@ class ReciveContractInfomation(APIView):
             object_id=sale_id,
             file=content_file,
             document_type=document_type,
-            status='EA'
+            status="EA",
         )
 
     def post(self, request):
         with transaction.atomic():
             data = request.data
-            
+
             logger.info(f"Payload ClickSign: {data}")
-            
+
             try:
-                signature_date, document_key, document_file, document_status = self.get_signature_data(data)
-                
-                signature_date = datetime.strptime(
-                    signature_date.split('.')[0].replace('T', ' '), 
-                    '%Y-%m-%d %H:%M:%S'
+                signature_date, document_key, document_file, document_status = (
+                    self.get_signature_data(data)
                 )
-                
+
+                signature_date = datetime.strptime(
+                    signature_date.split(".")[0].replace("T", " "), "%Y-%m-%d %H:%M:%S"
+                )
+
                 if not all([signature_date, document_key, document_file]):
-                    return Response({'message': 'Dados insuficientes no payload.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"message": "Dados insuficientes no payload."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
-
-                contract = self.handle_contract_submission(document_key, signature_date, document_status)
+                contract = self.handle_contract_submission(
+                    document_key, signature_date, document_status
+                )
                 if not contract:
                     return Response(
-                        {'message': f'Contrato {document_key} não encontrado.'},
-                        status=status.HTTP_404_NOT_FOUND
+                        {"message": f"Contrato {document_key} não encontrado."},
+                        status=status.HTTP_404_NOT_FOUND,
                     )
 
                 self.save_signature_date(contract.sale, signature_date)
 
-                if document_status == 'closed':
+                if document_status == "closed":
                     document_content = self.fetch_document(document_file)
-                    document_type = DocumentType.objects.get(id=os.environ.get('CONTENT_TYPE_DOCUMENT'))
-                    self.save_attachment(contract.sale.id, document_content, document_type)
+                    document_type = DocumentType.objects.get(
+                        id=os.environ.get("CONTENT_TYPE_DOCUMENT")
+                    )
+                    self.save_attachment(
+                        contract.sale.id, document_content, document_type
+                    )
 
-                return Response({'message': 'Contrato processado com sucesso.'}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Contrato processado com sucesso."},
+                    status=status.HTTP_200_OK,
+                )
             except ValueError as e:
                 logger.error(f"ValueError: {str(e)}")
-                return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 logger.error(f"Exception: {str(e)}")
-                return Response({'message': 'Erro ao processar o contrato.', 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+                return Response(
+                    {"message": "Erro ao processar o contrato.", "error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
 
 class SicoobRequestViewSet(BaseModelViewSet):
     serializer_class = SicoobRequestSerializer
     queryset = SicoobRequest.objects.all()
+
+
+class GenerateAddendumPDF(APIView):
+    serializer_class = AddendumPDFSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        sale = get_object_or_404(Sale, pk=serializer.validated_data["sale_id"])
+        timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
+        filename = f"termo_aditivo_{sale.contract_number}-{timestamp}.pdf"
+
+        # Gera PDF em memória
+        pdf_buffer = self.render_addendum_pdf_bytes(
+            sale,
+            serializer.validated_data["before_addendum"],
+            serializer.validated_data["after_addendum"],
+            request.build_absolute_uri(),
+        )
+
+        with transaction.atomic():
+            doc_type, _ = DocumentType.objects.get_or_create(
+                name="Termo Aditivo",
+                defaults={"app_label": "contracts"},
+            )
+            pdf_buffer.seek(0)
+            content_file = ContentFile(pdf_buffer.read(), name=filename)
+            attachment = Attachment.objects.create(
+                content_object=sale,
+                file=content_file,
+                document_type=doc_type,
+                status="EA",
+            )
+
+        # Prepara resposta de download incluindo cabeçalhos com ID e mensagem
+        pdf_buffer.seek(0)
+        response = FileResponse(
+            pdf_buffer,
+            as_attachment=True,
+            filename=filename,
+            content_type="application/pdf",
+        )
+        response["X-Attachment-ID"] = str(attachment.id)
+        response["X-Message"] = "Termo aditivo adicionado com sucesso"
+        return response
+
+    def render_addendum_pdf_bytes(self, sale, before, after, base_url):
+        from django.template.loader import get_template
+        from weasyprint import HTML
+
+        context = {"sale": sale, "before_addendum": before, "after_addendum": after}
+        html = get_template("addendum_pdf.html").render(context)
+        buffer = io.BytesIO()
+        HTML(string=html, base_url=base_url).write_pdf(buffer)
+        buffer.seek(0)
+        return buffer
