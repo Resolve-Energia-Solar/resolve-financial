@@ -514,70 +514,66 @@ class ProjectQuerySet(django_models.QuerySet):
 
 
     def with_delivery_status(self):
-        from django.db.models import Exists, OuterRef, Subquery
-        
-        # Subquery para o último parecer de entrega
+        from django.db.models import Exists, OuterRef, Subquery, Case, When, Value, Q, CharField
+
         delivery_schedules = Schedule.objects.filter(
-            service__name="Entrega"
-        ).filter(project=OuterRef('pk'))
-        
+            service__name="Serviço de Entrega",
+            project=OuterRef('pk')
+        )
+
         return (
             self.with_is_released_to_engineering().annotate(
-            has_delivery=Exists(delivery_schedules),
-            last_delivery_opinion_name=Subquery(
-                delivery_schedules.order_by('-created_at')
-                .values('final_service_opinion__name')[:1]
+                has_delivery=Exists(delivery_schedules),
+                last_delivery_opinion_name=Subquery(
+                    delivery_schedules.order_by('-created_at')
+                    .values('final_service_opinion__name')[:1]
                 ),
                 delivery_status=Case(
-                    # Condições de Bloqueado
+                    # 1) Primeiro: Entregue
+                    When(last_delivery_opinion_name="Entregue", then=Value("Entregue")),
+                    # 2) Depois: Cancelado
+                    When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
+                    # 3) Agendado
+                    When(
+                        Q(has_delivery=True) &
+                        Q(last_delivery_opinion_name__isnull=True),
+                        then=Value("Agendado")
+                    ),
+                    # 4) Liberado (tipo D)
+                    When(
+                        Q(purchases__isnull=False) &
+                        Q(delivery_type="D") &
+                        Q(purchases__status="R") &
+                        ~Q(has_delivery=True),
+                        then=Value("Liberado")
+                    ),
+                    # 5) Liberado (tipo C)
+                    When(
+                        Q(purchases__isnull=False) &
+                        Q(delivery_type="C") &
+                        Q(purchases__status="R") &
+                        Q(designer_status__in=["CO"]) &
+                        Q(material_list_is_completed=True) &
+                        ~Q(has_delivery=True),
+                        then=Value("Liberado")
+                    ),
+                    # 6) Bloqueado (fallback)
                     When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
                     When(Q(purchases__isnull=True), then=Value("Bloqueado")),
                     When(
                         Q(purchases__isnull=False) &
-                        Q(delivery_type="D") & 
+                        Q(delivery_type="D") &
                         ~Q(purchases__status="R"),
                         then=Value("Bloqueado")
                     ),
                     When(
                         Q(purchases__isnull=False) &
-                        Q(delivery_type="C") & 
+                        Q(delivery_type="C") &
                         Q(purchases__status="R") &
                         ~Q(designer_status__in=["CO"]) &
                         ~Q(material_list_is_completed=True),
                         then=Value("Bloqueado")
                     ),
-                    # Condições de Liberado
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="D") & 
-                        Q(purchases__status="R") &
-                        ~Q(has_delivery=True),  # Usando a annotation has_delivery
-                        then=Value("Liberado")
-                    ),
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="C") & 
-                        Q(purchases__status="R") &
-                        Q(designer_status__in=["CO"]) &
-                        Q(material_list_is_completed=True) &
-                        ~Q(has_delivery=True),  # Usando a annotation has_delivery
-                        then=Value("Liberado")
-                    ),
-                    # Outros status
-                    When(
-                        Q(has_delivery=True) &  # Usando a annotation has_delivery
-                        Q(last_delivery_opinion_name__isnull=True),
-                        then=Value("Agendado")
-                    ),
-                    When(
-                        Q(last_delivery_opinion_name="Entregue"),
-                        then=Value("Entregue")
-                    ),
-                    When(
-                        Q(last_delivery_opinion_name="Cancelado"),
-                        then=Value("Cancelado")
-                    ),
-                    # Caso padrão
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 )
