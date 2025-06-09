@@ -12,8 +12,8 @@ class LostReasonSerializer(BaseSerializer):
     class Meta:
         model = LostReason
         fields = "__all__"
-        
-    
+
+
 class TicketTypeSerializer(BaseSerializer):
     class Meta:
         model = TicketType
@@ -23,28 +23,16 @@ class TicketTypeSerializer(BaseSerializer):
 class TicketSerializer(BaseSerializer):
     class Meta:
         model = Ticket
-        fields = [
-            "id",
-            "project",
-            "subject",
-            "description",
-            "ticket_type",
-            "priority",
-            "responsible_user",
-            "conclusion_date",
-            "status",
+        fields = "__all__"
+        read_only_fields = (
             "responsible",
             "responsible_department",
             "deadline",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = (
-            "responsible",           
-            "responsible_department",
-            "deadline",
-            "answered_at", "answered_by",
-            "resolved_at", "resolved_by",
-            "closed_at", "closed_by",
+            "answered_at",
+            "answered_by",
+            "resolved_at",
+            "resolved_by",
+            "closed_at",
+            "closed_by",
             "conclusion_date",
         )
