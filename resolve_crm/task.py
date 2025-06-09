@@ -385,21 +385,30 @@ def _linear_distance_km(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     return R * c
 
+
 @shared_task
 def update_project_delivery_type(project_id):
-    logger.info(f"🔄 Iniciando cálculo de delivery_type por rota para Project {project_id}")
+    logger.info(
+        f"🔄 Iniciando cálculo de delivery_type por rota para Project {project_id}"
+    )
     try:
         project = Project.objects.get(pk=project_id)
     except Project.DoesNotExist:
         logger.warning(f"Project {project_id} não encontrado")
-        return
+        return {"status": "error", "message": "Projeto não encontrado"}
 
     matriz = Branch.objects.filter(name__icontains="Matriz").first()
-    proj_addr = project.address  # cached_property
+    proj_addr = project.address
 
-    if not (matriz and matriz.address and proj_addr):
-        logger.error(f"Endereço da Matriz ou do Projeto {project_id} ausente")
-        return
+    if not matriz:
+        logger.warning(f"Matriz não encontrada para o Projeto {project_id}")
+        return {"status": "error", "message": "Matriz não encontrada"}
+    if not matriz.address:
+        logger.warning(f"Endereço da Matriz ausente para o Projeto {project_id}")
+        return {"status": "error", "message": "Endereço da Matriz ausente"}
+    if not proj_addr:
+        logger.warning(f"Endereço do Projeto {project_id} ausente")
+        return {"status": "error", "message": "Endereço do Projeto ausente"}
 
     # extrai e valida coordenadas
     try:
@@ -408,16 +417,15 @@ def update_project_delivery_type(project_id):
         lat2 = float(proj_addr.latitude)
         lon2 = float(proj_addr.longitude)
     except (TypeError, ValueError) as e:
-        logger.error(f"Coordenadas inválidas para Project {project_id}: {e}")
-        return
+        logger.warning(f"Coordenadas inválidas para Project {project_id}: {e}")
+        return {"status": "error", "message": "Coordenadas inválidas"}
 
-    # chama Google Distance Matrix
     url = "https://maps.googleapis.com/maps/api/distancematrix/json"
     params = {
-        "origins":      f"{lat1},{lon1}",
+        "origins": f"{lat1},{lon1}",
         "destinations": f"{lat2},{lon2}",
-        "mode":         "driving",
-        "key":          settings.GMAPS_API_KEY,
+        "mode": "driving",
+        "key": settings.GMAPS_API_KEY,
     }
 
     try:
