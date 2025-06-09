@@ -36,3 +36,9 @@ class TicketSerializer(BaseSerializer):
             "closed_by",
             "conclusion_date",
         )
+
+    def create(self, validated_data):
+        current_user = validated_data.pop('current_user', None)
+        ticket = Ticket(**validated_data)
+        ticket.save(current_user=current_user)
+        return ticket
