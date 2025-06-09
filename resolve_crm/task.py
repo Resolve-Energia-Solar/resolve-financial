@@ -128,7 +128,7 @@ def update_or_create_sale_tag(sale_id, sale_status):
         )
 
     except Sale.DoesNotExist:
-        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        logger.warning(f"📌Sale com ID {sale_id} não encontrada.")
         return ("error", f"Sale com ID {sale_id} não encontrada.")
 
 
@@ -153,7 +153,7 @@ def remove_tag_from_sale(sale_id, tag_name):
         )
 
     except Sale.DoesNotExist:
-        logger.error(f"📌Sale com ID {sale_id} não encontrada.")
+        logger.warning(f"📌Sale com ID {sale_id} não encontrada.")
         return ("error", f"Sale com ID {sale_id} não encontrada.")
 
 
@@ -162,7 +162,7 @@ def check_projects_and_update_sale_tag(sale_id, sale_status):
     try:
         sale = Sale.objects.get(pk=sale_id)
     except Sale.DoesNotExist:
-        logger.error(f"📌 Sale com ID {sale_id} não encontrada.")
+        logger.warning(f"📌 Sale com ID {sale_id} não encontrada.")
         return ("error", f"Sale com ID {sale_id} não encontrada.")
 
     logger.info(f"📌 Task: Verificando projetos da venda {sale.contract_number}")

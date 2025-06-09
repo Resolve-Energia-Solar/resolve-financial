@@ -62,14 +62,14 @@ def create_clicksign_envelope(sale_number, customer_name, seller_name):
             return {"status": "success", "envelope_id": envelope_id}
         else:
             error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-            logger.error(f"Erro ao criar o envelope: {error_detail}")
+            logger.warning(f"Erro ao criar o envelope: {error_detail}")
             return {
                 "status": "error",
                 "message": f"Failed to create envelope: {error_detail}",
                 "response": response.content,
             }
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
@@ -117,7 +117,7 @@ def create_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes
         )
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         return {
             "status": "error",
             "message": f"RequestException: {str(e)}",
@@ -132,7 +132,7 @@ def create_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes
         }))
         sale = Sale.objects.filter(contract_number=sale_number).first()
         if not sale:
-            logger.error("Sale not found for contract number", sale_number)
+            logger.warning("Sale not found for contract number", sale_number)
             return {
                 "status": "error",
                 "message": f"Sale not found for contract number: {sale_number}",
@@ -140,7 +140,7 @@ def create_clicksign_document(envelope_id, sale_number, customer_name, pdf_bytes
         return document_data
     else:
         error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-        logger.error(f"Erro ao criar o documento: {error_detail}")
+        logger.warning(f"Erro ao criar o documento: {error_detail}")
         return {
             "status": "error",
             "message": f"Failed to create document: {error_detail}",
@@ -153,7 +153,7 @@ def create_signer(envelope_id, customer):
     
     phone_number = customer.phone_numbers.filter(is_main=True).first()
     if not phone_number:
-        logger.error("Número de telefone principal não encontrado para o cliente", "Telefone principal ausente")
+        logger.warning("Número de telefone principal não encontrado para o cliente", "Telefone principal ausente")
         return {
             "status": "error",
             "message": "Número de telefone principal não encontrado para o cliente.",
@@ -161,7 +161,7 @@ def create_signer(envelope_id, customer):
 
     formatted_phone_number = f'{phone_number.area_code}{phone_number.phone_number}'
     if len(formatted_phone_number) != 11:
-        logger.error("Número de telefone principal está em um formato inválido", formatted_phone_number)
+        logger.warning("Número de telefone principal está em um formato inválido", formatted_phone_number)
         return {
             "status": "error",
             "message": "Número de telefone principal está em um formato inválido.",
@@ -209,23 +209,23 @@ def create_signer(envelope_id, customer):
             return {"status": "success", "signer_key": signer_response["data"]["id"]}
         else:
             error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-            logger.error(f"Erro ao criar o signatário: {error_detail}")
+            logger.warning(f"Erro ao criar o signatário: {error_detail}")
             return {
                 "status": "error",
                 "message": f"Failed to create signer: {error_detail}",
                 "response": response.content,
             }
     except requests.exceptions.HTTPError as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         if response.content:
-            logger.error(f"Detalhes do erro: {response.content.decode('utf-8')}")
+            logger.warning(f"Detalhes do erro: {response.content.decode('utf-8')}")
         return {
             "status": "error",
             "message": f"HTTPError: {str(e)}",
             "response": response.content.decode("utf-8") if response.content else "",
         }
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
@@ -304,7 +304,7 @@ def add_envelope_requirements(envelope_id, document_id, signer_id):
                 error_data = response.json()
                 errors = error_data.get("errors", [])
                 for error in errors:
-                    logger.error(f"Erro do Clicksign: {error.get('detail', 'Erro desconhecido')}")
+                    logger.warning(f"Erro do Clicksign: {error.get('detail', 'Erro desconhecido')}")
             except Exception as parse_err:
                 logger.error(f"Falha ao decodificar JSON de erro: {str(parse_err)}")
             response.raise_for_status()
@@ -312,7 +312,7 @@ def add_envelope_requirements(envelope_id, document_id, signer_id):
         logger.info("Requisitos adicionados com sucesso via bulk_requirements.")
         return {"status": "success", "message": "Requisitos adicionados com sucesso."}
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição: " + str(e))
+        logger.warning("Erro na requisição: " + str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
@@ -347,14 +347,14 @@ def activate_envelope(envelope_id):
             return {"status": "success", "message": "Envelope ativado com sucesso."}
         else:
             error_detail = response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-            logger.error(f"Erro ao ativar o envelope: {error_detail}")
+            logger.warning(f"Erro ao ativar o envelope: {error_detail}")
             return {
                 "status": "error",
                 "message": f"Failed to activate envelope: {error_detail}",
                 "response": response.content,
             }
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
@@ -390,7 +390,7 @@ def send_notification(envelope_id, message="Olá! O contrato está disponível p
                 "response": response.content,
             }
     except requests.exceptions.RequestException as e:
-        logger.error("Erro na requisição", str(e))
+        logger.warning("Erro na requisição", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
 
@@ -439,9 +439,9 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
     except requests.exceptions.RequestException as e:
         if add_document_response.status_code == 403:
             error_detail = add_document_response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-            logger.error(f"Erro ao adicionar o novo documento: {error_detail}")
+            logger.warning(f"Erro ao adicionar o novo documento: {error_detail}")
             return {"status": "error", "message": f"Forbidden: {error_detail}"}
-        logger.error("Erro ao adicionar o novo documento", str(e))
+        logger.warning("Erro ao adicionar o novo documento", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
     if add_document_response.status_code == 201:
@@ -454,13 +454,13 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
         new_document_id = document_data["data"]["id"]
     else:
         error_detail = add_document_response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-        logger.error(f"Erro ao adicionar o novo documento: {error_detail}")
+        logger.warning(f"Erro ao adicionar o novo documento: {error_detail}")
         return {"status": "error", "message": f"Failed to add new document: {error_detail}"}
 
     # Vincula o signatário existente ao novo documento usando bulk_requirements
     add_requirements_response = add_envelope_requirements(envelope_id, new_document_id, signer_id)
     if add_requirements_response.get("status") != "success":
-        logger.error("Erro ao adicionar requisitos ao envelope", add_requirements_response)
+        logger.warning("Erro ao adicionar requisitos ao envelope", add_requirements_response)
         return {"status": "error", "message": "Erro ao adicionar requisitos ao envelope."}
 
     # Cancela o documento antigo
@@ -480,14 +480,14 @@ def update_clicksign_document(envelope_id, document_id, sale_number, customer, s
     except requests.exceptions.RequestException as e:
         if cancel_response.status_code == 403:
             error_detail = cancel_response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-            logger.error(f"Erro ao cancelar o documento: {error_detail}")
+            logger.warning(f"Erro ao cancelar o documento: {error_detail}")
             return {"status": "error", "message": f"Forbidden: {error_detail}"}
-        logger.error("Erro ao cancelar o documento", str(e))
+        logger.warning("Erro ao cancelar o documento", str(e))
         return {"status": "error", "message": f"RequestException: {str(e)}"}
 
     if cancel_response.status_code != 200:
         error_detail = cancel_response.json().get("errors", [{}])[0].get("detail", "Erro desconhecido.")
-        logger.error(f"Erro ao cancelar o documento: {error_detail}")
+        logger.warning(f"Erro ao cancelar o documento: {error_detail}")
         return {"status": "error", "message": f"Failed to cancel the old document: {error_detail}"}
 
     logger.info(json.dumps({
