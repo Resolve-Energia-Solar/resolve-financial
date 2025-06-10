@@ -13,7 +13,8 @@ from rest_framework.serializers import ValidationError
 from api.serializers import BaseSerializer
 from core.serializers import AttachmentSerializer
 from accounts.serializers import AddressSerializer
-from financial.models import FranchiseInstallment
+from financial.models import Financier, FranchiseInstallment
+from financial.serializers import FinancierSerializer
 from logistics.models import Materials, Product, ProjectMaterials, SaleProduct
 from resolve_crm.models import *
 
@@ -58,7 +59,7 @@ class SaleSerializer(BaseSerializer):
     child=serializers.IntegerField(), required=False
     )
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False)
-    
+    financiers = serializers.SerializerMethodField()
     documents_under_analysis = serializers.SerializerMethodField()
     total_paid = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     final_service_opinion = serializers.SerializerMethodField()
@@ -69,7 +70,18 @@ class SaleSerializer(BaseSerializer):
     class Meta:
         model = Sale
         fields = '__all__'
-        
+
+    def get_financiers(self, obj):
+        financiers = Financier.objects.select_related(
+            'address'
+        ).filter(payment__sale=obj, is_deleted=False).distinct()
+        return FinancierSerializer(
+            financiers,
+            many=True,
+            fields=('id', 'name'),
+            context=self.context
+        ).data
+    
     def get_can_edit(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
