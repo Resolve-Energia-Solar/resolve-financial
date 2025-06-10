@@ -6,7 +6,11 @@ from django.utils import timezone
 class CustomerService(models.Model):
 
     customer = models.ForeignKey(
-        "accounts.User", on_delete=models.CASCADE, verbose_name="Cliente", blank=True, null=True
+        "accounts.User",
+        on_delete=models.CASCADE,
+        verbose_name="Cliente",
+        blank=True,
+        null=True,
     )
     protocol = models.BigIntegerField("Protocolo")
     user = models.CharField("Usuário", max_length=50)
@@ -19,7 +23,6 @@ class CustomerService(models.Model):
 
     def __str__(self):
         return f"{self.protocol} - {self.customer.complete_name}"
-
 
 
 class LostReason(models.Model):
@@ -52,10 +55,12 @@ class TicketType(models.Model):
         return self.name
 
 
-
 class Ticket(models.Model):
     project = models.ForeignKey(
-        "resolve_crm.Project", on_delete=models.CASCADE, verbose_name="Projeto", related_name="project_tickets"
+        "resolve_crm.Project",
+        on_delete=models.CASCADE,
+        verbose_name="Projeto",
+        related_name="project_tickets",
     )
     responsible = models.ForeignKey(
         "accounts.User",
@@ -63,7 +68,11 @@ class Ticket(models.Model):
         verbose_name="Responsável",
         related_name="responsible_tickets",
     )
-    subject = models.CharField("Assunto", max_length=100)
+    subject = models.ForeignKey(
+        "customer_service.TicketsSubject",
+        on_delete=models.CASCADE,
+        verbose_name="Assunto",
+    )
     description = models.TextField("Descrição")
     ticket_type = models.ForeignKey(
         "TicketType",
@@ -113,7 +122,7 @@ class Ticket(models.Model):
         "Prazo (Em horas)",
         help_text="Prazo em horas para resolução do chamado",
     )
-    
+
     # Monitoring
     observer = models.ForeignKey(
         "accounts.User",
@@ -165,13 +174,13 @@ class Ticket(models.Model):
         blank=True,
         null=True,
     )
-    
+
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True)
     is_deleted = models.BooleanField("Deletado", default=False)
 
     history = HistoricalRecords()
-    
+
     def save(self, *args, **kwargs):
         """
         Override do save para:
@@ -219,8 +228,6 @@ class Ticket(models.Model):
         # 8) Atualizar o atributo interno para não revalidar na próxima chamada
         self._original_status = self.status
 
-        
-    
     @property
     def open_duration(self):
         início = self.created_at
@@ -232,10 +239,9 @@ class Ticket(models.Model):
         verbose_name = "Chamado"
         verbose_name_plural = "Chamados"
         ordering = ["-created_at"]
-        
-    def __str__(self):
-        return f"{self.subject} - {self.project.project_number} ({self.get_status_display()})"
 
+    def __str__(self):
+        return f"{self.subject.subject} - {self.project.project_number} ({self.get_status_display()})"
 
 
 class TicketsSubject(models.Model):
@@ -243,8 +249,13 @@ class TicketsSubject(models.Model):
     Modelo auxiliar para armazenar os assuntos dos tickets.
     Utilizado para facilitar a busca e categorização de tickets.
     """
+
     subject = models.CharField("Assunto", max_length=100, unique=True)
-    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    category = models.CharField("Categoria", max_length=50, blank=True, null=True)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.subject
 
     class Meta:
         verbose_name = "Assunto de Chamado"
