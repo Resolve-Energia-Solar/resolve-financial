@@ -1,5 +1,5 @@
 from api.serializers import BaseSerializer
-from .models import CustomerService, LostReason, Ticket, TicketType
+from .models import CustomerService, LostReason, Ticket, TicketType, TicketsSubject
 
 
 class CustomerServiceSerializer(BaseSerializer):
@@ -38,7 +38,13 @@ class TicketSerializer(BaseSerializer):
         )
 
     def create(self, validated_data):
-        current_user = validated_data.pop('current_user', None)
+        current_user = validated_data.pop("current_user", None)
         ticket = Ticket(**validated_data)
         ticket.save(current_user=current_user)
         return ticket
+
+
+class TicketsSubjectSerializer(BaseSerializer):
+    class Meta:
+        model = TicketsSubject
+        fields = "__all__"

@@ -8,12 +8,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.views import BaseModelViewSet
-from customer_service.models import CustomerService, LostReason, Ticket, TicketType
+from customer_service.models import CustomerService, LostReason, Ticket, TicketType, TicketsSubject
 from customer_service.serializers import (
     CustomerServiceSerializer,
     LostReasonSerializer,
     TicketSerializer,
     TicketTypeSerializer,
+    TicketsSubjectSerializer,
 )
 from rest_framework import serializers
 from django.db.models import Count
@@ -147,3 +148,11 @@ def tickets_por_departamento(request):
         for item in qs
     ]
     return JsonResponse(data, safe=False)
+
+
+class TicketsSubjectViewSet(BaseModelViewSet):
+    """
+    ViewSet para obter os assuntos dos tickets.
+    """
+    serializer_class = TicketsSubjectSerializer
+    queryset = TicketsSubject.objects.all()
