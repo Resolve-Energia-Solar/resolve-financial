@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomerService, LostReason, Ticket, TicketType
+from .models import CustomerService, LostReason, Ticket, TicketType, TicketsSubject
 
 
 @admin.register(CustomerService)
@@ -15,8 +15,8 @@ class LostReasonAdmin(admin.ModelAdmin):
     list_display = ("name", "is_deleted", "created_at")
     search_fields = ("name",)
     list_filter = ("is_deleted",)
-    
-    
+
+
 @admin.register(TicketType)
 class TicketTypeAdmin(admin.ModelAdmin):
     list_display = ("name", "deadline", "is_deleted", "created_at")
@@ -30,7 +30,14 @@ class TicketAdmin(admin.ModelAdmin):
     search_fields = ("project__name", "responsible__complete_name")
     list_filter = ("status",)
     autocomplete_fields = ("project", "responsible")
-    
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related("project", "responsible")
+
+
+@admin.register(TicketsSubject)
+class TicketsSubjectAdmin(admin.ModelAdmin):
+    list_display = ("subject", "category")
+    search_fields = ("subject", "category")
+    list_filter = ("category",)
