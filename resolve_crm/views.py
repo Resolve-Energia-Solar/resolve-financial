@@ -110,7 +110,8 @@ class SaleViewSet(BaseModelViewSet):
                 Prefetch(
                     "attachments",
                     queryset=Attachment.objects.filter(
-                        content_type=self.sale_content_type, status="EA"
+                        content_type=self.sale_content_type,
+                        status="EA",
                     ),
                     to_attr="attachments_under_analysis",
                 ),
@@ -119,34 +120,32 @@ class SaleViewSet(BaseModelViewSet):
                     queryset=ContractSubmission.objects.order_by("-submit_datetime"),
                     to_attr="all_submissions",
                 ),
+                Prefetch(
+                    "projects",
+                    queryset=(
+                        Project.objects
+                        .with_journey_counter()
+                        .select_related(
+                            "inspection",
+                            "inspection__final_service_opinion",
+                        )
+                        .order_by("-created_at")
+                    ),
+                    to_attr="cached_projects",
+                ),
             )
             .order_by("-created_at")
         )
 
-        # filtra por permissão
         if not (user.is_superuser or user.has_perm("resolve_crm.view_all_sales")):
             stakeholder = Q(customer=user) | Q(seller=user)
-            if hasattr(user, "employee") and user.employee.related_branches.exists():
-                branch_ids = user.employee.related_branches.values_list("id", flat=True)
-                qs = qs.filter(Q(branch__id__in=branch_ids) | stakeholder)
+            if hasattr(user, "employee"):
+                branch_q = Q(branch__in=user.employee.related_branches.all())
+                qs = qs.filter(stakeholder | branch_q)
             else:
                 qs = qs.filter(stakeholder)
 
-        qs = qs.distinct()
-
-        # prefetch batch de projetos sem to_attr conflitante
-        sale_ids = list(qs.values_list("pk", flat=True))
-        if sale_ids:
-            projects_qs = (
-                Project.objects
-                .with_journey_counter()
-                .select_related("inspection", "inspection__final_service_opinion")
-                .filter(sale_id__in=sale_ids)
-                .order_by("-created_at")
-            )
-            qs = qs.prefetch_related(Prefetch("projects", queryset=projects_qs, to_attr="cached_projects"))
-
-        return qs
+        return qs.distinct()
 
     def apply_filters(self, queryset, query_params):
         if query_params.get("documents_under_analysis") == "true":
