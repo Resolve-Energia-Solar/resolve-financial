@@ -72,7 +72,9 @@ class ScheduleSerializer(BaseSerializer):
                 if not has_permission:
                     delta = schedule_datetime - now
 
+                    # Caso o agendamento esteja com menos de 24h
                     if delta < timedelta(hours=24):
+                        # Verifica se foi feito até as 17h do dia anterior
                         deadline = schedule_datetime - timedelta(days=1)
                         deadline = deadline.replace(hour=17, minute=0, second=0, microsecond=0)
                         if now > deadline:

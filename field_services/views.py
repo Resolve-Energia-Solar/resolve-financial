@@ -151,6 +151,12 @@ class ScheduleViewSet(BaseModelViewSet):
 
         user = self.request.user
         params = self.request.query_params
+        
+        if schedule_year := params.get("schedule_date_year"):
+            qs = qs.filter(schedule_date__year=schedule_year)
+
+        if schedule_month := params.get("schedule_date_month"):
+            qs = qs.filter(schedule_date__month=schedule_month)
 
         # 1) filtros globais
         if q := params.get("q"):
