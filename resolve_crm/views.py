@@ -144,7 +144,7 @@ class SaleViewSet(BaseModelViewSet):
                 .filter(sale_id__in=sale_ids)
                 .order_by("-created_at")
             )
-            qs = qs.prefetch_related(Prefetch("projects", queryset=projects_qs))
+            qs = qs.prefetch_related(Prefetch("projects", queryset=projects_qs, to_attr="cached_projects"))
 
         return qs
 
