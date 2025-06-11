@@ -229,6 +229,9 @@ class Ticket(models.Model):
             old_status = old["status"] if old else None
         else:
             old_status = None
+            # Se não houver status antigo, preenche o criador
+            if not self.created_by:
+                self.created_by = current_user
 
         # 3) Se status mudou para 'RE' (Respondido) E ainda não tem answered_at
         if self.status == "RE" and old_status != "RE" and not self.answered_at:

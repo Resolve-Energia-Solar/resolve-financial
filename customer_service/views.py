@@ -86,7 +86,7 @@ class TicketViewSet(BaseModelViewSet):
         "responsible",
         "ticket_type",
         "responsible_department",
-        "responsible_user",
+        "created_by",
     )
     authentication_classes = [
         TokenAuthentication,
