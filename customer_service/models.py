@@ -98,12 +98,6 @@ class Ticket(models.Model):
         verbose_name="Departamento Responsável",
         related_name="responsible_department_tickets",
     )
-    responsible_user = models.ForeignKey(
-        "accounts.User",
-        on_delete=models.CASCADE,
-        verbose_name="Usuário Responsável",
-        related_name="responsible_user_tickets",
-    )
     status = models.CharField(
         "Status",
         max_length=20,
