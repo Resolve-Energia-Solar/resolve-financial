@@ -1,5 +1,10 @@
 from core.models import Attachment
-from engineering.models import CivilConstruction, RequestsEnergyCompany, ResquestType, Units
+from engineering.models import (
+    CivilConstruction,
+    RequestsEnergyCompany,
+    ResquestType,
+    Units,
+)
 from field_services.models import Schedule
 from django.contrib.contenttypes.models import ContentType
 from django.db import models as django_models  # Adicione esta linha
@@ -36,6 +41,7 @@ from functools import reduce
 from django.utils import timezone
 from datetime import timedelta
 
+
 class TimestampDiff(Func):
     function = "TIMESTAMPDIFF"
     template = "%(function)s(DAY, %(expressions)s)"
@@ -58,39 +64,44 @@ class GroupConcat(Aggregate):
 
 
 class ProjectQuerySet(django_models.QuerySet):
-    
+
     def with_journey_counter(self):
-        return self.annotate(
-            last_final=Subquery(
-                RequestsEnergyCompany.objects.filter(
-                    project=OuterRef('pk'),
-                    type__name__icontains="Vistoria final",
-                    status="D",
-                    conclusion_date__isnull=False
-                )
-                .order_by('-conclusion_date')
-                .values('conclusion_date')[:1],
-                output_field=DateField()
-            ),
-            contract_dt=Cast(F("sale__signature_date"), DateField())
-        ).annotate(
-            journey_end=Coalesce(
-                F("last_final"),
-                Value(timezone.localdate()),
-                output_field=DateField()
+        return (
+            self.annotate(
+                last_final=Subquery(
+                    RequestsEnergyCompany.objects.filter(
+                        project=OuterRef("pk"),
+                        type__name__icontains="Vistoria final",
+                        status="D",
+                        conclusion_date__isnull=False,
+                    )
+                    .order_by("-conclusion_date")
+                    .values("conclusion_date")[:1],
+                    output_field=DateField(),
+                ),
+                contract_dt=Cast(F("sale__signature_date"), DateField()),
             )
-        ).annotate(
-            journey_counter=Func(
-                F('journey_end'),  # Data final
-                F('contract_dt'),  # Data inicial
-                function='DATEDIFF',
-                template='%(function)s(%(expressions)s)',
-                output_field=IntegerField()
+            .annotate(
+                journey_end=Coalesce(
+                    F("last_final"),
+                    Value(timezone.localdate()),
+                    output_field=DateField(),
+                )
+            )
+            .annotate(
+                journey_counter=Func(
+                    F("journey_end"),  # Data final
+                    F("contract_dt"),  # Data inicial
+                    function="DATEDIFF",
+                    template="%(function)s(%(expressions)s)",
+                    output_field=IntegerField(),
+                )
             )
         )
 
     def with_is_released_to_engineering(self):
         from resolve_crm import models as resolve_models
+
         sale_ct = ContentType.objects.get_for_model(resolve_models.Sale)
 
         has_contract = Exists(
@@ -150,7 +161,6 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
-
     def with_trt_status(self):
         from core.models import Attachment
         from django.contrib.contenttypes.models import ContentType
@@ -171,23 +181,26 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         ).distinct()
 
-
     def with_pending_material_list(self):
-        return (
-            self.with_is_released_to_engineering()
-            .annotate(
-                pending_material_list=Case(
-                    When(
-                        Q(is_released_to_engineering=True)
-                        & Q(material_list_is_completed=False),
-                        then=Value(True),
-                    ),
-                    default=Value(False),
-                    output_field=BooleanField(),
-                )
+        return self.with_is_released_to_engineering().annotate(
+            pending_material_list=Case(
+                When(
+                    Q(is_released_to_engineering=True)
+                    & Q(material_list_is_completed=False),
+                    then=Value(True),
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
             )
         )
 
+    def with_open_tickets(self):
+        return self.annotate(
+            open_tickets_count=Count(
+                "project_tickets",
+                filter=Q(project_tickets__status="open"),
+            )
+        )
 
     def with_access_opnion(self):
         return (
@@ -206,7 +219,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 )
             )
         ).distinct()
-
 
     def with_trt_pending(self):
         return (
@@ -229,7 +241,6 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
-
     def with_request_requested(self):
         return self.annotate(
             request_requested=Case(
@@ -238,7 +249,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 output_field=BooleanField(),
             )
         )
-
 
     def with_last_installation_final_service_opinion(self):
         return self.annotate(
@@ -252,7 +262,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 output_field=CharField(),
             )
         )
-
 
     def with_request_days_since_requested(self, type_name: str, annotation_name: str):
         base_qs = RequestsEnergyCompany.objects.filter(
@@ -270,7 +279,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 )
             }
         ).distinct()
-
 
     def with_supply_adquance_names(self):
         subquery = Units.objects.filter(
@@ -293,66 +301,82 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         ).distinct()
 
-
     def with_homologation_status(self):
         # 1) busca os RequestType relevantes e agrupa seus IDs por categoria
         request_types = ResquestType.objects.filter(
-            Q(name="Parecer de Acesso") |
-            Q(name="Aumento de Carga") |
-            Q(name="Ajuste de Ramal") |
-            Q(name="Nova UC") |
-            Q(name="Vistoria Final")
+            Q(name="Parecer de Acesso")
+            | Q(name="Aumento de Carga")
+            | Q(name="Ajuste de Ramal")
+            | Q(name="Nova UC")
+            | Q(name="Vistoria Final")
         )
-        
+
         type_ids = {
             "Parecer de Acesso": [],
             "Aumento de Carga": [],
             "Ajuste de Ramal": [],
             "Nova UC": [],
-            "Vistoria Final": []
+            "Vistoria Final": [],
         }
-        
+
         for rt in request_types:
             for key in type_ids.keys():
                 if key.lower() in rt.name.lower():
                     type_ids[key].append(rt.id)
-        
+
         main_unit_has_new_contract = Units.objects.filter(
-            project=OuterRef("pk"),
-            main_unit=True,
-            new_contract_number=True
+            project=OuterRef("pk"), main_unit=True, new_contract_number=True
         )
 
         return (
-            self
-            .with_is_released_to_engineering()
+            self.with_is_released_to_engineering()
             .with_last_installation_final_service_opinion()
             .with_supply_adquance_names()
-            .with_request_days_since_requested("Parecer de Acesso", "access_opnion_days")
+            .with_request_days_since_requested(
+                "Parecer de Acesso", "access_opnion_days"
+            )
             .with_request_days_since_requested("Aumento de Carga", "load_increase_days")
-            .with_request_days_since_requested("Ajuste de Ramal", "branch_adjustment_days")
+            .with_request_days_since_requested(
+                "Ajuste de Ramal", "branch_adjustment_days"
+            )
             .with_request_days_since_requested("Nova UC", "new_contact_number_days")
-            .with_request_days_since_requested("Vistoria Final", "final_inspection_days")
+            .with_request_days_since_requested(
+                "Vistoria Final", "final_inspection_days"
+            )
             .annotate(
                 access_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Parecer de Acesso"])
+                    "requests_energy_company",
+                    condition=Q(
+                        requests_energy_company__type_id__in=type_ids[
+                            "Parecer de Acesso"
+                        ]
+                    ),
                 ),
                 load_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Aumento de Carga"])
+                    "requests_energy_company",
+                    condition=Q(
+                        requests_energy_company__type_id__in=type_ids[
+                            "Aumento de Carga"
+                        ]
+                    ),
                 ),
                 branch_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Ajuste de Ramal"])
+                    "requests_energy_company",
+                    condition=Q(
+                        requests_energy_company__type_id__in=type_ids["Ajuste de Ramal"]
+                    ),
                 ),
                 new_uc_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Nova UC"])
+                    "requests_energy_company",
+                    condition=Q(
+                        requests_energy_company__type_id__in=type_ids["Nova UC"]
+                    ),
                 ),
                 final_req=FilteredRelation(
-                    'requests_energy_company',
-                    condition=Q(requests_energy_company__type_id__in=type_ids["Vistoria Final"])
+                    "requests_energy_company",
+                    condition=Q(
+                        requests_energy_company__type_id__in=type_ids["Vistoria Final"]
+                    ),
                 ),
                 has_main_unit_new_contract=Exists(main_unit_has_new_contract),
             )
@@ -360,16 +384,23 @@ class ProjectQuerySet(django_models.QuerySet):
                 access_opnion_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
                     When(access_req__isnull=True, then=Value("Pendente")),
-                    When(access_req__status="S",    then=Value("Solicitado")),
-                    When(access_req__status="D",    then=Value("Deferido")),
-                    When(access_req__status="I",    then=Value("Indeferida")),
-                    When(access_req__status="ID",    then=Value("Indeferida Debito")),
+                    When(access_req__status="S", then=Value("Solicitado")),
+                    When(access_req__status="D", then=Value("Deferido")),
+                    When(access_req__status="I", then=Value("Indeferida")),
+                    When(access_req__status="ID", then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
                 load_increase_status=Case(
-                When(~Q(supply_adquance_names="Aumento de Carga"), then=Value("Não se aplica")),
-                    When(load_req__isnull=True, last_installation_final_service_opinion='Concluído', then=Value("Pendente")),
+                    When(
+                        ~Q(supply_adquance_names="Aumento de Carga"),
+                        then=Value("Não se aplica"),
+                    ),
+                    When(
+                        load_req__isnull=True,
+                        last_installation_final_service_opinion="Concluído",
+                        then=Value("Pendente"),
+                    ),
                     When(load_req__status="S", then=Value("Solicitado")),
                     When(load_req__status="D", then=Value("Deferido")),
                     When(load_req__status="I", then=Value("Indeferida")),
@@ -378,8 +409,15 @@ class ProjectQuerySet(django_models.QuerySet):
                     output_field=CharField(),
                 ),
                 branch_adjustment_status=Case(
-                    When(~Q(supply_adquance_names="Ajuste de Ramal"), then=Value("Não se aplica")),
-                    When(branch_req__isnull=True, last_installation_final_service_opinion='Concluído', then=Value("Pendente")),
+                    When(
+                        ~Q(supply_adquance_names="Ajuste de Ramal"),
+                        then=Value("Não se aplica"),
+                    ),
+                    When(
+                        branch_req__isnull=True,
+                        last_installation_final_service_opinion="Concluído",
+                        then=Value("Pendente"),
+                    ),
                     When(branch_req__status="S", then=Value("Solicitado")),
                     When(branch_req__status="D", then=Value("Deferido")),
                     When(branch_req__status="I", then=Value("Indeferida")),
@@ -392,102 +430,118 @@ class ProjectQuerySet(django_models.QuerySet):
                     When(
                         has_main_unit_new_contract=True,
                         then=Case(
-                            When(is_released_to_engineering=False, then=Value("Bloqueado")),
+                            When(
+                                is_released_to_engineering=False,
+                                then=Value("Bloqueado"),
+                            ),
                             When(~Q(designer_status="CO"), then=Value("Bloqueado")),
-                            When(new_uc_req__isnull=True,  then=Value("Pendente")),
-                            When(new_uc_req__status="S",   then=Value("Solicitado")),
-                            When(new_uc_req__status="D",   then=Value("Deferido")),
-                            When(new_uc_req__status="I",   then=Value("Indeferida")),
-                            When(new_uc_req__status="ID", then=Value("Indeferida Debito")),
+                            When(new_uc_req__isnull=True, then=Value("Pendente")),
+                            When(new_uc_req__status="S", then=Value("Solicitado")),
+                            When(new_uc_req__status="D", then=Value("Deferido")),
+                            When(new_uc_req__status="I", then=Value("Indeferida")),
+                            When(
+                                new_uc_req__status="ID", then=Value("Indeferida Debito")
+                            ),
                             default=Value("Bloqueado"),
-                        )
+                        ),
                     ),
                     output_field=CharField(),
-            ),
+                ),
                 final_inspection_status=Case(
                     When(is_released_to_engineering=False, then=Value("Bloqueado")),
                     When(
-                        ~Q(Q(new_contact_number_status="Não se aplica") | Q(new_contact_number_status="Deferido")) |
-                        ~Q(Q(load_increase_status="Não se aplica") | Q(load_increase_status="Deferido")) |
-                        ~Q(Q(branch_adjustment_status="Não se aplica") | Q(branch_adjustment_status="Deferido")) |
-                        ~Q(access_opnion_status="Deferido") |
-                        ~Q(last_installation_final_service_opinion__icontains='Concluído'),
-                        then=Value("Bloqueado")
+                        ~Q(
+                            Q(new_contact_number_status="Não se aplica")
+                            | Q(new_contact_number_status="Deferido")
+                        )
+                        | ~Q(
+                            Q(load_increase_status="Não se aplica")
+                            | Q(load_increase_status="Deferido")
+                        )
+                        | ~Q(
+                            Q(branch_adjustment_status="Não se aplica")
+                            | Q(branch_adjustment_status="Deferido")
+                        )
+                        | ~Q(access_opnion_status="Deferido")
+                        | ~Q(
+                            last_installation_final_service_opinion__icontains="Concluído"
+                        ),
+                        then=Value("Bloqueado"),
                     ),
-                    When(final_req__isnull=True, last_installation_final_service_opinion='Concluído', then=Value("Pendente")),
-                    When(final_req__status="S",    then=Value("Solicitado")),
-                    When(final_req__status="D",    then=Value("Deferido")),
-                    When(final_req__status="I",    then=Value("Indeferida")),
-                    When(final_req__status="ID",    then=Value("Indeferida Debito")),
+                    When(
+                        final_req__isnull=True,
+                        last_installation_final_service_opinion="Concluído",
+                        then=Value("Pendente"),
+                    ),
+                    When(final_req__status="S", then=Value("Solicitado")),
+                    When(final_req__status="D", then=Value("Deferido")),
+                    When(final_req__status="I", then=Value("Indeferida")),
+                    When(final_req__status="ID", then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 ),
-            ).distinct()
+            )
+            .distinct()
         )
-
 
     def with_final_inspection_status(self):
         # Mover para constante global (definida no topo do arquivo)
         VISTORIA_FINAL_IDS = ResquestType.objects.filter(
             name="Vistoria Final"
-        ).values_list('id', flat=True)
-        return self.with_is_released_to_engineering().with_last_installation_final_service_opinion().annotate(
-        
-            final_req_exists=Exists(
-                RequestsEnergyCompany.objects.filter(
-                    project=OuterRef('pk'),
-                    type_id__in=VISTORIA_FINAL_IDS
-                )
-            ),
-            final_req_status=Subquery(
-                RequestsEnergyCompany.objects.filter(
-                    project=OuterRef('pk'),
-                    type_id__in=VISTORIA_FINAL_IDS
-                ).order_by('-id')[:1].values('status')
-            )
-        ).annotate(
-            
-            final_inspection_status=Case(
-                When(
-                    Q(is_released_to_engineering=False), then=Value("Bloqueado")
-                ),
-                When(
-                    Q(final_req_exists=False) &
-                    Q(last_installation_final_service_opinion='Concluído'),
-                    then=Value("Pendente")
-                ),
-                When(final_req_status="S", then=Value("Solicitado")),
-                When(final_req_status="D", then=Value("Deferido")),
-                When(final_req_status="I", then=Value("Indeferida")),
-                When(final_req_status="ID", then=Value("Indeferida Debito")),
-                default=Value("Bloqueado"),
-                output_field=CharField(),
-            )
-        )
-    
-    
-    def with_purchase_status(self):
+        ).values_list("id", flat=True)
         return (
             self.with_is_released_to_engineering()
+            .with_last_installation_final_service_opinion()
             .annotate(
-                purchase_status=Case(
+                final_req_exists=Exists(
+                    RequestsEnergyCompany.objects.filter(
+                        project=OuterRef("pk"), type_id__in=VISTORIA_FINAL_IDS
+                    )
+                ),
+                final_req_status=Subquery(
+                    RequestsEnergyCompany.objects.filter(
+                        project=OuterRef("pk"), type_id__in=VISTORIA_FINAL_IDS
+                    )
+                    .order_by("-id")[:1]
+                    .values("status")
+                ),
+            )
+            .annotate(
+                final_inspection_status=Case(
                     When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                    When(Q(purchases__isnull=True), then=Value("Liberado")),
-                    When(Q(purchases__status="P"), then=Value("Pendente")),
-                    When(Q(purchases__status="R"), then=Value("Compra Realizada")),
-                    When(Q(purchases__status="C"), then=Value("Cancelado")),
-                    When(Q(purchases__status="D"), then=Value("Distrato")),
                     When(
-                        Q(purchases__status="F"),
-                        then=Value("Aguardando Previsão de Entrega"),
+                        Q(final_req_exists=False)
+                        & Q(last_installation_final_service_opinion="Concluído"),
+                        then=Value("Pendente"),
                     ),
-                    When(Q(purchases__status="A"), then=Value("Aguardando Pagamento")),
+                    When(final_req_status="S", then=Value("Solicitado")),
+                    When(final_req_status="D", then=Value("Deferido")),
+                    When(final_req_status="I", then=Value("Indeferida")),
+                    When(final_req_status="ID", then=Value("Indeferida Debito")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 )
             )
         )
 
+    def with_purchase_status(self):
+        return self.with_is_released_to_engineering().annotate(
+            purchase_status=Case(
+                When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                When(Q(purchases__isnull=True), then=Value("Liberado")),
+                When(Q(purchases__status="P"), then=Value("Pendente")),
+                When(Q(purchases__status="R"), then=Value("Compra Realizada")),
+                When(Q(purchases__status="C"), then=Value("Cancelado")),
+                When(Q(purchases__status="D"), then=Value("Distrato")),
+                When(
+                    Q(purchases__status="F"),
+                    then=Value("Aguardando Previsão de Entrega"),
+                ),
+                When(Q(purchases__status="A"), then=Value("Aguardando Pagamento")),
+                default=Value("Bloqueado"),
+                output_field=CharField(),
+            )
+        )
 
     def with_expected_delivery_date(self):
         return self.annotate(
@@ -512,75 +566,79 @@ class ProjectQuerySet(django_models.QuerySet):
             ),
         )
 
-
     def with_delivery_status(self):
-        from django.db.models import Exists, OuterRef, Subquery, Case, When, Value, Q, CharField
+        from django.db.models import (
+            Exists,
+            OuterRef,
+            Subquery,
+            Case,
+            When,
+            Value,
+            Q,
+            CharField,
+        )
 
         delivery_schedules = Schedule.objects.filter(
-            service__name="Serviço de Entrega",
-            project=OuterRef('pk')
+            service__name="Serviço de Entrega", project=OuterRef("pk")
         )
 
-        return (
-            self.with_is_released_to_engineering().annotate(
-                has_delivery=Exists(delivery_schedules),
-                last_delivery_opinion_name=Subquery(
-                    delivery_schedules.order_by('-created_at')
-                    .values('final_service_opinion__name')[:1]
+        return self.with_is_released_to_engineering().annotate(
+            has_delivery=Exists(delivery_schedules),
+            last_delivery_opinion_name=Subquery(
+                delivery_schedules.order_by("-created_at").values(
+                    "final_service_opinion__name"
+                )[:1]
+            ),
+            delivery_status=Case(
+                # 1) Primeiro: Entregue
+                When(last_delivery_opinion_name="Entregue", then=Value("Entregue")),
+                # 2) Depois: Cancelado
+                When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
+                # 3) Agendado
+                When(
+                    Q(has_delivery=True) & Q(last_delivery_opinion_name__isnull=True),
+                    then=Value("Agendado"),
                 ),
-                delivery_status=Case(
-                    # 1) Primeiro: Entregue
-                    When(last_delivery_opinion_name="Entregue", then=Value("Entregue")),
-                    # 2) Depois: Cancelado
-                    When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
-                    # 3) Agendado
-                    When(
-                        Q(has_delivery=True) &
-                        Q(last_delivery_opinion_name__isnull=True),
-                        then=Value("Agendado")
-                    ),
-                    # 4) Liberado (tipo D)
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="D") &
-                        Q(purchases__status="R") &
-                        ~Q(has_delivery=True),
-                        then=Value("Liberado")
-                    ),
-                    # 5) Liberado (tipo C)
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="C") &
-                        Q(purchases__status="R") &
-                        Q(designer_status__in=["CO"]) &
-                        Q(material_list_is_completed=True) &
-                        ~Q(has_delivery=True),
-                        then=Value("Liberado")
-                    ),
-                    # 6) Bloqueado (fallback)
-                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                    When(Q(purchases__isnull=True), then=Value("Bloqueado")),
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="D") &
-                        ~Q(purchases__status="R"),
-                        then=Value("Bloqueado")
-                    ),
-                    When(
-                        Q(purchases__isnull=False) &
-                        Q(delivery_type="C") &
-                        Q(purchases__status="R") &
-                        ~Q(designer_status__in=["CO"]) &
-                        ~Q(material_list_is_completed=True),
-                        then=Value("Bloqueado")
-                    ),
-                    default=Value("Bloqueado"),
-                    output_field=CharField(),
-                )
-            )
+                # 4) Liberado (tipo D)
+                When(
+                    Q(purchases__isnull=False)
+                    & Q(delivery_type="D")
+                    & Q(purchases__status="R")
+                    & ~Q(has_delivery=True),
+                    then=Value("Liberado"),
+                ),
+                # 5) Liberado (tipo C)
+                When(
+                    Q(purchases__isnull=False)
+                    & Q(delivery_type="C")
+                    & Q(purchases__status="R")
+                    & Q(designer_status__in=["CO"])
+                    & Q(material_list_is_completed=True)
+                    & ~Q(has_delivery=True),
+                    then=Value("Liberado"),
+                ),
+                # 6) Bloqueado (fallback)
+                When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                When(Q(purchases__isnull=True), then=Value("Bloqueado")),
+                When(
+                    Q(purchases__isnull=False)
+                    & Q(delivery_type="D")
+                    & ~Q(purchases__status="R"),
+                    then=Value("Bloqueado"),
+                ),
+                When(
+                    Q(purchases__isnull=False)
+                    & Q(delivery_type="C")
+                    & Q(purchases__status="R")
+                    & ~Q(designer_status__in=["CO"])
+                    & ~Q(material_list_is_completed=True),
+                    then=Value("Bloqueado"),
+                ),
+                default=Value("Bloqueado"),
+                output_field=CharField(),
+            ),
         )
 
-        
     def with_is_released_to_installation(self):
         """Annotates whether the project is released for installation based on:
         - Engineering release status
@@ -604,32 +662,36 @@ class ProjectQuerySet(django_models.QuerySet):
                         project=OuterRef("pk"),
                         service__category__name__icontains=INSPECTION_CATEGORY,
                         final_service_opinion__name__icontains=APPROVED_OPINION,
-                    ).filter(
+                    )
+                    .filter(
                         reduce(
                             operator.or_,
                             [
                                 Q(final_service_opinion__name__icontains=opinion)
                                 for opinion in CONSTRUCTION_OPINIONS
-                            ]
+                            ],
                         )
-                    ).values("id")
+                    )
+                    .values("id")
                 ),
                 # Check if there's a finished construction
                 has_finished_construction=Exists(
                     CivilConstruction.objects.filter(
-                        project=OuterRef("pk"), 
-                        status=FINISHED_CONSTRUCTION_STATUS
+                        project=OuterRef("pk"), status=FINISHED_CONSTRUCTION_STATUS
                     ).values("id")
-                )
+                ),
             )
             .annotate(
                 is_released_to_installation=Case(
                     When(
-                        Q(is_released_to_engineering=True) &
-                        Q(delivery_status="Entregue") &
-                        (
-                            ~Q(has_construction_need=True) |
-                            (Q(has_construction_need=True) & Q(has_finished_construction=True))
+                        Q(is_released_to_engineering=True)
+                        & Q(delivery_status="Entregue")
+                        & (
+                            ~Q(has_construction_need=True)
+                            | (
+                                Q(has_construction_need=True)
+                                & Q(has_finished_construction=True)
+                            )
                         ),
                         then=Value(True),
                     ),
@@ -639,29 +701,29 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
-
     def _annotate_installation_related_fields(self, queryset):
         INSTALLATION_CATEGORY = "Instalação"
         INSPECTION_CATEGORY = "Vistoria"
 
         installation_schedules = Schedule.objects.filter(
             project=OuterRef("pk"),
-            service__category__name__icontains=INSTALLATION_CATEGORY
+            service__category__name__icontains=INSTALLATION_CATEGORY,
         )
 
         inspection_schedules = Schedule.objects.filter(
             project=OuterRef("pk"),
             service__category__name__icontains=INSPECTION_CATEGORY,
-            final_service_opinion__name__icontains="Aprovad"
+            final_service_opinion__name__icontains="Aprovad",
         ).filter(
-            Q(final_service_opinion__name__icontains="Obra") |
-            Q(final_service_opinion__name__icontains="Sombreamento")
+            Q(final_service_opinion__name__icontains="Obra")
+            | Q(final_service_opinion__name__icontains="Sombreamento")
         )
 
         return queryset.annotate(
             latest_installation_opinion_name=Subquery(
-                installation_schedules.order_by("-created_at")
-                .values("final_service_opinion__name")[:1]
+                installation_schedules.order_by("-created_at").values(
+                    "final_service_opinion__name"
+                )[:1]
             ),
             has_installation=Exists(installation_schedules),
             has_construction_schedule=Exists(inspection_schedules),
@@ -671,10 +733,9 @@ class ProjectQuerySet(django_models.QuerySet):
                     .order_by("-id")
                     .values("status")[:1]
                 ),
-                Value("P")
-            )
+                Value("P"),
+            ),
         )
-
 
     def with_installation_status(self):
         """Determines the installation status of projects based on multiple criteria"""
@@ -711,12 +772,14 @@ class ProjectQuerySet(django_models.QuerySet):
                 ),
                 # 2) Scheduled: has installation but no final opinion yet
                 When(
-                    Q(has_installation=True) & Q(latest_installation_opinion_name__isnull=True),
+                    Q(has_installation=True)
+                    & Q(latest_installation_opinion_name__isnull=True),
                     then=Value(STATUS_SCHEDULED),
                 ),
                 # 3) Under construction: needs construction and not finished
                 When(
-                    Q(has_construction_schedule=True) & ~Q(latest_construction_status="F"),
+                    Q(has_construction_schedule=True)
+                    & ~Q(latest_construction_status="F"),
                     then=Value(STATUS_UNDER_CONSTRUCTION),
                 ),
                 # 4) Not released for installation → blocked
@@ -727,7 +790,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 output_field=CharField(),
             )
         )
-
 
     def with_latest_installation(self):
         return self.annotate(
@@ -740,7 +802,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 .values("id")[:1]
             )
         )
-
 
     def with_installments_indicators(self):
         now = timezone.now()
@@ -807,7 +868,6 @@ class ProjectQuerySet(django_models.QuerySet):
             ),
         )
 
-
     def with_construction_status(self):
         return self.annotate(
             # Determine if the project needs construction
@@ -850,36 +910,34 @@ class ProjectQuerySet(django_models.QuerySet):
             ),
         ).distinct()
 
-    
     def with_ticket_stats(self):
         return self.annotate(
-            total_tickets=Count(
-                "project_tickets",
-                distinct=True
-            ),
+            total_tickets=Count("project_tickets", distinct=True),
             total_tickets_abertos=Count(
                 "project_tickets",
                 filter=~Q(project_tickets__status__in=["R", "F"]),
-                distinct=True
+                distinct=True,
             ),
             avg_tempo_resolucao=Avg(
                 ExpressionWrapper(
-                    F("project_tickets__conclusion_date") - F("project_tickets__created_at"),
+                    F("project_tickets__conclusion_date")
+                    - F("project_tickets__created_at"),
                     output_field=DurationField(),
                 ),
-                filter=Q(project_tickets__status__in=["R", "F"])
+                filter=Q(project_tickets__status__in=["R", "F"]),
             ),
             ticket_aberto_mais_antigo=Min(
                 "project_tickets__created_at",
-                filter=~Q(project_tickets__status__in=["R", "F"])
+                filter=~Q(project_tickets__status__in=["R", "F"]),
             ),
         )
-    
 
     def with_status_annotations(self):
         return (
             self
-            # default
+            # Tickets
+            .with_open_tickets()
+            # Engineering
             .with_is_released_to_engineering()
             .with_pending_material_list()
             # Homologation
@@ -899,7 +957,6 @@ class ProjectQuerySet(django_models.QuerySet):
             .with_construction_status()
             .with_in_construction()
         )
-
 
     def with_avg_time_installation(self):
         entrega_finished_at_subquery = (
@@ -941,7 +998,6 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
-
     def with_customer_released_flag(self):
         inspection_done = Schedule.objects.filter(
             project=OuterRef("pk"),
@@ -959,7 +1015,6 @@ class ProjectQuerySet(django_models.QuerySet):
             customer_released=Exists(inspection_done) & Exists(delivery_done)
         )
 
-
     def with_number_of_installations(self):
         return self.annotate(
             number_of_installations=Count(
@@ -972,7 +1027,6 @@ class ProjectQuerySet(django_models.QuerySet):
                 distinct=True,
             )
         )
-
 
     def with_in_construction(self):
         return self.annotate(
@@ -991,4 +1045,3 @@ class ProjectQuerySet(django_models.QuerySet):
                 .values("id")
             )
         )
-

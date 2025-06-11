@@ -319,6 +319,7 @@ class ProjectViewSet(BaseModelViewSet):
             "in_construction": lambda qs: qs.with_in_construction(),
             "construction_status": lambda qs: qs.with_construction_status(),
             "ticket_stats": lambda qs: qs.with_ticket_stats(),
+            "open_tickets": lambda qs: qs.with_open_tickets(),
         }
 
         if metrics:
