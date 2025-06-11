@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.utils import timezone
@@ -56,6 +57,9 @@ class TicketType(models.Model):
 
 
 class Ticket(models.Model):
+    protocol = models.CharField(
+        "Protocolo", max_length=50, unique=True, null=True, blank=True, db_index=True
+    )
     project = models.ForeignKey(
         "resolve_crm.Project",
         on_delete=models.CASCADE,
@@ -174,12 +178,40 @@ class Ticket(models.Model):
         blank=True,
         null=True,
     )
-
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        verbose_name="Criado por",
+        related_name="created_tickets",
+        blank=True,
+        null=True,
+    )
     created_at = models.DateTimeField("Criado em", auto_now_add=True)
     updated_at = models.DateTimeField("Atualizado em", auto_now=True)
     is_deleted = models.BooleanField("Deletado", default=False)
 
     history = HistoricalRecords()
+
+    @property
+    def duration(self):
+        """
+        Retorna a duração do ticket desde a sua criação até o momento atual.
+        Se o ticket foi concluído, retorna a duração até a data de conclusão.
+        """
+        duration = self.conclusion_date - self.created_at if self.conclusion_date else timezone.now() - self.created_at
+        days = duration.days
+        hours, remainder = divmod(duration.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        
+        parts = []
+        if days > 0:
+            parts.append(f"{days} dia{'s' if days != 1 else ''}")
+        if hours > 0:
+            parts.append(f"{hours} hora{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            parts.append(f"{minutes} minuto{'s' if minutes != 1 else ''}")
+        
+        return ", ".join(parts) if parts else "menos de 1 minuto"
 
     def save(self, *args, **kwargs):
         """
@@ -189,6 +221,10 @@ class Ticket(models.Model):
         - popular closed_at / closed_by quando status passar a 'F'
         - manter a lógica de conclusion_date (quando status for 'R' ou 'F')
         """
+        now = datetime.datetime.now()
+        if not self.protocol:
+            self.protocol = f"{now.strftime('%Y%m%d%H%M%S')}"
+        
         # 1) Obter o usuário atual, se passado como argumento
         current_user = kwargs.pop("current_user", None)
 

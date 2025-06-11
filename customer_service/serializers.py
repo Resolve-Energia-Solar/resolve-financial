@@ -1,5 +1,6 @@
 from api.serializers import BaseSerializer
 from .models import CustomerService, LostReason, Ticket, TicketType, TicketsSubject
+from rest_framework.serializers import SerializerMethodField
 
 
 class CustomerServiceSerializer(BaseSerializer):
@@ -21,6 +22,8 @@ class TicketTypeSerializer(BaseSerializer):
 
 
 class TicketSerializer(BaseSerializer):
+    duration = SerializerMethodField()
+
     class Meta:
         model = Ticket
         fields = "__all__"
@@ -36,6 +39,9 @@ class TicketSerializer(BaseSerializer):
             "closed_by",
             "conclusion_date",
         )
+
+    def get_duration(self, obj):
+        return str(obj.duration)
 
     def create(self, validated_data):
         current_user = validated_data.pop("current_user", None)
