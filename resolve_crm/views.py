@@ -47,6 +47,7 @@ from django.db.models import OuterRef, Subquery, DecimalField, Value
 
 logger = logging.getLogger(__name__)
 
+
 class OriginViewSet(BaseModelViewSet):
     queryset = Origin.objects.all()
     serializer_class = OriginSerializer
@@ -85,19 +86,25 @@ class SaleViewSet(BaseModelViewSet):
         base_select = ["customer", "seller", "branch", "marketing_campaign", "supplier"]
 
         paid_installments = (
-            PaymentInstallment.objects
-            .filter(payment__sale_id=OuterRef("pk"), is_paid=True)
+            PaymentInstallment.objects.filter(
+                payment__sale_id=OuterRef("pk"), is_paid=True
+            )
             .values("payment__sale_id")
             .annotate(total=Sum("installment_value"))
             .values("total")[:1]
         )
 
+        projects_qs = (
+            Project.objects.with_journey_counter()
+            .select_related("inspection", "inspection__final_service_opinion")
+            .order_by("-created_at")
+        )
+
         qs = (
-            Sale.objects
-            .annotate(
+            Sale.objects.annotate(
                 total_paid=Coalesce(
                     Subquery(paid_installments, output_field=DecimalField()),
-                    Value(0, output_field=DecimalField())
+                    Value(0, output_field=DecimalField()),
                 )
             )
             .select_related(*base_select)
@@ -122,16 +129,8 @@ class SaleViewSet(BaseModelViewSet):
                 ),
                 Prefetch(
                     "projects",
-                    queryset=(
-                        Project.objects
-                        .with_journey_counter()
-                        .select_related(
-                            "inspection",
-                            "inspection__final_service_opinion",
-                        )
-                        .order_by("-created_at")
-                    ),
-                    to_attr="cached_projects",
+                    queryset=projects_qs,
+                    to_attr="prefetched_projects",
                 ),
             )
             .order_by("-created_at")
@@ -156,10 +155,12 @@ class SaleViewSet(BaseModelViewSet):
             queryset = queryset.exclude(
                 attachments__document_type__required=True, attachments__status="EA"
             )
-        
+
         if query_params.get("delivery_type__in"):
             queryset = queryset.filter(
-                projects__delivery_type__in=query_params.get("delivery_type__in").split(",")
+                projects__delivery_type__in=query_params.get("delivery_type__in").split(
+                    ","
+                )
             )
 
         if tag := query_params.get("tag_name__exact"):
@@ -329,10 +330,15 @@ class ProjectViewSet(BaseModelViewSet):
                     queryset = method_map[metric](queryset)
 
         queryset = queryset.select_related(
-            "sale", "sale__customer", "sale__branch", 
-            "inspection__final_service_opinion", "inspection",
-            "product", "designer", "homologator", 
-            "registered_circuit_breaker"
+            "sale",
+            "sale__customer",
+            "sale__branch",
+            "inspection__final_service_opinion",
+            "inspection",
+            "product",
+            "designer",
+            "homologator",
+            "registered_circuit_breaker",
         ).prefetch_related(
             "attachments",
             "attachments__document_type",
@@ -343,47 +349,47 @@ class ProjectViewSet(BaseModelViewSet):
             Prefetch(
                 "requests_energy_company",
                 queryset=RequestsEnergyCompany.objects.select_related(
-                    "type",
-                    "company",
-                    "requested_by",
-                    "unit"
-                ).prefetch_related("situation")
+                    "type", "company", "requested_by", "unit"
+                ).prefetch_related("situation"),
             ),
             Prefetch(
                 "units",
                 queryset=Units.objects.filter(main_unit=True)
-                    .select_related("address")
-                    .prefetch_related("supply_adquance"),
+                .select_related("address")
+                .prefetch_related("supply_adquance"),
                 to_attr="main_unit_prefetched",
             ),
         )
         if metrics:
-            if 'delivery_status' in metrics.split(","):
+            if "delivery_status" in metrics.split(","):
                 queryset = queryset.prefetch_related(
                     Prefetch(
-                        'field_services',
+                        "field_services",
                         queryset=Schedule.objects.filter(
                             service__name__icontains="Entrega"
-                        ).order_by('-created_at'),
-                        to_attr='delivery_schedules'
+                        ).order_by("-created_at"),
+                        to_attr="delivery_schedules",
                     )
                 )
 
         return queryset.order_by("-created_at")
 
-
     def apply_additional_filters(self, queryset, request):
         from django.db.models import Q, Exists, OuterRef
         from django.contrib.contenttypes.models import ContentType
 
-        q = request.query_params.get('q')
-        customer = request.query_params.get('customer')
-        remove_termination_cancelled_and_pre_sale = request.query_params.get('remove_termination_cancelled_and_pre_sale')
-        is_released_to_engineering = request.query_params.get('is_released_to_engineering')
-        inspection_status = request.query_params.get('inspection_status')
-        inspection_isnull = request.query_params.get('inspection_isnull')
-        signature_date = request.query_params.get('signature_date')
-        product_kwp = request.query_params.get('product_kwp')
+        q = request.query_params.get("q")
+        customer = request.query_params.get("customer")
+        remove_termination_cancelled_and_pre_sale = request.query_params.get(
+            "remove_termination_cancelled_and_pre_sale"
+        )
+        is_released_to_engineering = request.query_params.get(
+            "is_released_to_engineering"
+        )
+        inspection_status = request.query_params.get("inspection_status")
+        inspection_isnull = request.query_params.get("inspection_isnull")
+        signature_date = request.query_params.get("signature_date")
+        product_kwp = request.query_params.get("product_kwp")
         journey_counter = request.query_params.get("journey_counter")
 
         access_opnion = request.query_params.get("access_opnion")
@@ -423,11 +429,15 @@ class ProjectViewSet(BaseModelViewSet):
         attachments_status = request.query_params.get("attachments_status")
         delivery_type__in = request.query_params.get("delivery_type__in")
         installation_status__in = request.query_params.get("installation_status__in")
-        is_released_to_installation = request.query_params.get("is_released_to_installation")
+        is_released_to_installation = request.query_params.get(
+            "is_released_to_installation"
+        )
         in_construction = request.query_params.get("in_construction")
         construction_status__in = request.query_params.get("construction_status__in")
-        is_customer_aware_of_construction = request.query_params.get("is_customer_aware_of_construction")
-        
+        is_customer_aware_of_construction = request.query_params.get(
+            "is_customer_aware_of_construction"
+        )
+
         if is_customer_aware_of_construction:
             if is_customer_aware_of_construction.lower() == "true":
                 queryset = queryset.filter(civil_construction__is_customer_aware=True)
@@ -436,7 +446,7 @@ class ProjectViewSet(BaseModelViewSet):
             else:
                 pass
 
-        if 'journey_counter' in queryset.query.annotations and journey_counter:
+        if "journey_counter" in queryset.query.annotations and journey_counter:
             queryset = queryset.filter(journey_counter=journey_counter)
         if is_pre_sale == "true":
             queryset = queryset.filter(sale__is_pre_sale=True)
@@ -470,13 +480,20 @@ class ProjectViewSet(BaseModelViewSet):
         if "delivery_status" in queryset.query.annotations and delivery_status:
             queryset = queryset.filter(delivery_status__in=delivery_status.split(","))
 
-        if "installation_status" in queryset.query.annotations and installation_status__in:
+        if (
+            "installation_status" in queryset.query.annotations
+            and installation_status__in
+        ):
             queryset = queryset.filter(
                 installation_status__in=installation_status__in.split(",")
             )
-        if "is_released_to_installation" in queryset.query.annotations and is_released_to_installation:
+        if (
+            "is_released_to_installation" in queryset.query.annotations
+            and is_released_to_installation
+        ):
             queryset = queryset.filter(
-                is_released_to_installation=is_released_to_installation.lower() == "true"
+                is_released_to_installation=is_released_to_installation.lower()
+                == "true"
             )
 
         if borrower:
@@ -533,16 +550,17 @@ class ProjectViewSet(BaseModelViewSet):
                 units__supply_adquance__id__in=supply_adquance.split(",")
             )
 
-        if 'in_construction' in queryset.query.annotations and in_construction:
+        if "in_construction" in queryset.query.annotations and in_construction:
             queryset = queryset.filter(
                 in_construction=in_construction.lower() == "true"
             )
 
-        if 'construction_status' in queryset.query.annotations and construction_status__in:
+        if (
+            "construction_status" in queryset.query.annotations
+            and construction_status__in
+        ):
             construction_status_list = construction_status__in.split(",")
-            queryset = queryset.filter(
-                construction_status__in=construction_status_list
-            )
+            queryset = queryset.filter(construction_status__in=construction_status_list)
 
         if access_opnion == "liberado":
             queryset = queryset.filter(access_opnion__icontains="Liberado")
@@ -576,20 +594,34 @@ class ProjectViewSet(BaseModelViewSet):
                 new_contact_number_status__icontains=new_contact_number_status
             )
         if inspection_status:
-            queryset = queryset.filter(inspection__final_service_opinion__id=inspection_status)
-        if inspection_is_finished and inspection_is_finished.lower() == 'true':
-            queryset = queryset.filter(inspection__final_service_opinion__name__icontains='Aprovado')
-        elif inspection_is_finished and inspection_is_finished.lower() == 'false':
-            queryset = queryset.filter(~Q(inspection__final_service_opinion__name__icontains='Aprovado'))
-        if inspection_is_pending and inspection_is_pending.lower() == 'true':
-            queryset = queryset.filter(Q(inspection__isnull=False) & ~Q(inspection__final_service_opinion__name__icontains='Aprovado'))
-        elif inspection_is_pending and inspection_is_pending.lower() == 'false':
-            queryset = queryset.filter(Q(inspection__final_service_opinion__name__icontains='Aprovado') | Q(inspection__isnull=True))
+            queryset = queryset.filter(
+                inspection__final_service_opinion__id=inspection_status
+            )
+        if inspection_is_finished and inspection_is_finished.lower() == "true":
+            queryset = queryset.filter(
+                inspection__final_service_opinion__name__icontains="Aprovado"
+            )
+        elif inspection_is_finished and inspection_is_finished.lower() == "false":
+            queryset = queryset.filter(
+                ~Q(inspection__final_service_opinion__name__icontains="Aprovado")
+            )
+        if inspection_is_pending and inspection_is_pending.lower() == "true":
+            queryset = queryset.filter(
+                Q(inspection__isnull=False)
+                & ~Q(inspection__final_service_opinion__name__icontains="Aprovado")
+            )
+        elif inspection_is_pending and inspection_is_pending.lower() == "false":
+            queryset = queryset.filter(
+                Q(inspection__final_service_opinion__name__icontains="Aprovado")
+                | Q(inspection__isnull=True)
+            )
         if inspection_isnull:
-            inspection_isnull_bool = inspection_isnull.lower() == 'true'
+            inspection_isnull_bool = inspection_isnull.lower() == "true"
             queryset = queryset.filter(inspection__isnull=inspection_isnull_bool)
         if remove_termination_cancelled_and_pre_sale:
-            queryset = queryset.exclude(sale__status__in=['C', 'D']).exclude(sale__is_pre_sale=True)
+            queryset = queryset.exclude(sale__status__in=["C", "D"]).exclude(
+                sale__is_pre_sale=True
+            )
 
         if signature_date:
             date_range = signature_date.split(",")
@@ -629,9 +661,9 @@ class ProjectViewSet(BaseModelViewSet):
                     )
                 )
             ).filter(has_current_step=True)
-            
+
         ordering = request.query_params.get("ordering")
-        
+
         if ordering and "inspection.schedule_date" in ordering:
             if not ordering.startswith("-"):
                 queryset = queryset.order_by("inspection__schedule_date")
@@ -639,7 +671,6 @@ class ProjectViewSet(BaseModelViewSet):
                 queryset = queryset.order_by("-inspection__schedule_date")
 
         return queryset
-
 
     @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
@@ -654,7 +685,6 @@ class ProjectViewSet(BaseModelViewSet):
         serialized_data = self.get_serializer(queryset, many=True).data
         return Response(serialized_data)
 
-    
     @action(detail=False, methods=["get"])
     def indicators(self, request, *args, **kwargs):
         request.query_params._mutable = True
@@ -703,24 +733,31 @@ class ProjectViewSet(BaseModelViewSet):
         cached_indicators = cache.get(cache_key)
         if cached_indicators:
             return Response({"indicators": cached_indicators})
-        
+
         request.query_params._mutable = True
 
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
 
         indicators = queryset.aggregate(
-            total_finished=Count('id', filter=Q(inspection__final_service_opinion__name__icontains="Aprovado")),
-            total_pending=Count('id', filter=(
-                      ~Q(inspection__final_service_opinion__name__icontains="Aprovado") |
-                      Q(inspection__final_service_opinion__isnull=True)) &
-                      Q(inspection__isnull=False)),
-            total_not_scheduled=Count('id', filter=Q(inspection__isnull=True)),
+            total_finished=Count(
+                "id",
+                filter=Q(inspection__final_service_opinion__name__icontains="Aprovado"),
+            ),
+            total_pending=Count(
+                "id",
+                filter=(
+                    ~Q(inspection__final_service_opinion__name__icontains="Aprovado")
+                    | Q(inspection__final_service_opinion__isnull=True)
+                )
+                & Q(inspection__isnull=False),
+            ),
+            total_not_scheduled=Count("id", filter=Q(inspection__isnull=True)),
         )
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-    
+
     @action(detail=False, methods=["get"], url_path="installations-indicators")
     def installation_indicators(self, request, *args, **kwargs):
         filter_params = request.GET.dict()
@@ -738,25 +775,24 @@ class ProjectViewSet(BaseModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
         queryset = queryset.with_installation_status()
-        
+
         # Count projects by installation status
-        status_counts = queryset.values('installation_status').annotate(
-            count=Count('id', distinct=True)
-        ).order_by('installation_status')
-        
+        status_counts = (
+            queryset.values("installation_status")
+            .annotate(count=Count("id", distinct=True))
+            .order_by("installation_status")
+        )
+
         installation_status_dict = {
-            status['installation_status']: status['count'] 
+            status["installation_status"]: status["count"]
             for status in status_counts
-            if status['installation_status'] is not None
+            if status["installation_status"] is not None
         }
 
-        indicators = {
-            "installations_status_count": installation_status_dict
-        }
+        indicators = {"installations_status_count": installation_status_dict}
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-
 
     @action(detail=False, methods=["get"], url_path="constructions-indicators")
     def constructions_indicators(self, request):
@@ -767,29 +803,30 @@ class ProjectViewSet(BaseModelViewSet):
         cached_indicators = cache.get(cache_key)
         if cached_indicators:
             return Response({"indicators": cached_indicators})
-        
+
         request.query_params._mutable = True
-        request.query_params["metrics"] = (
-            "construction_status"
-        )
+        request.query_params["metrics"] = "construction_status"
         request.query_params._mutable = False
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.apply_additional_filters(queryset, request)
 
         indicators = queryset.aggregate(
-            total_pending=Count('id', filter=Q(construction_status="P")),
-            total_in_progress=Count('id', filter=Q(construction_status="EA")),
-            total_finished=Count('id', filter=Q(construction_status="F")),
-            total_canceled=Count('id', filter=Q(construction_status="C")),
-            total_without_construction=Count('id', filter=Q(construction_status="S")),
+            total_pending=Count("id", filter=Q(construction_status="P")),
+            total_in_progress=Count("id", filter=Q(construction_status="EA")),
+            total_finished=Count("id", filter=Q(construction_status="F")),
+            total_canceled=Count("id", filter=Q(construction_status="C")),
+            total_without_construction=Count("id", filter=Q(construction_status="S")),
             # total_not_applicable=Count('id', filter=Q(construction_status="NA")),
-            total_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=True)),
-            total_not_customer_aware=Count('id', filter=Q(civil_construction__is_customer_aware=False)),
+            total_customer_aware=Count(
+                "id", filter=Q(civil_construction__is_customer_aware=True)
+            ),
+            total_not_customer_aware=Count(
+                "id", filter=Q(civil_construction__is_customer_aware=False)
+            ),
         )
 
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
-
 
     @action(detail=False, methods=["get"], url_path="logistics-indicators")
     def logistics_indicators(self, request, *args, **kwargs):
@@ -859,13 +896,14 @@ class ProjectViewSet(BaseModelViewSet):
         cache.set(cache_key, indicators, 60)
         return Response({"indicators": indicators})
 
-
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if not instance.project_number:
             from .task import generate_project_number
+
             generate_project_number.delay(instance.id)
         return super().retrieve(request, *args, **kwargs)
+
 
 class ContractSubmissionViewSet(BaseModelViewSet):
     queryset = ContractSubmission.objects.all()
@@ -1442,7 +1480,10 @@ class GenerateContractView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        total_payments_value = sum(payment.value for payment in sale.payments.exclude(payment_type__in=["PA", "RO"]))
+        total_payments_value = sum(
+            payment.value
+            for payment in sale.payments.exclude(payment_type__in=["PA", "RO"])
+        )
         if total_payments_value != sale.total_value:
             return Response(
                 {
