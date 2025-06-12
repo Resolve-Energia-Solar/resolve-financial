@@ -8,7 +8,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from api.views import BaseModelViewSet
-from customer_service.models import CustomerService, LostReason, Ticket, TicketType, TicketsSubject
+from customer_service.models import (
+    CustomerService,
+    LostReason,
+    Ticket,
+    TicketType,
+    TicketsSubject,
+)
 from customer_service.serializers import (
     CustomerServiceSerializer,
     LostReasonSerializer,
@@ -81,19 +87,22 @@ class TicketTypeViewSet(BaseModelViewSet):
 
 class TicketViewSet(BaseModelViewSet):
     serializer_class = TicketSerializer
-    queryset = Ticket.objects.select_related(
-        "project",
-        "responsible",
-        "ticket_type",
-        "responsible_department",
-        "created_by",
-    )
-    authentication_classes = [
-        TokenAuthentication,
-        BasicAuthentication,
-        SessionAuthentication,
-        JWTAuthentication,
-    ]
+
+    def get_queryset(self):
+        return (
+            Ticket.objects.select_related(
+                "project",
+                "project__sale",
+                "project__sale__customer",
+                "subject",
+                "responsible",
+                "ticket_type",
+                "responsible_department",
+                "created_by",
+            )
+            .filter(is_deleted=False)
+            .order_by("-created_at")
+        )
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -154,5 +163,6 @@ class TicketsSubjectViewSet(BaseModelViewSet):
     """
     ViewSet para obter os assuntos dos tickets.
     """
+
     serializer_class = TicketsSubjectSerializer
     queryset = TicketsSubject.objects.all()
