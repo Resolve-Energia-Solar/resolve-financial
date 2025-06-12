@@ -105,11 +105,15 @@ class TicketViewSet(BaseModelViewSet):
         )
 
     def perform_create(self, serializer):
-        user = self.request.user
-        employee = getattr(user, "employee", None)
         ticket_type = serializer.validated_data.get("ticket_type")
-
-        print(f"User: {user}, Employee: {employee}, Ticket Type: {ticket_type}")
+        responsible = serializer.validated_data.get("responsible")
+        if responsible:
+            try:
+                employee = User.objects.get(id=responsible.id).employee
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    "Usuário responsável não está cadastrado como funcionário."
+                )
 
         if not ticket_type or not getattr(ticket_type, "deadline", None):
             raise serializers.ValidationError(
@@ -120,15 +124,12 @@ class TicketViewSet(BaseModelViewSet):
                 "Usuário não está cadastrado como funcionário."
             )
 
-        print(f"Employee Department: {employee.department}")
-
         if not employee.department:
             raise serializers.ValidationError(
                 "Funcionário não está vinculado a um Setor."
             )
 
         serializer.save(
-            responsible=user,
             responsible_department=employee.department,
             deadline=ticket_type.deadline,
             current_user=self.request.user,
