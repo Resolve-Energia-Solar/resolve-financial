@@ -71,7 +71,7 @@ class ProjectQuerySet(django_models.QuerySet):
                 last_final=Subquery(
                     RequestsEnergyCompany.objects.filter(
                         project=OuterRef("pk"),
-                        type__name__icontains="Vistoria final",
+                        type__name="Vistoria Final",
                         status="D",
                         conclusion_date__isnull=False,
                     )
@@ -90,8 +90,8 @@ class ProjectQuerySet(django_models.QuerySet):
             )
             .annotate(
                 journey_counter=Func(
-                    F("journey_end"),  # Data final
-                    F("contract_dt"),  # Data inicial
+                    F("journey_end"),
+                    F("contract_dt"),
                     function="DATEDIFF",
                     template="%(function)s(%(expressions)s)",
                     output_field=IntegerField(),
