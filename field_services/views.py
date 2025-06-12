@@ -206,13 +206,10 @@ class ScheduleViewSet(BaseModelViewSet):
 
         # 3) branches do usuário
         branch_ids = []
-        if (
-            hasattr(user, "employee") and user.employee.related_branches.exists()
-        ) or user.branch_owners.exists():
-            branch_ids = list(
-                user.employee.related_branches.values_list("id", flat=True)
-            )
-            branch_ids += list(user.branch_owners.values_list("id", flat=True))
+        if hasattr(user, "employee"):
+            branch_ids += list(user.employee.related_branches.values_list('id', flat=True))
+        branch_ids += list(user.branch_owners.values_list('id', flat=True))
+        branch_ids = list(set(branch_ids))
 
         # 4) filtro único (mantém select/prefetch)
         perms = (
