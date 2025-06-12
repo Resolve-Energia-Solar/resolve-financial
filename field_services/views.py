@@ -44,6 +44,7 @@ from .serializers import (
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
     serializer_class = RoofTypeSerializer
@@ -80,9 +81,11 @@ class ServiceViewSet(BaseModelViewSet):
     @cached_property
     def filterset_fields(self):
         fs = super().filterset_fields
-        fs.update({
-            "category__name": ["exact"],
-        })
+        fs.update(
+            {
+                "category__name": ["exact"],
+            }
+        )
         return fs
 
     def get_queryset(self):
@@ -129,9 +132,7 @@ class ScheduleViewSet(BaseModelViewSet):
                 "project__sale__products",
                 queryset=Product.objects.select_related("roof_type"),
             ),
-            Prefetch(
-                "attachments", queryset=Attachment.objects.all()
-            ),
+            Prefetch("attachments", queryset=Attachment.objects.all()),
             Prefetch("leads", queryset=Lead.objects.select_related("column")),
             Prefetch("products", queryset=Product.objects.select_related("roof_type")),
             Prefetch(
@@ -151,7 +152,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
         user = self.request.user
         params = self.request.query_params
-        
+
         if schedule_year := params.get("schedule_date_year"):
             qs = qs.filter(schedule_date__year=schedule_year)
 
@@ -226,7 +227,6 @@ class ScheduleViewSet(BaseModelViewSet):
 
         return qs.filter(perms).distinct()
 
-
     # @method_decorator(cache_page(60 * 5))
     # def list(self, request, *args, **kwargs):
     #     queryset = self.filter_queryset(self.get_queryset())
@@ -238,8 +238,7 @@ class ScheduleViewSet(BaseModelViewSet):
 
     #     serialized_data = self.get_serializer(queryset, many=True).data
     #     return Response(serialized_data)
-    
-    
+
     def perform_update(self, serializer):
         instance = self.get_object()
         if (
@@ -249,7 +248,6 @@ class ScheduleViewSet(BaseModelViewSet):
             serializer.save(final_service_opinion_user=self.request.user)
         else:
             serializer.save()
-
 
     @action(detail=False, methods=["get"])
     def get_timeline(self, request):
@@ -393,15 +391,6 @@ class FormFileViewSet(BaseModelViewSet):
 class ServiceOpinionViewSet(BaseModelViewSet):
     queryset = ServiceOpinion.objects.all()
     serializer_class = ServiceOpinionSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        service = self.request.query_params.get("service")
-
-        if service:
-            queryset = queryset.filter(service__id=service)
-
-        return queryset
 
 
 class RouteViewSet(BaseModelViewSet):
