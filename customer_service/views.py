@@ -99,7 +99,6 @@ class TicketViewSet(BaseModelViewSet):
         )
 
     def perform_create(self, serializer):
-        print(serializer.validated_data)
         ticket_type = serializer.validated_data.get("ticket_type")
         responsible = serializer.validated_data.get("responsible")
         employee = None
@@ -114,7 +113,6 @@ class TicketViewSet(BaseModelViewSet):
 
         try:
             employee = User.objects.get(id=responsible.id).employee
-            print("employee", employee)
         except (User.DoesNotExist, AttributeError):
             raise serializers.ValidationError(
                 "Usuário responsável não está cadastrado como funcionário."
