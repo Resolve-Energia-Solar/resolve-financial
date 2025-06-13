@@ -28,7 +28,6 @@ class TicketSerializer(BaseSerializer):
         model = Ticket
         fields = "__all__"
         read_only_fields = (
-            "responsible",
             "responsible_department",
             "deadline",
             "answered_at",

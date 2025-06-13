@@ -77,12 +77,6 @@ class LostReasonViewSet(BaseModelViewSet):
 class TicketTypeViewSet(BaseModelViewSet):
     serializer_class = TicketTypeSerializer
     queryset = TicketType.objects.all()
-    authentication_classes = [
-        TokenAuthentication,
-        BasicAuthentication,
-        SessionAuthentication,
-        JWTAuthentication,
-    ]
 
 
 class TicketViewSet(BaseModelViewSet):
@@ -105,23 +99,25 @@ class TicketViewSet(BaseModelViewSet):
         )
 
     def perform_create(self, serializer):
+        print(serializer.validated_data)
         ticket_type = serializer.validated_data.get("ticket_type")
         responsible = serializer.validated_data.get("responsible")
-        if responsible:
-            try:
-                employee = User.objects.get(id=responsible.id).employee
-            except User.DoesNotExist:
-                raise serializers.ValidationError(
-                    "Usuário responsável não está cadastrado como funcionário."
-                )
+        employee = None
 
         if not ticket_type or not getattr(ticket_type, "deadline", None):
             raise serializers.ValidationError(
                 "O tipo de chamado deve ter um prazo definido."
             )
-        if not employee:
+
+        if not responsible:
+            raise serializers.ValidationError("É necessário informar um responsável.")
+
+        try:
+            employee = User.objects.get(id=responsible.id).employee
+            print("employee", employee)
+        except (User.DoesNotExist, AttributeError):
             raise serializers.ValidationError(
-                "Usuário não está cadastrado como funcionário."
+                "Usuário responsável não está cadastrado como funcionário."
             )
 
         if not employee.department:
