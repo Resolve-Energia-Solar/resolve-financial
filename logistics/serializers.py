@@ -45,6 +45,8 @@ class ProductMaterialsSerializer(BaseSerializer):
 class ProductSerializer(BaseSerializer):
     sale_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     commercial_proposal_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    materials_ids = serializers.ListField(child=serializers.DictField(), required=False)
+
 
     class Meta(BaseSerializer.Meta):
         model = Product
