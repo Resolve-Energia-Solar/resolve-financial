@@ -272,6 +272,14 @@ class Schedule(models.Model):
         null=True,
         related_name="final_service_opinions",
     )
+    requester = models.ForeignKey(
+        "accounts.User",
+        verbose_name="Solicitante",
+        on_delete=models.PROTECT,
+        related_name="schedule_requester",
+        blank=True,
+        null=True,
+    )
     observation = models.TextField("Observação", blank=True, null=True)
     step = models.IntegerField("Etapa", default=1)
     arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
