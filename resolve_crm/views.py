@@ -823,6 +823,15 @@ class ProjectViewSet(BaseModelViewSet):
             total_not_customer_aware=Count(
                 "id", filter=Q(civil_construction__is_customer_aware=False)
             ),
+            total_customer_responsible=Count(
+                "id", filter=Q(civil_construction__work_responsibility="C")
+            ),
+            total_branch_responsible=Count(
+                "id", filter=Q(civil_construction__work_responsibility="F")
+            ),
+            total_operational_center_responsible=Count(
+                "id", filter=Q(civil_construction__work_responsibility="O")
+            ),
         )
 
         cache.set(cache_key, indicators, 60)
