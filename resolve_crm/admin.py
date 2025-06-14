@@ -13,6 +13,7 @@ from .models import (
     MarketingCampaign,
     ProjectStep,
     Reason,
+    Reward,
     Step,
     Task,
     Project,
@@ -253,4 +254,12 @@ class MarketingCampaignAdmin(admin.ModelAdmin):
 class ReasonAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
+    ordering = ("name",)
+
+
+@admin.register(Reward)
+class RewardAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active")
+    search_fields = ("name",)
+    list_filter = ("is_active",)
     ordering = ("name",)

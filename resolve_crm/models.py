@@ -387,7 +387,7 @@ class Sale(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Cliente",
         related_name="customer_sales",
-        db_index=True
+        db_index=True,
     )
     seller = models.ForeignKey(
         get_user_model(),
@@ -484,6 +484,14 @@ class Sale(models.Model):
         null=True,
         blank=True,
         db_index=True,
+    )
+    reward = models.ForeignKey(
+        "resolve_crm.Reward",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="sales",
+        verbose_name="Recompensa",
     )
     attachments = GenericRelation(
         "core.Attachment", related_query_name="sale_attachments"
@@ -652,7 +660,7 @@ class Project(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Venda",
         related_name="projects",
-        db_index=True
+        db_index=True,
     )
     product = models.ForeignKey(
         "logistics.Product",
@@ -674,7 +682,7 @@ class Project(models.Model):
         related_name="designer_projects",
         null=True,
         blank=True,
-        db_index=True
+        db_index=True,
     )
     designer_status = models.CharField(
         "Status do Projeto de Engenharia",
@@ -750,6 +758,7 @@ class Project(models.Model):
         blank=True,
         null=True,
     )
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     registered_circuit_breaker = models.ForeignKey(
         "logistics.Materials",
         on_delete=models.PROTECT,
@@ -759,10 +768,8 @@ class Project(models.Model):
         blank=True,
     )
     objects = ProjectQuerySet.as_manager()
-    created_at = models.DateTimeField("Criado em", auto_now_add=True)
     history = HistoricalRecords()
-    
-        
+
     @cached_property
     def distance_to_matriz_km(self):
         """
@@ -793,7 +800,6 @@ class Project(models.Model):
         )
         c = 2 * math.asin(math.sqrt(a))
         return round(R * c, 2)
-
 
     @cached_property
     def address(self):
@@ -926,4 +932,18 @@ class ContractTemplate(models.Model):
     class Meta:
         verbose_name = "Modelo de Contrato"
         verbose_name_plural = "Modelos de Contrato"
+        ordering = ["name"]
+
+
+class Reward(models.Model):
+    name = models.CharField("Nome", max_length=200)
+    description = models.TextField("Descrição", blank=True, null=True)
+    is_active = models.BooleanField("Ativo", default=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Recompensa"
+        verbose_name_plural = "Recompensas"
         ordering = ["name"]

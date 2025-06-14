@@ -1799,7 +1799,12 @@ def list_sales_func(request):
 
     # Paginação
     paginator = PageNumberPagination()
-    paginator.page_size = 10  # Define o número de itens por página
+    paginator.page_size = 10
     paginated_sales = paginator.paginate_queryset(sales, request)
 
     return paginator.get_paginated_response(paginated_sales)
+
+
+class RewardViewSet(BaseModelViewSet):
+    queryset = Reward.objects.all()
+    serializer_class = RewardSerializer
