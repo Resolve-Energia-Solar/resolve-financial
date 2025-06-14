@@ -832,6 +832,12 @@ class ProjectViewSet(BaseModelViewSet):
             total_operational_center_responsible=Count(
                 "id", filter=Q(civil_construction__work_responsibility="O")
             ),
+            total_repass_value= Sum(
+                "civil_construction__repass_value", filter=Q(civil_construction__isnull=False)
+            ),
+            total_budget_value=Sum(
+                "civil_construction__budget_value", filter=Q(civil_construction__isnull=False)
+            ),
         )
 
         cache.set(cache_key, indicators, 60)
