@@ -77,6 +77,13 @@ class ComercialProposalViewSet(BaseModelViewSet):
 class SaleViewSet(BaseModelViewSet):
     serializer_class = SaleSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if not self.request.user.is_superuser:
+            grupos = self.request.user.groups.values_list("id", flat=True)
+            qs = qs.filter(groups__id__in=grupos)
+        return qs.distinct()
+
     @cached_property
     def sale_content_type(self):
         return ContentType.objects.get_for_model(Sale)
@@ -147,6 +154,29 @@ class SaleViewSet(BaseModelViewSet):
         return qs.distinct()
 
     def apply_filters(self, queryset, query_params):
+        if q := query_params.get("q"):
+            queryset = queryset.filter(
+                Q(contract_number__icontains=q)
+                | Q(customer__first_document__icontains=q)
+                | Q(customer__complete_name__icontains=q)
+                | Q(customer__email__icontains=q)
+                | Q(projects__homologator__first_document__icontains=q)
+                | Q(projects__homologator__complete_name__icontains=q)
+                | Q(projects__homologator__email__icontains=q)
+                | Q(seller__first_document__icontains=q)
+                | Q(seller__complete_name__icontains=q)
+                | Q(seller__email__icontains=q)
+                | Q(sales_supervisor__first_document__icontains=q)
+                | Q(sales_supervisor__complete_name__icontains=q)
+                | Q(sales_supervisor__email__icontains=q)
+                | Q(sales_manager__first_document__icontains=q)
+                | Q(sales_manager__complete_name__icontains=q)
+                | Q(sales_manager__email__icontains=q)
+                | Q(supplier__first_document__icontains=q)
+                | Q(supplier__complete_name__icontains=q)
+                | Q(supplier__email__icontains=q)
+            )
+
         if query_params.get("documents_under_analysis") == "true":
             queryset = queryset.filter(
                 attachments__document_type__required=True, attachments__status="EA"
@@ -535,9 +565,29 @@ class ProjectViewSet(BaseModelViewSet):
 
         if q:
             queryset = queryset.filter(
-                Q(sale__customer__complete_name__icontains=q)
+                Q(project_number__icontains=q)
+                | Q(designer__first_document__icontains=q)
+                | Q(designer__complete_name__icontains=q)
+                | Q(designer__email__icontains=q)
+                | Q(homologator__first_document__icontains=q)
+                | Q(homologator__complete_name__icontains=q)
+                | Q(homologator__email__icontains=q)
+                | Q(sale__contract_number__icontains=q)
                 | Q(sale__customer__first_document__icontains=q)
-                | Q(project_number__icontains=q)
+                | Q(sale__customer__complete_name__icontains=q)
+                | Q(sale__customer__email__icontains=q)
+                | Q(sale__seller__first_document__icontains=q)
+                | Q(sale__seller__complete_name__icontains=q)
+                | Q(sale__seller__email__icontains=q)
+                | Q(sale__sales_supervisor__first_document__icontains=q)
+                | Q(sale__sales_supervisor__complete_name__icontains=q)
+                | Q(sale__sales_supervisor__email__icontains=q)
+                | Q(sale__sales_manager__first_document__icontains=q)
+                | Q(sale__sales_manager__complete_name__icontains=q)
+                | Q(sale__sales_manager__email__icontains=q)
+                | Q(sale__supplier__first_document__icontains=q)
+                | Q(sale__supplier__complete_name__icontains=q)
+                | Q(sale__supplier__email__icontains=q)
             )
 
         if new_contract_number == "true":
@@ -832,11 +882,13 @@ class ProjectViewSet(BaseModelViewSet):
             total_operational_center_responsible=Count(
                 "id", filter=Q(civil_construction__work_responsibility="O")
             ),
-            total_repass_value= Sum(
-                "civil_construction__repass_value", filter=Q(civil_construction__isnull=False)
+            total_repass_value=Sum(
+                "civil_construction__repass_value",
+                filter=Q(civil_construction__isnull=False),
             ),
             total_budget_value=Sum(
-                "civil_construction__budget_value", filter=Q(civil_construction__isnull=False)
+                "civil_construction__budget_value",
+                filter=Q(civil_construction__isnull=False),
             ),
         )
 

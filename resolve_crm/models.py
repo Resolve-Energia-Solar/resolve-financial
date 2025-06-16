@@ -381,7 +381,6 @@ class Sale(models.Model):
         ("CA", "Cancelado"),
     ]
 
-    # Stakeholders (ForeignKey já cria índice automaticamente, mas podemos reforçar com db_index se desejado)
     customer = models.ForeignKey(
         get_user_model(),
         on_delete=models.PROTECT,
