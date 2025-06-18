@@ -137,7 +137,6 @@ class SaleViewSet(BaseModelViewSet):
                 Prefetch(
                     "projects",
                     queryset=projects_qs,
-                    to_attr="prefetched_projects",
                 ),
             )
             .order_by("-created_at")
