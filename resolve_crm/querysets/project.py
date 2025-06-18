@@ -582,8 +582,11 @@ class ProjectQuerySet(django_models.QuerySet):
             service__name="Serviço de Entrega", project=OuterRef("pk")
         )
 
+        delivered_schedules = delivery_schedules.filter(final_service_opinion__name="Entregue")
+
         return self.with_is_released_to_engineering().annotate(
             has_delivery=Exists(delivery_schedules),
+            has_delivered=Exists(delivered_schedules),
             last_delivery_opinion_name=Subquery(
                 delivery_schedules.order_by("-created_at").values(
                     "final_service_opinion__name"
@@ -591,7 +594,7 @@ class ProjectQuerySet(django_models.QuerySet):
             ),
             delivery_status=Case(
                 # 1) Primeiro: Entregue
-                When(last_delivery_opinion_name="Entregue", then=Value("Entregue")),
+                When(has_delivered=True, then=Value("Entregue")),
                 # 2) Depois: Cancelado
                 When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
                 # 3) Agendado
