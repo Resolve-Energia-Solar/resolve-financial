@@ -87,8 +87,8 @@ class Product(models.Model):
 
     DEFAULT_CHOICES = [("S", "Sim"), ("N", "Não")]
 
-    name = models.CharField("Nome", max_length=50, null=False, blank=False)
-    description = models.CharField("Descrição", max_length=80, null=True, blank=True)
+    name = models.CharField("Nome", max_length=155, null=False, blank=False)
+    description = models.CharField("Descrição", max_length=255, null=True, blank=True)
     product_value = models.DecimalField(
         "Valor do Produto",
         max_digits=20,
