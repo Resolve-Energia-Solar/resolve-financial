@@ -467,6 +467,9 @@ class ProjectViewSet(BaseModelViewSet):
         is_customer_aware_of_construction = request.query_params.get(
             "is_customer_aware_of_construction"
         )
+        construction__work_responsibility__in = request.query_params.get(
+            "construction__work_responsibility__in"
+        )
 
         if is_customer_aware_of_construction:
             if is_customer_aware_of_construction.lower() == "true":
@@ -475,6 +478,9 @@ class ProjectViewSet(BaseModelViewSet):
                 queryset = queryset.filter(civil_construction__is_customer_aware=False)
             else:
                 pass
+
+        if construction__work_responsibility__in:
+            queryset = queryset.filter(civil_construction__work_responsibility__in=construction__work_responsibility__in.split(","))
 
         if "journey_counter" in queryset.query.annotations and journey_counter:
             queryset = queryset.filter(journey_counter=journey_counter)
