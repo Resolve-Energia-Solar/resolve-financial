@@ -750,6 +750,15 @@ class Project(models.Model):
     documention_completion_date = models.DateTimeField(
         "Data de Conclusão do Documento", null=True, blank=True
     )
+    monitoring_app_status = models.CharField(
+        "Status do App de Monitoramento",
+        max_length=1,
+        choices=[
+            ("P", "Pendente"),
+            ("C", "Concluído"),
+        ],
+        default="P",
+    )
     delivery_type = models.CharField(
         "Tipo de Entrega",
         max_length=1,
