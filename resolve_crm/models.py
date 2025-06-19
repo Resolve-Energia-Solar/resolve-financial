@@ -754,8 +754,10 @@ class Project(models.Model):
         "Status do App de Monitoramento",
         max_length=1,
         choices=[
+            ("C", "Criado"),
+            ("E", "Criado e Entregue"), 
+            ("S", "Cliente sem Internet"),
             ("P", "Pendente"),
-            ("C", "Concluído"),
         ],
         default="P",
     )
