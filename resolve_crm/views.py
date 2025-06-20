@@ -325,6 +325,7 @@ class ProjectViewSet(BaseModelViewSet):
 
         method_map = {
             "journey_counter": lambda qs: qs.with_journey_counter(),
+            "current_step": lambda qs: qs.with_current_step(),
             "is_released_to_engineering": lambda qs: qs.with_is_released_to_engineering(),
             "trt_status": lambda qs: qs.with_trt_status(),
             "pending_material_list": lambda qs: qs.with_pending_material_list(),

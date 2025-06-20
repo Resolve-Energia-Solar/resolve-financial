@@ -40,6 +40,7 @@ import operator
 from functools import reduce
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models.functions import Concat, Trim, Replace
 
 
 class TimestampDiff(Func):
@@ -99,6 +100,74 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
+    def with_current_step(self):
+        final_qs = RequestsEnergyCompany.objects.filter(
+            project=OuterRef('pk'),
+            type__name="Vistoria Final",
+            status="D",
+        )
+        entrega_qs = Schedule.objects.filter(
+            project=OuterRef('pk'),
+            service__name="Serviço de Entrega",
+            final_service_opinion__name="Entregue",
+        )
+        instal_qs = Schedule.objects.filter(
+            project=OuterRef('pk'),
+            service__category__name="Instalação",
+            final_service_opinion__name="Concluído",
+        )
+
+        return (
+            self.annotate(
+                has_final=Exists(final_qs),
+                has_entrega=Exists(entrega_qs),
+                has_instalacao=Exists(instal_qs),
+            )
+            .select_related('inspection__final_service_opinion', 'sale')
+            .annotate(
+                pend_vistoria=Case(
+                    When(
+                        Q(inspection__isnull=True)
+                        | Q(inspection__final_service_opinion__isnull=True)
+                        | ~Q(inspection__final_service_opinion__name__icontains="Aprovad"),
+                        then=Value("Vistoria,")
+                    ),
+                    default=Value(""),
+                    output_field=CharField(),
+                ),
+                pend_documentacao=Case(
+                    When(~Q(sale__status="F"), then=Value("Documentação,")),
+                    default=Value(""),
+                    output_field=CharField(),
+                ),
+                pend_financeiro=Case(
+                    When(~Q(sale__payment_status__in=["L", "C"]), then=Value("Financeiro,")),
+                    default=Value(""),
+                    output_field=CharField(),
+                ),
+            )
+            .annotate(
+                pending_concat=Concat(
+                    F('pend_vistoria'),
+                    F('pend_documentacao'),
+                    F('pend_financeiro'),
+                    output_field=CharField(),
+                )
+            )
+            .annotate(
+                current_step=Case(
+                    When(has_final=True, then=Value("Homologado")),
+                    When(~Q(pending_concat=""), then=F('pending_concat')),
+                    When(~Q(designer_status="CO"), then=Value("Projeto de Engenharia")),
+                    When(material_list_is_completed=False, then=Value("Lista de Materiais")),
+                    When(has_entrega=False, then=Value("Logística")),
+                    When(has_instalacao=False, then=Value("Instalação")),
+                    default=Value("Vistoria Final"),
+                    output_field=CharField(),
+                )
+            )
+        )
+    
     def with_is_released_to_engineering(self):
         from resolve_crm import models as resolve_models
 
