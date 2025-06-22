@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import F, Value, Case, When, CharField
+from django.db.models import Case, CharField, Count, F, Prefetch, Q, Value, When
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
