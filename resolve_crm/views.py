@@ -8,11 +8,12 @@ from hashlib import md5
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Count, F, Prefetch, Q, Sum
+from django.db.models import F, Value, Case, When, CharField
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
@@ -480,7 +481,11 @@ class ProjectViewSet(BaseModelViewSet):
                 pass
 
         if construction__work_responsibility__in:
-            queryset = queryset.filter(civil_construction__work_responsibility__in=construction__work_responsibility__in.split(","))
+            queryset = queryset.filter(
+                civil_construction__work_responsibility__in=construction__work_responsibility__in.split(
+                    ","
+                )
+            )
 
         if "journey_counter" in queryset.query.annotations and journey_counter:
             queryset = queryset.filter(journey_counter=journey_counter)
@@ -1870,7 +1875,6 @@ def list_sales_func(request):
     ]
     sales = Sale.objects.values(*fields)
 
-    # Paginação
     paginator = PageNumberPagination()
     paginator.page_size = 10
     paginated_sales = paginator.paginate_queryset(sales, request)
@@ -1881,3 +1885,61 @@ def list_sales_func(request):
 class RewardViewSet(BaseModelViewSet):
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
+
+
+class JourneyKanbanView(APIView):
+    http_method_names = ["get"]
+
+    def get(self, request):
+        per_page = 5
+        status_map = {
+            "projeto_engenharia": "Projeto de Engenharia",
+            "lista_materiais": "Lista de Materiais",
+            "logistica": "Logística",
+            "instalacao": "Instalação",
+            "vistoria_final": "Vistoria Final",
+            "homologado": "Homologado",
+            "vistoria": "Vistoria",
+            "documentacao": "Documentação",
+            "financeiro": "Financeiro",
+        }
+        pages = {
+            key: int(request.query_params.get(f"{key}_page", 1)) for key in status_map
+        }
+
+        qs = (
+            Project.objects.with_current_step()
+            .annotate(
+                customer_name=Case(
+                    When(
+                        sale__customer__complete_name__isnull=False,
+                        then=F("sale__customer__complete_name"),
+                    ),
+                    default=Value(""),
+                    output_field=CharField(),
+                )
+            )
+            .values("id", "project_number", "current_step", "customer_name")
+        )
+
+        result = {}
+        for key, label in status_map.items():
+            if key in {"vistoria", "documentacao", "financeiro"}:
+                filtered = qs.filter(current_step__icontains=label)
+            else:
+                filtered = qs.filter(current_step__iexact=label)
+
+            paginator = Paginator(filtered, per_page)
+            try:
+                page = paginator.page(pages[key])
+            except (PageNotAnInteger, EmptyPage):
+                page = paginator.page(1)
+
+            result[key] = {
+                "count": paginator.count,
+                "total_pages": paginator.num_pages,
+                "current_page": page.number,
+                "projects": list(page),
+            }
+
+        return Response(result)

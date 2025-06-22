@@ -12,7 +12,7 @@ from core.views import CreateTasksFromSaleView, HistoryView, SystemConfigView
 from customer_service.views import tickets_por_departamento
 from engineering.views import ProjectMaterialsCSVUploadAPIView
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus, SendFinancialRecordsToOmieView
-from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, ValidateContractView
+from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, JourneyKanbanView, ValidateContractView
 from .views import GanttView, StatusView
 from resolve_crm.views import save_all_sales_func
 from resolve_crm.views import list_sales_func
@@ -79,5 +79,5 @@ urlpatterns = [
     path('save-sales/', save_all_sales_func , name='save_sales'),    
     path('list-sale/', list_sales_func , name='simple_serializer'),
     path("tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
-
+    path('journey-kanban/', JourneyKanbanView.as_view(), name='journey-kanban'),
 ]
