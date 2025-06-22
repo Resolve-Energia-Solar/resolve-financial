@@ -1891,17 +1891,17 @@ class JourneyKanbanView(APIView):
     http_method_names = ["get"]
 
     def get(self, request):
-        per_page = 5
+        per_page = 10
         status_map = {
+            "vistoria": "Vistoria",
+            "documentacao": "Documentação",
+            "financeiro": "Financeiro",
             "projeto_engenharia": "Projeto de Engenharia",
             "lista_materiais": "Lista de Materiais",
             "logistica": "Logística",
             "instalacao": "Instalação",
             "vistoria_final": "Vistoria Final",
             "homologado": "Homologado",
-            "vistoria": "Vistoria",
-            "documentacao": "Documentação",
-            "financeiro": "Financeiro",
         }
         pages = {
             key: int(request.query_params.get(f"{key}_page", 1)) for key in status_map
@@ -1917,9 +1917,25 @@ class JourneyKanbanView(APIView):
                     ),
                     default=Value(""),
                     output_field=CharField(),
+                ),
+                contract_number=Case(
+                    When(
+                        sale__contract_number__isnull=False,
+                        then=F("sale__contract_number"),
+                    ),
+                    default=Value(""),
+                    output_field=CharField(),
+                ),
+                signature_date=Case(
+                    When(
+                        sale__signature_date__isnull=False,
+                        then=F("sale__signature_date"),
+                    ),
+                    default=Value(""),
+                    output_field=CharField(),
                 )
             )
-            .values("id", "project_number", "current_step", "customer_name")
+            .values("id", "project_number", "current_step", "customer_name", "sale", "contract_number", "signature_date")
         )
 
         result = {}
