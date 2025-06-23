@@ -1933,10 +1933,47 @@ class JourneyKanbanView(APIView):
                     ),
                     default=Value(""),
                     output_field=CharField(),
-                )
+                ),
             )
-            .values("id", "project_number", "current_step", "customer_name", "sale", "contract_number", "signature_date")
+            .values(
+                "id",
+                "project_number",
+                "current_step",
+                "customer_name",
+                "sale",
+                "contract_number",
+                "signature_date",
+            )
         )
+
+        # Apply search filter if 'q' parameter exists
+        search_query = request.query_params.get("q")
+        if search_query:
+            qs = qs.filter(
+                Q(project_number__icontains=search_query)
+                | Q(designer__first_document__icontains=search_query)
+                | Q(designer__complete_name__icontains=search_query)
+                | Q(designer__email__icontains=search_query)
+                | Q(homologator__first_document__icontains=search_query)
+                | Q(homologator__complete_name__icontains=search_query)
+                | Q(homologator__email__icontains=search_query)
+                | Q(contract_number__icontains=search_query)
+                | Q(sale__customer__first_document__icontains=search_query)
+                | Q(customer_name=search_query)
+                | Q(sale__customer__email__icontains=search_query)
+                | Q(sale__seller__first_document__icontains=search_query)
+                | Q(sale__seller__complete_name__icontains=search_query)
+                | Q(sale__seller__email__icontains=search_query)
+                | Q(sale__sales_supervisor__first_document__icontains=search_query)
+                | Q(sale__sales_supervisor__complete_name__icontains=search_query)
+                | Q(sale__sales_supervisor__email__icontains=search_query)
+                | Q(sale__sales_manager__first_document__icontains=search_query)
+                | Q(sale__sales_manager__complete_name__icontains=search_query)
+                | Q(sale__sales_manager__email__icontains=search_query)
+                | Q(sale__supplier__first_document__icontains=search_query)
+                | Q(sale__supplier__complete_name__icontains=search_query)
+                | Q(sale__supplier__email__icontains=search_query)
+            )
 
         result = {}
         for key, label in status_map.items():
