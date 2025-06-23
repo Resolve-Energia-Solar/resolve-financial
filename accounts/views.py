@@ -127,7 +127,12 @@ class UserViewSet(BaseModelViewSet):
         'employee__related_branches',
         'free_times',
         'block_times'
-    ).defer('groups', 'user_permissions')
+    ).annotate(
+            schedule_inspection_count=Count(
+                'costumer',
+                filter=Q(costumer__service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação'])
+            )
+        ).defer('groups', 'user_permissions')
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
 
@@ -317,13 +322,13 @@ class UserViewSet(BaseModelViewSet):
                 has_overlap=False,
             )
             .annotate(
-                schedule_count=Count(
+                schedule_inspection_count=Count(
                     'schedule_agent',
                     filter=Q(schedule_agent__schedule_date=date_str)
                 )
             )
             .distinct()
-            .values('id', 'complete_name', 'schedule_count')
+            .values('id', 'complete_name', 'schedule_inspection_count')
         )
 
         return Response(list(qs), status=status.HTTP_200_OK)

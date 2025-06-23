@@ -174,10 +174,25 @@ class UserSerializer(BaseSerializer):
 
     distance = SerializerMethodField()
     daily_schedules_count = SerializerMethodField()
+    schedule_inspection_count = SerializerMethodField()
 
     class Meta:
         model = User
         exclude = ['password', 'user_permissions', 'groups']
+        
+    def get_schedule_inspection_count(self, obj):
+        schedule_inspection_count = getattr(obj, 'schedule_inspection_count', None)
+        
+        if schedule_inspection_count is None and not self.context.get('nested_serializer', False):
+            from django.db.models import Count
+            
+            result = obj.costumer.filter(
+                service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação']
+            ).aggregate(count=Count('id'))
+            
+            schedule_inspection_count = result['count'] or 0
+            
+        return schedule_inspection_count
         
     def validate(self, attrs):
         if 'first_document' in attrs:
