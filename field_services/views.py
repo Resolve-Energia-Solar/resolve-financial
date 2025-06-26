@@ -1,12 +1,21 @@
+import base64
 from collections import defaultdict
 from datetime import datetime
+import io
+import json
+import json
+from PIL import Image
 
 from django.db.models import Prefetch, Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from django.utils.functional import cached_property
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from weasyprint import HTML 
 
 from accounts.models import Address, PhoneNumber, User
 from api.views import BaseModelViewSet
@@ -43,6 +52,7 @@ from .serializers import (
 )
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.template.loader import render_to_string
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -393,3 +403,78 @@ class ServiceOpinionViewSet(BaseModelViewSet):
 class RouteViewSet(BaseModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
+
+
+def compress_image(fieldfile, max_w=600, quality=50):
+    fieldfile.open()
+    img = Image.open(fieldfile)
+    if img.width > max_w:
+        h = int(max_w * img.height / img.width)
+        from PIL.Image import Resampling
+        img = img.resize((max_w, h), Resampling.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=quality, optimize=True)
+    data = base64.b64encode(buf.getvalue()).decode()
+    return f"data:image/jpeg;base64,{data}"
+
+
+class GenerateSchedulePDF(APIView):
+    def get(self, request, pk):
+        schedule = get_object_or_404(Schedule, pk=pk)
+        answers  = Answer.objects.filter(schedule=schedule, is_deleted=False)
+        fields   = json.loads(schedule.service.form.fields or '[]')
+
+        # labels e opções de select
+        labels = {f"{f['type']}-{f['id']}": f['label'] for f in fields}
+        options_map = {}
+        for f in fields:
+            if f["type"] == "select":
+                key = f"select-{f['id']}"
+                options_map[key] = {opt["value"]: opt["label"] for opt in f["options"]}
+
+        # imagens
+        exts     = {'jpg','jpeg','png','gif'}
+        files_qs = FormFile.objects.filter(answer__in=answers, is_deleted=False)
+        files_map = {}
+        for f in files_qs:
+            if f.file.name.rsplit('.',1)[-1].lower() in exts:
+                uri = compress_image(f.file)
+                files_map.setdefault((f.answer_id, f.field_id), []).append(uri)
+
+        # montar resp_list
+        resp_list = []
+        for ans in answers:
+            items = []
+            for key, val in (ans.answers or {}).items():
+                label = labels.get(key, key)
+                if key.startswith("file"):
+                    imgs = files_map.get((ans.id, key), [])
+                    if imgs:
+                        items.append({"label": label, "images": imgs})
+                elif key.startswith("select"):
+                    if isinstance(val, list):
+                        disp = ", ".join(options_map[key].get(v, v) for v in val)
+                    else:
+                        disp = options_map[key].get(val, val)
+                    items.append({"label": label, "value": disp})
+                else:
+                    items.append({"label": label, "value": val})
+            resp_list.append({"items": items})
+
+        html = render_to_string("schedule_pdf.html", {
+            "schedule":  schedule,
+            "resp_list": resp_list,
+            "pdf_requester": request.user.complete_name.title()
+        })
+        html = html.replace(
+            "<head>",
+            "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
+        )
+        pdf = HTML(string=html).write_pdf()
+
+        return HttpResponse(
+            pdf,
+            content_type="application/pdf",
+            headers={"Content-Disposition":
+                     f'attachment; filename=\"agendamento_{schedule.protocol}.pdf\"'}
+        )
