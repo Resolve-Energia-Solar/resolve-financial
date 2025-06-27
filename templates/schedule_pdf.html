@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    @page {
+      margin: 40px 30px 60px 30px;
+
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages) " - Gerado em {% now 'd/m/Y H:i' %} por {{ pdf_requester }}";
+        font-size: 10px;
+        color: #666;
+      }
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: #333;
+      margin: 40px;
+      line-height: 1.6;
+    }
+
+    h1,
+    h2 {
+      color: #2a2a2a;
+      margin: 0 0 15px;
+    }
+
+    h1 {
+      font-size: 2em;
+    }
+
+    h2 {
+      font-size: 1.4em;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 5px;
+    }
+
+    .material-icons {
+      font-family: 'Material Icons';
+      font-size: 16px;
+      vertical-align: middle;
+      margin-right: 6px;
+      color: #555;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      height: 80px;
+      width: auto;
+      margin-bottom: 15px;
+    }
+
+    /* Details Section */
+    .details {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .details table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .details th,
+    .details td {
+      padding: 12px 10px;
+      text-align: left;
+    }
+
+    .details th {
+      background: #f0f0f0;
+      width: 40%;
+      font-weight: normal;
+    }
+
+    /* Responses */
+    .resp-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 25px;
+    }
+
+    .resp {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .resp-item {
+      margin-bottom: 12px;
+    }
+
+    .resp-item p {
+      margin: 4px 0;
+    }
+
+    .resp-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 500px;
+      margin: 8px 0;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <img src="https://storage.googleapis.com/storage_host/branding/Logo-Resolve.png" alt="Logo Resolve" class="logo" />
+    <h1>Agendamento nº {{ schedule.protocol }}</h1>
+  </header>
+
+  <section class="details">
+    <h2>Detalhes do Agendamento</h2>
+    <table>
+      <tr>
+        <th><i class="material-icons">event</i>Data Agendada (Início)</th>
+        <td>{{ schedule.schedule_date }} {{ schedule.schedule_start_time }}</td>
+      </tr>
+      <tr>
+        <th><i class="material-icons">event_note</i>Data Agendada (Fim)</th>
+        <td>{{ schedule.schedule_end_date }} {{ schedule.schedule_end_time }}</td>
+      </tr>
+      <tr>
+        <th><i class="material-icons">build</i>Tipo de Serviço</th>
+        <td>{{ schedule.service.name }}</td>
+      </tr>
+      <tr>
+        <th><i class="material-icons">person</i>Cliente</th>
+        <td>{{ schedule.customer.complete_name }}</td>
+      </tr>
+      {% if schedule.execution_started_at %}
+      <tr>
+        <th><i class="material-icons">play_arrow</i>Início da Execução</th>
+        <td>{{ schedule.execution_started_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endif %}
+      {% if schedule.execution_finished_at %}
+      <tr>
+        <th><i class="material-icons">stop</i>Fim da Execução</th>
+        <td>{{ schedule.execution_finished_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <th><i class="material-icons">assignment_turned_in</i>Parecer do Agente</th>
+        <td>{{ schedule.service_opinion.name|default:'Pendente' }}</td>
+      </tr>
+      {% if schedule.final_service_opinion %}
+      <tr>
+        <th><i class="material-icons">verified_user</i>Parecer do Validador</th>
+        <td>{{ schedule.final_service_opinion.name }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <th><i class="material-icons">support_agent</i>Agente de Campo</th>
+        <td>{{ schedule.schedule_agent.complete_name }}</td>
+      </tr>
+      {% if schedule.final_service_opinion_user %}
+      <tr>
+        <th><i class="material-icons">supervisor_account</i>Validador</th>
+        <td>{{ schedule.final_service_opinion_user.complete_name }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </section>
+
+  <section>
+    <h2>Laudo do Agente de Campo</h2>
+    <div class="resp-container">
+      {% for block in resp_list %}
+      {% for item in block.items %}
+      <div class="resp">
+        <div class="resp-item">
+          <strong>{{ item.label }}</strong>
+          {% if item.images %}
+          {% for uri in item.images %}
+          <img src="{{ uri|safe }}" alt="{{ item.label }}" />
+          {% endfor %}
+          {% else %}
+          <p>{{ item.value }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% empty %}
+      <div class="resp">
+        <p>Ainda não fornecido.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</body>
+
+</html>

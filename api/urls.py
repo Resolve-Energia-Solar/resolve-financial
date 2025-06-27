@@ -11,6 +11,7 @@ from contracts.views import InformacaoFaturaAPIView, ReciveContractInfomation
 from core.views import CreateTasksFromSaleView, HistoryView, SystemConfigView
 from customer_service.views import tickets_por_departamento
 from engineering.views import ProjectMaterialsCSVUploadAPIView
+from field_services.views import GenerateSchedulePDF
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus, SendFinancialRecordsToOmieView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, JourneyKanbanView, ValidateContractView
 from .views import GanttView, StatusView
@@ -80,4 +81,5 @@ urlpatterns = [
     path('list-sale/', list_sales_func , name='simple_serializer'),
     path("tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
     path('journey-kanban/', JourneyKanbanView.as_view(), name='journey-kanban'),
+    path('schedule/<int:pk>/pdf/', GenerateSchedulePDF.as_view(), name='schedule-pdf'),
 ]

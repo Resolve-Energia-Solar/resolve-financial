@@ -138,8 +138,8 @@ class UserViewSet(BaseModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        # filtros simples
         params = self.request.query_params
+
         if params.get('name'):
             qs = qs.filter(complete_name__icontains=params['name'])
         if params.get('type'):
@@ -157,12 +157,19 @@ class UserViewSet(BaseModelViewSet):
         if params.get('category'):
             qs = qs.filter(
                 id__in=Category.objects.get(id=params['category'])
-                                  .members.values_list('id', flat=True)
+                                .members.values_list('id', flat=True)
             )
         if params.get('role'):
             qs = qs.filter(employee__role__name__icontains=params['role']).distinct()
 
+        order_by_inspections = params.get('order_by_inspections')
+        if order_by_inspections == 'asc':
+            qs = qs.order_by('schedule_inspection_count')
+        elif order_by_inspections == 'desc':
+            qs = qs.order_by('-schedule_inspection_count')
+
         return qs
+
 
     @action(detail=True, methods=['get'])
     def availability(self, request, pk=None):
