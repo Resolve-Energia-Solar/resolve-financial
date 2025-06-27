@@ -4,7 +4,9 @@ from datetime import datetime
 import io
 import json
 import json
+import os
 from PIL import Image
+from PIL.Image import Resampling
 
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
@@ -22,6 +24,7 @@ from api.views import BaseModelViewSet
 from core.models import Attachment
 from logistics.models import Product
 from resolve_crm.models import Lead
+from resolve_erp import settings
 from .models import (
     Answer,
     BlockTimeAgent,
@@ -54,6 +57,20 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.template.loader import render_to_string
 
+from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+from pyhanko.sign                        import signers
+from pyhanko.sign.fields                 import SigFieldSpec
+from pyhanko.sign.general                import (
+    load_cert_from_pemder,
+    load_private_key_from_pemder
+)
+from pyhanko.sign.signers import PdfSignatureMetadata
+from pyhanko_certvalidator.registry      import SimpleCertificateStore
+
+from reportlab.pdfgen.canvas import Canvas
+from reportlab.lib.pagesizes import letter
+
+from PyPDF2 import PdfReader, PdfWriter
 
 class RoofTypeViewSet(BaseModelViewSet):
     queryset = RoofType.objects.all()
@@ -410,13 +427,11 @@ def compress_image(fieldfile, max_w=600, quality=50):
     img = Image.open(fieldfile)
     if img.width > max_w:
         h = int(max_w * img.height / img.width)
-        from PIL.Image import Resampling
         img = img.resize((max_w, h), Resampling.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, "JPEG", quality=quality, optimize=True)
     data = base64.b64encode(buf.getvalue()).decode()
     return f"data:image/jpeg;base64,{data}"
-
 
 class GenerateSchedulePDF(APIView):
     def get(self, request, pk):
@@ -424,57 +439,117 @@ class GenerateSchedulePDF(APIView):
         answers  = Answer.objects.filter(schedule=schedule, is_deleted=False)
         fields   = json.loads(schedule.service.form.fields or '[]')
 
-        # labels e opções de select
+        # Cria dicionário de labels e lista de fields para fallback
         labels = {f"{f['type']}-{f['id']}": f['label'] for f in fields}
-        options_map = {}
-        for f in fields:
-            if f["type"] == "select":
-                key = f"select-{f['id']}"
-                options_map[key] = {opt["value"]: opt["label"] for opt in f["options"]}
+        options_map = {f"select-{f['id']}": {opt['value']:opt['label'] for opt in f.get('options',[])}
+                       for f in fields if f['type']=='select'}
 
-        # imagens
-        exts     = {'jpg','jpeg','png','gif'}
+        # Separa imagens e campos PDF
+        image_exts = {'jpg','jpeg','png','gif'}
         files_qs = FormFile.objects.filter(answer__in=answers, is_deleted=False)
-        files_map = {}
+        img_map, pdf_fields = {}, []
         for f in files_qs:
-            if f.file.name.rsplit('.',1)[-1].lower() in exts:
-                uri = compress_image(f.file)
-                files_map.setdefault((f.answer_id, f.field_id), []).append(uri)
+            ext = f.file.name.rsplit('.',1)[-1].lower()
+            if ext in image_exts:
+                img_map.setdefault((f.answer_id,f.field_id),[]).append(compress_image(f.file))
+            elif ext == 'pdf':
+                pdf_fields.append(f)
 
-        # montar resp_list
+        attachment_labels = [labels.get(f"file-{pf.field_id}", pf.field_id) for pf in pdf_fields]
+
+        # Monta resposta com fallback de label
         resp_list = []
         for ans in answers:
             items = []
             for key, val in (ans.answers or {}).items():
-                label = labels.get(key, key)
-                if key.startswith("file"):
-                    imgs = files_map.get((ans.id, key), [])
-                    if imgs:
-                        items.append({"label": label, "images": imgs})
-                elif key.startswith("select"):
-                    if isinstance(val, list):
-                        disp = ", ".join(options_map[key].get(v, v) for v in val)
-                    else:
-                        disp = options_map[key].get(val, val)
-                    items.append({"label": label, "value": disp})
+                # Resolve label: primeiro do dict, depois busca em fields
+                if key in labels:
+                    label = labels[key]
                 else:
-                    items.append({"label": label, "value": val})
-            resp_list.append({"items": items})
+                    parts = key.split('-',1)
+                    if len(parts)==2:
+                        ftype, fid = parts
+                        found = next((f for f in fields if f['type']==ftype and f['id']==fid), None)
+                        label = found['label'] if found else key
+                    else:
+                        label = key
+                # Processa valor ou imagens
+                if key.startswith('file'):
+                    imgs = img_map.get((ans.id, key), [])
+                    if imgs:
+                        items.append({'label': label, 'images': imgs})
+                elif key.startswith('select'):
+                    vals = val if isinstance(val,list) else [val]
+                    disp = ", ".join(options_map.get(key,{}).get(v,v) for v in vals)
+                    items.append({'label': label, 'value': disp})
+                else:
+                    items.append({'label': label, 'value': val})
+            resp_list.append({'items': items})
 
-        html = render_to_string("schedule_pdf.html", {
-            "schedule":  schedule,
-            "resp_list": resp_list,
-            "pdf_requester": request.user.complete_name.title()
+        # Renderiza HTML e gera PDF
+        html = render_to_string('schedule_pdf.html', {
+            'schedule': schedule,
+            'resp_list': resp_list,
+            'pdf_requester': request.user.complete_name.title(),
         })
-        html = html.replace(
-            "<head>",
-            "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
-        )
-        pdf = HTML(string=html).write_pdf()
+        html = html.replace('<head>', '<head><meta charset="utf-8"/>')
+        pdf_bytes = HTML(string=html).write_pdf()
 
+        # Anexa PDFs como páginas de apêndice com watermark de label
+        if pdf_fields:
+            writer = PdfWriter()
+            main_reader = PdfReader(io.BytesIO(pdf_bytes))
+            for page in main_reader.pages:
+                writer.add_page(page)
+            for pf, label in zip(pdf_fields, attachment_labels):
+                with pf.file.open('rb') as stream:
+                    attach_reader = PdfReader(stream)
+                    for page in attach_reader.pages:
+                        # desenha watermark do label
+                        buf_wm = io.BytesIO()
+                        width = float(page.mediabox.upper_right[0])
+                        height = float(page.mediabox.upper_right[1])
+                        c = Canvas(buf_wm, pagesize=(width, height))
+                        c.setFont("Helvetica", 10)
+                        c.drawString(40, 30, label)
+                        c.save()
+                        buf_wm.seek(0)
+                        wm = PdfReader(buf_wm).pages[0]
+                        page.merge_page(wm)
+                        writer.add_page(page)
+            buf_out = io.BytesIO()
+            writer.write(buf_out)
+            pdf_bytes = buf_out.getvalue()
+
+        # Assinatura digital
+        pem = settings.SIGN_PEM
+        if pem and os.path.exists(pem):
+            cert = load_cert_from_pemder(pem)
+            key  = load_private_key_from_pemder(pem, None)
+            signer = signers.SimpleSigner(
+                signing_cert=cert,
+                signing_key=key,
+                cert_registry=SimpleCertificateStore()
+            )
+            meta = PdfSignatureMetadata(
+                field_name='Resolve Energia Solar',
+                reason='Assinado digitalmente pelo sistema',
+                location='Belém-PA'
+            )
+            spec = SigFieldSpec(sig_field_name='Resolve Energia Solar', box=(40,40,200,100), on_page=0)
+            in_buf = io.BytesIO(pdf_bytes)
+            writer_inc = IncrementalPdfFileWriter(in_buf)
+            out_buf = io.BytesIO()
+            signers.sign_pdf(
+                writer_inc, meta, signer,
+                new_field_spec=spec, existing_fields_only=False,
+                output=out_buf
+            )
+            pdf_bytes = out_buf.getvalue()
+
+        filename = f"agendamento_{schedule.protocol}_{datetime.now():%Y%m%d%H%M%S}.pdf"
         return HttpResponse(
-            pdf,
-            content_type="application/pdf",
-            headers={"Content-Disposition":
-                     f'attachment; filename=\"agendamento_{schedule.protocol}.pdf\"'}
+            pdf_bytes,
+            content_type='application/pdf',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
         )

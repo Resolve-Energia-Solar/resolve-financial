@@ -239,6 +239,13 @@ STORAGES = {
     }
 }
 
+# SSL/TLS Certificates
+
+CERT_DIR = os.environ.get("CERT_DIR", BASE_DIR / "certs")
+SIGN_PEM = os.path.join(CERT_DIR, "combined.pem")
+
+# Simple History
+
 SIMPLE_HISTORY_HISTORY_ID_USE_UUID = False
 # SIMPLE_HISTORY_ENABLED = True
 
