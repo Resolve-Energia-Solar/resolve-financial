@@ -172,3 +172,7 @@ dump.rdb
 
 # Ignore GCS credentials file
 google_application_credentials.json
+
+# Ignore certificates
+certs/
+*.pem

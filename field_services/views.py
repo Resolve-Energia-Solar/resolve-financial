@@ -4,6 +4,7 @@ from datetime import datetime
 import io
 import json
 import json
+import os
 from PIL import Image
 
 from django.db.models import Prefetch, Q
@@ -22,6 +23,7 @@ from api.views import BaseModelViewSet
 from core.models import Attachment
 from logistics.models import Product
 from resolve_crm.models import Lead
+from resolve_erp import settings
 from .models import (
     Answer,
     BlockTimeAgent,
@@ -53,6 +55,15 @@ from .serializers import (
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.template.loader import render_to_string
+
+from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+from pyhanko.sign                        import signers
+from pyhanko.sign.fields                 import SigFieldSpec
+from pyhanko.sign.general                import (
+    load_cert_from_pemder,
+    load_private_key_from_pemder
+)
+from pyhanko_certvalidator.registry      import SimpleCertificateStore
 
 
 class RoofTypeViewSet(BaseModelViewSet):
@@ -432,7 +443,6 @@ class GenerateSchedulePDF(APIView):
                 key = f"select-{f['id']}"
                 options_map[key] = {opt["value"]: opt["label"] for opt in f["options"]}
 
-        # imagens
         exts     = {'jpg','jpeg','png','gif'}
         files_qs = FormFile.objects.filter(answer__in=answers, is_deleted=False)
         files_map = {}
@@ -441,7 +451,6 @@ class GenerateSchedulePDF(APIView):
                 uri = compress_image(f.file)
                 files_map.setdefault((f.answer_id, f.field_id), []).append(uri)
 
-        # montar resp_list
         resp_list = []
         for ans in answers:
             items = []
@@ -470,11 +479,47 @@ class GenerateSchedulePDF(APIView):
             "<head>",
             "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>"
         )
-        pdf = HTML(string=html).write_pdf()
+        pdf_bytes = HTML(string=html).write_pdf()
+
+        pem_path = settings.SIGN_PEM
+        if pem_path and os.path.exists(pem_path):
+            cert = load_cert_from_pemder(pem_path)
+            key  = load_private_key_from_pemder(pem_path, None)
+
+            simple_signer = signers.SimpleSigner(
+                signing_cert=cert,
+                signing_key=key,
+                cert_registry=SimpleCertificateStore(),
+            )
+            meta = signers.PdfSignatureMetadata(
+                field_name="Resolve Energia Solar",
+                reason="Assinado digitalmente pelo sistema Resolve ERP",
+                location="Belém-PA, BR",
+            )
+
+            sig_field_spec = SigFieldSpec(
+                sig_field_name="Resolve Energia Solar",
+                box=(40, 40, 200, 100),
+                on_page=0
+            )
+
+            in_buf  = io.BytesIO(pdf_bytes)
+            writer  = IncrementalPdfFileWriter(in_buf)
+            out_buf = io.BytesIO()
+
+            signers.sign_pdf(
+                writer,
+                meta,
+                simple_signer,
+                new_field_spec=sig_field_spec,
+                existing_fields_only=False,
+                output=out_buf
+            )
+            pdf_bytes = out_buf.getvalue()
 
         return HttpResponse(
-            pdf,
+            pdf_bytes,
             content_type="application/pdf",
             headers={"Content-Disposition":
-                     f'attachment; filename=\"agendamento_{schedule.protocol}.pdf\"'}
+                     f'attachment; filename="agendamento_{schedule.protocol}_{datetime.now().strftime("%Y%m%d%H%M%S")}.pdf"'}
         )
