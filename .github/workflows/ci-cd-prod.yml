@@ -31,6 +31,7 @@ jobs:
       - name: Create .env and google_application_credentials.json
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          COMBINED_PEM: ${{ vars.COMBINED_PEM }}
         run: |
           # Criar .env
           echo "CLICKSIGN_API_URL=${{ vars.CLICKSIGN_API_URL}}" >> .env
@@ -75,6 +76,9 @@ jobs:
           echo "TICKET_INFO_WEBHOOK_URL=${{ vars.TICKET_INFO_WEBHOOK_URL }}" >> .env
           # Criar google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
+          # Criar o combined.pem
+          mkdir -p certs
+          echo "${COMBINED_PEM}" > certs/combined.pem
 
       # 4. Build e Push da Imagem Docker
       - name: Build and Push Docker Image
