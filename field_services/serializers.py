@@ -364,11 +364,17 @@ class ScheduleSerializer(BaseSerializer):
 
         return super().create(validated_data)
 
-    def update(self, instance, validated_data):
-        schedule_agent = validated_data.get("schedule_agent", instance.schedule_agent)
-        service = validated_data.get("service", instance.service)
+def update(self, instance, validated_data):
+    schedule_agent = validated_data.get("schedule_agent", instance.schedule_agent)
+    service = validated_data.get("service", instance.service)
 
-        if service.name == "Serviço de Vistoria" and schedule_agent:
+    if service.name == "Serviço de Vistoria" and schedule_agent:
+        service_opinion_approved = False
+        
+        if instance.service_opinion and instance.service_opinion.name:
+            service_opinion_approved = "aprovado" in instance.service_opinion.name.lower()
+        
+        if not service_opinion_approved:
             schedule_date = validated_data.get("schedule_date", instance.schedule_date)
             schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
             schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
@@ -386,7 +392,7 @@ class ScheduleSerializer(BaseSerializer):
                 disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
             )
 
-        return super().update(instance, validated_data)
+    return super().update(instance, validated_data)
 
 
 class AnswerSerializer(BaseSerializer):
