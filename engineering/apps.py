@@ -5,3 +5,6 @@ class EngineeringConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'engineering'
     verbose_name = 'Engenharia'
+    
+    def ready(self):
+        import engineering.signals

@@ -369,22 +369,28 @@ class ScheduleSerializer(BaseSerializer):
         service = validated_data.get("service", instance.service)
 
         if service.name == "Serviço de Vistoria" and schedule_agent:
-            schedule_date = validated_data.get("schedule_date", instance.schedule_date)
-            schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
-            schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
-            address = validated_data.get("address", instance.address)
+            service_opinion_approved = False
+            
+            if instance.service_opinion and instance.service_opinion.name:
+                service_opinion_approved = "aprovado" in instance.service_opinion.name.lower()
+            
+            if not service_opinion_approved:
+                schedule_date = validated_data.get("schedule_date", instance.schedule_date)
+                schedule_start_time = validated_data.get("schedule_start_time", instance.schedule_start_time)
+                schedule_end_time = validated_data.get("schedule_end_time", instance.schedule_end_time)
+                address = validated_data.get("address", instance.address)
 
-            disponibility = self.validate_agent_availability(
-                schedule_agent, schedule_date, schedule_start_time, schedule_end_time
-            )
+                disponibility = self.validate_agent_availability(
+                    schedule_agent, schedule_date, schedule_start_time, schedule_end_time
+                )
 
-            existing_schedules = self.check_schedule_conflicts(
-                schedule_agent, schedule_date, schedule_start_time, schedule_end_time, instance, disponibility=disponibility
-            )
+                existing_schedules = self.check_schedule_conflicts(
+                    schedule_agent, schedule_date, schedule_start_time, schedule_end_time, instance, disponibility=disponibility
+                )
 
-            self.find_available_slots(
-                disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
-            )
+                self.find_available_slots(
+                    disponibility, list(existing_schedules), schedule_start_time, schedule_end_time, address
+                )
 
         return super().update(instance, validated_data)
 
