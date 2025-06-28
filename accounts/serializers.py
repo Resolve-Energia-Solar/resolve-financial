@@ -175,6 +175,7 @@ class UserSerializer(BaseSerializer):
     distance = SerializerMethodField()
     daily_schedules_count = SerializerMethodField()
     schedule_inspection_count = SerializerMethodField()
+    date_schedule_inspection_count = SerializerMethodField()
 
     class Meta:
         model = User
@@ -243,6 +244,9 @@ class UserSerializer(BaseSerializer):
 
     def get_daily_schedules_count(self, obj):
         return getattr(obj, 'daily_schedules_count', None)
+    
+    def get_date_schedule_inspection_count(self, obj):
+        return getattr(obj, 'date_schedule_inspection_count', None)
     
 
 class SquadSerializer(BaseSerializer):
