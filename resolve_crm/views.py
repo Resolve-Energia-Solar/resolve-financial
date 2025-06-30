@@ -175,6 +175,9 @@ class SaleViewSet(BaseModelViewSet):
                 | Q(supplier__first_document__icontains=q)
                 | Q(supplier__complete_name__icontains=q)
                 | Q(supplier__email__icontains=q)
+                | Q(payments__borrower__first_document__icontains=q)
+                | Q(payments__borrower__complete_name__icontains=q)
+                | Q(payments__borrower__email__icontains=q)
             )
 
         if query_params.get("documents_under_analysis") == "true":
@@ -599,6 +602,9 @@ class ProjectViewSet(BaseModelViewSet):
                 | Q(sale__supplier__first_document__icontains=q)
                 | Q(sale__supplier__complete_name__icontains=q)
                 | Q(sale__supplier__email__icontains=q)
+                | Q(sale__payments__borrower__first_document__icontains=q)
+                | Q(sale__payments__borrower__complete_name__icontains=q)
+                | Q(sale__payments__borrower__email__icontains=q)
             )
 
         if new_contract_number == "true":
