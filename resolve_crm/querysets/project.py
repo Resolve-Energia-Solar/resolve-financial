@@ -946,46 +946,51 @@ class ProjectQuerySet(django_models.QuerySet):
         )
 
     def with_construction_status(self):
-        return self.annotate(
-            # Determine if the project needs construction
-            # (if there's a schedule with an approved inspection that mentions construction or shading)
-            needs_construction=Exists(
-                Schedule.objects.filter(
-                    project=OuterRef("pk"),
-                    service__category__name__icontains="Vistoria",
-                    final_service_opinion__name__icontains="Aprovad",
-                )
-                .filter(
-                    Q(final_service_opinion__name__icontains="Obra")
-                    | Q(final_service_opinion__name__icontains="Sombreamento")
-                )
-                .values("id")
-            ),
-            # Check if there's any civil construction associated with the project
-            has_construction=Exists(
-                CivilConstruction.objects.filter(project=OuterRef("pk"))
-            ),
-            # Return the status based on the conditions:
-            # - If has construction, return the status of the latest construction
-            # - If needs construction but has no construction, return empty string
-            # - If doesn't need construction, return "Não se aplica"
-            construction_status=Case(
-                When(
-                    Q(has_construction=True),
-                    then=Subquery(
-                        CivilConstruction.objects.filter(project=OuterRef("pk"))
-                        .order_by("-id")
-                        .values("status")[:1]
+        return (
+            self.with_installation_status()
+            .with_homologation_status()
+            .annotate(
+                needs_construction=Exists(
+                    Schedule.objects.filter(
+                        project=OuterRef("pk"),
+                        service__category__name__icontains="Vistoria",
+                        final_service_opinion__name__icontains="Aprovad",
+                    ).filter(
+                        Q(final_service_opinion__name__icontains="Obra")
+                        | Q(final_service_opinion__name__icontains="Sombreamento")
+                    )
+                ),
+                has_construction=Exists(
+                    CivilConstruction.objects.filter(project=OuterRef("pk"))
+                ),
+                construction_status=Case(
+                    # 1) Se já instalado OU já homologado, sempre "NA"
+                    When(
+                        Q(installation_status="Instalado")
+                        | Q(final_inspection_status="Deferido"),
+                        then=Value("NA"),
                     ),
+                    # 2) Se tem construção, retorna último status
+                    When(
+                        Q(has_construction=True),
+                        then=Subquery(
+                            CivilConstruction.objects.filter(project=OuterRef("pk"))
+                            .order_by("-id")
+                            .values("status")[:1]
+                        ),
+                    ),
+                    # 3) Se precisa de obra e não tem obra, marca "S"
+                    When(
+                        Q(needs_construction=True) & ~Q(has_construction=True),
+                        then=Value("S"),
+                    ),
+                    # 4) todos os outros, "NA"
+                    default=Value("NA"),
+                    output_field=CharField(),
                 ),
-                When(
-                    Q(needs_construction=True) & Q(has_construction=False),
-                    then=Value("S"),
-                ),
-                default=Value("NA"),
-                output_field=CharField(),
-            ),
-        ).distinct()
+            )
+            .distinct()
+        )
 
     def with_ticket_stats(self):
         return self.annotate(
