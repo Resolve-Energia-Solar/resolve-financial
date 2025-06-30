@@ -119,7 +119,21 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 class UserViewSet(BaseModelViewSet):
-    queryset = User.objects.all().select_related('employee', 'employee__user_manager', 'employee__department', 'employee__role').prefetch_related(
+    total_inspections_subquery = User.objects.filter(
+        id=OuterRef('id')
+    ).annotate(
+        total_count=Count(
+            'costumer',
+            filter=Q(costumer__service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação'])
+        )
+    ).values('total_count')
+    
+    queryset = User.objects.all().select_related(
+        'employee', 
+        'employee__user_manager', 
+        'employee__department', 
+        'employee__role'
+    ).prefetch_related(
         'phone_numbers',
         'user_types',
         'addresses',
@@ -127,18 +141,37 @@ class UserViewSet(BaseModelViewSet):
         'employee__related_branches',
         'free_times',
         'block_times'
-    ).annotate(
-            schedule_inspection_count=Count(
-                'costumer',
-                filter=Q(costumer__service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação'])
-            )
-        ).defer('groups', 'user_permissions')
+    ).defer('groups', 'user_permissions').annotate(
+        schedule_inspection_count=Subquery(total_inspections_subquery)
+    )
     serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
-
+    
     def get_queryset(self):
         qs = super().get_queryset()
         params = self.request.query_params
+        schedule_date = params.get('schedule_date')
+
+        if schedule_date:
+            date_inspections_subquery = User.objects.filter(
+                id=OuterRef('id')
+            ).annotate(
+                date_count=Count(
+                    'schedule_agent',
+                    filter=Q(
+                        schedule_agent__service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação'],
+                        schedule_agent__schedule_date=schedule_date
+                    )
+                )
+            ).values('date_count')
+            
+            qs = qs.annotate(
+                date_schedule_inspection_count=Subquery(date_inspections_subquery)
+            )
+        else:
+            qs = qs.annotate(
+                date_schedule_inspection_count=models.Value(0, output_field=models.IntegerField())
+            )
 
         if params.get('name'):
             qs = qs.filter(complete_name__icontains=params['name'])
@@ -162,14 +195,14 @@ class UserViewSet(BaseModelViewSet):
         if params.get('role'):
             qs = qs.filter(employee__role__name__icontains=params['role']).distinct()
 
-        order_by_inspections = params.get('order_by_inspections')
+        order_by_inspections = params.get('date_schedule_inspection_count')
         if order_by_inspections == 'asc':
-            qs = qs.order_by('schedule_inspection_count')
+            qs = qs.order_by('date_schedule_inspection_count')
         elif order_by_inspections == 'desc':
-            qs = qs.order_by('-schedule_inspection_count')
+            qs = qs.order_by('-date_schedule_inspection_count')
 
         return qs
-
+    
 
     @action(detail=True, methods=['get'])
     def availability(self, request, pk=None):

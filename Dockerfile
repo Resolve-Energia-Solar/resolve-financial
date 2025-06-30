@@ -26,8 +26,8 @@ RUN fc-list
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Criar diretório para logs
-RUN mkdir -p /app/logs
+# Criar diretório para logs e certs
+RUN mkdir -p /app/logs /app/certs
 
 # Instalar dependências do Python
 COPY requirements.txt .
