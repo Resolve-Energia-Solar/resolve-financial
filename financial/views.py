@@ -376,12 +376,15 @@ class FinancialRecordViewSet(BaseModelViewSet):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-
+        response = super().update(request, *args, **kwargs)
+        
+        instance.refresh_from_db()
+        
         if instance.responsible_status == "P" and instance.payment_status == "P":
             from .task import resend_approval_request_to_responsible_task
             resend_approval_request_to_responsible_task.delay(instance.id)
-
-        return super().update(request, *args, **kwargs)
+        
+        return response
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
