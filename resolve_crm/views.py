@@ -686,7 +686,7 @@ class ProjectViewSet(BaseModelViewSet):
             inspection_isnull_bool = inspection_isnull.lower() == "true"
             queryset = queryset.filter(inspection__isnull=inspection_isnull_bool)
         if remove_termination_cancelled_and_pre_sale:
-            queryset = queryset.exclude(sale__status__in=["C", "D"]).exclude(
+            queryset = queryset.exclude(sale__status__in=["C", "D", "ED"]).exclude(
                 sale__is_pre_sale=True
             )
 
