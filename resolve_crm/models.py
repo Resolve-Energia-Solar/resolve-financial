@@ -521,6 +521,12 @@ class Sale(models.Model):
     financial_completion_date = models.DateTimeField(
         "Data de Conclusão do Financeiro", null=True, blank=True, db_index=True
     )
+    financier_id = models.CharField(
+        "ID do Financeiro", max_length=50, null=True, blank=True, db_index=True
+    )
+    financier_date = models.DateField(
+        "Data do Financeiro", auto_now=False, auto_now_add=False, null=True, blank=True
+    )
 
     # Logs
     created_at = models.DateTimeField("Criado em", auto_now_add=True, db_index=True)

@@ -413,7 +413,7 @@ class ProjectQuerySet(django_models.QuerySet):
                 RequestsEnergyCompany.objects.filter(
                     project=OuterRef("pk"), type_id__in=type_list
                 )
-                .order_by("-id")
+                .order_by("-request_date")
                 .values("status")[:1]
             )
 
@@ -574,22 +574,22 @@ class ProjectQuerySet(django_models.QuerySet):
                     RequestsEnergyCompany.objects.filter(
                         project=OuterRef("pk"), type_id__in=VISTORIA_FINAL_IDS
                     )
-                    .order_by("-id")[:1]
+                    .order_by("-request_date")[:1]
                     .values("status")
                 ),
             )
             .annotate(
                 final_inspection_status=Case(
-                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                    When(final_req_status="D", then=Value("Deferido")),
+                    When(final_req_status="S", then=Value("Solicitado")),
+                    When(final_req_status="I", then=Value("Indeferida")),
+                    When(final_req_status="ID", then=Value("Indeferida Debito")),
                     When(
                         Q(final_req_exists=False)
                         & Q(last_installation_final_service_opinion="Concluído"),
                         then=Value("Pendente"),
                     ),
-                    When(final_req_status="S", then=Value("Solicitado")),
-                    When(final_req_status="D", then=Value("Deferido")),
-                    When(final_req_status="I", then=Value("Indeferida")),
-                    When(final_req_status="ID", then=Value("Indeferida Debito")),
+                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
                     default=Value("Bloqueado"),
                     output_field=CharField(),
                 )
@@ -948,7 +948,7 @@ class ProjectQuerySet(django_models.QuerySet):
     def with_construction_status(self):
         return (
             self.with_installation_status()
-            .with_homologation_status()
+            .with_final_inspection_status()
             .annotate(
                 needs_construction=Exists(
                     Schedule.objects.filter(
@@ -958,19 +958,14 @@ class ProjectQuerySet(django_models.QuerySet):
                     ).filter(
                         Q(final_service_opinion__name__icontains="Obra")
                         | Q(final_service_opinion__name__icontains="Sombreamento")
+                        | Q(service__category__name__icontains="Obra")
                     )
                 ),
                 has_construction=Exists(
                     CivilConstruction.objects.filter(project=OuterRef("pk"))
                 ),
                 construction_status=Case(
-                    # 1) Se já instalado OU já homologado, sempre "NA"
-                    When(
-                        Q(installation_status="Instalado")
-                        | Q(final_inspection_status="Deferido"),
-                        then=Value("NA"),
-                    ),
-                    # 2) Se tem construção, retorna último status
+                    # 1) Se tem construção, retorna último status
                     When(
                         Q(has_construction=True),
                         then=Subquery(
@@ -979,18 +974,24 @@ class ProjectQuerySet(django_models.QuerySet):
                             .values("status")[:1]
                         ),
                     ),
-                    # 3) Se precisa de obra e não tem obra, marca "S"
+                    # 2) Se precisa de obra e não tem obra, marca "S"
                     When(
-                        Q(needs_construction=True) & ~Q(has_construction=True),
+                        Q(needs_construction=True)
+                        & ~Q(has_construction=True)
+                        & ~(
+                            Q(installation_status__icontains="Instalado")
+                            | Q(final_req_exists=True)
+                        ),
                         then=Value("S"),
                     ),
-                    # 4) todos os outros, "NA"
+                    # 3) todos os outros, "NA"
                     default=Value("NA"),
                     output_field=CharField(),
-                ),
+                )
             )
             .distinct()
         )
+
 
     def with_ticket_stats(self):
         return self.annotate(
