@@ -5,7 +5,7 @@ import io
 import json
 import json
 import os
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from PIL.Image import Resampling
 
 from django.db.models import Prefetch, Q
@@ -445,15 +445,22 @@ class GenerateSchedulePDF(APIView):
                        for f in fields if f['type']=='select'}
 
         # Separa imagens e campos PDF
-        image_exts = {'jpg','jpeg','png','gif'}
         files_qs = FormFile.objects.filter(answer__in=answers, is_deleted=False)
         img_map, pdf_fields = {}, []
         for f in files_qs:
-            ext = f.file.name.rsplit('.',1)[-1].lower()
-            if ext in image_exts:
-                img_map.setdefault((f.answer_id,f.field_id),[]).append(compress_image(f.file))
-            elif ext == 'pdf':
+            name = f.file.name.lower()
+            if name.endswith('.pdf'):
                 pdf_fields.append(f)
+            else:
+                try:
+                    # tenta abrir como imagem
+                    f.file.open()
+                    Image.open(f.file).verify()
+                    uri = compress_image(f.file)
+                    img_map.setdefault((f.answer_id, f.field_id), []).append(uri)
+                except UnidentifiedImageError:
+                    # não é imagem nem pdf -> ignora
+                    continue
 
         attachment_labels = [labels.get(f"file-{pf.field_id}", pf.field_id) for pf in pdf_fields]
 
