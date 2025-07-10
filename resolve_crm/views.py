@@ -736,6 +736,12 @@ class ProjectViewSet(BaseModelViewSet):
                 queryset = queryset.order_by("inspection__schedule_date")
             else:
                 queryset = queryset.order_by("-inspection__schedule_date")
+        
+        if ordering and "civil_construction.end_date" in ordering:
+            if not ordering.startswith("-"):
+                queryset = queryset.order_by("civil_construction__end_date")
+            else:
+                queryset = queryset.order_by("-civil_construction__end_date")
 
         return queryset
 
