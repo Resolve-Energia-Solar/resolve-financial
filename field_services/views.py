@@ -18,7 +18,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from weasyprint import HTML 
-
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from accounts.models import Address, PhoneNumber, User
 from api.views import BaseModelViewSet
 from core.models import Attachment
@@ -415,6 +416,8 @@ class FormFileViewSet(BaseModelViewSet):
 class ServiceOpinionViewSet(BaseModelViewSet):
     queryset = ServiceOpinion.objects.all()
     serializer_class = ServiceOpinionSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['name', 'service__name']
 
 
 class RouteViewSet(BaseModelViewSet):
