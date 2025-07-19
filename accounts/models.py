@@ -321,3 +321,26 @@ class Squad(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class EndpointAccess(models.Model):
+    user = models.ForeignKey(
+        "accounts.User",
+        verbose_name="Usuário",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    method = models.CharField("Método", max_length=10)
+    endpoint = models.CharField("Endpoint", max_length=255)
+    user_agent = models.CharField("User Agent", max_length=255, blank=True, null=True)
+    ip = models.GenericIPAddressField("IP")
+    accessed_at = models.DateTimeField("Acessado em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Acessos ao Endpoint"
+        verbose_name_plural = "Acessos ao Endpoint"
+        ordering = ["-accessed_at"]
+
+    def __str__(self):
+        return f"{self.user} - {self.endpoint} - {self.accessed_at}"

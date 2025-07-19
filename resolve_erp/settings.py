@@ -107,6 +107,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "accounts.middlewares.EndpointAccessLogMiddleware",
 ]
 
 INTERNAL_IPS = [
@@ -178,6 +179,7 @@ CORS_ALLOW_HEADERS = [
 ROOT_URLCONF = 'resolve_erp.urls'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
+DISABLE_ENDPOINT_ACCESS_LOG = os.environ.get('DISABLE_ENDPOINT_ACCESS_LOG', 'False') == 'True'
 
 
 # Templates
