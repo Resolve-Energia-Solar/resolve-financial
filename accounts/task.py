@@ -8,8 +8,8 @@ from django.utils import timezone
 
 import requests
 
-from resolve_erp.celery import shared_task
-from .models import User
+from celery import shared_task
+from .models import User, EndpointAccess
 
 logger = logging.getLogger(__name__)
 
@@ -101,3 +101,27 @@ def send_login_info_logs(user_id, email, complete_name, last_login, ip_address):
             exc_info=True,
         )
         return {"status": "error", "message": f"An error occurred: {e}"}
+
+
+@shared_task
+def create_endpoint_access_log(request_data):
+    """
+    Cria um log de acesso ao endpoint
+    """
+    logger.info("Creating endpoint access log")
+    logger.debug(f"Request data: {request_data}")
+    try:
+        EndpointAccess.objects.create(
+            user_id=request_data.get("user_id"),
+            endpoint=request_data.get("path"),
+            method=request_data.get("method", "GET"),
+            ip=request_data.get("remote_addr", "unknown"),
+            user_agent=request_data.get("user_agent", ""),
+        )
+        logger.info("Endpoint access log created successfully")
+    except Exception as e:
+        logger.error(
+            f"An error occurred while creating endpoint access log: {e}", exc_info=True
+        )
+        return {"status": "error", "message": "Failed to create endpoint access log"}
+    return {"status": "success", "message": "Endpoint access log created successfully"}
