@@ -41,6 +41,7 @@ from financial.models import PaymentInstallment
 from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
+from resolve_erp.utils.access_log import AccessLogMixin
 from .models import *
 from .serializers import *
 from django.db.models import OuterRef, Subquery, DecimalField, Value
@@ -75,7 +76,7 @@ class ComercialProposalViewSet(BaseModelViewSet):
     serializer_class = ComercialProposalSerializer
 
 
-class SaleViewSet(BaseModelViewSet):
+class SaleViewSet(AccessLogMixin, BaseModelViewSet):
     serializer_class = SaleSerializer
 
     def get_queryset(self):
@@ -319,7 +320,7 @@ class SaleViewSet(BaseModelViewSet):
         )
 
 
-class ProjectViewSet(BaseModelViewSet):
+class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 

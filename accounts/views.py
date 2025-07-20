@@ -41,6 +41,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from accounts.serializers import UserLoginSerializer
 from resolve_crm.models import Project
+from resolve_erp.utils.access_log import AccessLogMixin
 
 
 # Accounts views
@@ -118,7 +119,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return distance
 
 
-class UserViewSet(BaseModelViewSet):
+class UserViewSet(AccessLogMixin, BaseModelViewSet):
     total_inspections_subquery = User.objects.filter(
         id=OuterRef('id')
     ).annotate(

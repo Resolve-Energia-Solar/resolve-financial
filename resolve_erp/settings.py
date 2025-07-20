@@ -106,8 +106,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
-    "accounts.middlewares.EndpointAccessLogMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware"
 ]
 
 INTERNAL_IPS = [

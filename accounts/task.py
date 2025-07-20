@@ -115,7 +115,7 @@ def create_endpoint_access_log(request_data):
             user_id=request_data.get("user_id"),
             endpoint=request_data.get("path"),
             method=request_data.get("method", "GET"),
-            ip=request_data.get("remote_addr", "unknown"),
+            ip=request_data.get("ip", "unknown"),
             user_agent=request_data.get("user_agent", ""),
         )
         logger.info("Endpoint access log created successfully")
