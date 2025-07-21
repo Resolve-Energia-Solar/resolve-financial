@@ -176,6 +176,14 @@ class ScheduleViewSet(BaseModelViewSet):
                 queryset=Address.objects.filter(is_deleted=False),
                 to_attr="addresses_list",
             ),
+            Prefetch(
+                "schedule_agent__phone_numbers",
+                queryset=PhoneNumber.objects.order_by("-is_main"),
+            ),
+            Prefetch(
+                "schedule_agent__addresses",
+                queryset=Address.objects.filter(is_deleted=False),
+            ),
         )
 
         user = self.request.user
