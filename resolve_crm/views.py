@@ -382,7 +382,6 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
             "units",
             "units__address",
             "materials",
-            "materials__material",
             "civil_construction",
             "project_tickets",
             "field_services",
