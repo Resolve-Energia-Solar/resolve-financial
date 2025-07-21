@@ -368,6 +368,8 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
             "sale",
             "sale__customer",
             "sale__branch",
+            "sale__branch__address",
+            "sale__branch__energy_company",
             "inspection__final_service_opinion",
             "inspection",
             "product",
@@ -378,9 +380,14 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
             "attachments",
             "attachments__document_type",
             "units",
+            "units__address",
+            "materials",
+            "materials__material",
             "civil_construction",
             "project_tickets",
             "field_services",
+            "sale__customer__addresses",
+            "sale__customer__phone_numbers",
             Prefetch(
                 "requests_energy_company",
                 queryset=RequestsEnergyCompany.objects.select_related(
