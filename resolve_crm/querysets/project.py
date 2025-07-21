@@ -117,62 +117,33 @@ class ProjectQuerySet(django_models.QuerySet):
             final_service_opinion__name="Concluído",
         )
 
-        return (
-            self.annotate(
-                has_final=Exists(final_qs),
-                has_entrega=Exists(entrega_qs),
-                has_instalacao=Exists(instal_qs),
-            )
-            .select_related("inspection__final_service_opinion", "sale")
-            .annotate(
-                pend_vistoria=Case(
-                    When(
-                        Q(inspection__isnull=True)
-                        | Q(inspection__final_service_opinion__isnull=True)
-                        | ~Q(
-                            inspection__final_service_opinion__name__icontains="Aprovad"
-                        ),
-                        then=Value("Vistoria,"),
-                    ),
-                    default=Value(""),
-                    output_field=CharField(),
+        return self.annotate(
+            has_final=Exists(final_qs),
+            has_entrega=Exists(entrega_qs),
+            has_instalacao=Exists(instal_qs),
+        ).select_related("inspection__final_service_opinion", "sale").annotate(
+            current_step=Case(
+                When(has_final=True, then=Value("Homologado")),
+                When(
+                    Q(inspection__isnull=True)
+                    | Q(inspection__final_service_opinion__isnull=True)
+                    | ~Q(inspection__final_service_opinion__name__icontains="Aprovad"),
+                    then=Value("Vistoria"),
                 ),
-                pend_documentacao=Case(
-                    When(~Q(sale__status="F"), then=Value("Documentação,")),
-                    default=Value(""),
-                    output_field=CharField(),
+                When(~Q(sale__status="F"), then=Value("Documentação")),
+                When(
+                    ~Q(sale__payment_status__in=["L", "C"]),
+                    then=Value("Financeiro"),
                 ),
-                pend_financeiro=Case(
-                    When(
-                        ~Q(sale__payment_status__in=["L", "C"]),
-                        then=Value("Financeiro,"),
-                    ),
-                    default=Value(""),
-                    output_field=CharField(),
+                When(~Q(designer_status="CO"), then=Value("Projeto de Engenharia")),
+                When(
+                    material_list_is_completed=False,
+                    then=Value("Lista de Materiais"),
                 ),
-            )
-            .annotate(
-                pending_concat=Concat(
-                    F("pend_vistoria"),
-                    F("pend_documentacao"),
-                    F("pend_financeiro"),
-                    output_field=CharField(),
-                )
-            )
-            .annotate(
-                current_step=Case(
-                    When(has_final=True, then=Value("Homologado")),
-                    When(~Q(pending_concat=""), then=F("pending_concat")),
-                    When(~Q(designer_status="CO"), then=Value("Projeto de Engenharia")),
-                    When(
-                        material_list_is_completed=False,
-                        then=Value("Lista de Materiais"),
-                    ),
-                    When(has_entrega=False, then=Value("Logística")),
-                    When(has_instalacao=False, then=Value("Instalação")),
-                    default=Value("Vistoria Final"),
-                    output_field=CharField(),
-                )
+                When(has_entrega=False, then=Value("Logística")),
+                When(has_instalacao=False, then=Value("Instalação")),
+                default=Value("Vistoria Final"),
+                output_field=CharField(),
             )
         )
 
@@ -181,43 +152,27 @@ class ProjectQuerySet(django_models.QuerySet):
 
         sale_ct = ContentType.objects.get_for_model(resolve_models.Sale)
 
-        has_contract = Exists(
-            Attachment.objects.filter(
-                content_type=sale_ct,
-                object_id=OuterRef("sale_id"),
-                status="A",
-                document_type__name__icontains="Contrato",
-            ).values("id")
+        has_contract = Attachment.objects.filter(
+            content_type=sale_ct,
+            object_id=OuterRef("sale_id"),
+            status="A",
+            document_type__name__icontains="Contrato",
         )
 
-        # Subconsulta para verificar se há CNH ou RG do homologador
-        has_cnh_or_rg_homologador = Exists(
-            Attachment.objects.filter(
-                content_type=sale_ct, object_id=OuterRef("sale_id"), status="A"
-            )
-            .filter(
-                Q(document_type__name__icontains="CNH")
-                | Q(document_type__name__icontains="RG"),
-                document_type__name__icontains="homologador",
-            )
-            .values("id")
+        has_cnh_or_rg_homologador = Attachment.objects.filter(
+            content_type=sale_ct, object_id=OuterRef("sale_id"), status="A"
+        ).filter(
+            Q(document_type__name__icontains="CNH")
+            | Q(document_type__name__icontains="RG"),
+            document_type__name__icontains="homologador",
         )
 
-        # Restante das subconsultas
-        has_unit_with_bill_file = Exists(
-            Units.objects.filter(
-                project=OuterRef("pk"), bill_file__isnull=False
-            ).values(
-                "id"
-            )  # Limita a subconsulta para retornar apenas 'id'
+        has_unit_with_bill_file = Units.objects.filter(
+            project=OuterRef("pk"), bill_file__isnull=False
         )
 
-        has_new_contract_uc = Exists(
-            Units.objects.filter(
-                project=OuterRef("pk"), new_contract_number=True
-            ).values(
-                "id"
-            )  # Limita a subconsulta para retornar apenas 'id'
+        has_new_contract_uc = Units.objects.filter(
+            project=OuterRef("pk"), new_contract_number=True
         )
 
         return self.annotate(
@@ -228,9 +183,9 @@ class ProjectQuerySet(django_models.QuerySet):
                     & Q(sale__is_pre_sale=False)
                     & ~Q(status__in=["C", "D"])
                     & Q(sale__status__in=["EA", "F"])
-                    & has_contract
-                    & has_cnh_or_rg_homologador
-                    & (has_unit_with_bill_file | has_new_contract_uc),
+                    & Exists(has_contract.values("pk"))
+                    & Exists(has_cnh_or_rg_homologador.values("pk"))
+                    & (Exists(has_unit_with_bill_file.values("pk")) | Exists(has_new_contract_uc.values("pk"))),
                     then=Value(True),
                 ),
                 default=Value(False),
@@ -379,35 +334,26 @@ class ProjectQuerySet(django_models.QuerySet):
         ).distinct()
 
     def with_homologation_status(self):
-        # 1) coleta os IDs por tipo
         request_types = ResquestType.objects.filter(
             Q(name="Parecer de Acesso")
             | Q(name="Aumento de Carga")
             | Q(name="Ajuste de Ramal")
             | Q(name="Nova UC")
             | Q(name="Vistoria Final")
-        )
-        type_ids = {
-            k: []
-            for k in [
-                "Parecer de Acesso",
-                "Aumento de Carga",
-                "Ajuste de Ramal",
-                "Nova UC",
-                "Vistoria Final",
-            ]
-        }
-        for rt in request_types:
-            for key in type_ids:
-                if key.lower() in rt.name.lower():
-                    type_ids[key].append(rt.id)
+        ).values("id", "name")
 
-        # 2) subquery para novo contrato
+        type_ids = {
+            "Parecer de Acesso": [rt["id"] for rt in request_types if "Parecer de Acesso" in rt["name"]],
+            "Aumento de Carga": [rt["id"] for rt in request_types if "Aumento de Carga" in rt["name"]],
+            "Ajuste de Ramal": [rt["id"] for rt in request_types if "Ajuste de Ramal" in rt["name"]],
+            "Nova UC": [rt["id"] for rt in request_types if "Nova UC" in rt["name"]],
+            "Vistoria Final": [rt["id"] for rt in request_types if "Vistoria Final" in rt["name"]],
+        }
+
         main_unit_has_new_contract = Units.objects.filter(
             project=OuterRef("pk"), main_unit=True, new_contract_number=True
         )
 
-        # 3) subqueries para cada status de pedido (pega o mais recente)
         def status_subquery(type_list):
             return (
                 RequestsEnergyCompany.objects.filter(
@@ -433,7 +379,7 @@ class ProjectQuerySet(django_models.QuerySet):
                 "Vistoria Final", "final_inspection_days"
             )
             .annotate(
-                has_main_unit_new_contract=Exists(main_unit_has_new_contract),
+                has_main_unit_new_contract=Exists(main_unit_has_new_contract.values("pk")),
                 access_req_status=Subquery(
                     status_subquery(type_ids["Parecer de Acesso"])
                 ),
@@ -514,12 +460,10 @@ class ProjectQuerySet(django_models.QuerySet):
                     output_field=CharField(),
                 ),
                 final_inspection_status=Case(
-                    # 1 status explícitos
                     When(final_req_status="D", then=Value("Deferido")),
                     When(final_req_status="S", then=Value("Solicitado")),
                     When(final_req_status="I", then=Value("Indeferida")),
                     When(final_req_status="ID", then=Value("Indeferida Debito")),
-                    # 2 bloqueios (sem decisão final)
                     When(
                         Q(final_req_status__isnull=True)
                         & (
@@ -544,7 +488,6 @@ class ProjectQuerySet(django_models.QuerySet):
                         ),
                         then=Value("Bloqueado"),
                     ),
-                    # 3 pendente
                     When(
                         final_req_status__isnull=True,
                         last_installation_final_service_opinion="Concluído",
@@ -815,55 +758,20 @@ class ProjectQuerySet(django_models.QuerySet):
         )
 
     def with_installation_status(self):
-        """Determines the installation status of projects based on multiple criteria"""
-        # Status constants
-        STATUS_PRE_SALE = "Pré-Venda"
-        STATUS_CANCELED_SALE = "Venda Cancelada ou Distrato"
-        STATUS_INSTALLED = "Instalado"
-        STATUS_CANCELED = "Cancelado"
-        STATUS_SCHEDULED = "Agendado"
-        STATUS_UNDER_CONSTRUCTION = "Em obra"
-        STATUS_BLOCKED = "Bloqueado"
-        STATUS_RELEASED = "Liberado"
-
-        # First get all necessary annotations
         queryset = self.with_is_released_to_installation()
         queryset = self._annotate_installation_related_fields(queryset)
 
         return queryset.annotate(
             installation_status=Case(
-                # 0) Check pre-sale and canceled sale status first
-                When(Q(sale__is_pre_sale=True), then=Value(STATUS_PRE_SALE)),
-                When(
-                    Q(sale__status__in=["C", "D"]),
-                    then=Value(STATUS_CANCELED_SALE),
-                ),
-                # 1) Installed or canceled
-                When(
-                    Q(latest_installation_opinion_name__icontains="Concluído"),
-                    then=Value(STATUS_INSTALLED),
-                ),
-                When(
-                    Q(latest_installation_opinion_name__icontains="Cancelada"),
-                    then=Value(STATUS_CANCELED),
-                ),
-                # 2) Scheduled: has installation but no final opinion yet
-                When(
-                    Q(has_installation=True)
-                    & Q(latest_installation_opinion_name__isnull=True),
-                    then=Value(STATUS_SCHEDULED),
-                ),
-                # 3) Under construction: needs construction and not finished
-                When(
-                    Q(has_construction_schedule=True)
-                    & ~Q(latest_construction_status="F"),
-                    then=Value(STATUS_UNDER_CONSTRUCTION),
-                ),
-                # 4) Not released for installation → blocked
-                When(Q(is_released_to_installation=False), then=Value(STATUS_BLOCKED)),
-                # 5) Released: ready for installation
-                When(Q(is_released_to_installation=True), then=Value(STATUS_RELEASED)),
-                default=Value(STATUS_BLOCKED),
+                When(Q(sale__is_pre_sale=True), then=Value("Pré-Venda")),
+                When(Q(sale__status__in=["C", "D"]), then=Value("Venda Cancelada ou Distrato")),
+                When(Q(latest_installation_opinion_name__icontains="Concluído"), then=Value("Instalado")),
+                When(Q(latest_installation_opinion_name__icontains="Cancelada"), then=Value("Cancelado")),
+                When(Q(has_installation=True) & Q(latest_installation_opinion_name__isnull=True), then=Value("Agendado")),
+                When(Q(has_construction_schedule=True) & ~Q(latest_construction_status="F"), then=Value("Em obra")),
+                When(Q(is_released_to_installation=False), then=Value("Bloqueado")),
+                When(Q(is_released_to_installation=True), then=Value("Liberado")),
+                default=Value("Bloqueado"),
                 output_field=CharField(),
             )
         )

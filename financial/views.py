@@ -310,7 +310,16 @@ class FinancialRecordViewSet(BaseModelViewSet):
     serializer_class = FinancialRecordSerializer
 
     def get_queryset(self):
-        query = super().get_queryset()
+        query = super().get_queryset().select_related(
+            'project',
+            'project__sale',
+            'project__sale__customer',
+            'requesting_department',
+            'requester',
+            'responsible',
+            'bank_details',
+            'lost_reason'
+        )
 
         user = self.request.user
         employee = user.employee

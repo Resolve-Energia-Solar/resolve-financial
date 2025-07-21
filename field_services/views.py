@@ -252,17 +252,17 @@ class ScheduleViewSet(BaseModelViewSet):
 
         return qs.filter(perms).distinct()
 
-    # @method_decorator(cache_page(60 * 5))
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
+    @method_decorator(cache_page(60 * 5))
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
-    #     page = self.paginate_queryset(queryset)
-    #     if page is not None:
-    #         serialized_data = self.get_serializer(page, many=True).data
-    #         return self.get_paginated_response(serialized_data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serialized_data = self.get_serializer(page, many=True).data
+            return self.get_paginated_response(serialized_data)
 
-    #     serialized_data = self.get_serializer(queryset, many=True).data
-    #     return Response(serialized_data)
+        serialized_data = self.get_serializer(queryset, many=True).data
+        return Response(serialized_data)
 
     def perform_update(self, serializer):
         instance = self.get_object()

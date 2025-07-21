@@ -104,7 +104,7 @@ class SaleViewSet(AccessLogMixin, BaseModelViewSet):
         )
 
         projects_qs = (
-            Project.objects.with_journey_counter()
+            Project.objects
             .select_related("inspection", "inspection__final_service_opinion")
             .order_by("-created_at")
         )

@@ -120,14 +120,10 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 class UserViewSet(AccessLogMixin, BaseModelViewSet):
-    total_inspections_subquery = User.objects.filter(
-        id=OuterRef('id')
-    ).annotate(
-        total_count=Count(
-            'costumer',
-            filter=Q(costumer__service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação'])
-        )
-    ).values('total_count')
+    total_inspections_subquery = Schedule.objects.filter(
+        schedule_agent_id=OuterRef('id'),
+        service__name__in=['Serviço de Vistoria', 'Serviço de Vistoria de Reavaliação']
+    ).values('schedule_agent_id').annotate(total_count=Count('id')).values('total_count')
     
     queryset = User.objects.all().select_related(
         'employee', 
@@ -377,7 +373,9 @@ class UserViewSet(AccessLogMixin, BaseModelViewSet):
 
 
 class EmployeeViewSet(BaseModelViewSet):
-    queryset = Employee.objects.all()
+    queryset = Employee.objects.select_related(
+        'user', 'user_manager', 'department', 'role', 'branch'
+    ).prefetch_related('related_branches').all()
     serializer_class = EmployeeSerializer
     http_method_names = ['get', 'post', 'put', 'delete', 'patch']
     
