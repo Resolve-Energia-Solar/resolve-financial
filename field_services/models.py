@@ -287,6 +287,12 @@ class Schedule(models.Model):
     value = models.DecimalField(
         "Valor", max_digits=10, decimal_places=2, blank=True, null=True
     )
+    datalogger_serial_number = models.CharField(
+        "Número de Série do Datalogger", max_length=50, blank=True, null=True
+    )
+    inverter_serial_number = models.CharField(
+        "Número de Série do Inversor", max_length=50, blank=True, null=True
+    )
     is_paid = models.BooleanField("Pago", default=False)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
