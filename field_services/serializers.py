@@ -85,7 +85,6 @@ class ScheduleSerializer(BaseSerializer):
 
         return attrs
 
-
     def validate_agent_availability(self, schedule_agent, schedule_date, schedule_start_time, schedule_end_time):
         disponibility = FreeTimeAgent.objects.filter(
             agent=schedule_agent,

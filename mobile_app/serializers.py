@@ -3,7 +3,7 @@ import datetime
 
 from django.utils.text import slugify
 from .models import *
-from resolve_crm.serializers import ContractSubmissionSerializer
+from resolve_crm.serializers.serializers import ContractSubmissionSerializer
 from rest_framework.reverse import reverse
 from rest_framework.serializers import SerializerMethodField, StringRelatedField
 from accounts.models import User

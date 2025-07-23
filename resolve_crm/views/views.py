@@ -42,8 +42,8 @@ from logistics.models import Product, ProductMaterials, SaleProduct
 from logistics.serializers import ProductSerializer
 from resolve_crm.task import save_all_sales
 from resolve_erp.utils.access_log import AccessLogMixin
-from .models import *
-from .serializers import *
+from ..models import *
+from ..serializers.serializers import *
 from django.db.models import OuterRef, Subquery, DecimalField, Value
 
 
@@ -268,7 +268,7 @@ class SaleViewSet(AccessLogMixin, BaseModelViewSet):
 
     def get_documents_under_analysis(self, obj):
         documents = obj.documents_under_analysis[:10]
-        from .serializers import AttachmentSerializer
+        from ..serializers.serializers import AttachmentSerializer
 
         return AttachmentSerializer(documents, many=True).data
 
@@ -996,7 +996,7 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if not instance.project_number:
-            from .task import generate_project_number
+            from ..task import generate_project_number
 
             generate_project_number.delay(instance.id)
         return super().retrieve(request, *args, **kwargs)

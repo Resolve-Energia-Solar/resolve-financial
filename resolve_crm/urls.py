@@ -1,5 +1,6 @@
 from api.urls import router
 from resolve_crm.views import *
+from resolve_crm.views.sale import OptimizedSaleListViewSet
 
 
 router.register('origins', OriginViewSet, basename='origin')
@@ -12,3 +13,7 @@ router.register('contract-submissions', ContractSubmissionViewSet, basename='con
 router.register('contract-template', ContractTemplateViewSet, basename='contract-template')
 router.register('reasons', ReasonViewSet, basename='reason')
 router.register('rewards', RewardViewSet, basename='reward')
+
+
+# API V2
+router.register(r'v2/sales', OptimizedSaleListViewSet, basename='optimized-sale-list')
