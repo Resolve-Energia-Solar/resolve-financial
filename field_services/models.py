@@ -293,6 +293,9 @@ class Schedule(models.Model):
     inverter_serial_number = models.CharField(
         "Número de Série do Inversor", max_length=50, blank=True, null=True
     )
+    cancellation_reason = models.TextField(
+        "Motivo do Cancelamento", blank=True, null=True
+    )
     is_paid = models.BooleanField("Pago", default=False)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
