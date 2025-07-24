@@ -260,7 +260,8 @@ class ScheduleViewSet(BaseModelViewSet):
 
         return qs.filter(perms).distinct()
 
-    @method_decorator(cache_page(60 * 5))
+    
+    # @method_decorator(cache_page(60 * 5))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
