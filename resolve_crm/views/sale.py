@@ -1,7 +1,7 @@
 # Em views.py
 
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from django.db.models import Count, Q, Prefetch, Sum, OuterRef
+from django.db.models import Count, Q, Prefetch, Sum, OuterRef, Exists
 
 from api.pagination import CustomPagination
 from resolve_crm.filters.sale_filter import SaleFilterSet
@@ -52,6 +52,15 @@ class OptimizedSaleListViewSet(ReadOnlyModelViewSet):
                 queryset=projects_qs,
                 to_attr="cached_projects"
             )
+        ).annotate(
+            is_released_to_engineering=Exists(
+                released_projects_subquery, 
+                filter=Q(projects__is_released_to_engineering=True)
+            )
+        ).filter(
+            Q(status__in=["P", "F", "EA", "C", "D"])
+        ).prefetch_related(
+            Prefetch('attachments', queryset=attachments_under_analysis_qs)
         )
 
         if not (user.is_superuser or user.has_perm("resolve_crm.view_all_sales")):

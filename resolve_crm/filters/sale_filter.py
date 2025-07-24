@@ -23,6 +23,8 @@ class SaleFilterSet(django_filters.FilterSet):
     tag_name__exact = django_filters.CharFilter(field_name='tags__tag', lookup_expr='exact')
     borrower = django_filters.NumberFilter(field_name='payments__borrower__id')
     homologator = django_filters.NumberFilter(field_name='projects__homologator__id')
+    
+    customer__in = django_filters.BaseInFilter(field_name='customer__id', lookup_expr='in')
 
     class Meta:
         model = Sale
