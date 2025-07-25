@@ -118,17 +118,13 @@ def generate_materials_pdf(request, project_id):
         'generation_date': datetime.datetime.now(),
     }
 
-    # 2. Renderizar o template HTML para uma string
     html_string = render_to_string('materiais_projeto.html', context)
 
-    # 3. Gerar o PDF com WeasyPrint
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
 
-    # 4. Criar a resposta HTTP com o PDF
     response = HttpResponse(pdf_file, content_type='application/pdf')
     
-    # Define o nome do arquivo para download
-    filename = f"materiais-projeto-{project.id}.pdf"
+    filename = f"materiais-projeto-{project.project_number}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     return response
