@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Materiais do Projeto: {{ project.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        thead {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            position: fixed;
+            bottom: -1cm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="footer">
+        Gerado em: {{ generation_date|date:"d/m/Y H:i" }}
+    </div>
+
+    <h1>Lista de Materiais - Projeto: {{ project.project_number }}</h1>
+    <p><strong>Cliente:</strong> {{ project.sale.customer.complete_name }}</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Material</th>
+                <th>Quantidade</th>
+                <th>Classe</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in materials %}
+            <tr>
+                <td>{{ item.material }}</td>
+                <td>{{ item.amount|floatformat:"2" }}</td>
+                <td>{{ item.get_material_class_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center;">Nenhum material encontrado para este projeto.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

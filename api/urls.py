@@ -14,7 +14,7 @@ from engineering.views import ProjectMaterialsCSVUploadAPIView
 from field_services.views import GenerateSchedulePDF
 from financial.views import FinancialRecordApprovalView, OmieIntegrationView, UpdateFinancialRecordPaymentStatus, SendFinancialRecordsToOmieView
 from resolve_crm.views import GenerateContractView, GenerateCustomContract, GeneratePreSaleView, GenerateSalesProjectsView, JourneyKanbanView, ValidateContractView
-from .views import GanttView, StatusView
+from .views import GanttView, StatusView, generate_materials_pdf
 from resolve_crm.views import save_all_sales_func
 from resolve_crm.views import list_sales_func
 
@@ -82,4 +82,9 @@ urlpatterns = [
     path("tickets-por-departamento/", tickets_por_departamento, name="tickets_por_departamento"),
     path('journey-kanban/', JourneyKanbanView.as_view(), name='journey-kanban'),
     path('schedule/<int:pk>/pdf/', GenerateSchedulePDF.as_view(), name='schedule-pdf'),
+    path(
+        'projetos/<int:project_id>/gerar-pdf-materiais/', 
+        generate_materials_pdf, 
+        name='gerar_pdf_materiais'
+    ),
 ]

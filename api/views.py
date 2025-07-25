@@ -8,6 +8,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 from api.pagination import CustomPagination
+import datetime
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from weasyprint import HTML
+
+from logistics.models import ProjectMaterials
+from resolve_crm.models import Project
 
 class BaseModelViewSet(ModelViewSet):
     permission_classes = [DjangoModelPermissions]
@@ -90,3 +98,37 @@ class StatusView(APIView):
 
     def get(self, request):
         return Response({"status": "OK"}, status=status.HTTP_200_OK)
+
+
+
+def generate_materials_pdf(request, project_id):
+    try:
+        project = get_object_or_404(Project, pk=project_id)
+        print(f"Gerando PDF para o projeto: {project_id}")
+        materials = ProjectMaterials.objects.filter(project=project, is_deleted=False)
+        if not materials:
+            return HttpResponse("Nenhum material encontrado para este projeto.", status=404)
+        print(f"Materiais encontrados: {materials.count()}")
+    except Project.DoesNotExist:
+        return HttpResponse("Projeto não encontrado.", status=404)
+
+    context = {
+        'project': project,
+        'materials': materials,
+        'generation_date': datetime.datetime.now(),
+    }
+
+    # 2. Renderizar o template HTML para uma string
+    html_string = render_to_string('materiais_projeto.html', context)
+
+    # 3. Gerar o PDF com WeasyPrint
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+
+    # 4. Criar a resposta HTTP com o PDF
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    
+    # Define o nome do arquivo para download
+    filename = f"materiais-projeto-{project.id}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
