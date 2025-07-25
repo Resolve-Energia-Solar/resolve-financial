@@ -83,8 +83,8 @@ urlpatterns = [
     path('journey-kanban/', JourneyKanbanView.as_view(), name='journey-kanban'),
     path('schedule/<int:pk>/pdf/', GenerateSchedulePDF.as_view(), name='schedule-pdf'),
     path(
-        'projetos/<int:project_id>/gerar-pdf-materiais/', 
+        'project/<int:project_id>/generate-pdf-materials/', 
         generate_materials_pdf, 
-        name='gerar_pdf_materiais'
+        name='generate_pdf_materials'
     ),
 ]
