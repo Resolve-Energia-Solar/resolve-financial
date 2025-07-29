@@ -8,7 +8,8 @@ from django.forms import ValidationError
 from simple_history.models import HistoricalRecords
 from django.urls import reverse_lazy
 from django.utils.text import slugify
-
+from django.db.models import Sum
+from datetime import timedelta
 
 class UserType(models.Model):
     name = models.CharField("Nome do Tipo de Usuário", max_length=50, unique=True)
@@ -344,3 +345,69 @@ class EndpointAccess(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.endpoint} - {self.accessed_at}"
+
+
+
+class MonthlyGoal(models.Model):
+    branch = models.ForeignKey(
+        "accounts.Branch",
+        verbose_name="Unidade",
+        help_text="A unidade à qual esta meta se refere.",
+        on_delete=models.CASCADE,
+        related_name="monthly_goals"
+    )
+    month_year = models.DateField(
+        "Mês e Ano da Meta",
+        help_text="Use o primeiro dia do mês para representar o período da meta (ex: 01/08/2024 para Agosto de 2024)."
+    )
+    target_value = models.DecimalField(
+        "Valor da Meta",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="O valor total que a unidade deve atingir no mês."
+    )
+    achieved_value = models.DecimalField(
+        "Valor Alcançado",
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="O valor acumulado de vendas no mês. Atualizado automaticamente."
+    )
+    created_at = models.DateTimeField("Data de Criação", auto_now_add=True)
+    updated_at = models.DateTimeField("Última Atualização", auto_now=True)
+
+    class Meta:
+        verbose_name = "Meta Mensal"
+        verbose_name_plural = "Metas Mensais"
+        unique_together = ('branch', 'month_year')
+        ordering = ['-month_year', 'branch__name']
+
+    def __str__(self):
+        return f"{self.branch.name} - {self.month_year.strftime('%m/%Y')}"
+
+    def _get_month_range(self):
+        start_date = self.month_year
+        next_month = (start_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+        end_date = next_month - timedelta(days=1)
+        return start_date, end_date
+
+    # @property
+    # def live_achieved_value(self):
+    #     start_date, end_date = self._get_month_range()
+    #     total = Sale.objects.filter(
+    #         branch=self.branch,
+    #         created_at__gte=start_date,
+    #         created_at__lte=end_date.replace(hour=23, minute=59, second=59)
+    #     ).aggregate(
+    #         total_sum=Sum('value')
+    #     )['total_sum']
+
+    #     return total or Decimal('0.00')
+
+    @property
+    def live_percentage_achieved(self):
+        if self.target_value == 0:
+            return Decimal('0.00')
+        return round((self.live_achieved_value / self.target_value) * 100, 2)

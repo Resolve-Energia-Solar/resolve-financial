@@ -6,8 +6,7 @@ from .jazzmin import JAZZMIN_SETTINGS, JAZZMIN_UI_TWEAKS
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
-
-
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -87,6 +86,13 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [('redis', 6379)], 
         },
+    },
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'finalize-goals-at-start-of-month': {
+        'task': 'resolve_crm.tasks.finalize_monthly_goals',
+        'schedule': crontab(day_of_month=1, hour=2, minute=0),
     },
 }
 

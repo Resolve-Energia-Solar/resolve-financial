@@ -8,9 +8,10 @@ from django.utils import timezone
 import requests
 import math
 from django.conf import settings
-from accounts.models import Branch
+from accounts.models import Branch, MonthlyGoal
 from core.models import Tag
 from logistics.models import SaleProduct
+from datetime import timedelta
 
 from .clicksign import (
     activate_envelope,
@@ -458,3 +459,29 @@ def update_project_delivery_type(project_id):
         "delivery_type": project.delivery_type,
         "distance_km": round(dist_km, 2),
     }
+
+
+
+@shared_task
+def finalize_monthly_goals():
+    yesterday = timezone.now().date() - timedelta(days=1)
+    goals_to_finalize = MonthlyGoal.objects.filter(
+        month_year__year=yesterday.year,
+        month_year__month=yesterday.month
+    )
+
+    if not goals_to_finalize.exists():
+        print(f"Nenhuma meta para finalizar para o mês {yesterday.strftime('%m/%Y')}.")
+        return
+
+    print(f"Iniciando finalização de {goals_to_finalize.count()} metas para {yesterday.strftime('%m/%Y')}...")
+
+    for goal in goals_to_finalize:
+        final_value = goal.live_achieved_value
+        
+        goal.achieved_value = final_value
+        goal.save(update_fields=['achieved_value', 'updated_at'])
+        
+        print(f"Meta de {goal.branch.name} finalizada com valor de R$ {final_value}.")
+
+    return f"Finalização concluída para {goals_to_finalize.count()} metas."
