@@ -18,7 +18,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import formats
-
+from datetime import datetime
 # REST framework imports
 from rest_framework import status
 from rest_framework.decorators import action, api_view
@@ -481,6 +481,50 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
         construction__work_responsibility__in = request.query_params.get(
             "construction__work_responsibility__in"
         )
+        installation_date = request.query_params.get("installation_date")
+        delivery_date = request.query_params.get("delivery_date")
+        
+        if delivery_date:
+            date_range_str = delivery_date.split(",")
+
+            if len(date_range_str) == 2:
+                date_range = [
+                    datetime.strptime(date_range_str[0].strip(), "%Y-%m-%d").date(),
+                    datetime.strptime(date_range_str[1].strip(), "%Y-%m-%d").date(),
+                ]
+                queryset = queryset.filter(
+                    field_services__service__category__name="Entrega",
+                    field_services__final_service_opinion__name__icontains="Entregue",
+                    field_services__final_service_opinion_date__range=date_range,
+                )
+            else:
+                single_date = datetime.strptime(delivery_date.strip(), "%Y-%m-%d").date()
+                queryset = queryset.filter(
+                    field_services__service__category__name="Entrega",
+                    field_services__final_service_opinion__name__icontains="Entregue",
+                    field_services__final_service_opinion_date=single_date,
+                )
+
+        if installation_date:
+            date_range_str = installation_date.split(",")
+            
+            if len(date_range_str) == 2:
+                date_range = [
+                    datetime.strptime(date_range_str[0].strip(), "%Y-%m-%d").date(),
+                    datetime.strptime(date_range_str[1].strip(), "%Y-%m-%d").date(),
+                ]
+                queryset = queryset.filter(
+                    field_services__service__category__name="Instalação",
+                    field_services__final_service_opinion__name__icontains="Concluído",
+                    field_services__final_service_opinion_date__range=date_range,
+                )
+            else:
+                single_date = datetime.strptime(installation_date.strip(), "%Y-%m-%d").date()
+                queryset = queryset.filter(
+                    field_services__service__category__name="Instalação",
+                    field_services__final_service_opinion__name__icontains="Concluído",
+                    field_services__final_service_opinion_date=single_date,
+                )
 
         if is_customer_aware_of_construction:
             if is_customer_aware_of_construction.lower() == "true":
