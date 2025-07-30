@@ -3,7 +3,6 @@ import datetime
 import logging
 import re
 from hashlib import md5
-
 # Django imports
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -18,7 +17,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import formats
-from datetime import datetime
+from datetime import datetime as dt
 # REST framework imports
 from rest_framework import status
 from rest_framework.decorators import action, api_view
@@ -510,8 +509,8 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
             
             if len(date_range_str) == 2:
                 date_range = [
-                    datetime.strptime(date_range_str[0].strip(), "%Y-%m-%d").date(),
-                    datetime.strptime(date_range_str[1].strip(), "%Y-%m-%d").date(),
+                    dt.strptime(date_range_str[0].strip(), "%Y-%m-%d").date(),
+                    dt.strptime(date_range_str[1].strip(), "%Y-%m-%d").date(),
                 ]
                 queryset = queryset.filter(
                     field_services__service__category__name="Instalação",
