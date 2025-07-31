@@ -367,6 +367,16 @@ class MonthlyGoal(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text="O valor total que a unidade deve atingir no mês."
     )
+    target_sales = models.PositiveIntegerField(
+        "Número de Vendas",
+        validators=[MinValueValidator(1)],
+        help_text="O número total de vendas que a unidade deve alcançar no mês."
+    )
+    achieved_sales = models.PositiveIntegerField(
+        "Vendas Alcançadas",
+        default=0,
+        help_text="O número de vendas que a unidade alcançou no mês."
+    )
     achieved_value = models.DecimalField(
         "Valor Alcançado",
         max_digits=12,
