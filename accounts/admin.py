@@ -265,5 +265,11 @@ class MonthlyGoalAdmin(admin.ModelAdmin):
         "achieved_value",
         "month_year"
     )
+    search_fields = (
+        "branch__name",
+        "target_value",
+        "achieved_value",
+        "month_year"
+    )
     list_per_page = 10
     list_max_show_all = 100
