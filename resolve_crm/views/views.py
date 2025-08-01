@@ -482,6 +482,18 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
         )
         installation_date = request.query_params.get("installation_date")
         delivery_date = request.query_params.get("delivery_date")
+        delivery_forecast = request.query_params.get("delivery_forecast__range")
+        
+        if delivery_forecast:
+            date_range = delivery_forecast.split(",")
+            if len(date_range) == 2:
+                queryset = queryset.filter(
+                    purchases__delivery_forecast__range=date_range
+                )
+            else:
+                queryset = queryset.filter(
+                    purchases__delivery_forecast=date_range[0].strip()
+                )
         
         if delivery_date:
             date_range_str = delivery_date.split(",")
