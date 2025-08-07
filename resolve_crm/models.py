@@ -627,6 +627,8 @@ class Sale(models.Model):
         permissions = [
             ("can_change_billing_date", "Can change billing date"),
             ("can_change_fineshed_sale", "Can change finished sale"),
+            ("view_dashboard", "Pode ver dashboard no sistema de vendas"),
+            ("view_ranking", "Pode ver ranking de vendas"),
         ]
         """
         constraints = [

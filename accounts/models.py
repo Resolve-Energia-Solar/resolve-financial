@@ -360,6 +360,8 @@ class MonthlyGoal(models.Model):
         "Mês e Ano da Meta",
         help_text="Use o primeiro dia do mês para representar o período da meta (ex: 01/08/2024 para Agosto de 2024)."
     )
+    start_date = models.DateField("Data de Início do Período")
+    end_date = models.DateField("Data de Fim do Período")
     target_value = models.DecimalField(
         "Valor da Meta",
         max_digits=12,

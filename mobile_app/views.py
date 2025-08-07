@@ -38,63 +38,67 @@ class CustomerLoginView(APIView):
     def post(self, request):
         first_document = request.data.get('first_document')
         birth_date = request.data.get('birth_date')
-
-        # Validar os campos recebidos
-        if not first_document or not birth_date:
-            return Response({
-                'message': 'Documento e data de nascimento são obrigatórios.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        elif first_document and len(first_document) != 11:
-            return Response({
-                'message': 'Documento (CPF) deve ter 11 dígitos.'       
-            }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-        user = User.objects.filter(first_document=first_document, birth_date=birth_date).order_by('-last_login').first()
-
-        if not user:
-            # Não informar se o usuário não existe
-            return Response({
-                'message': 'Verifique as informações inseridas.'
-            }, status=status.HTTP_403_FORBIDDEN)
-    
-        # Verificar se o usuário está ativo
-        if not user.is_active:
-            return Response({
-                'message': 'Usuário inativo.'
-            }, status=status.HTTP_403_FORBIDDEN)
         
-        # Verificar se o usuário tem uma venda associada
-        if not user.customer_sales.exists():
-            return Response({
-                'message': 'Cliente sem venda.'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        last_login = user.last_login
-        
-        # Gerar e retornar os tokens JWT
-        refresh = RefreshToken.for_user(user)
-        
-        # Adicionar o usuário ao grupo "Cliente" e atribuir o tipo de usuário "Cliente"
-        # Isso deve ser feito apenas uma vez, então verifique se o usuário já está no grupo
-        if not user.groups.filter(name="Cliente").exists():
-            customer_group, _ = Group.objects.get_or_create(name="Cliente")
-            user.groups.add(customer_group)
-            customer_type, _ = UserType.objects.get_or_create(name="Cliente")
-            user.user_types.add(customer_type)
-        else:
-            # Se o usuário já estiver no grupo, não faça nada
-            pass
-
-        # Atualizar o último login do usuário
-        user.last_login = timezone.now()
-        user.save()
-
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'id': user.id,
-            'last_login': last_login
-        }, status=status.HTTP_200_OK)
+            'message': 'Este aplicativo está temporariamente desativada. Entre em contato através do WhatsApp (91) 4004-8688.'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        # # Validar os campos recebidos
+        # if not first_document or not birth_date:
+        #     return Response({
+        #         'message': 'Documento e data de nascimento são obrigatórios.'
+        #     }, status=status.HTTP_400_BAD_REQUEST)
+        # elif first_document and len(first_document) != 11:
+        #     return Response({
+        #         'message': 'Documento (CPF) deve ter 11 dígitos.'       
+        #     }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        # user = User.objects.filter(first_document=first_document, birth_date=birth_date).order_by('-last_login').first()
+
+        # if not user:
+        #     # Não informar se o usuário não existe
+        #     return Response({
+        #         'message': 'Verifique as informações inseridas.'
+        #     }, status=status.HTTP_403_FORBIDDEN)
+    
+        # # Verificar se o usuário está ativo
+        # if not user.is_active:
+        #     return Response({
+        #         'message': 'Usuário inativo.'
+        #     }, status=status.HTTP_403_FORBIDDEN)
+        
+        # # Verificar se o usuário tem uma venda associada
+        # if not user.customer_sales.exists():
+        #     return Response({
+        #         'message': 'Cliente sem venda.'
+        #     }, status=status.HTTP_403_FORBIDDEN)
+        
+        # last_login = user.last_login
+        
+        # # Gerar e retornar os tokens JWT
+        # refresh = RefreshToken.for_user(user)
+        
+        # # Adicionar o usuário ao grupo "Cliente" e atribuir o tipo de usuário "Cliente"
+        # # Isso deve ser feito apenas uma vez, então verifique se o usuário já está no grupo
+        # if not user.groups.filter(name="Cliente").exists():
+        #     customer_group, _ = Group.objects.get_or_create(name="Cliente")
+        #     user.groups.add(customer_group)
+        #     customer_type, _ = UserType.objects.get_or_create(name="Cliente")
+        #     user.user_types.add(customer_type)
+        # else:
+        #     # Se o usuário já estiver no grupo, não faça nada
+        #     pass
+
+        # # Atualizar o último login do usuário
+        # user.last_login = timezone.now()
+        # user.save()
+
+        # return Response({
+        #     'refresh': str(refresh),
+        #     'access': str(refresh.access_token),
+        #     'id': user.id,
+        #     'last_login': last_login
+        # }, status=status.HTTP_200_OK)
 
 
 class CustomerViewset(BaseModelViewSet):
