@@ -423,3 +423,9 @@ class RouteSerializer(BaseSerializer):
     class Meta:
         model = Route
         fields = '__all__'
+        
+
+class FormAnswerSerializer(BaseSerializer):
+    class Meta(BaseSerializer.Meta):
+        model = FormAnswer
+        fields = '__all__'

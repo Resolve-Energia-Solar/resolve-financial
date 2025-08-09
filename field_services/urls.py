@@ -14,3 +14,4 @@ router.register('free-time-agent', FreeTimeAgentViewSet, basename='free-time-age
 router.register('form-files', FormFileViewSet, basename='form-file')
 router.register('service-opinions', ServiceOpinionViewSet, basename='service-opinion')
 router.register('routes', RouteViewSet, basename='route')
+router.register('form-answers', FormAnswerViewSet, basename='form-answer')

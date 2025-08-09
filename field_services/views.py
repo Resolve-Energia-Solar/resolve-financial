@@ -45,6 +45,7 @@ from .serializers import (
     BlockTimeAgentSerializer,
     CategorySerializer,
     DeadlineSerializer,
+    FormAnswerSerializer,
     FormsSerializer,
     FormFileSerializer,
     FreeTimeAgentSerializer,
@@ -572,3 +573,16 @@ class GenerateSchedulePDF(APIView):
             content_type='application/pdf',
             headers={'Content-Disposition': f'attachment; filename="{filename}"'}
         )
+
+
+
+class FormAnswerViewSet(BaseModelViewSet):
+    queryset = Answer.objects.all()
+    serializer_class = FormAnswerSerializer
+
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     schedule = self.request.query_params.get("schedule")
+    #     if schedule:
+    #         queryset = queryset.filter(schedule__id=schedule)
+    #     return queryset

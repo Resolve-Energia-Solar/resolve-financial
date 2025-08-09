@@ -296,6 +296,14 @@ class Schedule(models.Model):
     cancellation_reason = models.TextField(
         "Motivo do Cancelamento", blank=True, null=True
     )
+    planta = models.TextField("Planta", blank=True, null=True)
+    solarz = models.CharField(
+        "Solarz", max_length=50, blank=True, null=True,
+        choices=[
+            ("Sim", "Sim"),
+            ("Não", "Não"),
+        ]
+    )
     is_paid = models.BooleanField("Pago", default=False)
     is_deleted = models.BooleanField("Deletado", default=False)
     history = HistoricalRecords()
@@ -483,4 +491,23 @@ class Route(models.Model):
     class Meta:
         verbose_name = "Rota"
         verbose_name_plural = "Rotas"
+        ordering = ["-created_at"]
+
+
+
+class FormAnswer(models.Model):
+    schedule = models.ForeignKey(
+        "Schedule", verbose_name="Agendamento", on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        "accounts.User", verbose_name="Usuário", on_delete=models.CASCADE
+    )
+    answer = models.JSONField("Resposta", blank=True, null=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
+    is_deleted = models.BooleanField("Deletado", default=False)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "Resposta de Formulário"
+        verbose_name_plural = "Respostas de Formulário"
         ordering = ["-created_at"]
