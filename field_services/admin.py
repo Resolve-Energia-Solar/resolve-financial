@@ -105,3 +105,10 @@ class RouteAdmin(admin.ModelAdmin):
     list_display = ("schedule", "agent", "start_time", "end_time", "status")
     search_fields = ("schedule__protocol", "agent__complete_name", "status")
     autocomplete_fields = ("schedule", "agent")
+
+
+@admin.register(FormAnswer)
+class FormAnswerAdmin(admin.ModelAdmin):
+    list_display = ("schedule", "user", "created_at")
+    search_fields = ("schedule__protocol", "user__complete_name")
+    autocomplete_fields = ("schedule", "user")
