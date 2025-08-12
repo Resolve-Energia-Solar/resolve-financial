@@ -539,24 +539,115 @@ class ProjectQuerySet(django_models.QuerySet):
             )
         )
 
-    def with_purchase_status(self):
-        return self.with_is_released_to_engineering().annotate(
-            purchase_status=Case(
-                When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                When(Q(purchases__isnull=True), then=Value("Liberado")),
-                When(Q(purchases__status="P"), then=Value("Pendente")),
-                When(Q(purchases__status="R"), then=Value("Compra Realizada")),
-                When(Q(purchases__status="C"), then=Value("Cancelado")),
-                When(Q(purchases__status="D"), then=Value("Distrato")),
-                When(
-                    Q(purchases__status="F"),
-                    then=Value("Aguardando Previsão de Entrega"),
+    def with_purchase_and_delivery_status(self):
+        """
+        Método otimizado que combina purchase_status e delivery_status em uma única query
+        para melhor performance. Se delivery_status for "Entregue", purchase_status será "Compra Realizada".
+        """
+        # Subqueries otimizadas para delivery
+        delivery_schedules = Schedule.objects.filter(
+            service__name="Serviço de Entrega", 
+            project=OuterRef("pk")
+        )
+        
+        delivered_schedules = delivery_schedules.filter(
+            final_service_opinion__name="Entregue"
+        )
+        
+        # Subquery para última opinião de entrega (otimizada)
+        last_delivery_opinion = delivery_schedules.order_by("-created_at").values(
+            "final_service_opinion__name"
+        )[:1]
+        
+        return (
+            self.with_is_released_to_engineering()
+            .select_related('sale')
+            .prefetch_related('purchases')
+            .annotate(
+                # Anotações para delivery status
+                has_delivery=Exists(delivery_schedules),
+                has_delivered=Exists(delivered_schedules),
+                last_delivery_opinion_name=Subquery(
+                    last_delivery_opinion,
+                    output_field=CharField()
                 ),
-                When(Q(purchases__status="A"), then=Value("Aguardando Pagamento")),
-                default=Value("Bloqueado"),
-                output_field=CharField(),
+                # Delivery status calculado
+                delivery_status=Case(
+                    When(has_delivered=True, then=Value("Entregue")),
+                    When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
+                    When(
+                        Q(has_delivery=True) & Q(last_delivery_opinion_name__isnull=True),
+                        then=Value("Agendado")
+                    ),
+                    When(
+                        Q(purchases__isnull=False)
+                        & Q(delivery_type="D")
+                        & Q(purchases__status="R")
+                        & ~Q(has_delivery=True),
+                        then=Value("Liberado")
+                    ),
+                    When(
+                        Q(purchases__isnull=False)
+                        & Q(delivery_type="C")
+                        & Q(purchases__status="R")
+                        & Q(designer_status__in=["CO"])
+                        & Q(material_list_is_completed=True)
+                        & ~Q(has_delivery=True),
+                        then=Value("Liberado")
+                    ),
+                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                    When(Q(purchases__isnull=True), then=Value("Bloqueado")),
+                    When(
+                        Q(purchases__isnull=False)
+                        & Q(delivery_type="D")
+                        & ~Q(purchases__status="R"),
+                        then=Value("Bloqueado")
+                    ),
+                    When(
+                        Q(purchases__isnull=False)
+                        & Q(delivery_type="C")
+                        & Q(purchases__status="R")
+                        & ~Q(designer_status__in=["CO"])
+                        & ~Q(material_list_is_completed=True),
+                        then=Value("Bloqueado")
+                    ),
+                    default=Value("Bloqueado"),
+                    output_field=CharField(),
+                ),
+            )
+            .annotate(
+                # Purchase status com lógica especial para delivery "Entregue"
+                purchase_status=Case(
+                    # Se delivery_status for "Entregue", purchase_status deve ser "Compra Realizada"
+                    When(delivery_status="Entregue", then=Value("Compra Realizada")),
+                    When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
+                    When(Q(purchases__isnull=True), then=Value("Liberado")),
+                    When(Q(purchases__status="P"), then=Value("Pendente")),
+                    When(Q(purchases__status="R"), then=Value("Compra Realizada")),
+                    When(Q(purchases__status="C"), then=Value("Cancelado")),
+                    When(Q(purchases__status="D"), then=Value("Distrato")),
+                    When(
+                        Q(purchases__status="F"),
+                        then=Value("Aguardando Previsão de Entrega")
+                    ),
+                    When(Q(purchases__status="A"), then=Value("Aguardando Pagamento")),
+                    default=Value("Bloqueado"),
+                    output_field=CharField(),
+                )
             )
         )
+
+    def with_purchase_status(self):
+        """
+        Método mantido para compatibilidade, mas agora usa o método otimizado
+        """
+        return self.with_purchase_and_delivery_status()
+
+    def with_delivery_status(self):
+        """
+        Método mantido para compatibilidade, mas agora usa o método otimizado
+        """
+        return self.with_purchase_and_delivery_status()
 
     def with_expected_delivery_date(self):
         return self.annotate(
@@ -577,84 +668,6 @@ class ProjectQuerySet(django_models.QuerySet):
             expected_delivery_status=Case(
                 When(sale__signature_date__isnull=True, then=Value("Sem contrato")),
                 default=Value("Com contrato"),
-                output_field=CharField(),
-            ),
-        )
-
-    def with_delivery_status(self):
-        from django.db.models import (
-            Exists,
-            OuterRef,
-            Subquery,
-            Case,
-            When,
-            Value,
-            Q,
-            CharField,
-        )
-
-        delivery_schedules = Schedule.objects.filter(
-            service__name="Serviço de Entrega", project=OuterRef("pk")
-        )
-
-        delivered_schedules = delivery_schedules.filter(
-            final_service_opinion__name="Entregue"
-        )
-
-        return self.with_is_released_to_engineering().annotate(
-            has_delivery=Exists(delivery_schedules),
-            has_delivered=Exists(delivered_schedules),
-            last_delivery_opinion_name=Subquery(
-                delivery_schedules.order_by("-created_at").values(
-                    "final_service_opinion__name"
-                )[:1]
-            ),
-            delivery_status=Case(
-                # 1) Primeiro: Entregue
-                When(has_delivered=True, then=Value("Entregue")),
-                # 2) Depois: Cancelado
-                When(last_delivery_opinion_name="Cancelado", then=Value("Cancelado")),
-                # 3) Agendado
-                When(
-                    Q(has_delivery=True) & Q(last_delivery_opinion_name__isnull=True),
-                    then=Value("Agendado"),
-                ),
-                # 4) Liberado (tipo D)
-                When(
-                    Q(purchases__isnull=False)
-                    & Q(delivery_type="D")
-                    & Q(purchases__status="R")
-                    & ~Q(has_delivery=True),
-                    then=Value("Liberado"),
-                ),
-                # 5) Liberado (tipo C)
-                When(
-                    Q(purchases__isnull=False)
-                    & Q(delivery_type="C")
-                    & Q(purchases__status="R")
-                    & Q(designer_status__in=["CO"])
-                    & Q(material_list_is_completed=True)
-                    & ~Q(has_delivery=True),
-                    then=Value("Liberado"),
-                ),
-                # 6) Bloqueado (fallback)
-                When(Q(is_released_to_engineering=False), then=Value("Bloqueado")),
-                When(Q(purchases__isnull=True), then=Value("Bloqueado")),
-                When(
-                    Q(purchases__isnull=False)
-                    & Q(delivery_type="D")
-                    & ~Q(purchases__status="R"),
-                    then=Value("Bloqueado"),
-                ),
-                When(
-                    Q(purchases__isnull=False)
-                    & Q(delivery_type="C")
-                    & Q(purchases__status="R")
-                    & ~Q(designer_status__in=["CO"])
-                    & ~Q(material_list_is_completed=True),
-                    then=Value("Bloqueado"),
-                ),
-                default=Value("Bloqueado"),
                 output_field=CharField(),
             ),
         )
@@ -900,7 +913,6 @@ class ProjectQuerySet(django_models.QuerySet):
             .distinct()
         )
 
-
     def with_ticket_stats(self):
         return self.annotate(
             total_tickets=Count("project_tickets", distinct=True),
@@ -937,9 +949,8 @@ class ProjectQuerySet(django_models.QuerySet):
             .with_last_installation_final_service_opinion()
             .with_supply_adquance_names()
             .with_trt_pending()
-            # Logistics
-            .with_delivery_status()
-            .with_purchase_status()
+            # Logistics - Usando método otimizado
+            .with_purchase_and_delivery_status()
             .with_expected_delivery_date()
             # Installation
             .with_is_released_to_installation()
