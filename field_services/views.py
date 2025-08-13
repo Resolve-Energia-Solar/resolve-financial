@@ -28,6 +28,7 @@ from resolve_crm.models import Lead
 from resolve_erp import settings
 from .models import (
     Answer,
+    FormAnswer,
     BlockTimeAgent,
     Category,
     Deadline,
@@ -577,7 +578,7 @@ class GenerateSchedulePDF(APIView):
 
 
 class FormAnswerViewSet(BaseModelViewSet):
-    queryset = Answer.objects.all()
+    queryset = FormAnswer.objects.all()
     serializer_class = FormAnswerSerializer
 
     # def get_queryset(self):
