@@ -1,4 +1,4 @@
-# ERP Resolve
+# ERP Resolve V1
 
 Sistema de _Enterprise Resource Planning_ da Resolve Energia Solar.
 
