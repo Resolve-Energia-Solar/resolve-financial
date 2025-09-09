@@ -769,6 +769,31 @@ class Project(models.Model):
         ],
         default="P",
     )
+    financier_monitoring_status = models.CharField(
+        "Status do Monitoramento do Financeiro",
+        max_length=3,
+        choices=[
+            ("SFI", "Sem Foto da Instalação"),
+            ("CMK", "Confirmar Mensagem de Kit Entregue"),
+            ("FTA", "Falha na Transferência (Em Análise)"),
+            ("AAD", "Aguardando Aprovação da Documentação de Equipamento Entregue"),
+            ("F", "Finalizado"),
+        ],
+        default="P",
+    )
+    financier_monitoring_status_changed_by = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        verbose_name="Alterado por",
+        related_name="financier_status_changes",
+        null=True,
+        blank=True,
+    )
+    financier_monitoring_status_changed_at = models.DateTimeField(
+        "Data da Última Alteração do Status",
+        null=True,
+        blank=True,
+    )
     delivery_type = models.CharField(
         "Tipo de Entrega",
         max_length=1,
@@ -895,6 +920,22 @@ class Project(models.Model):
             self.documention_completion_date = now()
         if not self.designer_conclusion_date and self.designer_status == "CO":
             self.designer_conclusion_date = now()
+
+        # Auditoria para financier_monitoring_status
+        if self.pk:  # Se o objeto já existe, verificar se o status foi alterado
+            try:
+                old_project = Project.objects.get(pk=self.pk)
+                if old_project.financier_monitoring_status != self.financier_monitoring_status:
+                    # Status foi alterado, registrar quem e quando
+                    self.financier_monitoring_status_changed_by = current_user
+                    self.financier_monitoring_status_changed_at = now()
+            except Project.DoesNotExist:
+                pass
+        else:
+            # Novo objeto, registrar quem criou e quando (se current_user fornecido)
+            if current_user:
+                self.financier_monitoring_status_changed_by = current_user
+                self.financier_monitoring_status_changed_at = now()
 
         super().save(*args, **kwargs)
         if not self.project_steps.exists():

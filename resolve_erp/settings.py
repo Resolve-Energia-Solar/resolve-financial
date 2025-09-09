@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'resolve_erp',
     'accounts.apps.AccountsConfig',
     'core.apps.CoreConfig',
     'resolve_crm.apps.ResolveCRMConfig',

@@ -433,12 +433,28 @@ class ProjectSerializer(BaseSerializer):
             "neighborhood": addr.get("neighborhood") if addr else None,
         }
 
+    def create(self, validated_data):
+        materials_data = validated_data.pop("materials_data", [])
+        
+        # Pass current_user if available in context
+        current_user = self.context.get('current_user')
+        instance = super().create(validated_data)
+        instance.save(current_user=current_user)
+
+        if materials_data:
+            self._save_materials(instance, materials_data)
+
+        return instance
+
     def update(self, instance, validated_data):
         materials_data = validated_data.pop("materials_data", [])
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.save()
+        
+        # Pass current_user if available in context
+        current_user = self.context.get('current_user')
+        instance.save(current_user=current_user)
 
         if materials_data:
             self._save_materials(instance, materials_data)
