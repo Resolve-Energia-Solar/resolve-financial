@@ -323,6 +323,17 @@ class ProjectViewSet(AccessLogMixin, BaseModelViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['current_user'] = self.request.user
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
+
     def get_queryset(self):
         metrics = self.request.query_params.get("metrics")
         queryset = super().get_queryset()

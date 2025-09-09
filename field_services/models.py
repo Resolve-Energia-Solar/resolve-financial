@@ -280,6 +280,7 @@ class Schedule(models.Model):
         blank=True,
         null=True,
     )
+    financiers_voucher = models.CharField("Voucher do Financiador", max_length=50, blank=True, null=True)
     observation = models.TextField("Observação", blank=True, null=True)
     step = models.IntegerField("Etapa", default=1)
     arrived_at = models.DateTimeField("Chegou em", blank=True, null=True)
