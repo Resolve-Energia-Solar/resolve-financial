@@ -778,8 +778,7 @@ class Project(models.Model):
             ("FTA", "Falha na Transferência (Em Análise)"),
             ("AAD", "Aguardando Aprovação da Documentação de Equipamento Entregue"),
             ("F", "Finalizado"),
-        ],
-        default="P",
+        ], blank=True, null=True,
     )
     financier_monitoring_status_changed_by = models.ForeignKey(
         get_user_model(),
