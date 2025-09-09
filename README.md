@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # ERP Resolve Produção v3
+=======
+# ERP Resolve V1
+>>>>>>> approval
 
 Sistema de _Enterprise Resource Planning_ da Resolve Energia Solar.
 

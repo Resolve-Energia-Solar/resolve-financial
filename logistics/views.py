@@ -1,6 +1,7 @@
 from api.views import BaseModelViewSet
 from .models import *
 from .serializers import *
+from .filters import PurchaseFilterSet
 from django.db.models import Prefetch
 
 
@@ -91,5 +92,9 @@ class SaleProductViewSet(BaseModelViewSet):
 
 
 class PurchaseViewSet(BaseModelViewSet):
-    queryset = Purchase.objects.all()
+    queryset = Purchase.objects.select_related(
+        'project__sale__customer',
+        'supplier'
+    ).all()
     serializer_class = PurchaseSerializer
+    filterset_class = PurchaseFilterSet
