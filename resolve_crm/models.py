@@ -777,6 +777,11 @@ class Project(models.Model):
             ("CMK", "Confirmar Mensagem de Kit Entregue"),
             ("FTA", "Falha na Transferência (Em Análise)"),
             ("AAD", "Aguardando Aprovação da Documentação de Equipamento Entregue"),
+            ("PPD", "Pend. Preenchimento de Dados de Monitoramento"),
+            ("ACM", "Aguardando Confirmação de Monitoração"),
+            ("PC", "Projeto Cancelado"),
+            ("ADE", "Aguardando Documentação de Equipamento Entregue"),
+            ("EEA", "Equipamento Entregue (Aguardando Próxima Etapa)"),
             ("F", "Finalizado"),
         ], blank=True, null=True,
     )
