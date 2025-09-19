@@ -488,6 +488,7 @@ class FinancialRecord(models.Model):
             ("view_all_payable_financial_records", "Can view all payable financial records"),
             ("view_all_department_payable_financial_records", "Can view all payable financial_records from the department"),
             ("view_financialrecord_attachment", "Can view financial record attachment"),
+            ("can_change_audit_status", "Can change audit status"),
         ]
 
 
