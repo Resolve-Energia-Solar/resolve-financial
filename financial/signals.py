@@ -7,6 +7,7 @@ from financial.views import OmieIntegrationView
 from resolve_crm.models import Sale
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 import requests
 
 
@@ -55,6 +56,90 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
             installment.full_clean()
             installment.save()
 
+
+
+@receiver(pre_save, sender=FinancialRecord)
+def store_old_audit_status(sender, instance, **kwargs):
+    """
+    Antes de salvar, armazena o valor antigo de audit_status na instância.
+    """
+    if instance.pk:
+        old_instance = FinancialRecord.objects.get(pk=instance.pk)
+        instance.old_audit_status = old_instance.audit_status
+    else:
+        instance.old_audit_status = None
+
+
+@receiver(post_save, sender=FinancialRecord)
+def send_to_omie_on_audit_approval(sender, instance, created, **kwargs):
+    """
+    Envia para OMIE quando audit_status for alterado para 'A' (Aprovado).
+    """
+    if not created and hasattr(instance, 'old_audit_status'):
+        # Verifica se o audit_status foi alterado para 'A'
+        if instance.old_audit_status != 'A' and instance.audit_status == 'A':
+            logger.info(f"Audit status changed to 'A' for financial record {instance.protocol}. Sending to OMIE...")
+            try:
+                # Utiliza a task para envio assíncrono ao OMIE
+                from .task import send_to_omie_task
+                send_to_omie_task.delay(instance.id)
+                logger.info(f"Financial record {instance.protocol} sent to OMIE processing queue")
+            except Exception as e:
+                logger.error(f"Erro ao enviar registro financeiro {instance.protocol} para OMIE: {e}")
+
+
+@receiver(post_save, sender=FinancialRecord)
+def track_audit_status_changes(sender, instance, created, **kwargs):
+    """
+    Atualiza os campos audit_by e audit_response_date quando audit_status for alterado.
+    """
+    if not created and hasattr(instance, 'old_audit_status'):
+        # Verifica se o audit_status foi alterado
+        if instance.old_audit_status != instance.audit_status:
+            # Obtém o usuário atual através do simple_history
+            current_user = None
+            
+            # Tenta obter o usuário através do middleware do simple_history
+            try:
+                import threading
+                # O HistoryRequestMiddleware armazena o usuário em um local thread-local
+                local = threading.local()
+                if hasattr(local, 'user'):
+                    current_user = local.user
+                else:
+                    # Fallback: verifica se existe no contexto do Django
+                    from django import get_version
+                    # Para Django com simple_history, o usuário pode estar em _request_middleware_context
+                    context = getattr(threading.current_thread(), '_request_middleware_context', None)
+                    if context and hasattr(context, 'user'):
+                        current_user = context.user
+            except:
+                pass
+            
+            # Se não conseguir obter o usuário, log de warning (mas continua a execução)
+            if not current_user or (hasattr(current_user, 'is_authenticated') and not current_user.is_authenticated):
+                logger.warning(f"Não foi possível identificar o usuário que alterou o audit_status do registro {instance.protocol}")
+                current_user = None
+            
+            # Prepara os campos para atualização (apenas se não foram definidos pelo serializer)
+            update_fields = {}
+            
+            # Só atualiza audit_response_date se ainda não foi definido
+            if not instance.audit_response_date:
+                update_fields['audit_response_date'] = timezone.now()
+            
+            # Só atualiza audit_by se conseguiu identificar um usuário válido e ainda não foi definido
+            if (not instance.audit_by and 
+                current_user and 
+                hasattr(current_user, 'is_authenticated') and 
+                current_user.is_authenticated):
+                update_fields['audit_by'] = current_user
+            
+            # Salva apenas se há campos para atualizar
+            if update_fields:
+                FinancialRecord.objects.filter(pk=instance.pk).update(**update_fields)
+            
+            logger.info(f"Audit tracking updated for financial record {instance.protocol}: status changed from '{instance.old_audit_status}' to '{instance.audit_status}', user: {current_user.email if current_user else 'Unknown'}")
 
 
 @receiver(post_save, sender=FinancialRecord)
