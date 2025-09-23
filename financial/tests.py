@@ -6,6 +6,7 @@ from resolve_crm.models import Sale
 from financial.models import (
     FinancialRecord, Financier, Payment, PaymentInstallment, FranchiseInstallment
 )
+from unittest.mock import patch
 from datetime import date, datetime, timedelta
 from django.utils import timezone
 
@@ -374,3 +375,82 @@ class FinancialRecordAPITestCase(BaseAPITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(FinancialRecord.objects.filter(pk=self.financial_record.pk).exists())
+
+    @patch('simple_history.utils.get_history_user')
+    def test_audit_status_tracking(self, mock_get_history_user):
+        """Testa se os campos audit_by e audit_response_date são atualizados quando audit_status muda"""
+        # Configura o mock para retornar o usuário autenticado
+        mock_get_history_user.return_value = self.user
+        
+        # Cria um financial record com audit_status inicial
+        financial_record = FinancialRecord.objects.create(
+            integration_code='AUDIT_TEST',
+            protocol='AUDIT001',
+            is_receivable=True,
+            status='S',
+            audit_status='AA',  # Aguardando Aprovação
+            value=500.00,
+            due_date=date.today(),
+            department_code='DEP001',
+            category_code='CAT001',
+            client_supplier_code=123456789,
+            requester=self.user,
+            responsible=self.user2
+        )
+        
+        # Verifica que os campos de audit não estão preenchidos inicialmente
+        self.assertIsNone(financial_record.audit_by)
+        self.assertIsNone(financial_record.audit_response_date)
+        
+        # Atualiza o audit_status
+        financial_record.audit_status = 'A'  # Aprovado
+        financial_record.save()
+        
+        # Recarrega o objeto do banco de dados
+        financial_record.refresh_from_db()
+        
+        # Verifica se os campos foram atualizados
+        self.assertEqual(financial_record.audit_by, self.user)
+        self.assertIsNotNone(financial_record.audit_response_date)
+        self.assertAlmostEqual(
+            financial_record.audit_response_date,
+            timezone.now(),
+            delta=timedelta(seconds=5)
+        )
+
+    def test_audit_status_tracking_without_user(self):
+        """Testa se audit_response_date é atualizado mesmo sem usuário identificado"""
+        # Cria um financial record com audit_status inicial
+        financial_record = FinancialRecord.objects.create(
+            integration_code='AUDIT_TEST2',
+            protocol='AUDIT002',
+            is_receivable=True,
+            status='S',
+            audit_status='AA',  # Aguardando Aprovação
+            value=750.00,
+            due_date=date.today(),
+            department_code='DEP002',
+            category_code='CAT002',
+            client_supplier_code=123456788,
+            requester=self.user,
+            responsible=self.user2
+        )
+        
+        # Verifica que os campos de audit não estão preenchidos inicialmente
+        self.assertIsNone(financial_record.audit_by)
+        self.assertIsNone(financial_record.audit_response_date)
+        
+        # Atualiza o audit_status
+        financial_record.audit_status = 'R'  # Reprovado
+        financial_record.save()
+        
+        # Recarrega o objeto do banco de dados
+        financial_record.refresh_from_db()
+        
+        # Verifica se audit_response_date foi atualizado mesmo sem usuário
+        self.assertIsNotNone(financial_record.audit_response_date)
+        self.assertAlmostEqual(
+            financial_record.audit_response_date,
+            timezone.now(),
+            delta=timedelta(seconds=5)
+        )

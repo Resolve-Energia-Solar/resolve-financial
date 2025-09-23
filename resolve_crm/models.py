@@ -783,6 +783,12 @@ class Project(models.Model):
             ("ADE", "Aguardando Documentação de Equipamento Entregue"),
             ("EEA", "Equipamento Entregue (Aguardando Próxima Etapa)"),
             ("F", "Finalizado"),
+            ("PCG", "PEND. CLIENTE CONFIRMAR MENSAGEM DE GERAÇÃO"),
+            ("PVI", "Pend. validar instalação com inversor"),
+            ("SGI", "Não foi identificada geração de energia no(s) inversor(es)"),
+            ("EPI", "ERRO NA POTENCIA DO INVERSOR"),
+            ("IVD", "INSTALAÇÃO VALIDADA"),
+            ("PG", "Pago"),
         ], blank=True, null=True,
     )
     financier_monitoring_status_changed_by = models.ForeignKey(

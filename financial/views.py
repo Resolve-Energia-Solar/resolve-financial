@@ -775,15 +775,25 @@ class FinancialRecordApprovalView(APIView):
                 return Response({"error": "Failed to update due date"}, status=500)
 
             try:
-                response = OmieIntegrationView().create_payment_request(
-                    financial_record, manager_status, manager_note
-                )
-                if response.status_code == 200:
-                    financial_record.integration_code = response.data.get(
-                        "codigo_lancamento_omie", None
+                if manager_status == "Aprovado":
+                    # Quando gestor aprovar, alterar audit_status para EA (Em Análise)
+                    financial_record.audit_status = "EA"
+                    financial_record.responsible_status = "A"
+                    financial_record.responsible_response_date = timezone.now()
+                    financial_record.responsible_notes = manager_note
+                    logger.info(
+                        f"Manager approved financial record {financial_record.protocol}. Audit status updated to EA"
+                    )
+                else:
+                    # Quando gestor reprovar, não alterar audit_status
+                    financial_record.responsible_status = "R"
+                    financial_record.responsible_response_date = timezone.now()
+                    financial_record.responsible_notes = manager_note
+                    logger.info(
+                        f"Manager rejected financial record {financial_record.protocol}. Audit status unchanged"
                     )
 
-                    financial_record.save()
+                financial_record.save()
             except Exception as e:
                 logger.error(f"Failed to create payment request in Omie: {e}")
                 return Response(

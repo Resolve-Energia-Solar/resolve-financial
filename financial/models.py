@@ -417,6 +417,22 @@ class FinancialRecord(models.Model):
         choices=[("A", "Aprovado"), ("R", "Reprovado"), ("P", "Pendente")],
         default="P",
     )
+    audit_status = models.CharField(
+        "Status do Audit",
+        max_length=2,
+        choices=[("A", "Aprovado"), ("R", "Reprovado"), ("AA", "Aguardando Aprovação"), ("EA", "Em Análise"), ("C", "Cancelado")],
+        default="AA",
+    )
+    audit_notes = models.TextField("Notas do Audit", null=True, blank=True)
+    audit_response_date = models.DateTimeField("Data da Resposta do Audit", null=True, blank=True)
+    audit_by = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.PROTECT,
+        verbose_name="Auditado por",
+        related_name="audited_financial_records",
+        null=True,
+        blank=True,
+    )
     responsible_response_date = models.DateTimeField("Data da Resposta do Gestor", null=True, blank=True)
     responsible_request_integration_code = models.CharField(
         "Código de Integração da Solicitação ao Gestor", max_length=50, null=True, blank=True
@@ -472,6 +488,7 @@ class FinancialRecord(models.Model):
             ("view_all_payable_financial_records", "Can view all payable financial records"),
             ("view_all_department_payable_financial_records", "Can view all payable financial_records from the department"),
             ("view_financialrecord_attachment", "Can view financial record attachment"),
+            ("can_change_audit_status", "Can change audit status"),
         ]
 
 

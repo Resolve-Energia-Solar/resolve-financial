@@ -8,6 +8,7 @@ from django.forms import ValidationError
 from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import SerializerMethodField
 from rest_framework import serializers
+from django.utils import timezone
 
 from accounts.serializers import BaseSerializer
 
@@ -137,6 +138,29 @@ class FinancialRecordSerializer(BaseSerializer):
     class Meta:
         model = FinancialRecord
         fields = "__all__"
+        read_only_fields = ['audit_by', 'audit_response_date']
+
+    def update(self, instance, validated_data):
+        """
+        Sobrescrevendo o método update para rastrear mudanças no audit_status
+        e definir automaticamente o usuário e data da auditoria.
+        """
+        # Captura o audit_status anterior
+        old_audit_status = instance.audit_status if instance else None
+        
+        # Verifica se o audit_status está sendo alterado
+        new_audit_status = validated_data.get('audit_status')
+        audit_status_changed = old_audit_status != new_audit_status
+        
+        # Se o audit_status foi alterado, define o usuário e data automaticamente
+        if audit_status_changed and new_audit_status is not None:
+            # Obtém o usuário atual do contexto da requisição
+            request = self.context.get('request')
+            if request and hasattr(request, 'user') and request.user.is_authenticated:
+                validated_data['audit_by'] = request.user
+                validated_data['audit_response_date'] = timezone.now()
+        
+        return super().update(instance, validated_data)
 
 
 class BankDetailsSerializer(BaseSerializer):
