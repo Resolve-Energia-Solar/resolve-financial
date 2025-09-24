@@ -2,6 +2,10 @@ from celery import shared_task
 import os, requests, logging
 from financial.models import FinancialRecord
 from financial.views import OmieIntegrationView
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -121,3 +125,74 @@ def resend_approval_request_to_responsible_task(record_id):
     else:
         logger.warning(f"Registro {record.protocol} não está em status 'Pendente'.")
         return {"status": "warning", "message": "Record not in 'Pending' status"}
+
+
+@shared_task
+def notify_requester_on_audit_change_task(record_id):
+    try:
+        record = FinancialRecord.objects.get(id=record_id)
+    except FinancialRecord.DoesNotExist:
+        logger.error(f"Registro {record_id} não encontrado para notificação ao solicitante.")
+        return {"status": "error", "message": "Record not found"}
+
+    if record.audit_status not in ("C", "R"):
+        logger.info(
+            f"Registro {record.protocol} não está em status de cancelamento/reprovação para notificação."
+        )
+        return {"status": "ignored", "message": "Audit status is not C or R"}
+
+    requester = getattr(record, "requester", None)
+    requester_email = getattr(requester, "email", None)
+    if not requester or not requester_email:
+        logger.warning(
+            f"Solicitante ou e-mail ausente para o registro {record.protocol}. Notificação não enviada."
+        )
+        return {"status": "warning", "message": "Requester email not available"}
+
+    status_text = "Cancelada" if record.audit_status == "C" else "Reprovada"
+    subject = f"Sua solicitação {record.protocol} foi {status_text}"
+
+    notes = record.audit_notes or "—"
+    try:
+        requester_name = getattr(requester, "first_name", None) or getattr(
+            requester, "complete_name", ""
+        )
+    except Exception:
+        requester_name = ""
+
+    # Datas e formatos
+    local_created_at = timezone.localtime(record.created_at) if record.created_at else None
+    local_audit_date = timezone.localtime(record.audit_response_date) if record.audit_response_date else None
+
+    context = {
+        'status_text': status_text,
+        'requester_name': requester_name,
+        'protocol': record.protocol,
+        'value': f"R$ {record.value:.2f}",
+        'created_at': local_created_at.strftime('%d/%m/%Y %H:%M') if local_created_at else None,
+        'audit_by': getattr(record.audit_by, 'complete_name', None) or getattr(record.audit_by, 'email', None) or '—',
+        'audit_date': local_audit_date.strftime('%d/%m/%Y %H:%M') if local_audit_date else '—',
+        'notes': notes,
+        'requesting_department': getattr(record.requesting_department, 'name', None) or '—',
+        'category_name': record.category_name,
+        'client_supplier_name': record.client_supplier_name,
+        'due_date': record.due_date.strftime('%d/%m/%Y') if record.due_date else '—',
+        'payment_method': record.get_payment_method_display() if hasattr(record, 'get_payment_method_display') else '—',
+    }
+
+    html_content = render_to_string('financial/audit-notification-email.html', context)
+
+    try:
+        email = EmailMessage(subject=subject, body=html_content, to=[requester_email])
+        email.content_subtype = "html"
+        email.send()
+        logger.info(
+            f"Notificação de {status_text.lower()} enviada para o solicitante do registro {record.protocol}."
+        )
+        return {"status": "success", "message": "Notification email sent"}
+    except Exception as e:
+        logger.error(
+            f"Erro ao enviar notificação ao solicitante do registro {record.protocol}: {e}",
+            exc_info=True,
+        )
+        return {"status": "error", "message": f"Failed to send email: {e}"}
