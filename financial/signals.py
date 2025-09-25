@@ -9,6 +9,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 import requests
+from .task import notify_requester_on_audit_change_task
 
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,15 @@ def track_audit_status_changes(sender, instance, created, **kwargs):
                 FinancialRecord.objects.filter(pk=instance.pk).update(**update_fields)
             
             logger.info(f"Audit tracking updated for financial record {instance.protocol}: status changed from '{instance.old_audit_status}' to '{instance.audit_status}', user: {current_user.email if current_user else 'Unknown'}")
+
+            # Envia notificação ao solicitante quando o audit_status for Cancelado ou Reprovado
+            try:
+                if instance.audit_status in ("C", "R"):
+                    notify_requester_on_audit_change_task.delay(instance.id)
+            except Exception as e:
+                logger.error(
+                    f"Erro ao enfileirar notificação ao solicitante para o registro {instance.protocol}: {e}"
+                )
 
 
 @receiver(post_save, sender=FinancialRecord)

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificação de Auditoria</title>
+    {% load static %}
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #F4F4F4; color: #333333; }
+        .email-container { max-width: 680px; margin: 30px auto; background: #FFFFFF; border: 1px solid #E6E6E6; border-radius: 8px; overflow: hidden; }
+        .header { background-color: #FFC72C; text-align: center; padding: 16px; }
+        .header img { max-width: 160px; }
+        .content { padding: 24px; }
+        .content h1 { color: #333333; text-align: center; font-size: 22px; margin-top: 0; }
+        .content p { line-height: 1.6; }
+        .tag { display: inline-block; padding: 6px 10px; background: #FDE68A; color: #92400E; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+        .grid .label { color: #6B7280; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        .grid .value { color: #111827; font-size: 14px; font-weight: 600; }
+        .notes { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 6px; padding: 12px; margin-top: 16px; }
+        .footer { background-color: #F4F4F4; text-align: center; padding: 10px; font-size: 12px; color: #999B9D; }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <strong>Resolve Energia Solar</strong>
+        </div>
+        <div class="content">
+            <h1>Solicitação {{ protocol }} {{ status_text }}</h1>
+            <p>Olá {{ requester_name }}, sua solicitação de pagamento de protocolo <strong>{{ protocol }}</strong> foi <span class="tag">{{ status_text }}</span>.</p>
+
+            <div class="grid" style="margin-top: 16px;">
+                <div>
+                    <div class="label">Valor</div>
+                    <div class="value">{{ value }}</div>
+                </div>
+                <div>
+                    <div class="label">Criada em</div>
+                    <div class="value">{{ created_at }}</div>
+                </div>
+                <div>
+                    <div class="label">Departamento</div>
+                    <div class="value">{{ requesting_department }}</div>
+                </div>
+                <div>
+                    <div class="label">Categoria</div>
+                    <div class="value">{{ category_name }}</div>
+                </div>
+                <div>
+                    <div class="label">Fornecedor/Cliente</div>
+                    <div class="value">{{ client_supplier_name }}</div>
+                </div>
+                <div>
+                    <div class="label">Vencimento</div>
+                    <div class="value">{{ due_date }}</div>
+                </div>
+                <div>
+                    <div class="label">Forma de Pagamento</div>
+                    <div class="value">{{ payment_method }}</div>
+                </div>
+                <div>
+                    <div class="label">Auditado por</div>
+                    <div class="value">{{ audit_by }}</div>
+                </div>
+                <div>
+                    <div class="label">Data da Auditoria</div>
+                    <div class="value">{{ audit_date }}</div>
+                </div>
+            </div>
+
+            <div class="notes">
+                <div class="label" style="margin-bottom: 6px;">Motivo</div>
+                <div>{{ notes|linebreaksbr }}</div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Em caso de dúvidas, procure o seu gestor ou o financeiro.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+

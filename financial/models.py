@@ -420,7 +420,7 @@ class FinancialRecord(models.Model):
     audit_status = models.CharField(
         "Status do Audit",
         max_length=2,
-        choices=[("A", "Aprovado"), ("R", "Reprovado"), ("AA", "Aguardando Aprovação"), ("EA", "Em Análise"), ("C", "Cancelado")],
+        choices=[("A", "Aprovada"), ("R", "Reprovada"), ("AA", "Aguardando Aprovação"), ("EA", "Em Análise"), ("C", "Cancelada")],
         default="AA",
     )
     audit_notes = models.TextField("Notas do Audit", null=True, blank=True)
