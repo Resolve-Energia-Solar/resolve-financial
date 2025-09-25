@@ -62,13 +62,15 @@ def adjust_franchise_installments_on_sale_update(sender, instance, created, **kw
 @receiver(pre_save, sender=FinancialRecord)
 def store_old_audit_status(sender, instance, **kwargs):
     """
-    Antes de salvar, armazena o valor antigo de audit_status na instância.
+    Antes de salvar, armazena os valores antigos de audit_status e audit_notes na instância.
     """
     if instance.pk:
         old_instance = FinancialRecord.objects.get(pk=instance.pk)
         instance.old_audit_status = old_instance.audit_status
+        instance.old_audit_notes = old_instance.audit_notes
     else:
         instance.old_audit_status = None
+        instance.old_audit_notes = None
 
 
 @receiver(post_save, sender=FinancialRecord)
@@ -96,7 +98,7 @@ def track_audit_status_changes(sender, instance, created, **kwargs):
     """
     if not created and hasattr(instance, 'old_audit_status'):
         # Verifica se o audit_status foi alterado
-        if instance.old_audit_status != instance.audit_status:
+        if instance.old_audit_status != instance.audit_status or instance.old_audit_notes != instance.audit_notes:
             # Obtém o usuário atual através do simple_history
             current_user = None
             
@@ -142,10 +144,27 @@ def track_audit_status_changes(sender, instance, created, **kwargs):
             
             logger.info(f"Audit tracking updated for financial record {instance.protocol}: status changed from '{instance.old_audit_status}' to '{instance.audit_status}', user: {current_user.email if current_user else 'Unknown'}")
 
-            # Envia notificação ao solicitante quando o audit_status for Cancelado ou Reprovado
             try:
-                if instance.audit_status in ("C", "R"):
+                status_is_cr = instance.audit_status in ("C", "R")
+                notes_now = (instance.audit_notes or "").strip()
+                old_notes = (getattr(instance, "old_audit_notes", None) or "").strip()
+
+                status_changed_to_cr = False
+                if hasattr(instance, "old_audit_status"):
+                    status_changed_to_cr = (
+                        instance.old_audit_status not in ("C", "R")
+                        and instance.audit_status in ("C", "R")
+                    )
+
+                notes_changed_to_present = status_is_cr and (old_notes == "" and notes_now != "")
+
+                should_notify = (status_changed_to_cr and notes_now != "") or notes_changed_to_present
+                if should_notify:
                     notify_requester_on_audit_change_task.delay(instance.id)
+                else:
+                    logger.info(
+                        f"Notificação adiada para {instance.protocol}: status={instance.audit_status}, motivo presente? {bool(notes_now)}"
+                    )
             except Exception as e:
                 logger.error(
                     f"Erro ao enfileirar notificação ao solicitante para o registro {instance.protocol}: {e}"

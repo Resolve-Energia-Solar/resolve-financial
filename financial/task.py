@@ -141,6 +141,13 @@ def notify_requester_on_audit_change_task(record_id):
         )
         return {"status": "ignored", "message": "Audit status is not C or R"}
 
+    # Exigir motivo para cancelamento/reprovação
+    if not (record.audit_notes and record.audit_notes.strip()):
+        logger.info(
+            f"Notificação não enviada para {record.protocol} por ausência de motivo (audit_notes)."
+        )
+        return {"status": "ignored", "message": "Missing reason (audit_notes)"}
+
     requester = getattr(record, "requester", None)
     requester_email = getattr(requester, "email", None)
     if not requester or not requester_email:
