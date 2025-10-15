@@ -101,7 +101,7 @@ jobs:
             --build-arg ENV_FILE=.env \
             -t "${DOCKER_IMAGE}:${{ env.DOCKER_TAG }}" .
           docker push "${DOCKER_IMAGE}:${{ env.DOCKER_TAG }}"
-          
+
        # 6. Deploy via SSH na VM
       - name: Deploy to VM
         uses: appleboy/ssh-action@v1.1.0
@@ -111,10 +111,12 @@ jobs:
           key: ${{ vars.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            cd ${{ env.APP_PATH }}
             echo "Deploying resolve-financial API..."
+            cd ${{ env.APP_PATH }}
+            IMAGE_TAG=${{ github.sha }}
+            export IMAGE_TAG
             docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" -p "${{ vars.AZURE_ACR_PASSWORD }}"
-            docker pull ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            docker pull resourceresolve.azurecr.io/resolve-financial:${IMAGE_TAG}
             docker-compose down
-            docker-compose up -d --build --no-deps --force-recreate
+            docker-compose up -d --build
             echo "✅ Deploy completed successfully"
