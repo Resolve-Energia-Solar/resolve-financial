@@ -88,21 +88,17 @@ jobs:
           mkdir -p certs
           echo "${COMBINED_PEM}" > certs/combined.pem
 
-      
-      # 4. Definir Docker tag
-      - name: Set Docker tag
-        run: echo "DOCKER_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+      # 4. Build e Push da Imagem Docker
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          build-args: |
+            ENV_FILE=.env
 
-      # 5. Build e push da imagem Docker
-      - name: Build and Push Docker Image
-        run: |
-          docker build \
-            --no-cache \
-            --build-arg ENV_FILE=.env \
-            -t "${DOCKER_IMAGE}:${{ env.DOCKER_TAG }}" .
-          docker push "${DOCKER_IMAGE}:${{ env.DOCKER_TAG }}"
-
-       # 6. Deploy via SSH na VM
+      # 5. Deploy na VM via SSH
       - name: Deploy to VM
         uses: appleboy/ssh-action@v1.1.0
         with:
@@ -111,12 +107,12 @@ jobs:
           key: ${{ vars.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            echo "Deploying resolve-financial API..."
-            cd ${{ env.APP_PATH }}
-            IMAGE_TAG=${{ github.sha }}
-            export IMAGE_TAG
+            echo "Deploying resolve-financial..."
             docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" -p "${{ vars.AZURE_ACR_PASSWORD }}"
-            docker pull resourceresolve.azurecr.io/resolve-financial:${IMAGE_TAG}
-            docker-compose down
-            docker-compose up -d --build
-            echo "✅ Deploy completed successfully"
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+            docker run -d --restart=always --name ${{ env.CONTAINER_NAME }} \
+              -p 3001:3000 \
+              ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            echo "✅ Deploy completed successfully"      
