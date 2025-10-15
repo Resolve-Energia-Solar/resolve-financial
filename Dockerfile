@@ -1,12 +1,13 @@
 # ===== Base =====
 FROM python:3.11-alpine
 
-# Dependências básicas
+# Dependências básicas + libs para compilar Python packages
 RUN apk update && apk add --no-cache \
     bash zsh git build-base python3-dev musl-dev libffi-dev openssl-dev \
     cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
     fontconfig fontconfig-dev \
-    ttf-dejavu ttf-freefont ttf-liberation ttf-droid tzdata
+    ttf-dejavu ttf-freefont ttf-liberation ttf-droid tzdata \
+    jpeg-dev zlib-dev freetype-dev
 
 # Configurar timezone
 RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime && echo "America/Belem" > /etc/timezone
@@ -22,16 +23,11 @@ RUN mkdir -p /app/logs /app/certs
 
 # Copiar requirements e instalar dependências
 COPY requirements.txt .
-RUN pip install --break-system-packages -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copiar o restante do código
 COPY . .
-
-# Copiar arquivo de variáveis de ambiente para build
-ARG ENV_FILE
-COPY ${ENV_FILE} .env
-# Exporta variáveis para runtime
-RUN export $(grep -v '^#' .env | xargs)
 
 # Expor porta da aplicação
 EXPOSE 8001
