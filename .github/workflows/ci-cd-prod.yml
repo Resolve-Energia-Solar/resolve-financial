@@ -111,6 +111,7 @@ jobs:
             cd ${{ env.APP_PATH }}
             docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" -p "${{ vars.AZURE_ACR_PASSWORD }}"
             docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            export TAG=${{ github.sha }}
             docker-compose down
             docker-compose up -d
             echo "✅ Deploy completed successfully"
