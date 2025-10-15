@@ -1,17 +1,18 @@
-name: CI/CD Pipeline for RESOLVE-ERP-API Update Backend env v5
-  
+name: CI/CD Pipeline for RESOLVE-FINANCIAL (VM-AZURE)
+
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
-  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-erp-api
-  AKS_CLUSTER_NAME: Resolve-AKS-Web
-  AKS_RESOURCE_GROUP: Resolve
-  NAMESPACE: resolve-erp
-  DEPLOYMENT_NAME: resolve-erp-api
-  DEPLOYMENT_NAME_CELERY: resolve-erp-celery
+  DOCKER_IMAGE: resourceresolve.azurecr.io/resolve-financial
+  APP_PATH: /home/zprouser/resolve-financial
+  CONTAINER_NAME: resolve-financial
 
 jobs:
   build-and-deploy:
@@ -20,14 +21,18 @@ jobs:
 
     steps:
       # 1. Checkout do Código
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2. Log in ao Azure Container Registry (ACR)
-      - name: Log in to Azure Container Registry (ACR)
-        run: echo "${{ vars.AZURE_ACR_PASSWORD }}" | docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" --password-stdin
+      # 2. Login no Azure Container Registry (ACR)
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v2
+        with:
+          login-server: resourceresolve.azurecr.io
+          username: ${{ vars.AZURE_ACR_USERNAME }}
+          password: ${{ vars.AZURE_ACR_PASSWORD }}
 
-      # 3. Criar os arquivos necessários para o build
+      # 3. Criar arquivos .env e google_application_credentials.json
       - name: Create .env and google_application_credentials.json
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ vars.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
@@ -74,36 +79,38 @@ jobs:
           echo "NEXT_PUBLIC_GOOGLE_MAPS_API_AGENT_ROUTES_KEY=${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_AGENT_ROUTES_KEY}}" >> .env
           echo "LOGIN_INFO_WEBHOOK_URL=${{ vars.LOGIN_INFO_WEBHOOK_URL }}" >> .env
           echo "TICKET_INFO_WEBHOOK_URL=${{ vars.TICKET_INFO_WEBHOOK_URL }}" >> .env
-          # Criar google_application_credentials.json
+          echo "REDIS_HOST=${{ vars.REDIS_HOST}}" >> .env
+          echo "REDIS_PORT=${{ vars.REDIS_PORT}}" >> .env
+          echo "CELERY_BROKER_URL=${{ vars.CELERY_BROKER_URL}}" >> .env
+          # google_application_credentials.json
           echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > google_application_credentials.json
-          # Criar o combined.pem
+          # combined.pem
           mkdir -p certs
           echo "${COMBINED_PEM}" > certs/combined.pem
 
-      # 4. Build e Push da Imagem Docker
-      - name: Build and Push Docker Image
-        run: |
-          docker build \
-            --no-cache \
-            --build-arg ENV_FILE=.env \
-            --build-arg GOOGLE_APPLICATION_CREDENTIALS_FILE=google_application_credentials.json \
-            -t "${DOCKER_IMAGE}:${{ github.sha }}" .
-          docker push "${DOCKER_IMAGE}:${{ github.sha }}"
+      # 4. Build e push da imagem Docker
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          build-args: |
+            ENV_FILE=.env
 
-      # 5. Log in ao Azure CLI
-      - name: Log in to Azure
-        run: az login --service-principal -u "${{ vars.AZURE_CLIENT_ID }}" -p "${{ vars.AZURE_CLIENT_SECRET }}" --tenant "${{ vars.AZURE_TENANT_ID }}"
-
-      # 6. Configurar Acesso ao Cluster AKS
-      - name: Configure Access to AKS
-        run: az aks get-credentials --resource-group "$AKS_RESOURCE_GROUP" --name "$AKS_CLUSTER_NAME" --overwrite-existing
-
-      # 7. Atualizar Deployment no AKS
-      - name: Update Deployment on AKS
-        run: |
-          kubectl set image deployment/$DEPLOYMENT_NAME resolve-erp-api="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
-          kubectl set image deployment/$DEPLOYMENT_NAME_CELERY celery="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
-          kubectl set image deployment/$DEPLOYMENT_NAME_CELERY celery-flower="${DOCKER_IMAGE}:${{ github.sha }}" -n "$NAMESPACE"
-          kubectl rollout status deployment/$DEPLOYMENT_NAME -n "$NAMESPACE"
-          kubectl rollout status deployment/$DEPLOYMENT_NAME_CELERY -n "$NAMESPACE"
-
+      # 5. Deploy via docker-compose na VM
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ vars.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            echo "Deploying resolve-financial API..."
+            cd ${{ env.APP_PATH }}
+            docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" -p "${{ vars.AZURE_ACR_PASSWORD }}"
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            docker-compose down
+            docker-compose up -d --build
+            echo "✅ Deploy completed successfully"

@@ -1,47 +1,42 @@
-FROM alpine:latest
+# ===== Base =====
+FROM python:3.11-alpine
 
-# Instalar dependências básicas e do Python
+# Dependências básicas
 RUN apk update && apk add --no-cache \
-    zsh git python3 py3-pip tzdata pkgconfig \
-    mysql-dev gcc musl-dev python3-dev libffi-dev openssl-dev \
-    build-base
-
-# Instalar dependências para WeasyPrint e fontes
-RUN apk add --no-cache \
+    bash zsh git build-base python3-dev musl-dev libffi-dev openssl-dev \
     cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
     fontconfig fontconfig-dev \
-    ttf-dejavu ttf-freefont font-noto font-noto-cjk font-noto-emoji \
-    ttf-liberation ttf-droid
+    ttf-dejavu ttf-freefont ttf-noto ttf-noto-cjk ttf-noto-emoji \
+    ttf-liberation ttf-droid tzdata
 
 # Configurar timezone
-RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime
-RUN echo "America/Belem" > /etc/timezone
+RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime && echo "America/Belem" > /etc/timezone
 
 # Atualizar cache de fontes
 RUN fc-cache -f -v
 
-# Verificar fontes instaladas (para depuração)
-RUN fc-list
-
-# Definir diretório de trabalho
+# Diretório de trabalho
 WORKDIR /app
 
-# Criar diretório para logs e certs
+# Criar diretórios necessários
 RUN mkdir -p /app/logs /app/certs
 
-# Instalar dependências do Python
+# Copiar requirements e instalar dependências
 COPY requirements.txt .
 RUN pip install --break-system-packages -r requirements.txt
 
 # Copiar o restante do código
 COPY . .
 
-# Instalar o Celery (caso não esteja no requirements.txt)
-#RUN pip install celery
+# Copiar arquivo de variáveis de ambiente para build
+ARG ENV_FILE
+COPY ${ENV_FILE} .env
+# Exporta variáveis para runtime
+RUN export $(grep -v '^#' .env | xargs)
 
-
-# Expor a porta
+# Expor porta da aplicação
 EXPOSE 8001
 
-# Adicionar o comando para iniciar o Celery junto com o Django
+# Comando padrão para Daphne
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8001", "resolve_erp.asgi:application"]
+
