@@ -108,11 +108,9 @@ jobs:
           script_stop: true
           script: |
             echo "Deploying resolve-financial..."
+            cd ${{ env.APP_PATH }}
             docker login resourceresolve.azurecr.io -u "${{ vars.AZURE_ACR_USERNAME }}" -p "${{ vars.AZURE_ACR_PASSWORD }}"
             docker pull ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
-            docker stop ${{ env.CONTAINER_NAME }} || true
-            docker rm ${{ env.CONTAINER_NAME }} || true
-            docker run -d --restart=always --name ${{ env.CONTAINER_NAME }} \
-              -p 3001:3000 \
-              ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
-            echo "✅ Deploy completed successfully"      
+            docker-compose down
+            docker-compose up -d
+            echo "✅ Deploy completed successfully"
