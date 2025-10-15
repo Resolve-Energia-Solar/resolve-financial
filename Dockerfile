@@ -7,7 +7,7 @@ RUN apk update && apk add --no-cache \
     cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
     fontconfig fontconfig-dev \
     ttf-dejavu ttf-freefont ttf-liberation ttf-droid tzdata \
-    jpeg-dev zlib-dev freetype-dev
+    mariadb-dev mariadb-connector-c-dev pkgconfig
 
 # Configurar timezone
 RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime && echo "America/Belem" > /etc/timezone
