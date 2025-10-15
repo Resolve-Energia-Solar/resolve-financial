@@ -1,4 +1,4 @@
-name: CI/CD Pipeline for RESOLVE-FINANCIAL (VM-AZURE)
+name: CI/CD Pipeline for RESOLVE-FINANCIAL (VM-AZURE-v1)
 
 on:
   push:
