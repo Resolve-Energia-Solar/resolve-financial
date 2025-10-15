@@ -6,8 +6,7 @@ RUN apk update && apk add --no-cache \
     bash zsh git build-base python3-dev musl-dev libffi-dev openssl-dev \
     cairo cairo-dev pango pango-dev gdk-pixbuf gdk-pixbuf-dev \
     fontconfig fontconfig-dev \
-    ttf-dejavu ttf-freefont ttf-noto ttf-noto-cjk ttf-noto-emoji \
-    ttf-liberation ttf-droid tzdata
+    ttf-dejavu ttf-freefont ttf-liberation ttf-droid tzdata
 
 # Configurar timezone
 RUN ln -fs /usr/share/zoneinfo/America/Belem /etc/localtime && echo "America/Belem" > /etc/timezone
